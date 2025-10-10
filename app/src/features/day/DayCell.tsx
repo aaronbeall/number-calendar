@@ -11,6 +11,7 @@ export interface DayCellProps {
 }
 
 function parseNumbers(input: string): number[] {
+  if (!input.trim()) return [];
   return input
     .replace(/\s+/g, '')
     .split(/(?=[+-])/) // split at + or -
@@ -72,8 +73,13 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   let bgColor;
   if (!hasData) {
     bgColor = isPast ? 'bg-slate-100' : 'bg-white';
+  } else if (total > 0) {
+    bgColor = 'bg-green-50';
+  } else if (total < 0) {
+    bgColor = 'bg-red-50';
   } else {
-    bgColor = total > 0 ? 'bg-green-50' : 'bg-red-50';
+    // total === 0, neutral
+    bgColor = isPast ? 'bg-slate-100' : 'bg-white';
   }
 
   return (
@@ -137,9 +143,11 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
                 <Badge
                   key={i}
                   className={`text-xs px-2 py-0.5 shadow-sm transition-all ${
-                    n >= 0
+                    n > 0
                       ? 'bg-green-500 text-white border-green-600'
-                      : 'bg-red-500 text-white border-red-600'
+                      : n < 0
+                      ? 'bg-red-500 text-white border-red-600'
+                      : 'bg-slate-500 text-white border-slate-600'
                   }`}
                 >
                   {n}
