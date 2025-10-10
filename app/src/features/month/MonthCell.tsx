@@ -12,16 +12,16 @@ interface MonthCellProps {
 export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = false, onClick }: MonthCellProps) {
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   
-  // Color styling based on total
+  // Unified tile style for monthly grid, with color effect
   const getColorClasses = () => {
     if (!stats) {
-      return 'bg-slate-50 border-slate-200 hover:bg-slate-100';
+      return 'bg-slate-50 border border-slate-100 shadow-sm hover:shadow-md rounded-lg transition-all duration-200';
     } else if (stats.total > 0) {
-      return 'bg-green-50 border-green-200 hover:bg-green-100';
+      return 'bg-green-50 border border-green-100 shadow-sm hover:shadow-md rounded-lg transition-all duration-200';
     } else if (stats.total < 0) {
-      return 'bg-red-50 border-red-200 hover:bg-red-100';
+      return 'bg-red-50 border border-red-100 shadow-sm hover:shadow-md rounded-lg transition-all duration-200';
     } else {
-      return 'bg-slate-50 border-slate-200 hover:bg-slate-100';
+      return 'bg-slate-50 border border-slate-100 shadow-sm hover:shadow-md rounded-lg transition-all duration-200';
     }
   };
 
@@ -43,10 +43,9 @@ export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = 
     <div
       onClick={onClick}
       className={`
-        relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-200
+        relative p-4 cursor-pointer
         ${getColorClasses()}
         ${isCurrentMonth ? 'ring-2 ring-blue-400 ring-opacity-60' : ''}
-        hover:shadow-md
         ${ghostClasses}
       `}
     >
