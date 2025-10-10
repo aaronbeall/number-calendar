@@ -84,8 +84,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
         
         {hasData && (
           <div className="flex-1 flex flex-col gap-2 text-xs">
-            <div className="text-slate-500 text-center">
-              Count: {count}
+            <div className="text-[10px] text-slate-500 text-center">
+              {count} entries
             </div>
             <div className={`w-full px-3 py-2 rounded text-center font-mono font-bold ${total > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
               {total}

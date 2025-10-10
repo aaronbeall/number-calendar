@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays } from 'lucide-react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
+import { YearSummary } from './features/stats/YearSummary';
 import WeekSummary from './features/stats/WeekSummary';
 import { MonthChart } from './features/chart/MonthChart';
 import { YearOverview } from './features/year/YearOverview';
+import { MonthlyGrid } from './features/month/MonthlyGrid';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
@@ -24,6 +26,7 @@ function getMonthDays(year: number, month: number) {
 }
 
 function App() {
+  const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [monthData, setMonthData] = useState<Record<string, number[]>>({});
@@ -79,19 +82,44 @@ function App() {
                 </h1>
                 <p className="text-xs text-slate-500 font-medium">Track your daily progress</p>
               </div>
+              
+              {/* View Toggle */}
+              <ToggleGroup
+                type="single"
+                value={view}
+                onValueChange={(v: string | null) => {
+                  if (v === 'daily' || v === 'monthly') {
+                    setView(v);
+                  }
+                }}
+                className="ml-6"
+              >
+                <ToggleGroupItem value="daily" aria-label="Daily View">
+                  <CalendarDays className="h-4 w-4 mr-2" />
+                  Daily
+                </ToggleGroupItem>
+                <ToggleGroupItem value="monthly" aria-label="Monthly View">
+                  <Grid3X3 className="h-4 w-4 mr-2" />
+                  Monthly
+                </ToggleGroupItem>
+              </ToggleGroup>
             </div>
             
-            {/* Month Navigation */}
+            {/* Navigation */}
             <div className="flex items-center gap-3">
               <Button 
                 variant="outline" 
                 size="icon"
                 onClick={() => {
-                  if (month === 1) {
-                    setYear(y => y - 1);
-                    setMonth(12);
+                  if (view === 'daily') {
+                    if (month === 1) {
+                      setYear(y => y - 1);
+                      setMonth(12);
+                    } else {
+                      setMonth(m => m - 1);
+                    }
                   } else {
-                    setMonth(m => m - 1);
+                    setYear(y => y - 1);
                   }
                 }}
                 className="shadow-sm hover:shadow-md transition-shadow h-9 w-9"
@@ -112,27 +140,34 @@ function App() {
               </Button>
               
               <div className="text-lg font-semibold text-slate-700 min-w-[160px] text-center">
-                {monthNames[month - 1]} {year}
+                {view === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
               </div>
               
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowWeekends(v => !v)}
-                aria-pressed={showWeekends}
-                title={showWeekends ? "Hide weekends" : "Show weekends"}
-              >
-                <CalendarOff className={showWeekends ? "text-slate-400" : "text-blue-500"} />
-              </Button>
+              {view === 'daily' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShowWeekends(v => !v)}
+                  aria-pressed={showWeekends}
+                  title={showWeekends ? "Hide weekends" : "Show weekends"}
+                >
+                  <CalendarOff className={showWeekends ? "text-slate-400" : "text-blue-500"} />
+                </Button>
+              )}
+              
               <Button 
                 variant="outline" 
                 size="icon"
                 onClick={() => {
-                  if (month === 12) {
-                    setYear(y => y + 1);
-                    setMonth(1);
+                  if (view === 'daily') {
+                    if (month === 12) {
+                      setYear(y => y + 1);
+                      setMonth(1);
+                    } else {
+                      setMonth(m => m + 1);
+                    }
                   } else {
-                    setMonth(m => m + 1);
+                    setYear(y => y + 1);
                   }
                 }}
                 className="shadow-sm hover:shadow-md transition-shadow h-9 w-9"
@@ -146,102 +181,143 @@ function App() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 space-y-6">
-        {/* Year Overview */}
-        <YearOverview
-          year={year}
-          data={yearData}
-          currentMonth={month}
-          onMonthClick={(selectedMonth) => setMonth(selectedMonth)}
-        />
+        {view === 'daily' ? (
+          <>
+            {/* Year Overview */}
+            <YearOverview
+              year={year}
+              data={yearData}
+              currentMonth={month}
+              onMonthClick={(selectedMonth) => setMonth(selectedMonth)}
+            />
 
-        {/* Calendar Grid */}
-        <CalendarGrid
-          year={year}
-          month={month}
-          showWeekends={showWeekends}
-          renderWeekFooter={(datesInWeek) => {
-            // Compute numbers for the week from monthData
-            const weekNumbers = datesInWeek.flatMap(d => {
-              const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-              return monthData[ds] || [];
-            });
-            if (weekNumbers.length === 0) return null; // Only render if any data exists
+            {/* Calendar Grid */}
+            <CalendarGrid
+              year={year}
+              month={month}
+              showWeekends={showWeekends}
+              renderWeekFooter={(datesInWeek) => {
+                // Compute numbers for the week from monthData
+                const weekNumbers = datesInWeek.flatMap(d => {
+                  const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                  return monthData[ds] || [];
+                });
+                if (weekNumbers.length === 0) return null; // Only render if any data exists
+                
+                // Calculate week number based on the first date in the week that's in current month
+                const firstDateInMonth = datesInWeek.find(d => d.getMonth() === month - 1);
+                const weekNumber = firstDateInMonth ? Math.ceil(firstDateInMonth.getDate() / 7) : 1;
+                
+                // Check if this week contains today
+                const today = new Date();
+                const isCurrentWeek = datesInWeek.some(d => 
+                  d.getFullYear() === today.getFullYear() &&
+                  d.getMonth() === today.getMonth() &&
+                  d.getDate() === today.getDate()
+                );
+                
+                return (
+                  <div onClick={() => {
+                    setPanelTitle(`Week ${weekNumber}`);
+                    setPanelNumbers(weekNumbers);
+                    setPanelOpen(true);
+                  }} className="cursor-pointer">
+                    <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} />
+                  </div>
+                );
+              }}
+              renderDay={date => {
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                return (
+                  <DayCell
+                    date={date}
+                    numbers={monthData[dateStr] || []}
+                    onSave={nums => handleSaveDay(dateStr, nums)}
+                  />
+                );
+              }}
+            />
             
-            // Calculate week number based on the first date in the week that's in current month
-            const firstDateInMonth = datesInWeek.find(d => d.getMonth() === month - 1);
-            const weekNumber = firstDateInMonth ? Math.ceil(firstDateInMonth.getDate() / 7) : 1;
-            
-            return (
+            {/* Monthly Stats Section */}
+            <div className="mt-8 mb-6">
               <div onClick={() => {
-                setPanelTitle(`Week ${weekNumber}`);
-                setPanelNumbers(weekNumbers);
+                setPanelTitle(`${monthNames[month - 1]} Summary`);
+                setPanelNumbers(allNumbers);
                 setPanelOpen(true);
               }} className="cursor-pointer">
-                <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} />
-              </div>
-            );
-          }}
-          renderDay={date => {
-            const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-            return (
-              <DayCell
-                date={date}
-                numbers={monthData[dateStr] || []}
-                onSave={nums => handleSaveDay(dateStr, nums)}
+              <MonthSummary 
+                numbers={allNumbers} 
+                monthName={monthNames[month - 1]} 
+                isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
               />
-            );
-          }}
-        />
-        
-        {/* Monthly Stats Section */}
-        <div className="mt-8 mb-6">
-          <div onClick={() => {
-            setPanelTitle(`${monthNames[month - 1]} Summary`);
-            setPanelNumbers(allNumbers);
-            setPanelOpen(true);
-          }} className="cursor-pointer">
-          <MonthSummary 
-            numbers={allNumbers} 
-            monthName={monthNames[month - 1]} 
-            isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
-          />
-          </div>
-        </div>
+              </div>
+            </div>
 
-        {/* Chart Section */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-700">Chart</h2>
-            <ToggleGroup
-              type="single"
-              value={chartMode}
-              onValueChange={(v: string | null) => {
-                if (!v) return;
-                setChartMode(v as 'serial' | 'cumulative');
+            {/* Chart Section */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-slate-700">Chart</h2>
+                <ToggleGroup
+                  type="single"
+                  value={chartMode}
+                  onValueChange={(v: string | null) => {
+                    if (!v) return;
+                    setChartMode(v as 'serial' | 'cumulative');
+                  }}
+                  size="sm"
+                  variant="outline"
+                  aria-label="Chart Mode"
+                  className="mb-2"
+                >
+                  <ToggleGroupItem value="serial" aria-label="Serial">
+                    <BarChartIcon className="size-4 mr-1" />
+                    <span className="hidden sm:inline">Serial</span>
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="cumulative" aria-label="Cumulative">
+                    <LineChartIcon className="size-4 mr-1" />
+                    <span className="hidden sm:inline">Cumulative</span>
+                  </ToggleGroupItem>
+                </ToggleGroup>
+              </div>
+              
+              <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+                <MonthChart
+                  days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
+                  mode={chartMode}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Monthly Grid */}
+            <MonthlyGrid
+              year={year}
+              yearData={yearData}
+              onMonthClick={(_, monthName, numbers) => {
+                setPanelTitle(`${monthName} ${year} Summary`);
+                setPanelNumbers(numbers);
+                setPanelOpen(true);
               }}
-              size="sm"
-              variant="outline"
-              aria-label="Chart Mode"
-              className="mb-2"
-            >
-              <ToggleGroupItem value="serial" aria-label="Serial">
-                <BarChartIcon className="size-4 mr-1" />
-                <span className="hidden sm:inline">Serial</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="cumulative" aria-label="Cumulative">
-                <LineChartIcon className="size-4 mr-1" />
-                <span className="hidden sm:inline">Cumulative</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          
-          <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-            <MonthChart
-              days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
-              mode={chartMode}
             />
-          </div>
-        </div>
+            
+            {/* Year Summary */}
+            <div className="mt-8 mb-6">
+              <div onClick={() => {
+                const allYearNumbers = Object.values(yearData).flat();
+                setPanelTitle(`${year} Year Summary`);
+                setPanelNumbers(allYearNumbers);
+                setPanelOpen(true);
+              }} className="cursor-pointer">
+                <YearSummary 
+                  numbers={Object.values(yearData).flat()} 
+                  yearName={`${year}`} 
+                  isCurrentYear={year === today.getFullYear()}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
       <NumbersPanel
         isOpen={panelOpen}

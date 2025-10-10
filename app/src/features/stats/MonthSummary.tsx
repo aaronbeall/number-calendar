@@ -48,20 +48,16 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
         <div className="flex-shrink-0">
           <div className="flex items-center gap-2">
             {getStatusIcon()}
-            <h3 className="text-lg font-bold text-slate-800 tracking-tight">
-              {monthName || 'Month'}
-            </h3>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800 tracking-tight">
+                {monthName || 'Month'}
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium">{stats.count} entries</p>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-4 sm:gap-6">
-          {/* Count (secondary) */}
-          <div className="text-right">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Count</div>
-            <div className="font-mono text-base font-bold text-slate-700">{stats.count}</div>
-          </div>
-
-          <div className="hidden sm:block w-px h-7 bg-slate-300/50" />
 
           {/* Mean / Median (secondary) */}
           <div className="hidden sm:flex items-center gap-4">

@@ -107,6 +107,9 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           <SheetTitle className={'text-slate-700'}>
             {title}
           </SheetTitle>
+          {stats && (
+            <div className="text-xs text-slate-500">{stats.count} entries</div>
+          )}
         </SheetHeader>
 
         <div className="flex flex-col gap-4 mt-6">
@@ -166,11 +169,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
           {stats && (
             <div className="bg-slate-50 rounded-lg p-4 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center bg-white rounded-lg p-3 shadow-sm">
-                  <div className="text-slate-600 text-sm font-medium mb-2">Count</div>
-                  <div className="font-mono text-lg font-bold text-slate-800">{stats.count}</div>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="text-center bg-white rounded-lg p-3 shadow-sm">
                   <div className="text-slate-600 text-sm font-medium mb-2">Total</div>
                   <div className={`font-mono text-lg font-bold ${stats.total >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.total}</div>

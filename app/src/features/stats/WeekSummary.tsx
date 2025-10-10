@@ -1,12 +1,14 @@
 import React from 'react';
+import { CheckCircle, XCircle, Minus, Clock } from 'lucide-react';
 import { computeNumberStats } from '@/lib/stats';
 
 export interface WeekSummaryProps {
   numbers: number[];
   weekNumber?: number;
+  isCurrentWeek?: boolean;
 }
 
-export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber }) => {
+export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek }) => {
   if (!numbers || numbers.length === 0) return null;
 
   const stats = computeNumberStats(numbers);
@@ -28,22 +30,35 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber })
   const meanText = mean > 0 ? 'text-green-700' : mean < 0 ? 'text-red-700' : 'text-slate-700';
   const medianText = median > 0 ? 'text-green-700' : median < 0 ? 'text-red-700' : 'text-slate-700';
 
+  // Choose icon based on total
+  const getStatusIcon = () => {
+    if (isCurrentWeek) {
+      return <Clock className="w-4 h-4 text-blue-600" />;
+    } else if (total > 0) {
+      return <CheckCircle className="w-4 h-4 text-green-600" />;
+    } else if (total < 0) {
+      return <XCircle className="w-4 h-4 text-red-600" />;
+    } else {
+      return <Minus className="w-4 h-4 text-slate-600" />;
+    }
+  };
+
   return (
     <div className={`mt-1 rounded-md ${bgClasses} ${borderClasses} shadow-sm hover:shadow-md transition-shadow`} aria-label="Weekly summary">
       <div className="w-full flex items-center justify-between gap-3 sm:gap-5 px-3 py-2">
-        {/* Week Label */}
-        <div className="text-xs font-medium text-slate-600 flex-shrink-0">
-          Week {weekNumber || '?'}
+        {/* Week Label + entries */}
+        <div className="flex-shrink-0">
+          <div className="flex items-center gap-2">
+            {getStatusIcon()}
+            <div>
+              <div className="text-xs font-medium text-slate-600">Week {weekNumber || '?'}</div>
+              <div className="text-[10px] text-slate-500">{count} entries</div>
+            </div>
+          </div>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-5">
-          {/* Count (secondary) */}
-          <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">Count</div>
-            <div className="font-mono text-sm font-semibold text-slate-700">{count}</div>
-          </div>
-
-          <div className="hidden sm:block w-px h-6 bg-slate-300/40" />
+          {/* spacer removed */}
 
           {/* Mean / Median (secondary) */}
           <div className="hidden sm:flex items-center gap-3">
