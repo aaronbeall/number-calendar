@@ -22,12 +22,13 @@ function parseNumbers(input: string): number[] {
 export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const [editMode, setEditMode] = useState(false);
   const [input, setInput] = useState(numbers.length ? numbers.join('+').replace('+-', '-') : '');
-  const [originalExpression] = useState(numbers.length ? numbers.join('+').replace('+-', '-') : '');
+  const [originalExpression, setOriginalExpression] = useState(numbers.length ? numbers.join('+').replace('+-', '-') : '');
   
   // Update input when numbers prop changes (external updates)
   React.useEffect(() => {
     const expression = numbers.length ? numbers.join('+').replace('+-', '-') : '';
     setInput(expression);
+    setOriginalExpression(expression);
   }, [numbers]);
 
   const handleSave = () => {
