@@ -57,6 +57,10 @@ export interface NumbersPanelProps {
   onSave?: () => void;
   onCancel?: () => void;
   hasChanges?: boolean;
+  // Optional action button displayed in the header (right side)
+  actionLabel?: string;
+  actionOnClick?: () => void;
+  actionIcon?: React.ReactNode;
 }
 
 // Utility
@@ -76,7 +80,10 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   onExpressionChange,
   onSave,
   onCancel,
-  hasChanges
+  hasChanges,
+  actionLabel,
+  actionOnClick,
+  actionIcon,
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
 
@@ -104,12 +111,22 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
       <SheetContentNoOverlay className="w-full max-w-md">
         <SheetHeader>
-          <SheetTitle className={'text-slate-700'}>
-            {title}
-          </SheetTitle>
-          {stats && (
-            <div className="text-xs text-slate-500">{stats.count} entries</div>
-          )}
+          <div className="flex items-center justify-between gap-3 pr-8">
+            <div>
+              <SheetTitle className={'text-slate-700'}>
+                {title}
+              </SheetTitle>
+              {stats && (
+                <div className="text-xs text-slate-500">{stats.count} entries</div>
+              )}
+            </div>
+            {actionLabel && actionOnClick && (
+              <Button variant="outline" size="sm" className="gap-1 h-8" onClick={actionOnClick}>
+                {actionIcon}
+                {actionLabel}
+              </Button>
+            )}
+          </div>
         </SheetHeader>
 
         <div className="flex flex-col gap-4 mt-6">

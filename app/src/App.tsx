@@ -36,6 +36,9 @@ function App() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelTitle, setPanelTitle] = useState('');
   const [panelNumbers, setPanelNumbers] = useState<number[]>([]);
+  const [panelActionLabel, setActionLabel] = useState<string | undefined>(undefined);
+  const [panelAction, setAction] = useState<(() => void) | undefined>(undefined);
+  const [panelActionIcon, setActionIcon] = useState<React.ReactNode | undefined>(undefined);
 
   useEffect(() => {
     loadMonth(year, month).then(setMonthData);
@@ -267,8 +270,12 @@ function App() {
             {/* Monthly Stats Section */}
             <div className="mt-8 mb-6">
               <div onClick={() => {
-                setPanelTitle(`${monthNames[month - 1]} Summary`);
+                setPanelTitle(`${monthNames[month - 1]}`);
                 setPanelNumbers(allNumbers);
+                // Clear any action since this is from daily view, not monthly view
+                setAction(undefined);
+                setActionLabel(undefined);
+                setActionIcon(undefined);
                 setPanelOpen(true);
               }} className="cursor-pointer">
               <MonthSummary 
@@ -320,9 +327,18 @@ function App() {
             <MonthlyGrid
               year={year}
               yearData={yearData}
-              onMonthClick={(_, monthName, numbers) => {
-                setPanelTitle(`${monthName} ${year} Summary`);
+              onMonthClick={(monthNumber, monthName, numbers) => {
+                setPanelTitle(`${monthName} '${String(year).slice(-2)}`);
                 setPanelNumbers(numbers);
+                // Provide action to jump to that month's daily view
+                setAction(() => () => {
+                  setView('daily');
+                  setYear(year);
+                  setMonth(monthNumber);
+                  setPanelOpen(false);
+                });
+                setActionLabel('Open daily view');
+                setActionIcon(<CalendarDays className="h-4 w-4" />);
                 setPanelOpen(true);
               }}
             />
@@ -352,6 +368,9 @@ function App() {
         numbers={panelNumbers}
         editableNumbers={false}
         showExpressionInput={false}
+        actionLabel={panelActionLabel}
+        actionOnClick={panelAction}
+        actionIcon={panelActionIcon}
       />
     </div>
   );
