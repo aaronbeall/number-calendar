@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Sheet, SheetHeader, SheetTitle, SheetFooter, SheetPortal } from '@/components/ui/sheet';
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { computeNumberStats } from '@/lib/stats';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Custom SheetContent without overlay (Escape disabled)
 const SheetContentNoOverlay = React.forwardRef<
@@ -78,8 +79,27 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   onCancel,
   hasChanges
 }) => {
+  const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
+
   // Stats computed via util
   const stats = React.useMemo(() => computeNumberStats(numbers), [numbers]);
+
+  // Prepare items with original indices for stable mapping when sorting
+  const items = React.useMemo(() => numbers.map((value, index) => ({ value, index })), [numbers]);
+  const sortedItems = React.useMemo(() => {
+    if (sortMode === 'original') return items;
+    const arr = [...items];
+    if (sortMode === 'asc') {
+      arr.sort((a, b) => (a.value - b.value) || (a.index - b.index));
+    } else {
+      arr.sort((a, b) => (b.value - a.value) || (a.index - b.index));
+    }
+    return arr;
+  }, [items, sortMode]);
+
+  const toggleSortMode = () => {
+    setSortMode((m) => (m === 'original' ? 'asc' : m === 'asc' ? 'desc' : 'original'));
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
@@ -90,7 +110,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           </SheetTitle>
         </SheetHeader>
 
-        <div className="flex flex-col gap-4 mt-6">
+        <TooltipProvider>
+          <div className="flex flex-col gap-4 mt-6">
           {showExpressionInput && (
             <Input
               value={expression}
@@ -105,25 +126,50 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             />
           )}
 
-          <div className="flex flex-wrap gap-1">
-            {numbers.map((n, i) => (
-              <EditableNumberBadge
-                key={`${i}-${n}`}
-                value={n}
-                editable={!!editableNumbers}
-                onCommit={editableNumbers ? (next) => {
-                  if (!onExpressionChange) return;
-                  let nextNumbers: number[];
-                  if (next === null) {
-                    nextNumbers = numbers.filter((_, idx) => idx !== i);
-                  } else {
-                    nextNumbers = numbers.map((val, idx) => (idx === i ? next : val));
-                  }
-                  const expr = buildExpressionFromNumbers(nextNumbers);
-                  onExpressionChange(expr);
-                } : undefined}
-              />
-            ))}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-1 pr-2 flex-1 min-w-0">
+              {sortedItems.map(({ value: n, index: originalIndex }) => (
+                <EditableNumberBadge
+                  key={`${originalIndex}-${n}`}
+                  value={n}
+                  editable={!!editableNumbers}
+                  onCommit={editableNumbers ? (next) => {
+                    if (!onExpressionChange) return;
+                    let nextNumbers: number[];
+                    if (next === null) {
+                      nextNumbers = numbers.filter((_, idx) => idx !== originalIndex);
+                    } else {
+                      nextNumbers = numbers.map((val, idx) => (idx === originalIndex ? next : val));
+                    }
+                    const expr = buildExpressionFromNumbers(nextNumbers);
+                    onExpressionChange(expr);
+                  } : undefined}
+                />
+              ))}
+            </div>
+            {numbers.length > 1 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`h-8 w-8 flex-shrink-0 ${
+                      sortMode === 'original' 
+                        ? 'hover:bg-slate-100' 
+                        : 'hover:bg-blue-100'
+                    }`}
+                    onClick={toggleSortMode}
+                  >
+                    {sortMode === 'original' && <ArrowUpDown className="h-4 w-4 text-slate-400" />}
+                    {sortMode === 'asc' && <ArrowUp className="h-4 w-4 text-blue-600" />}
+                    {sortMode === 'desc' && <ArrowDown className="h-4 w-4 text-blue-600" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sort: {sortMode === 'original' ? 'Original order' : sortMode === 'asc' ? 'Ascending' : 'Descending'}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {stats && (
@@ -174,6 +220,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             </Button>
           </SheetFooter>
         )}
+        </TooltipProvider>
       </SheetContentNoOverlay>
     </Sheet>
   );
