@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
+import { Sheet, SheetHeader, SheetTitle, SheetFooter, SheetPortal } from '@/components/ui/sheet';
+import * as SheetPrimitive from "@radix-ui/react-dialog";
+import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
 
 export interface DayCellProps {
   date: Date;
@@ -18,6 +21,39 @@ function parseNumbers(input: string): number[] {
     .map(Number)
     .filter(n => !isNaN(n));
 }
+
+// Custom SheetContent without overlay
+const SheetContentNoOverlay = React.forwardRef<
+  React.ElementRef<typeof SheetPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content> & {
+    side?: "top" | "right" | "bottom" | "left";
+  }
+>(({ side = "right", className, children, ...props }, ref) => {
+  const sheetVariants = cn(
+    "fixed z-50 gap-4 bg-white p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500 dark:bg-slate-950",
+    side === "right" && "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
+    className
+  );
+
+  return (
+    <SheetPortal>
+      {/* Invisible overlay that allows pointer events through */}
+      <div className="fixed inset-0 z-40 pointer-events-none" />
+      <SheetPrimitive.Content
+        ref={ref}
+        className={sheetVariants}
+        {...props}
+      >
+        {children}
+        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-slate-100 dark:ring-offset-slate-950 dark:focus:ring-slate-300 dark:data-[state=open]:bg-slate-800">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </SheetPrimitive.Close>
+      </SheetPrimitive.Content>
+    </SheetPortal>
+  );
+});
+SheetContentNoOverlay.displayName = "SheetContentNoOverlay";
 
 export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const [editMode, setEditMode] = useState(false);
@@ -110,17 +146,17 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
         )}
       </div>
 
-      <Dialog open={editMode} onOpenChange={(open) => {
+      <Sheet open={editMode} onOpenChange={(open) => {
         if (!open) handleCancel();
-      }}>
-        <DialogContent className="max-w-sm w-full p-6 rounded-xl animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-slate-700'}`}>
-                {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-              </div>
-            </div>
-            
+      }} modal={false}>
+        <SheetContentNoOverlay className="w-full max-w-md">
+          <SheetHeader>
+            <SheetTitle className={`${isToday ? 'text-blue-600' : 'text-slate-700'}`}>
+              {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+            </SheetTitle>
+          </SheetHeader>
+          
+          <div className="flex flex-col gap-4 mt-6">
             <Input
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -192,17 +228,17 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
           </div>
           
           {hasChanges && (
-            <DialogFooter className="gap-2">
+            <SheetFooter className="mt-6">
               <Button onClick={handleCancel} variant="outline" className="border-slate-300 hover:bg-slate-50">
                 Cancel
               </Button>
               <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 text-white">
                 Save
               </Button>
-            </DialogFooter>
+            </SheetFooter>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContentNoOverlay>
+      </Sheet>
     </>
   );
 };
