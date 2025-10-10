@@ -79,7 +79,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
               <div
                 key={date ? date.toISOString() : `empty-${wi}-${di}`}
                 className={`min-h-[90px] bg-white border border-slate-100 shadow-sm hover:shadow-md rounded-lg transition-all duration-200 ${
-                  date ? '' : 'bg-slate-50/50'
+                  date ? '' : 'invisible'
                 }`}
               >
                 {date ? renderDay(date) : null}
