@@ -21,6 +21,12 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
     ? 'bg-red-100 border-red-200'
     : 'bg-slate-200 border-slate-300';
 
+  const bottomBorderClasses = stats.total > 0
+    ? 'border-b-4 border-green-400'
+    : stats.total < 0
+    ? 'border-b-4 border-red-400'
+    : 'border-b-4 border-slate-400';
+
   const meanText = stats.mean > 0 ? 'text-green-700' : stats.mean < 0 ? 'text-red-700' : 'text-slate-700';
   const medianText = stats.median > 0 ? 'text-green-700' : stats.median < 0 ? 'text-red-700' : 'text-slate-700';
 
@@ -36,7 +42,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
   };
 
   return (
-    <div className={`rounded-lg ${bgClasses} shadow-md hover:shadow-lg transition-shadow`} aria-label="Monthly summary">
+    <div className={`rounded-lg ${bgClasses} ${bottomBorderClasses} shadow-md hover:shadow-lg transition-shadow`} aria-label="Monthly summary">
       <div className="w-full flex items-center justify-between gap-3 sm:gap-6 px-4 py-3">
         {/* Month Label - Header Style */}
         <div className="flex-shrink-0">
@@ -86,12 +92,12 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
           <div className="hidden sm:block w-px h-7 bg-slate-300/50" />
 
           {/* Total (most prominent, right-most, own container) */}
-          <div className={`flex items-center gap-3 px-5 py-4 rounded-lg font-mono font-black shadow-lg border-2 ${
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-lg font-mono font-black shadow-lg ${
             stats.total > 0
-              ? 'bg-green-200 text-green-700 border-green-300 shadow-green-200/50'
+              ? 'bg-green-200 text-green-700 shadow-green-200/50'
               : stats.total < 0
-              ? 'bg-red-200 text-red-700 border-red-300 shadow-red-200/50'
-              : 'bg-slate-300 text-slate-700 border-slate-400 shadow-slate-200/50'
+              ? 'bg-red-200 text-red-700 shadow-red-200/50'
+              : 'bg-slate-300 text-slate-700 shadow-slate-200/50'
           }`}>
             <div className="text-[11px] uppercase tracking-wide text-slate-600 font-bold">Total</div>
             <div className={`text-2xl sm:text-3xl font-black tracking-tight`}>{stats.total}</div>
