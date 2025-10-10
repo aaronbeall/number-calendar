@@ -19,16 +19,22 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber })
   const max = sorted[sorted.length - 1];
 
   const bgClasses = total > 0
-    ? 'bg-green-50 border-green-200'
+    ? 'bg-green-50'
     : total < 0
-    ? 'bg-red-50 border-red-200'
-    : 'bg-slate-50 border-slate-200';
+    ? 'bg-red-50'
+    : 'bg-slate-50';
+
+  const borderClasses = total > 0
+    ? 'border-r-4 border-green-400'
+    : total < 0
+    ? 'border-r-4 border-red-400'
+    : 'border-r-4 border-slate-400';
 
   const meanText = mean > 0 ? 'text-green-700' : mean < 0 ? 'text-red-700' : 'text-slate-700';
   const medianText = median > 0 ? 'text-green-700' : median < 0 ? 'text-red-700' : 'text-slate-700';
 
   return (
-    <div className={`mt-1 rounded-md border ${bgClasses} shadow-sm hover:shadow-md transition-shadow`} aria-label="Weekly summary">
+    <div className={`mt-1 rounded-md ${bgClasses} ${borderClasses} shadow-sm hover:shadow-md transition-shadow`} aria-label="Weekly summary">
       <div className="w-full flex items-center justify-between gap-3 sm:gap-5 px-3 py-2">
         {/* Week Label */}
         <div className="text-xs font-medium text-slate-600 flex-shrink-0">

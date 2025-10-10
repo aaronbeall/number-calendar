@@ -183,7 +183,11 @@ function App() {
         
         {/* Monthly Stats Section */}
         <div className="mt-8 mb-6">
-          <StatsBar numbers={allNumbers} monthName={monthNames[month - 1]} />
+          <StatsBar 
+            numbers={allNumbers} 
+            monthName={monthNames[month - 1]} 
+            isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
+          />
         </div>
 
         {/* Chart Section */}
