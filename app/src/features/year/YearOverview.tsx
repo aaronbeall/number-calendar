@@ -87,9 +87,9 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
     return (
       <div
         key={month}
-        className={`flex flex-col items-center space-y-1 cursor-pointer transition-all duration-200 hover:scale-105 ${
-          isCurrentMonth ? 'ring-2 ring-blue-500 ring-offset-1 rounded-lg p-2' : 'p-2'
-        }`}
+        className={`flex flex-col items-center space-y-1 cursor-pointer transition-all duration-200 p-2
+          ${isCurrentMonth ? 'ring-2 ring-blue-500 ring-offset-1 rounded-lg' : ''}
+          hover:bg-slate-100 hover:shadow-sm hover:scale-105 rounded-lg`}
         onClick={() => onMonthClick(month)}
       >
         <div className={`text-xs font-medium ${isCurrentMonth ? 'text-blue-600 font-semibold' : 'text-slate-600'}`}>
