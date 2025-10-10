@@ -16,14 +16,19 @@ function parseNumbers(input: string): number[] {
     .filter(n => !isNaN(n));
 }
 
+function buildExpressionFromNumbers(nums: number[]): string {
+  if (!nums.length) return '';
+  return nums.reduce((acc, n, i) => (i === 0 ? `${n}` : `${acc}${n >= 0 ? '+' : ''}${n}`), '');
+}
+
 export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const [editMode, setEditMode] = useState(false);
-  const [input, setInput] = useState(numbers.length ? numbers.join('+').replace('+-', '-') : '');
-  const [originalExpression, setOriginalExpression] = useState(numbers.length ? numbers.join('+').replace('+-', '-') : '');
+  const [input, setInput] = useState(buildExpressionFromNumbers(numbers));
+  const [originalExpression, setOriginalExpression] = useState(buildExpressionFromNumbers(numbers));
   
   // Update input when numbers prop changes (external updates)
   React.useEffect(() => {
-    const expression = numbers.length ? numbers.join('+').replace('+-', '-') : '';
+    const expression = buildExpressionFromNumbers(numbers);
     setInput(expression);
     setOriginalExpression(expression);
   }, [numbers]);

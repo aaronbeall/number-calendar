@@ -1,11 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetHeader, SheetTitle, SheetFooter, SheetPortal } from '@/components/ui/sheet';
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
+import { EditableNumberBadge } from './EditableNumberBadge';
 
 export interface DayEditorProps {
   date: Date;
@@ -47,6 +47,10 @@ const SheetContentNoOverlay = React.forwardRef<
       <SheetPrimitive.Content
         ref={ref}
         className={sheetVariants}
+        onEscapeKeyDown={(e) => {
+          // Prevent Radix Dialog from closing the sheet on Escape
+          e.preventDefault();
+        }}
         {...props}
       >
         {children}
@@ -74,6 +78,12 @@ export const DayEditor: React.FC<DayEditorProps> = ({
 }) => {
   const isToday = date.toDateString() === new Date().toDateString();
 
+  // Build a clean expression string from an array of numbers
+  const buildExpressionFromNumbers = React.useCallback((nums: number[]) => {
+    if (!nums.length) return "";
+    return nums.reduce((acc, n, i) => (i === 0 ? `${n}` : `${acc}${n >= 0 ? "+" : ""}${n}`), "");
+  }, []);
+
   return (
     <Sheet open={isOpen} onOpenChange={(open) => {
       if (!open) onClose();
@@ -100,18 +110,20 @@ export const DayEditor: React.FC<DayEditorProps> = ({
           
           <div className="flex flex-wrap gap-1">
             {currentNumbers.map((n, i) => (
-              <Badge
-                key={i}
-                className={`text-xs px-2 py-0.5 shadow-sm transition-all ${
-                  n > 0
-                    ? 'bg-green-500 text-white border-green-600'
-                    : n < 0
-                    ? 'bg-red-500 text-white border-red-600'
-                    : 'bg-slate-500 text-white border-slate-600'
-                }`}
-              >
-                {n}
-              </Badge>
+              <EditableNumberBadge
+                key={`${i}-${n}`}
+                value={n}
+                onCommit={(next) => {
+                  let nextNumbers: number[];
+                  if (next === null) {
+                    nextNumbers = currentNumbers.filter((_, idx) => idx !== i);
+                  } else {
+                    nextNumbers = currentNumbers.map((val, idx) => (idx === i ? next : val));
+                  }
+                  const expression = buildExpressionFromNumbers(nextNumbers);
+                  onInputChange(expression);
+                }}
+              />
             ))}
           </div>
           
