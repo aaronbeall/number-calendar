@@ -47,6 +47,10 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
   const positiveClasses = 'bg-green-500 text-white border-green-600';
   const negativeClasses = 'bg-red-500 text-white border-red-600';
 
+  const neutralHover = 'hover:bg-slate-600 hover:border-slate-700';
+  const positiveHover = 'hover:bg-green-600 hover:border-green-700';
+  const negativeHover = 'hover:bg-red-600 hover:border-red-700';
+
   const displayClasses =
     value > 0 ? positiveClasses : value < 0 ? negativeClasses : neutralClasses;
 
@@ -80,10 +84,12 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
     );
   }
 
+  const displayHoverClasses = value > 0 ? positiveHover : value < 0 ? negativeHover : neutralHover;
+
   return (
     <Badge
       onClick={beginEdit}
-      className={`cursor-text text-xs px-2 py-0.5 shadow-sm transition-all ${displayClasses}`}
+      className={`cursor-text text-xs px-2 py-0.5 shadow-sm hover:shadow-md transition-colors ${displayClasses} ${displayHoverClasses}`}
       aria-label={`Number, click to edit`}
     >
       {value}
