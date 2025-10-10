@@ -13,22 +13,39 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
   const days: Date[] = [];
+  
+  // Generate all days in the month
   for (let d = 1; d <= lastDay.getDate(); d++) {
-    days.push(new Date(year, month - 1, d));
+    const date = new Date(year, month - 1, d);
+    if (showWeekends || (date.getDay() !== 0 && date.getDay() !== 6)) {
+      days.push(date);
+    }
   }
-  // Pad start of week
-  const padStart = firstDay.getDay();
-  const padEnd = 6 - lastDay.getDay();
+  
   let weekdays = allWeekdays;
-  let gridDays = [
-    ...Array(padStart).fill(null),
-    ...days,
-    ...Array(padEnd).fill(null),
-  ];
-  if (!showWeekends) {
-    // Remove Sundays (0) and Saturdays (6)
-    gridDays = gridDays.filter(date => date && date.getDay() !== 0 && date.getDay() !== 6);
+  let gridDays: (Date | null)[] = [];
+  
+  if (showWeekends) {
+    // Standard 7-day week layout
+    const padStart = firstDay.getDay();
+    const padEnd = 6 - lastDay.getDay();
+    gridDays = [
+      ...Array(padStart).fill(null),
+      ...Array.from({ length: lastDay.getDate() }, (_, i) => new Date(year, month - 1, i + 1)),
+      ...Array(padEnd).fill(null),
+    ];
+  } else {
+    // 5-day week layout (Mon-Fri only)
     weekdays = allWeekdays.slice(1, 6); // Mon-Fri
+    
+    // Calculate padding for Mon-Fri grid (0=Mon, 1=Tue, ..., 4=Fri)
+    const firstDayOfWeek = firstDay.getDay();
+    const padStart = firstDayOfWeek === 0 ? 4 : firstDayOfWeek - 1; // Convert Sun(0) to Fri(4), others shift by -1
+    
+    gridDays = [
+      ...Array(padStart).fill(null),
+      ...days,
+    ];
   }
   
   return (
@@ -46,7 +63,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
       <div className={`grid gap-2 p-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
         {gridDays.map((date, i) => (
           <div 
-            key={i} 
+            key={date ? date.toISOString() : `empty-${i}`}
             className={`min-h-[90px] rounded-lg transition-all duration-200 ${
               date 
                 ? 'bg-white shadow-sm hover:shadow-md hover:scale-[1.02] border border-slate-100' 
