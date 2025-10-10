@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 export interface MonthChartProps {
   days: { date: string; numbers: number[] }[];
@@ -28,9 +28,13 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode }) => {
           <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" tickFormatter={d => String(new Date(d).getDate())} interval={0} fontSize={12} />
-            <YAxis fontSize={12} />
+            <YAxis fontSize={12} domain={['dataMin', 'dataMax']} />
             <Tooltip labelFormatter={d => d} formatter={(value: number) => [value, mode === 'serial' ? 'Serial' : 'Cumulative']} />
-            <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+              {data.map((entry, idx) => (
+                <Cell key={`cell-${idx}`} fill={entry.value >= 0 ? '#10b981' : '#ef4444'} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       )}

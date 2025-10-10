@@ -21,7 +21,7 @@ const ToggleGroup = React.forwardRef<
 >(({ className, variant, size, children, ...props }, ref) => (
   <ToggleGroupPrimitive.Root
     ref={ref}
-    className={cn("flex items-center justify-center gap-1", className)}
+    className={cn("inline-flex items-center justify-center rounded-md border border-slate-200 dark:border-slate-800", className)}
     {...props}
   >
     <ToggleGroupContext.Provider value={{ variant, size }}>
@@ -38,7 +38,7 @@ const ToggleGroupItem = React.forwardRef<
     VariantProps<typeof toggleVariants>
 >(({ className, children, variant, size, ...props }, ref) => {
   const context = React.useContext(ToggleGroupContext)
-
+  // Add group styling: remove rounded except first/last, remove border except between items
   return (
     <ToggleGroupPrimitive.Item
       ref={ref}
@@ -47,6 +47,7 @@ const ToggleGroupItem = React.forwardRef<
           variant: context.variant || variant,
           size: context.size || size,
         }),
+        "border-none rounded-none first:rounded-l-md last:rounded-r-md -ml-px data-[state=on]:bg-white data-[state=on]:text-blue-600 dark:data-[state=on]:bg-slate-800 dark:data-[state=on]:text-blue-400",
         className
       )}
       {...props}

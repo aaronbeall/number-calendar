@@ -24,7 +24,7 @@ function App() {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [monthData, setMonthData] = useState<Record<string, number[]>>({});
-  const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>('serial');
+  const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
 
   useEffect(() => {
     loadMonth(year, month).then(setMonthData);
@@ -171,25 +171,27 @@ function App() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-slate-700">Chart</h2>
-            <div className="flex gap-2">
-                  <ToggleGroup
-                    type="single"
-                    value={chartMode}
-                    onValueChange={(v: string) => setChartMode(v as 'serial' | 'cumulative')}
-                    size="sm"
-                    variant="outline"
-                    aria-label="Chart Mode"
-                  >
-                    <ToggleGroupItem value="serial" aria-label="Serial">
-                      <BarChartIcon className="size-4 mr-1" />
-                      <span className="hidden sm:inline">Serial</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="cumulative" aria-label="Cumulative">
-                      <LineChartIcon className="size-4 mr-1" />
-                      <span className="hidden sm:inline">Cumulative</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-            </div>
+            <ToggleGroup
+              type="single"
+              value={chartMode}
+              onValueChange={(v: string | null) => {
+                if (!v) return;
+                setChartMode(v as 'serial' | 'cumulative');
+              }}
+              size="sm"
+              variant="outline"
+              aria-label="Chart Mode"
+              className="mb-2"
+            >
+              <ToggleGroupItem value="serial" aria-label="Serial">
+                <BarChartIcon className="size-4 mr-1" />
+                <span className="hidden sm:inline">Serial</span>
+              </ToggleGroupItem>
+              <ToggleGroupItem value="cumulative" aria-label="Cumulative">
+                <LineChartIcon className="size-4 mr-1" />
+                <span className="hidden sm:inline">Cumulative</span>
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
           
           <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
