@@ -1,4 +1,5 @@
 import React from 'react';
+import { computeNumberStats } from '@/lib/stats';
 
 export interface WeekSummaryProps {
   numbers: number[];
@@ -8,15 +9,9 @@ export interface WeekSummaryProps {
 export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber }) => {
   if (!numbers || numbers.length === 0) return null;
 
-  const count = numbers.length;
-  const total = numbers.reduce((a, b) => a + b, 0);
-  const sorted = [...numbers].sort((a, b) => a - b);
-  const mean = total / count;
-  const median = count % 2 === 0
-    ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
-    : sorted[Math.floor(count / 2)];
-  const min = sorted[0];
-  const max = sorted[sorted.length - 1];
+  const stats = computeNumberStats(numbers);
+  if (!stats) return null;
+  const { count, total, mean, median, min, max } = stats;
 
   const bgClasses = total > 0
     ? 'bg-green-50'

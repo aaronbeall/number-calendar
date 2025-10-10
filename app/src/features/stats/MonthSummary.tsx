@@ -1,5 +1,6 @@
 import React from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { computeNumberStats } from '@/lib/stats';
 
 export interface MonthSummaryProps {
   numbers: number[];
@@ -7,24 +8,12 @@ export interface MonthSummaryProps {
   isCurrentMonth?: boolean;
 }
 
-function calcStats(numbers: number[]) {
-  if (!numbers.length) return null;
-  const total = numbers.reduce((a, b) => a + b, 0);
-  const mean = total / numbers.length;
-  const sorted = [...numbers].sort((a, b) => a - b);
-  const median = sorted.length % 2 === 0
-    ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
-    : sorted[Math.floor(sorted.length / 2)];
-  const min = sorted[0];
-  const max = sorted[sorted.length - 1];
-  return { total, mean, median, min, max, count: numbers.length };
-}
-
 export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, isCurrentMonth }) => {
-  const stats = calcStats(numbers);
-  if (!stats) return (
+  const s = computeNumberStats(numbers);
+  if (!s) return (
     <div className="text-sm text-slate-500">No data</div>
   );
+  const stats = { ...s, mean: s.mean };
 
   const bgClasses = stats.total > 0
     ? 'bg-green-100 border-green-200'

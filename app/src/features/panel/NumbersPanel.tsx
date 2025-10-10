@@ -6,6 +6,7 @@ import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { EditableNumberBadge } from './EditableNumberBadge';
+import { computeNumberStats } from '@/lib/stats';
 
 // Custom SheetContent without overlay (Escape disabled)
 const SheetContentNoOverlay = React.forwardRef<
@@ -77,25 +78,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   onCancel,
   hasChanges
 }) => {
-  // Stats computed locally
-  const stats = React.useMemo(() => {
-    if (!numbers || numbers.length === 0) return null;
-    const sorted = [...numbers].sort((a, b) => a - b);
-    const total = numbers.reduce((a, b) => a + b, 0);
-    const count = numbers.length;
-    const average = total / count;
-    const median = count % 2 === 0
-      ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
-      : sorted[Math.floor(count / 2)];
-    return {
-      count,
-      total,
-      average: Number(average.toFixed(2)),
-      median,
-      min: sorted[0],
-      max: sorted[sorted.length - 1]
-    };
-  }, [numbers]);
+  // Stats computed via util
+  const stats = React.useMemo(() => computeNumberStats(numbers), [numbers]);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
@@ -158,7 +142,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
                   <div className="text-slate-500 text-xs mb-1">Mean</div>
-                  <div className={`font-mono text-sm font-semibold ${stats.average >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.average.toFixed(1)}</div>
+                  <div className={`font-mono text-sm font-semibold ${stats.mean >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.mean.toFixed(1)}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-slate-500 text-xs mb-1">Median</div>

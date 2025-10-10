@@ -46,24 +46,6 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   
   const hasChanges = input !== originalExpression;
   const currentNumbers = parseNumbers(input);
-  const stats = React.useMemo(() => {
-    if (currentNumbers.length === 0) return null;
-    const sorted = [...currentNumbers].sort((a, b) => a - b);
-    const total = currentNumbers.reduce((a, b) => a + b, 0);
-    const count = currentNumbers.length;
-    const average = total / count;
-    const median = count % 2 === 0 
-      ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
-      : sorted[Math.floor(count / 2)];
-    return {
-      count,
-      total,
-      average: Number(average.toFixed(2)),
-      median,
-      min: sorted[0],
-      max: sorted[sorted.length - 1]
-    };
-  }, [currentNumbers]);
 
   const isToday = date.toDateString() === new Date().toDateString();
 
@@ -122,7 +104,6 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
         onCancel={handleCancel}
         hasChanges={hasChanges}
         currentNumbers={currentNumbers}
-        stats={stats}
       />
     </>
   );
