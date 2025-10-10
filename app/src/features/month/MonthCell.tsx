@@ -97,9 +97,7 @@ export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = 
           </div>
         </div>
       ) : (
-        <div className="text-center text-slate-400 text-sm py-4">
-          No data
-        </div>
+        <div className="text-center text-slate-400 text-sm py-4"></div>
       )}
 
       {/* Current month indicator */}
