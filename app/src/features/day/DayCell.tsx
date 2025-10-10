@@ -157,32 +157,40 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
             </div>
             
             {stats && (
-              <div className="bg-slate-50 rounded-lg p-4 space-y-3">
-                <h4 className="text-sm font-semibold text-slate-700 mb-2">Statistics</h4>
-                <div className="grid grid-cols-3 gap-3 text-xs">
+              <div className="bg-slate-50 rounded-lg p-4 space-y-4">
+                {/* Primary stats: Count and Total */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                    <div className="text-slate-600 text-sm font-medium mb-2">Count</div>
+                    <div className="font-mono text-lg font-bold text-slate-800">{stats.count}</div>
+                  </div>
+                  <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+                    <div className="text-slate-600 text-sm font-medium mb-2">Total</div>
+                    <div className={`font-mono text-lg font-bold ${stats.total >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.total}</div>
+                  </div>
+                </div>
+                
+                {/* Secondary stats: Central tendency */}
+                <div className="grid grid-cols-2 gap-3">
                   <div className="text-center">
-                    <div className="text-slate-500 mb-1">Count</div>
-                    <div className="font-mono font-bold text-slate-700">{stats.count}</div>
+                    <div className="text-slate-500 text-xs mb-1">Mean</div>
+                    <div className={`font-mono text-sm font-semibold ${stats.average >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.average.toFixed(1)}</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-slate-500 mb-1">Total</div>
-                    <div className={`font-mono font-bold ${stats.total >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.total}</div>
+                    <div className="text-slate-500 text-xs mb-1">Median</div>
+                    <div className={`font-mono text-sm font-semibold ${stats.median >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.median}</div>
+                  </div>
+                </div>
+                
+                {/* Tertiary stats: Range */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="text-center">
+                    <div className="text-slate-500 text-xs mb-1">Min</div>
+                    <div className={`font-mono text-sm font-semibold ${stats.min >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.min}</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-slate-500 mb-1">Average</div>
-                    <div className={`font-mono font-bold ${stats.average >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.average}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-slate-500 mb-1">Median</div>
-                    <div className={`font-mono font-bold ${stats.median >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.median}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-slate-500 mb-1">Min</div>
-                    <div className={`font-mono font-bold ${stats.min >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.min}</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-slate-500 mb-1">Max</div>
-                    <div className={`font-mono font-bold ${stats.max >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.max}</div>
+                    <div className="text-slate-500 text-xs mb-1">Max</div>
+                    <div className={`font-mono text-sm font-semibold ${stats.max >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.max}</div>
                   </div>
                 </div>
               </div>
