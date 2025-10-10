@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User } from 'lucide-react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
@@ -70,11 +70,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* App Bar Header */}
+      {/* Main App Header */}
       <header className="bg-white border-b border-slate-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Menu className="h-4 w-4" />
+              </Button>
               <img src="/icon.svg" alt="Numbers Go Up" className="w-10 h-10" />
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
@@ -82,31 +85,62 @@ function App() {
                 </h1>
                 <p className="text-xs text-slate-500 font-medium">Track your daily progress</p>
               </div>
-              
-              {/* View Toggle */}
-              <ToggleGroup
-                type="single"
-                value={view}
-                onValueChange={(v: string | null) => {
-                  if (v === 'daily' || v === 'monthly') {
-                    setView(v);
-                  }
-                }}
-                className="ml-6"
-              >
-                <ToggleGroupItem value="daily" aria-label="Daily View">
-                  <CalendarDays className="h-4 w-4 mr-2" />
-                  Daily
-                </ToggleGroupItem>
-                <ToggleGroupItem value="monthly" aria-label="Monthly View">
-                  <Grid3X3 className="h-4 w-4 mr-2" />
-                  Monthly
-                </ToggleGroupItem>
-              </ToggleGroup>
             </div>
             
-            {/* Navigation */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Settings className="h-4 w-4" />
+              </Button>
+              
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <User className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Header */}
+      <nav className="bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="flex items-center gap-4">
+            {/* View Toggle */}
+            <ToggleGroup
+              type="single"
+              value={view}
+              onValueChange={(v: string | null) => {
+                if (v === 'daily' || v === 'monthly') {
+                  setView(v);
+                }
+              }}
+              size="sm"
+            >
+              <ToggleGroupItem value="daily" aria-label="Daily View">
+                <CalendarDays className="h-4 w-4 mr-1" />
+                Daily
+              </ToggleGroupItem>
+              <ToggleGroupItem value="monthly" aria-label="Monthly View">
+                <Grid3X3 className="h-4 w-4 mr-1" />
+                Monthly
+              </ToggleGroupItem>
+            </ToggleGroup>
+            
+            {/* Today Button */}
+            <Button 
+              variant="outline"
+              size="sm"
+              onClick={() => { 
+                setYear(today.getFullYear()); 
+                setMonth(today.getMonth() + 1); 
+              }}
+              className="gap-1 h-8"
+            >
+              <Calendar className="h-3 w-3" />
+              Today
+            </Button>
+            
+            {/* Date Navigation */}
+            <div className="flex items-center gap-1">
               <Button 
                 variant="outline" 
                 size="icon"
@@ -122,38 +156,10 @@ function App() {
                     setYear(y => y - 1);
                   }
                 }}
-                className="shadow-sm hover:shadow-md transition-shadow h-9 w-9"
+                className="h-8 w-8"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              
-              <Button 
-                variant="outline"
-                onClick={() => { 
-                  setYear(today.getFullYear()); 
-                  setMonth(today.getMonth() + 1); 
-                }}
-                className="gap-2 shadow-sm hover:shadow-md transition-shadow text-sm px-3 h-9"
-              >
-                <Calendar className="h-4 w-4" />
-                Today
-              </Button>
-              
-              <div className="text-lg font-semibold text-slate-700 min-w-[160px] text-center">
-                {view === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
-              </div>
-              
-              {view === 'daily' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowWeekends(v => !v)}
-                  aria-pressed={showWeekends}
-                  title={showWeekends ? "Hide weekends" : "Show weekends"}
-                >
-                  <CalendarOff className={showWeekends ? "text-slate-400" : "text-blue-500"} />
-                </Button>
-              )}
               
               <Button 
                 variant="outline" 
@@ -170,14 +176,34 @@ function App() {
                     setYear(y => y + 1);
                   }
                 }}
-                className="shadow-sm hover:shadow-md transition-shadow h-9 w-9"
+                className="h-8 w-8"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+            
+            {/* Current Month/Year */}
+            <div className="text-lg font-semibold text-slate-700">
+              {view === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
+            </div>
+            
+            {/* Weekend Toggle (Daily view only) */}
+            {view === 'daily' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowWeekends(v => !v)}
+                aria-pressed={showWeekends}
+                title={showWeekends ? "Hide weekends" : "Show weekends"}
+                className="gap-1 h-8"
+              >
+                <CalendarOff className={`h-4 w-4 ${showWeekends ? "text-slate-400" : "text-blue-500"}`} />
+                {showWeekends ? "Hide weekends" : "Show weekends"}
+              </Button>
+            )}
           </div>
         </div>
-      </header>
+      </nav>
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 space-y-6">

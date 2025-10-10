@@ -169,10 +169,25 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
           {stats && (
             <div className="bg-slate-50 rounded-lg p-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="text-center bg-white rounded-lg p-3 shadow-sm">
+              {/* Centered Total with colored box */}
+              <div className="flex justify-center">
+                <div className={`rounded-lg p-4 text-center shadow-sm ${
+                  stats.total > 0 
+                    ? 'bg-green-100 border border-green-200' 
+                    : stats.total < 0 
+                      ? 'bg-red-100 border border-red-200'
+                      : 'bg-slate-100 border border-slate-200'
+                }`}>
                   <div className="text-slate-600 text-sm font-medium mb-2">Total</div>
-                  <div className={`font-mono text-lg font-bold ${stats.total >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.total}</div>
+                  <div className={`font-mono text-xl font-bold ${
+                    stats.total > 0 
+                      ? 'text-green-700' 
+                      : stats.total < 0 
+                        ? 'text-red-700'
+                        : 'text-slate-700'
+                  }`}>
+                    {stats.total}
+                  </div>
                 </div>
               </div>
 
