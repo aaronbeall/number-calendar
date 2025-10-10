@@ -4,16 +4,18 @@ import { Input } from '@/components/ui/input';
 
 export interface EditableNumberBadgeProps {
   value: number;
-  onCommit: (nextValue: number | null) => void; // null indicates delete
+  editable?: boolean; // default true
+  onCommit?: (nextValue: number | null) => void; // null indicates delete
 }
 
-export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value, onCommit }) => {
+export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value, editable = true, onCommit }) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [draft, setDraft] = React.useState<string>('');
   // Track whether blur should auto-commit or if we've already handled via Enter/Escape
   const handledRef = React.useRef<'none' | 'commit' | 'cancel'>('none');
 
   const beginEdit = () => {
+    if (!editable) return;
     setDraft(String(value));
     setIsEditing(true);
     handledRef.current = 'none';
@@ -29,7 +31,7 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
     handledRef.current = 'commit';
     const raw = draft.trim();
     if (raw === '') {
-      onCommit(null);
+      onCommit && onCommit(null);
       cancel();
       return;
     }
@@ -39,7 +41,7 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
       cancel();
       return;
     }
-    onCommit(n);
+    onCommit && onCommit(n);
     cancel();
   };
 
@@ -62,7 +64,7 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
     return n > 0 ? positiveClasses : n < 0 ? negativeClasses : neutralClasses;
   };
 
-  if (isEditing) {
+  if (editable && isEditing) {
     return (
       <Input
         value={draft}
@@ -88,8 +90,8 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
 
   return (
     <Badge
-      onClick={beginEdit}
-      className={`cursor-text text-xs px-2 py-0.5 shadow-sm hover:shadow-md transition-colors ${displayClasses} ${displayHoverClasses}`}
+      onClick={editable ? beginEdit : undefined}
+      className={`${editable ? 'cursor-text' : 'cursor-default'} text-xs px-2 py-0.5 shadow-sm hover:shadow-md transition-colors ${displayClasses} ${displayHoverClasses}`}
       aria-label={`Number, click to edit`}
     >
       {value}

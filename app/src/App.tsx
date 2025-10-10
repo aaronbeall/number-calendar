@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
 import { loadMonth, saveDay } from './features/db/localdb';
+import { NumbersPanel } from './features/panel/NumbersPanel';
 
 const today = new Date();
 
@@ -29,6 +30,9 @@ function App() {
   const [yearData, setYearData] = useState<Record<string, number[]>>({});
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
   const [showWeekends, setShowWeekends] = useState(true);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelTitle, setPanelTitle] = useState('');
+  const [panelNumbers, setPanelNumbers] = useState<number[]>([]);
 
   useEffect(() => {
     loadMonth(year, month).then(setMonthData);
@@ -167,7 +171,15 @@ function App() {
             const firstDateInMonth = datesInWeek.find(d => d.getMonth() === month - 1);
             const weekNumber = firstDateInMonth ? Math.ceil(firstDateInMonth.getDate() / 7) : 1;
             
-            return <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} />;
+            return (
+              <div onClick={() => {
+                setPanelTitle(`Week ${weekNumber}`);
+                setPanelNumbers(weekNumbers);
+                setPanelOpen(true);
+              }} className="cursor-pointer">
+                <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} />
+              </div>
+            );
           }}
           renderDay={date => {
             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -183,11 +195,17 @@ function App() {
         
         {/* Monthly Stats Section */}
         <div className="mt-8 mb-6">
+          <div onClick={() => {
+            setPanelTitle(`${monthNames[month - 1]} Summary`);
+            setPanelNumbers(allNumbers);
+            setPanelOpen(true);
+          }} className="cursor-pointer">
           <StatsBar 
             numbers={allNumbers} 
             monthName={monthNames[month - 1]} 
             isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
           />
+          </div>
         </div>
 
         {/* Chart Section */}
@@ -225,6 +243,14 @@ function App() {
           </div>
         </div>
       </div>
+      <NumbersPanel
+        isOpen={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        title={panelTitle}
+        numbers={panelNumbers}
+        editableNumbers={false}
+        showExpressionInput={false}
+      />
     </div>
   );
 }
