@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff } from 'lucide-react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { StatsBar } from './features/stats/StatsBar';
@@ -25,6 +25,7 @@ function App() {
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [monthData, setMonthData] = useState<Record<string, number[]>>({});
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
+  const [showWeekends, setShowWeekends] = useState(true);
 
   useEffect(() => {
     loadMonth(year, month).then(setMonthData);
@@ -107,6 +108,15 @@ function App() {
                 {monthNames[month - 1]} {year}
               </div>
               
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowWeekends(v => !v)}
+                aria-pressed={showWeekends}
+                title={showWeekends ? "Hide weekends" : "Show weekends"}
+              >
+                <CalendarOff className={showWeekends ? "text-slate-400" : "text-blue-500"} />
+              </Button>
               <Button 
                 variant="outline" 
                 size="icon"
@@ -133,6 +143,7 @@ function App() {
         <CalendarGrid
           year={year}
           month={month}
+          showWeekends={showWeekends}
           renderDay={date => {
             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             return (
