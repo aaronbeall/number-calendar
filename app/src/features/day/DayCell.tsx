@@ -99,18 +99,12 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
         </div>
         
         {hasData && (
-          <div className="flex-1 grid grid-cols-2 gap-2 text-xs">
-            <div className="text-center">
-              <div className="text-slate-500 mb-1">Count</div>
-              <div className={`px-2 py-1 rounded font-mono font-bold ${total > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {count}
-              </div>
+          <div className="flex-1 flex flex-col gap-2 text-xs">
+            <div className="text-slate-500 text-center">
+              Count: {count}
             </div>
-            <div className="text-center">
-              <div className="text-slate-500 mb-1">Total</div>
-              <div className={`px-2 py-1 rounded font-mono font-bold ${total > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {total}
-              </div>
+            <div className={`w-full px-3 py-2 rounded text-center font-mono font-bold ${total > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+              {total}
             </div>
           </div>
         )}

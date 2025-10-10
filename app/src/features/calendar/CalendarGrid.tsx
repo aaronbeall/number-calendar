@@ -5,26 +5,27 @@ export interface CalendarGridProps {
   month: number;
   renderDay: (date: Date) => React.ReactNode;
   showWeekends?: boolean;
+  renderWeekFooter?: (datesInWeek: Date[]) => React.ReactNode;
 }
 
 const allWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderDay, showWeekends = true }) => {
+export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderDay, showWeekends = true, renderWeekFooter }) => {
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
   const days: Date[] = [];
-  
-  // Generate all days in the month
+  // Generate all days in the month (filter weekends if needed)
   for (let d = 1; d <= lastDay.getDate(); d++) {
     const date = new Date(year, month - 1, d);
     if (showWeekends || (date.getDay() !== 0 && date.getDay() !== 6)) {
       days.push(date);
     }
   }
-  
+
   let weekdays = allWeekdays;
   let gridDays: (Date | null)[] = [];
-  
+  const cols = showWeekends ? 7 : 5;
+
   if (showWeekends) {
     // Standard 7-day week layout
     const padStart = firstDay.getDay();
@@ -37,15 +38,26 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
   } else {
     // 5-day week layout (Mon-Fri only)
     weekdays = allWeekdays.slice(1, 6); // Mon-Fri
-    
-    // Calculate padding for Mon-Fri grid (0=Mon, 1=Tue, ..., 4=Fri)
-    const firstDayOfWeek = firstDay.getDay();
-    const padStart = firstDayOfWeek === 0 ? 4 : firstDayOfWeek - 1; // Convert Sun(0) to Fri(4), others shift by -1
-    
+    const firstDow = firstDay.getDay();
+    const padStart = firstDow === 0 ? 4 : firstDow - 1; // Sun->Fri(4), Mon->0, ...
     gridDays = [
       ...Array(padStart).fill(null),
       ...days,
     ];
+    // Ensure full final row by padding the end to multiple of 5
+    const remainder = gridDays.length % cols;
+    if (remainder !== 0) {
+      gridDays = [
+        ...gridDays,
+        ...Array(cols - remainder).fill(null),
+      ];
+    }
+  }
+
+  // Chunk into weeks
+  const weeks: Array<(Date | null)[]> = [];
+  for (let i = 0; i < gridDays.length; i += cols) {
+    weeks.push(gridDays.slice(i, i + cols));
   }
   
   return (
@@ -59,19 +71,32 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
         ))}
       </div>
 
-      {/* Calendar grid */}
+      {/* Calendar grid rendered by weeks with optional footer per week */}
       <div className={`grid gap-2 p-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
-        {gridDays.map((date, i) => (
-          <div 
-            key={date ? date.toISOString() : `empty-${i}`}
-            className={`min-h-[90px] rounded-lg transition-all duration-200 ${
-              date 
-                ? 'bg-white shadow-sm hover:shadow-md hover:scale-[1.02] border border-slate-100' 
-                : 'bg-slate-50/50'
-            }`}
-          >
-            {date ? renderDay(date) : null}
-          </div>
+        {weeks.map((week, wi) => (
+          <React.Fragment key={`week-${wi}`}>
+            {week.map((date, di) => (
+              <div
+                key={date ? date.toISOString() : `empty-${wi}-${di}`}
+                className={`min-h-[90px] rounded-lg transition-all duration-200 ${
+                  date
+                    ? 'bg-white shadow-sm hover:shadow-md hover:scale-[1.02] border border-slate-100'
+                    : 'bg-slate-50/50'
+                }`}
+              >
+                {date ? renderDay(date) : null}
+              </div>
+            ))}
+            {renderWeekFooter && (() => {
+              const datesInWeek = week.filter((d): d is Date => d instanceof Date);
+              const content = renderWeekFooter(datesInWeek);
+              return content ? (
+                <div className={showWeekends ? 'col-span-7' : 'col-span-5'}>
+                  {content}
+                </div>
+              ) : null;
+            })()}
+          </React.Fragment>
         ))}
       </div>
     </div>

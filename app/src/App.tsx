@@ -3,6 +3,7 @@ import { ChevronLeft, ChevronRight, Calendar, CalendarOff } from 'lucide-react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { StatsBar } from './features/stats/StatsBar';
+import WeekSummary from './features/stats/WeekSummary';
 import { MonthChart } from './features/chart/MonthChart';
 import { YearOverview } from './features/year/YearOverview';
 import { Button } from '@/components/ui/button';
@@ -55,21 +56,7 @@ function App() {
   const days = getMonthDays(year, month);
   const allNumbers = Object.values(monthData).flat();
 
-  // Week stats (grouped by week)
-  function getWeekStats() {
-    const weeks: { week: number; numbers: number[] }[] = [];
-    let weekNum = 1;
-    let weekNumbers: number[] = [];
-    days.forEach((date, i) => {
-      weekNumbers.push(...(monthData[date] || []));
-      if ((i + 1) % 7 === 0 || i === days.length - 1) {
-        weeks.push({ week: weekNum, numbers: [...weekNumbers] });
-        weekNum++;
-        weekNumbers = [];
-      }
-    });
-    return weeks;
-  }
+  // Week stats are rendered inline beneath the calendar using renderWeekFooter
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
@@ -168,6 +155,15 @@ function App() {
           year={year}
           month={month}
           showWeekends={showWeekends}
+          renderWeekFooter={(datesInWeek) => {
+            // Compute numbers for the week from monthData
+            const weekNumbers = datesInWeek.flatMap(d => {
+              const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+              return monthData[ds] || [];
+            });
+            if (weekNumbers.length === 0) return null; // Only render if any data exists
+            return <WeekSummary numbers={weekNumbers} />;
+          }}
           renderDay={date => {
             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
             return (
@@ -179,21 +175,9 @@ function App() {
             );
           }}
         />
-
+        
         {/* Stats Section */}
         <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4 text-slate-700">Weekly Stats</h2>
-            <div className="space-y-3">
-              {getWeekStats().map((w, i) => (
-                <div key={w.week} className="rounded-lg border bg-white p-4 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="text-sm font-medium text-gray-500 mb-2">Week {i + 1}</div>
-                  <StatsBar numbers={w.numbers} />
-                </div>
-              ))}
-            </div>
-          </div>
-          
           <div>
             <h2 className="text-xl font-semibold mb-4 text-slate-700">Monthly Stats</h2>
             <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
