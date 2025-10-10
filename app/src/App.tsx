@@ -162,7 +162,12 @@ function App() {
               return monthData[ds] || [];
             });
             if (weekNumbers.length === 0) return null; // Only render if any data exists
-            return <WeekSummary numbers={weekNumbers} />;
+            
+            // Calculate week number based on the first date in the week that's in current month
+            const firstDateInMonth = datesInWeek.find(d => d.getMonth() === month - 1);
+            const weekNumber = firstDateInMonth ? Math.ceil(firstDateInMonth.getDate() / 7) : 1;
+            
+            return <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} />;
           }}
           renderDay={date => {
             const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -176,14 +181,9 @@ function App() {
           }}
         />
         
-        {/* Stats Section */}
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold mb-4 text-slate-700">Monthly Stats</h2>
-            <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
-              <StatsBar numbers={allNumbers} />
-            </div>
-          </div>
+        {/* Monthly Stats Section */}
+        <div className="mt-8 mb-6">
+          <StatsBar numbers={allNumbers} monthName={monthNames[month - 1]} />
         </div>
 
         {/* Chart Section */}
