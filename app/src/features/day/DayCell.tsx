@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 
 export interface DayCellProps {
   date: Date;
@@ -22,6 +21,13 @@ function parseNumbers(input: string): number[] {
 export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const [editMode, setEditMode] = useState(false);
   const [input, setInput] = useState(numbers.length ? numbers.join('+').replace('+-', '-') : '');
+  const [originalExpression] = useState(numbers.length ? numbers.join('+').replace('+-', '-') : '');
+  
+  // Update input when numbers prop changes (external updates)
+  React.useEffect(() => {
+    const expression = numbers.length ? numbers.join('+').replace('+-', '-') : '';
+    setInput(expression);
+  }, [numbers]);
 
   const handleSave = () => {
     const parsed = parseNumbers(input);
@@ -30,9 +36,30 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   };
 
   const handleCancel = () => {
-    setInput(numbers.length ? numbers.join('+').replace('+-', '-') : '');
+    setInput(originalExpression);
     setEditMode(false);
   };
+  
+  const hasChanges = input !== originalExpression;
+  const currentNumbers = parseNumbers(input);
+  const stats = React.useMemo(() => {
+    if (currentNumbers.length === 0) return null;
+    const sorted = [...currentNumbers].sort((a, b) => a - b);
+    const total = currentNumbers.reduce((a, b) => a + b, 0);
+    const count = currentNumbers.length;
+    const average = total / count;
+    const median = count % 2 === 0 
+      ? (sorted[count / 2 - 1] + sorted[count / 2]) / 2
+      : sorted[Math.floor(count / 2)];
+    return {
+      count,
+      total,
+      average: Number(average.toFixed(2)),
+      median,
+      min: sorted[0],
+      max: sorted[sorted.length - 1]
+    };
+  }, [currentNumbers]);
 
   const isToday = date.toDateString() === new Date().toDateString();
 
@@ -42,13 +69,11 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const isPast = date < new Date(new Date().toDateString());
   
   // Color logic: only positive/negative if there's data
-  let bgColor, textColor;
+  let bgColor;
   if (!hasData) {
     bgColor = isPast ? 'bg-slate-100' : 'bg-white';
-    textColor = isPast ? 'text-slate-400' : 'text-slate-600';
   } else {
     bgColor = total > 0 ? 'bg-green-50' : 'bg-red-50';
-    textColor = total > 0 ? 'text-green-600' : 'text-red-600';
   }
 
   return (
@@ -84,15 +109,17 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
         )}
       </div>
 
-      <Dialog open={editMode} onOpenChange={setEditMode}>
-        <DialogContent className="max-w-xs w-full p-4 rounded-xl">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between mb-2">
-              <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : textColor}`}>{date.toLocaleDateString()}</div>
-              <Button variant="ghost" size="icon" onClick={handleCancel} aria-label="Cancel">
-                <XCircle className="text-slate-400" />
-              </Button>
+      <Dialog open={editMode} onOpenChange={(open) => {
+        if (!open) handleCancel();
+      }}>
+        <DialogContent className="max-w-sm w-full p-6 rounded-xl animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <div className={`text-lg font-bold ${isToday ? 'text-blue-600' : 'text-slate-700'}`}>
+                {date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </div>
             </div>
+            
             <Input
               value={input}
               onChange={e => setInput(e.target.value)}
@@ -104,16 +131,9 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
                 if (e.key === 'Escape') handleCancel();
               }}
             />
-            <div className="flex gap-2 items-center">
-              <Button onClick={handleSave} size="icon" className="bg-green-600 hover:bg-green-700 text-white shadow-sm" aria-label="Save">
-                <CheckCircle className="size-5" />
-              </Button>
-              <Button onClick={handleCancel} variant="outline" size="icon" className="border-slate-300 hover:bg-slate-50 shadow-sm" aria-label="Cancel">
-                <XCircle className="size-5 text-slate-400" />
-              </Button>
-            </div>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {parseNumbers(input).map((n, i) => (
+            
+            <div className="flex flex-wrap gap-1">
+              {currentNumbers.map((n, i) => (
                 <Badge
                   key={i}
                   className={`text-xs px-2 py-0.5 shadow-sm transition-all ${
@@ -126,11 +146,50 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
                 </Badge>
               ))}
             </div>
-            <div className="mt-2 text-xs text-slate-500">
-              <div>Count: {parseNumbers(input).length}</div>
-              <div>Total: {parseNumbers(input).reduce((a, b) => a + b, 0)}</div>
-            </div>
+            
+            {stats && (
+              <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                <h4 className="text-sm font-semibold text-slate-700 mb-2">Statistics</h4>
+                <div className="grid grid-cols-3 gap-3 text-xs">
+                  <div className="text-center">
+                    <div className="text-slate-500 mb-1">Count</div>
+                    <div className="font-mono font-bold text-slate-700">{stats.count}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-slate-500 mb-1">Total</div>
+                    <div className={`font-mono font-bold ${stats.total >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.total}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-slate-500 mb-1">Average</div>
+                    <div className={`font-mono font-bold ${stats.average >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.average}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-slate-500 mb-1">Median</div>
+                    <div className={`font-mono font-bold ${stats.median >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.median}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-slate-500 mb-1">Min</div>
+                    <div className={`font-mono font-bold ${stats.min >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.min}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-slate-500 mb-1">Max</div>
+                    <div className={`font-mono font-bold ${stats.max >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.max}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
+          
+          {hasChanges && (
+            <DialogFooter className="gap-2">
+              <Button onClick={handleCancel} variant="outline" className="border-slate-300 hover:bg-slate-50">
+                Cancel
+              </Button>
+              <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700 text-white">
+                Save
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </>
