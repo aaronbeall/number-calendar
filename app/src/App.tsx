@@ -14,6 +14,7 @@ import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-rea
 import { loadMonth, saveDay } from './features/db/localdb';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { NumbersPanel } from './features/panel/NumbersPanel';
+import YearChart from './features/chart/YearChart';
 
 const today = new Date();
 
@@ -33,6 +34,7 @@ function App() {
   const [monthData, setMonthData] = useState<Record<string, number[]>>({});
   const [yearData, setYearData] = useState<Record<string, number[]>>({});
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
+  const [chartGroup, setChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
   const [showWeekends, setShowWeekends] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelTitle, setPanelTitle] = useState('');
@@ -383,7 +385,6 @@ function App() {
               onMonthClick={(monthNumber, monthName, numbers) => {
                 setPanelTitle(`${monthName} '${String(year).slice(-2)}`);
                 setPanelNumbers(numbers);
-                // Provide action to jump to that month's daily view
                 setAction(() => () => {
                   setView('daily');
                   setYear(year);
@@ -395,7 +396,7 @@ function App() {
                 setPanelOpen(true);
               }}
             />
-            
+
             {/* Year Summary */}
             <div className="mt-8 mb-6">
               <div onClick={() => {
@@ -408,6 +409,60 @@ function App() {
                   numbers={Object.values(yearData).flat()} 
                   yearName={`${year}`} 
                   isCurrentYear={year === today.getFullYear()}
+                />
+              </div>
+            </div>
+
+            {/* Year Chart Section */}
+            <div className="space-y-4 mb-6">
+              <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex gap-2">
+                    <ToggleGroup
+                      type="single"
+                      value={chartGroup}
+                      onValueChange={(v: string | null) => {
+                        if (!v) return;
+                        setChartGroup(v as 'daily' | 'monthly');
+                      }}
+                      size="sm"
+                      variant="outline"
+                      aria-label="Chart Group"
+                    >
+                      <ToggleGroupItem value="daily" aria-label="Daily">
+                        Daily
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="monthly" aria-label="Monthly">
+                        Monthly
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+                  <ToggleGroup
+                    type="single"
+                    value={chartMode}
+                    onValueChange={(v: string | null) => {
+                      if (!v) return;
+                      setChartMode(v as 'serial' | 'cumulative');
+                    }}
+                    size="sm"
+                    variant="outline"
+                    aria-label="Chart Mode"
+                  >
+                    <ToggleGroupItem value="serial" aria-label="Serial">
+                      <BarChartIcon className="size-4 mr-1" />
+                      <span className="hidden sm:inline">Serial</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="cumulative" aria-label="Cumulative">
+                      <LineChartIcon className="size-4 mr-1" />
+                      <span className="hidden sm:inline">Cumulative</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <YearChart
+                  year={year}
+                  yearData={yearData}
+                  mode={chartMode}
+                  group={chartGroup}
                 />
               </div>
             </div>
