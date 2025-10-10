@@ -101,7 +101,7 @@ function App() {
       </header>
 
       {/* Navigation Header */}
-      <nav className="bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200 shadow-sm">
+      <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center gap-4">
             {/* View Toggle */}
