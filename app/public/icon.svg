@@ -1,0 +1,46 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="50%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#bgGradient)"/>
+  <!-- Subtle calendar grid lines -->
+  <g opacity="0.18">
+    <!-- Vertical lines (fill circle) -->
+    <line x1="12" y1="2" x2="12" y2="62" stroke="#fff" stroke-width="1"/>
+    <line x1="22" y1="2" x2="22" y2="62" stroke="#fff" stroke-width="1"/>
+    <line x1="32" y1="2" x2="32" y2="62" stroke="#fff" stroke-width="1"/>
+    <line x1="42" y1="2" x2="42" y2="62" stroke="#fff" stroke-width="1"/>
+    <line x1="52" y1="2" x2="52" y2="62" stroke="#fff" stroke-width="1"/>
+    <!-- Horizontal lines (fill circle) -->
+    <line x1="2" y1="14" x2="62" y2="14" stroke="#fff" stroke-width="1"/>
+    <line x1="2" y1="24" x2="62" y2="24" stroke="#fff" stroke-width="1"/>
+    <line x1="2" y1="34" x2="62" y2="34" stroke="#fff" stroke-width="1"/>
+    <line x1="2" y1="44" x2="62" y2="44" stroke="#fff" stroke-width="1"/>
+    <line x1="2" y1="54" x2="62" y2="54" stroke="#fff" stroke-width="1"/>
+  </g>
+  <!-- Top-focused glow gradient -->
+  <linearGradient id="arrowTopGlow" x1="32" y1="8" x2="32" y2="48" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#fff" stop-opacity="0.95"/>
+    <stop offset="30%" stop-color="#f59e42" stop-opacity="0.7"/>
+    <stop offset="60%" stop-color="#10b981" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+  </linearGradient>
+  <!-- SVG filter for color blend mode glow -->
+  <filter id="arrowGlowFilter" x="0" y="0" width="64" height="64" filterUnits="userSpaceOnUse">
+    <feGaussianBlur stdDeviation="7" result="blur"/>
+    <feMerge>
+      <feMergeNode in="blur"/>
+      <feMergeNode in="SourceGraphic"/>
+    </feMerge>
+  </filter>
+  <!-- Glow shape above arrow -->
+  <ellipse cx="32" cy="20" rx="14" ry="8" fill="url(#arrowTopGlow)" style="mix-blend-mode:overlay;" filter="url(#arrowGlowFilter)"/>
+  <!-- Large upward arrow with top glow effect -->
+  <path d="M 32 16 L 20 28 L 26 28 L 26 48 L 38 48 L 38 28 L 44 28 Z" fill="#fff" stroke="#fff" stroke-width="1.5"/>
+</svg>
