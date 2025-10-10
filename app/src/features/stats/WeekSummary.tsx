@@ -44,7 +44,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
   };
 
   return (
-    <div className={`mt-1 rounded-md ${bgClasses} ${borderClasses} shadow-sm hover:shadow-md transition-shadow`} aria-label="Weekly summary">
+  <div className={`mb-2 rounded-md ${bgClasses} ${borderClasses} shadow-sm hover:shadow-md transition-shadow`} aria-label="Weekly summary">
       <div className="w-full flex items-center justify-between gap-3 sm:gap-5 px-3 py-2">
         {/* Week Label + entries */}
         <div className="flex-shrink-0">
