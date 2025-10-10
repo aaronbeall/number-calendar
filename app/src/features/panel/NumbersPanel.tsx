@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { computeNumberStats } from '@/lib/stats';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Custom SheetContent without overlay (Escape disabled)
 const SheetContentNoOverlay = React.forwardRef<
@@ -110,8 +109,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           </SheetTitle>
         </SheetHeader>
 
-        <TooltipProvider>
-          <div className="flex flex-col gap-4 mt-6">
+        <div className="flex flex-col gap-4 mt-6">
           {showExpressionInput && (
             <Input
               value={expression}
@@ -148,27 +146,21 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               ))}
             </div>
             {numbers.length > 1 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-8 w-8 flex-shrink-0 ${
-                      sortMode === 'original' 
-                        ? 'hover:bg-slate-100' 
-                        : 'hover:bg-blue-100'
-                    }`}
-                    onClick={toggleSortMode}
-                  >
-                    {sortMode === 'original' && <ArrowUpDown className="h-4 w-4 text-slate-400" />}
-                    {sortMode === 'asc' && <ArrowUp className="h-4 w-4 text-blue-600" />}
-                    {sortMode === 'desc' && <ArrowDown className="h-4 w-4 text-blue-600" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Sort: {sortMode === 'original' ? 'Original order' : sortMode === 'asc' ? 'Ascending' : 'Descending'}</p>
-                </TooltipContent>
-              </Tooltip>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 flex-shrink-0 ${
+                  sortMode === 'original' 
+                    ? 'hover:bg-slate-100' 
+                    : 'hover:bg-blue-100'
+                }`}
+                onClick={toggleSortMode}
+                title={`Sort: ${sortMode === 'original' ? 'Original order' : sortMode === 'asc' ? 'Ascending' : 'Descending'}`}
+              >
+                {sortMode === 'original' && <ArrowUpDown className="h-4 w-4 text-slate-400" />}
+                {sortMode === 'asc' && <ArrowUp className="h-4 w-4 text-blue-600" />}
+                {sortMode === 'desc' && <ArrowDown className="h-4 w-4 text-blue-600" />}
+              </Button>
             )}
           </div>
 
@@ -220,7 +212,6 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             </Button>
           </SheetFooter>
         )}
-        </TooltipProvider>
       </SheetContentNoOverlay>
     </Sheet>
   );
