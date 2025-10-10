@@ -4,6 +4,7 @@ import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { StatsBar } from './features/stats/StatsBar';
 import { MonthChart } from './features/chart/MonthChart';
+import { YearOverview } from './features/year/YearOverview';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
@@ -24,6 +25,7 @@ function App() {
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [monthData, setMonthData] = useState<Record<string, number[]>>({});
+  const [yearData, setYearData] = useState<Record<string, number[]>>({});
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
   const [showWeekends, setShowWeekends] = useState(true);
 
@@ -31,9 +33,23 @@ function App() {
     loadMonth(year, month).then(setMonthData);
   }, [year, month]);
 
+  // Load entire year data for the year overview
+  useEffect(() => {
+    const loadYearData = async () => {
+      const yearDataPromises = Array.from({ length: 12 }, (_, i) => 
+        loadMonth(year, i + 1)
+      );
+      const yearResults = await Promise.all(yearDataPromises);
+      const combinedYearData = yearResults.reduce((acc, monthData) => ({ ...acc, ...monthData }), {});
+      setYearData(combinedYearData);
+    };
+    loadYearData();
+  }, [year]);
+
   const handleSaveDay = async (date: string, numbers: number[]) => {
     await saveDay(date, numbers);
     setMonthData(prev => ({ ...prev, [date]: numbers }));
+    setYearData(prev => ({ ...prev, [date]: numbers }));
   };
 
   const days = getMonthDays(year, month);
@@ -139,6 +155,14 @@ function App() {
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 space-y-6">
+        {/* Year Overview */}
+        <YearOverview
+          year={year}
+          data={yearData}
+          currentMonth={month}
+          onMonthClick={(selectedMonth) => setMonth(selectedMonth)}
+        />
+
         {/* Calendar Grid */}
         <CalendarGrid
           year={year}

@@ -1,0 +1,112 @@
+import React from 'react';
+
+export interface YearOverviewProps {
+  year: number;
+  data: Record<string, number[]>; // dateKey -> numbers
+  currentMonth: number;
+  onMonthClick: (month: number) => void;
+}
+
+const monthNames = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+];
+
+export const YearOverview: React.FC<YearOverviewProps> = ({ 
+  year, 
+  data, 
+  currentMonth, 
+  onMonthClick 
+}) => {
+  const today = new Date();
+
+  const getDayColor = (date: Date): string => {
+    const dateKey = date.toISOString().split('T')[0];
+    const numbers = data[dateKey] || [];
+    const total = numbers.reduce((a, b) => a + b, 0);
+    const isFuture = date > today;
+    
+    if (isFuture) {
+      return 'bg-slate-200'; // Future days - faded
+    } else if (numbers.length === 0) {
+      return 'bg-slate-400'; // No data - gray
+    } else if (total > 0) {
+      return 'bg-green-500'; // Positive - green
+    } else if (total < 0) {
+      return 'bg-red-500'; // Negative - red
+    } else {
+      return 'bg-slate-400'; // Zero total - gray
+    }
+  };
+
+  const renderMonth = (month: number) => {
+    const isCurrentMonth = month === currentMonth;
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const days: React.ReactElement[] = [];
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const color = getDayColor(date);
+      
+      days.push(
+        <div
+          key={day}
+          className={`w-1 h-1 rounded-full ${color} transition-all duration-200`}
+          title={`${monthNames[month - 1]} ${day}, ${year}`}
+        />
+      );
+    }
+
+    // Pad the start and end so dots align with weekdays (Sun-Sat)
+    const firstDayOfWeek = new Date(year, month - 1, 1).getDay(); // 0=Sun .. 6=Sat
+    const lastDayOfWeek = new Date(year, month, 0).getDay();
+    const padStart = firstDayOfWeek; // number of empty cells before day 1
+    const padEnd = 6 - lastDayOfWeek; // number of empty cells after last day
+
+    const paddedCells: React.ReactElement[] = [
+      // Leading empty cells
+      ...Array.from({ length: padStart }, (_, i) => (
+        <div
+          key={`pad-start-${month}-${i}`}
+          className="w-1 h-1 rounded-full opacity-0"
+          aria-hidden
+        />
+      )),
+      // Actual day dots
+      ...days,
+      // Trailing empty cells
+      ...Array.from({ length: padEnd }, (_, i) => (
+        <div
+          key={`pad-end-${month}-${i}`}
+          className="w-1 h-1 rounded-full opacity-0"
+          aria-hidden
+        />
+      )),
+    ];
+
+    return (
+      <div
+        key={month}
+        className={`flex flex-col items-center space-y-1 cursor-pointer transition-all duration-200 hover:scale-105 ${
+          isCurrentMonth ? 'ring-2 ring-blue-500 ring-offset-1 rounded-lg p-2' : 'p-2'
+        }`}
+        onClick={() => onMonthClick(month)}
+      >
+        <div className={`text-xs font-medium ${isCurrentMonth ? 'text-blue-600 font-semibold' : 'text-slate-600'}`}>
+          {monthNames[month - 1]}
+        </div>
+        <div className="grid grid-cols-7 gap-0.5 w-fit">
+          {paddedCells}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 rounded-lg p-4 mb-6 shadow-sm">
+      <div className="grid grid-cols-12 gap-2 justify-items-center">
+        {Array.from({ length: 12 }, (_, i) => renderMonth(i + 1))}
+      </div>
+    </div>
+  );
+};
