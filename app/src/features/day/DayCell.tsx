@@ -36,7 +36,6 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const handleSave = () => {
     const parsed = parseNumbers(input);
     onSave(parsed);
-    setEditMode(false);
   };
 
   const handleCancel = () => {

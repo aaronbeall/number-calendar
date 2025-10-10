@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetHeader, SheetTitle, SheetFooter, SheetPortal } from '@/components/ui/sheet';
+import { Sheet, SheetHeader, SheetTitle, SheetPortal } from '@/components/ui/sheet';
 import * as SheetPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
@@ -55,8 +55,6 @@ export interface NumbersPanelProps {
   expression?: string;
   onExpressionChange?: (value: string) => void;
   onSave?: () => void;
-  onCancel?: () => void;
-  hasChanges?: boolean;
   // Optional action button displayed in the header (right side)
   actionLabel?: string;
   actionOnClick?: () => void;
@@ -79,13 +77,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   expression,
   onExpressionChange,
   onSave,
-  onCancel,
-  hasChanges,
   actionLabel,
   actionOnClick,
   actionIcon,
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
+  const [originalExpression, setOriginalExpression] = React.useState<string>('');
+
+  // Update original expression when expression prop changes
+  React.useEffect(() => {
+    if (expression !== undefined) {
+      setOriginalExpression(expression);
+    }
+  }, [expression]);
 
   // Stats computed via util
   const stats = React.useMemo(() => computeNumberStats(numbers), [numbers]);
@@ -102,6 +106,45 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     }
     return arr;
   }, [items, sortMode]);
+
+  // Simple expression parser - returns null if invalid, empty array if blank
+  const parseExpression = (expr: string): number[] | null => {
+    if (!expr.trim()) return []; // blank = delete
+    
+    try {
+      // Simple math expression evaluation
+      const result = Function(`"use strict"; return (${expr})`)();
+      if (typeof result === 'number' && !isNaN(result)) {
+        return [result];
+      }
+      
+      // Try parsing as comma/space separated numbers
+      const numbers = expr.split(/[,\s]+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+        .map(s => parseFloat(s));
+      
+      if (numbers.every(n => !isNaN(n))) {
+        return numbers;
+      }
+      
+      return null; // invalid
+    } catch {
+      return null; // invalid
+    }
+  };
+
+  const handleExpressionSave = (expr: string) => {
+    const parsed = parseExpression(expr);
+    if (parsed !== null) {
+      // Valid expression - save it
+      onSave && onSave();
+      setOriginalExpression(expr);
+    } else {
+      // Invalid expression - revert to original
+      onExpressionChange && onExpressionChange(originalExpression);
+    }
+  };
 
   const toggleSortMode = () => {
     setSortMode((m) => (m === 'original' ? 'asc' : m === 'asc' ? 'desc' : 'original'));
@@ -134,36 +177,53 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             <Input
               value={expression}
               onChange={e => onExpressionChange && onExpressionChange(e.target.value)}
-              placeholder="1+2-5"
+              onBlur={() => handleExpressionSave(expression || '')}
+              placeholder="Example: 1+2-5"
               className="text-sm border-blue-300 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
               autoFocus
               onKeyDown={e => {
-                if (e.key === 'Enter') onSave && onSave();
-                if (e.key === 'Escape') onCancel && onCancel();
+                if (e.key === 'Enter') {
+                  e.currentTarget.blur(); // Trigger onBlur which will save
+                  e.preventDefault(); // Prevent any form submission or panel closing
+                }
+                if (e.key === 'Escape') {
+                  onExpressionChange && onExpressionChange(originalExpression);
+                  e.currentTarget.blur();
+                  e.preventDefault(); // Prevent panel from closing
+                }
               }}
             />
           )}
 
           <div className="flex items-center justify-between gap-2">
             <div className="flex flex-wrap gap-1 pr-2 flex-1 min-w-0">
-              {sortedItems.map(({ value: n, index: originalIndex }) => (
-                <EditableNumberBadge
-                  key={`${originalIndex}-${n}`}
-                  value={n}
-                  editable={!!editableNumbers}
-                  onCommit={editableNumbers ? (next) => {
-                    if (!onExpressionChange) return;
-                    let nextNumbers: number[];
-                    if (next === null) {
-                      nextNumbers = numbers.filter((_, idx) => idx !== originalIndex);
-                    } else {
-                      nextNumbers = numbers.map((val, idx) => (idx === originalIndex ? next : val));
-                    }
-                    const expr = buildExpressionFromNumbers(nextNumbers);
-                    onExpressionChange(expr);
-                  } : undefined}
-                />
-              ))}
+              {sortedItems.length > 0 ? (
+                sortedItems.map(({ value: n, index: originalIndex }) => (
+                  <EditableNumberBadge
+                    key={`${originalIndex}-${n}`}
+                    value={n}
+                    editable={!!editableNumbers}
+                    onCommit={editableNumbers ? (next) => {
+                      if (!onExpressionChange) return;
+                      let nextNumbers: number[];
+                      if (next === null) {
+                        nextNumbers = numbers.filter((_, idx) => idx !== originalIndex);
+                      } else {
+                        nextNumbers = numbers.map((val, idx) => (idx === originalIndex ? next : val));
+                      }
+                      const expr = buildExpressionFromNumbers(nextNumbers);
+                      onExpressionChange(expr);
+                    } : undefined}
+                  />
+                ))
+              ) : (
+                <div className="flex items-center justify-center w-full py-8 text-center">
+                  <div className="text-slate-400">
+                    <div className="text-sm font-medium mb-1">No numbers to display</div>
+                    <div className="text-xs">Add some data to see statistics</div>
+                  </div>
+                </div>
+              )}
             </div>
             {numbers.length > 1 && (
               <Button
@@ -184,7 +244,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             )}
           </div>
 
-          {stats && (
+          {stats && stats.count > 0 && (
             <div className="bg-slate-50 rounded-lg p-4 space-y-4">
               {/* Centered Total with colored box */}
               <div className="flex justify-center">
@@ -240,17 +300,6 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             </div>
           )}
         </div>
-
-        {showExpressionInput && hasChanges && (
-          <SheetFooter className="mt-6">
-            <Button onClick={onCancel} variant="outline" className="border-slate-300 hover:bg-slate-50">
-              Cancel
-            </Button>
-            <Button onClick={onSave} className="bg-green-600 hover:bg-green-700 text-white">
-              Save
-            </Button>
-          </SheetFooter>
-        )}
       </SheetContentNoOverlay>
     </Sheet>
   );
