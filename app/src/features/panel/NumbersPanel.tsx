@@ -181,10 +181,10 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <div className="text-slate-600 text-sm font-medium mb-2">Total</div>
                   <div className={`font-mono text-xl font-bold ${
                     stats.total > 0 
-                      ? 'text-green-700' 
+                      ? 'text-green-600' 
                       : stats.total < 0 
-                        ? 'text-red-700'
-                        : 'text-slate-700'
+                        ? 'text-red-600'
+                        : 'text-slate-600'
                   }`}>
                     {stats.total}
                   </div>
@@ -194,22 +194,30 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
                   <div className="text-slate-500 text-xs mb-1">Mean</div>
-                  <div className={`font-mono text-sm font-semibold ${stats.mean >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.mean.toFixed(1)}</div>
+                  <div className={`font-mono text-sm font-semibold ${
+                    stats.mean > 0 ? 'text-green-600' : stats.mean < 0 ? 'text-red-600' : 'text-slate-600'
+                  }`}>{stats.mean.toFixed(1)}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-slate-500 text-xs mb-1">Median</div>
-                  <div className={`font-mono text-sm font-semibold ${stats.median >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.median}</div>
+                  <div className={`font-mono text-sm font-semibold ${
+                    stats.median > 0 ? 'text-green-600' : stats.median < 0 ? 'text-red-600' : 'text-slate-600'
+                  }`}>{stats.median}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
                   <div className="text-slate-500 text-xs mb-1">Min</div>
-                  <div className={`font-mono text-sm font-semibold ${stats.min >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.min}</div>
+                  <div className={`font-mono text-sm font-semibold ${
+                    stats.min > 0 ? 'text-green-600' : stats.min < 0 ? 'text-red-600' : 'text-slate-600'
+                  }`}>{stats.min}</div>
                 </div>
                 <div className="text-center">
                   <div className="text-slate-500 text-xs mb-1">Max</div>
-                  <div className={`font-mono text-sm font-semibold ${stats.max >= 0 ? 'text-green-600' : 'text-red-600'}`}>{stats.max}</div>
+                  <div className={`font-mono text-sm font-semibold ${
+                    stats.max > 0 ? 'text-green-600' : stats.max < 0 ? 'text-red-600' : 'text-slate-600'
+                  }`}>{stats.max}</div>
                 </div>
               </div>
             </div>

@@ -28,6 +28,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick }: MonthlyGridProps) 
 
   const currentDate = new Date();
   const isCurrentYear = year === currentDate.getFullYear();
+  const isFutureYear = year > currentDate.getFullYear();
 
   return (
     <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
@@ -35,6 +36,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick }: MonthlyGridProps) 
         const monthNumber = index + 1;
         const monthNumbers = getMonthNumbers(monthNumber);
         const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
+        const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
 
         return (
           <MonthCell
@@ -42,6 +44,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick }: MonthlyGridProps) 
             monthName={monthName}
             numbers={monthNumbers}
             isCurrentMonth={isCurrentMonth}
+            isFutureMonth={isFutureMonth}
             onClick={() => onMonthClick(monthNumber, monthName, monthNumbers)}
           />
         );

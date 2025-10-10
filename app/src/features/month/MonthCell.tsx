@@ -5,10 +5,11 @@ interface MonthCellProps {
   monthName: string;
   numbers: number[];
   isCurrentMonth: boolean;
+  isFutureMonth?: boolean;
   onClick: () => void;
 }
 
-export function MonthCell({ monthName, numbers, isCurrentMonth, onClick }: MonthCellProps) {
+export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = false, onClick }: MonthCellProps) {
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   
   // Color styling based on total
@@ -24,19 +25,19 @@ export function MonthCell({ monthName, numbers, isCurrentMonth, onClick }: Month
     }
   };
 
-  const getTextColorClass = () => {
-    if (!stats) return 'text-slate-700';
-    if (stats.total > 0) return 'text-green-700';
-    if (stats.total < 0) return 'text-red-700';
+  // Removed: getTextColorClass (replaced by per-stat getValueColorClass)
+
+  // Per-stat value color (positive/negative/neutral)
+  const getValueColorClass = (val?: number) => {
+    if (val === undefined || val === null) return 'text-slate-700';
+    if (val > 0) return 'text-green-700';
+    if (val < 0) return 'text-red-700';
     return 'text-slate-700';
   };
 
-  const getTotalColorClass = () => {
-    if (!stats) return 'text-slate-800';
-    if (stats.total > 0) return 'text-green-800';
-    if (stats.total < 0) return 'text-red-800';
-    return 'text-slate-800';
-  };
+  // Total uses same coloring as other stats via getValueColorClass
+
+  const ghostClasses = isFutureMonth ? 'opacity-50 saturate-0 cursor-default hover:shadow-none' : '';
 
   return (
     <div
@@ -46,6 +47,7 @@ export function MonthCell({ monthName, numbers, isCurrentMonth, onClick }: Month
         ${getColorClasses()}
         ${isCurrentMonth ? 'ring-2 ring-blue-400 ring-opacity-60' : ''}
         hover:shadow-md
+        ${ghostClasses}
       `}
     >
       {/* Month name */}
@@ -61,36 +63,36 @@ export function MonthCell({ monthName, numbers, isCurrentMonth, onClick }: Month
           {/* Total (most prominent) */}
           <div className="text-center">
             <div className="text-xs text-slate-500 uppercase tracking-wide">Total</div>
-            <div className={`text-lg font-bold ${getTotalColorClass()}`}>
+            <div className={`text-lg font-bold ${getValueColorClass(stats.total)}`}>
               {stats.total}
             </div>
           </div>
 
-          {/* Secondary stats in grid */}
-          <div className="grid grid-cols-1 gap-2 text-xs">
+          {/* Secondary stats: Median & Mean on one line (individual coloring) */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="text-center">
+              <div className="text-slate-400 uppercase tracking-wide">Median</div>
+              <div className={`font-semibold ${getValueColorClass(stats.median)}`}>
+                {stats.median?.toFixed(1) ?? '-'}
+              </div>
+            </div>
             <div className="text-center">
               <div className="text-slate-400 uppercase tracking-wide">Mean</div>
-              <div className={`font-semibold ${getTextColorClass()}`}>
+              <div className={`font-semibold ${getValueColorClass(stats.mean)}`}>
                 {stats.mean?.toFixed(1) ?? '-'}
               </div>
             </div>
           </div>
 
-          {/* Tertiary stats */}
-          <div className="grid grid-cols-3 gap-1 text-xs">
-            <div className="text-center">
-              <div className="text-slate-400 uppercase tracking-wide">Med</div>
-              <div className={`font-semibold ${getTextColorClass()}`}>
-                {stats.median?.toFixed(1) ?? '-'}
-              </div>
-            </div>
+          {/* Tertiary stats: Min & Max on next line (individual coloring) */}
+          <div className="grid grid-cols-2 gap-2 text-xs">
             <div className="text-center">
               <div className="text-slate-400 uppercase tracking-wide">Min</div>
-              <div className={`font-semibold ${getTextColorClass()}`}>{stats.min}</div>
+              <div className={`font-semibold ${getValueColorClass(stats.min)}`}>{stats.min}</div>
             </div>
             <div className="text-center">
               <div className="text-slate-400 uppercase tracking-wide">Max</div>
-              <div className={`font-semibold ${getTextColorClass()}`}>{stats.max}</div>
+              <div className={`font-semibold ${getValueColorClass(stats.max)}`}>{stats.max}</div>
             </div>
           </div>
         </div>
