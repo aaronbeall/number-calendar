@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Database, Trophy, Target, Plus, ChevronRight as ChevronRightIcon, Download, Sparkles } from 'lucide-react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
 import { loadMonth, saveDay } from './features/db/localdb';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { NumbersPanel } from './features/panel/NumbersPanel';
 
 const today = new Date();
@@ -78,9 +79,63 @@ function App() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Menu className="h-4 w-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48">
+                  <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                    Workspace
+                  </DropdownMenuLabel>
+                  <div className="px-2 py-2 mx-1 mb-1 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-blue-900">
+                      <Database className="h-4 w-4 text-blue-600" />
+                      Personal Tracking
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    New Workspace
+                  </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="gap-2">
+                      <ChevronRightIcon className="h-4 w-4" />
+                      Switch to...
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      <DropdownMenuItem>Personal Tracking</DropdownMenuItem>
+                      <DropdownMenuItem>Work Goals</DropdownMenuItem>
+                      <DropdownMenuItem>Fitness Journey</DropdownMenuItem>
+                      <DropdownMenuItem>Study Progress</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="gap-2">
+                    <Trophy className="h-4 w-4" />
+                    Achievements
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2">
+                    <Target className="h-4 w-4" />
+                    Milestones
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1">
+                    <Sparkles className="h-4 w-4 text-purple-600" />
+                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-semibold">AI Insights</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Import/Export
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2">
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <img src="/icon.svg" alt="Numbers Go Up" className="w-10 h-10" />
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
