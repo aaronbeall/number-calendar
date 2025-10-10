@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar, CalendarOff } from 'lucide-react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
-import { StatsBar } from './features/stats/StatsBar';
+import { MonthSummary } from './features/stats/MonthSummary';
 import WeekSummary from './features/stats/WeekSummary';
 import { MonthChart } from './features/chart/MonthChart';
 import { YearOverview } from './features/year/YearOverview';
@@ -200,7 +200,7 @@ function App() {
             setPanelNumbers(allNumbers);
             setPanelOpen(true);
           }} className="cursor-pointer">
-          <StatsBar 
+          <MonthSummary 
             numbers={allNumbers} 
             monthName={monthNames[month - 1]} 
             isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}

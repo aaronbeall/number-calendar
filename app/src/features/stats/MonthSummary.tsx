@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
-export interface StatsBarProps {
+export interface MonthSummaryProps {
   numbers: number[];
   monthName?: string;
   isCurrentMonth?: boolean;
@@ -20,7 +20,7 @@ function calcStats(numbers: number[]) {
   return { total, mean, median, min, max, count: numbers.length };
 }
 
-export const StatsBar: React.FC<StatsBarProps> = ({ numbers, monthName, isCurrentMonth }) => {
+export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, isCurrentMonth }) => {
   const stats = calcStats(numbers);
   if (!stats) return (
     <div className="text-sm text-slate-500">No data</div>
