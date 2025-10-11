@@ -34,6 +34,7 @@ function App() {
   const [monthData, setMonthData] = useState<Record<string, number[]>>({});
   const [yearData, setYearData] = useState<Record<string, number[]>>({});
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
+  const [monthChartGroup, setMonthChartGroup] = useState<'daily' | 'all'>(() => 'daily');
   const [chartGroup, setChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
   const [showWeekends, setShowWeekends] = useState(true);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -341,7 +342,21 @@ function App() {
             <div className="space-y-4">
               <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
-                  <div></div>
+                  <div className="flex gap-2">
+                    <ToggleGroup
+                      type="single"
+                      value={monthChartGroup}
+                      onValueChange={(v: string | null) => {
+                        if (v === 'daily' || v === 'all') setMonthChartGroup(v);
+                      }}
+                      size="sm"
+                      variant="outline"
+                      aria-label="Group Mode"
+                    >
+                      <ToggleGroupItem value="daily" aria-label="Daily">Daily</ToggleGroupItem>
+                      <ToggleGroupItem value="all" aria-label="All">All</ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
                   <ToggleGroup
                     type="single"
                     value={chartMode}
@@ -366,6 +381,7 @@ function App() {
                 <MonthChart
                   days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
                   mode={chartMode}
+                  group={monthChartGroup}
                 />
               </div>
             </div>

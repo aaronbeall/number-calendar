@@ -42,7 +42,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
   };
 
   return (
-    <div className={`rounded-lg ${bgClasses} ${bottomBorderClasses} shadow-md hover:shadow-lg transition-shadow`} aria-label="Monthly summary">
+    <div className={`rounded-lg ${bgClasses} ${bottomBorderClasses} shadow-lg`} aria-label="Monthly summary">
       <div className="w-full flex items-center justify-between gap-3 sm:gap-6 px-4 py-3">
         {/* Month Label - Header Style */}
         <div className="flex-shrink-0">
