@@ -80,29 +80,57 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
         <div className="text-center py-8 text-gray-500">No data to display</div>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis
-              dataKey="label"
-              tickFormatter={d => {
-                if (group === 'monthly') return d;
-                // For daily, show month abbreviation and day number (e.g. Jan 1, Jan 7, ...)
-                const parts = d.split('-');
-                const month = monthNames[parseInt(parts[1], 10) - 1];
-                const day = parseInt(parts[2], 10);
-                return `${month} ${day}`;
-              }}
-              fontSize={12}
-              minTickGap={20}
-            />
-            <YAxis fontSize={12} domain={['dataMin', 'dataMax']} />
-            <Tooltip labelFormatter={d => d} formatter={(value: number) => [value, mode === 'serial' ? 'Serial' : 'Cumulative']} />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-              {data.map((entry, idx) => (
-                <Cell key={`cell-${idx}`} fill={entry.value >= 0 ? '#10b981' : '#ef4444'} />
-              ))}
-            </Bar>
-          </BarChart>
+            <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis
+                dataKey="label"
+                tickFormatter={d => {
+                  if (group === 'monthly') return d;
+                  const parts = d.split('-');
+                  const month = monthNames[parseInt(parts[1], 10) - 1];
+                  const day = parseInt(parts[2], 10);
+                  return `${month} ${day}`;
+                }}
+                fontSize={12}
+                minTickGap={20}
+              />
+              <YAxis fontSize={12} domain={['dataMin', 'dataMax']} />
+              <Tooltip
+                cursor={{ fill: 'rgba(16,185,129,0.08)' }}
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const value = payload[0].value;
+                    if (typeof value !== 'number') return null;
+                    let color = '#10b981';
+                    if (value < 0) color = '#ef4444';
+                    if (value === 0) color = '#64748b';
+                    let formattedDate = '';
+                    if (group === 'monthly') {
+                      formattedDate = label;
+                    } else {
+                      // label is 'YYYY-MM-DD'
+                      const date = new Date(label);
+                      formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    }
+                    return (
+                      <div className="rounded-md bg-white px-3 py-2 shadow-lg border border-gray-200">
+                        <div className="text-xs text-gray-500 mb-1">{formattedDate}</div>
+                        <span style={{ color, fontWeight: 600, fontSize: 16 }}>{value}</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                {data.map((entry, idx) => {
+                  let color = '#10b981';
+                  if (entry.value < 0) color = '#ef4444';
+                  if (entry.value === 0) color = '#64748b';
+                  return <Cell key={`cell-${idx}`} fill={color} />;
+                })}
+              </Bar>
+            </BarChart>
         </ResponsiveContainer>
       )}
     </div>

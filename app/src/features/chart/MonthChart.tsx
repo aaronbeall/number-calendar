@@ -79,7 +79,6 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group }) => 
                 if (group === 'daily') {
                   return String(new Date(d).getDate());
                 } else {
-                  // For 'all' mode, show day number for each individual bar
                   const parts = d.split('-');
                   return String(new Date(parts.slice(0, 3).join('-')).getDate());
                 }
@@ -89,18 +88,36 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group }) => 
               fontSize={12} 
             />
             <YAxis fontSize={12} domain={['dataMin', 'dataMax']} />
-            <Tooltip 
-              labelFormatter={d => {
-                if (group === 'daily') {
-                  return d;
-                } else {
-                  const parts = d.split('-');
-                  const dateStr = parts.slice(0, 3).join('-');
-                  const numberIndex = parts[3];
-                  return `${dateStr} (Entry ${parseInt(numberIndex) + 1})`;
+            <Tooltip
+              cursor={{ fill: 'rgba(16,185,129,0.08)' }}
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  const value = payload[0].value;
+                  if (typeof value !== 'number') return null;
+                  let color = '#059669';
+                  if (value < 0) color = '#dc2626';
+                  if (value === 0) color = '#374151';
+                  let formattedDate = '';
+                  if (group === 'daily') {
+                    const date = new Date(label);
+                    formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                  } else {
+                    const parts = label.split('-');
+                    const dateStr = parts.slice(0, 3).join('-');
+                    const numberIndex = parts[3];
+                    const date = new Date(dateStr);
+                    const formatted = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                    formattedDate = `${formatted} • Entry ${parseInt(numberIndex) + 1}`;
+                  }
+                  return (
+                    <div className="rounded-md bg-white px-3 py-2 shadow-lg border border-gray-200">
+                      <div className="text-xs text-gray-500 mb-1">{formattedDate}</div>
+                      <span style={{ color, fontWeight: 600, fontSize: 16 }}>{value}</span>
+                    </div>
+                  );
                 }
-              }} 
-              formatter={(value: number) => [value, mode === 'serial' ? 'Serial' : 'Cumulative']} 
+                return null;
+              }}
             />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {data.map((entry, idx) => (
