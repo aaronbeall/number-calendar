@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Database, Trophy, Target, Plus, Download, Sparkles, Sun, Moon } from 'lucide-react';
+import LogoIcon from '../public/icon.svg?react';
 import { useState, useEffect } from 'react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
@@ -84,9 +85,9 @@ function App() {
 
   return (
   <div className="min-h-screen bg-white dark:bg-slate-900/80"> 
-      {/* Main App Header */}
-  <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-  <div className="max-w-4xl mx-auto px-4 py-4">
+    {/* Main App Header */}
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <DropdownMenu>
@@ -141,7 +142,7 @@ function App() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <img src="/icon.svg" alt="Numbers Go Up" className="w-10 h-10" />
+              <LogoIcon className="w-10 h-10" aria-label="Numbers Go Up" />
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
                   Numbers Go Up
