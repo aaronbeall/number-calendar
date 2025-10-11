@@ -40,12 +40,16 @@ function App() {
   const [monthChartGroup, setMonthChartGroup] = useState<'daily' | 'all'>(() => 'daily');
   const [chartGroup, setChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
   const [showWeekends, setShowWeekends] = useState(true);
-  const [panelOpen, setPanelOpen] = useState(false);
-  const [panelTitle, setPanelTitle] = useState('');
-  const [panelNumbers, setPanelNumbers] = useState<number[]>([]);
-  const [panelActionLabel, setActionLabel] = useState<string | undefined>(undefined);
-  const [panelAction, setAction] = useState<(() => void) | undefined>(undefined);
-  const [panelActionIcon, setActionIcon] = useState<React.ReactNode | undefined>(undefined);
+  const [panelProps, setPanelProps] = useState({
+    isOpen: false,
+    title: '',
+    numbers: [] as number[],
+    editableNumbers: false,
+    showExpressionInput: false,
+    actionLabel: undefined as string | undefined,
+    actionOnClick: undefined as (() => void) | undefined,
+    actionIcon: undefined as React.ReactNode | undefined,
+  });
 
   useEffect(() => {
     loadMonth(year, month).then(setMonthData);
@@ -411,17 +415,21 @@ function App() {
               year={year}
               yearData={yearData}
               onMonthClick={(monthNumber, monthName, numbers) => {
-                setPanelTitle(`${monthName} '${String(year).slice(-2)}`);
-                setPanelNumbers(numbers);
-                setAction(() => () => {
-                  setView('daily');
-                  setYear(year);
-                  setMonth(monthNumber);
-                  setPanelOpen(false);
+                setPanelProps({
+                  isOpen: true,
+                  title: `${monthName} '${String(year).slice(-2)}`,
+                  numbers,
+                  editableNumbers: false,
+                  showExpressionInput: false,
+                  actionLabel: 'Open daily view',
+                  actionOnClick: () => {
+                    setView('daily');
+                    setYear(year);
+                    setMonth(monthNumber);
+                    setPanelProps(prev => ({ ...prev, isOpen: false }));
+                  },
+                  actionIcon: <CalendarDays className="h-4 w-4" />,
                 });
-                setActionLabel('Open daily view');
-                setActionIcon(<CalendarDays className="h-4 w-4" />);
-                setPanelOpen(true);
               }}
             />
 
@@ -429,9 +437,16 @@ function App() {
             <div className="mt-8 mb-6">
               <div onClick={() => {
                 const allYearNumbers = Object.values(yearData).flat();
-                setPanelTitle(`${year} Year Summary`);
-                setPanelNumbers(allYearNumbers);
-                setPanelOpen(true);
+                setPanelProps({
+                  isOpen: true,
+                  title: `${year} Year Summary`,
+                  numbers: allYearNumbers,
+                  editableNumbers: false,
+                  showExpressionInput: false,
+                  actionLabel: undefined,
+                  actionOnClick: undefined,
+                  actionIcon: undefined,
+                });
               }} className="cursor-pointer">
                 <YearSummary 
                   numbers={Object.values(yearData).flat()} 
@@ -498,15 +513,8 @@ function App() {
         )}
       </div>
       <NumbersPanel
-        isOpen={panelOpen}
-        onClose={() => setPanelOpen(false)}
-        title={panelTitle}
-        numbers={panelNumbers}
-        editableNumbers={false}
-        showExpressionInput={false}
-        actionLabel={panelActionLabel}
-        actionOnClick={panelAction}
-        actionIcon={panelActionIcon}
+        {...panelProps}
+        onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   );
