@@ -307,9 +307,18 @@ function App() {
                 });
                 if (weekNumbers.length === 0) return null; // Only render if any data exists
                 
-                // Calculate week number based on the first date in the week that's in current month
-                const firstDateInMonth = datesInWeek.find(d => d.getMonth() === month - 1);
-                const weekNumber = firstDateInMonth ? Math.ceil(firstDateInMonth.getDate() / 7) : 1;
+                // Calculate week number: weeks start on Sunday, so week 1 is the week containing the 1st of the month, week 2 starts on the first Sunday after the 1st, etc.
+                const firstOfMonth = new Date(year, month - 1, 1);
+                const firstDayOfWeek = firstOfMonth.getDay(); // 0=Sun, 1=Mon, ...
+                const firstSunday = firstDayOfWeek === 0 ? 1 : 8 - firstDayOfWeek;
+                const datesInCurrentMonth = datesInWeek.filter(d => d.getMonth() === month - 1);
+                const minDate = datesInCurrentMonth.length > 0 ? Math.min(...datesInCurrentMonth.map(d => d.getDate())) : 1;
+                let weekNumber;
+                if (minDate < firstSunday) {
+                  weekNumber = 1;
+                } else {
+                  weekNumber = 1 + Math.floor((minDate - firstSunday) / 7) + 1;
+                }
                 
                 // Check if this week contains today
                 const today = new Date();
@@ -321,9 +330,16 @@ function App() {
                 
                 return (
                   <div onClick={() => {
-                    setPanelTitle(`Week ${weekNumber}`);
-                    setPanelNumbers(weekNumbers);
-                    setPanelOpen(true);
+                    setPanelProps({
+                      isOpen: true,
+                      title: `Week ${weekNumber}`,
+                      numbers: weekNumbers,
+                      editableNumbers: false,
+                      showExpressionInput: false,
+                      actionLabel: undefined,
+                      actionOnClick: undefined,
+                      actionIcon: undefined,
+                    });
                   }} className="cursor-pointer">
                     <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} />
                   </div>
@@ -344,13 +360,16 @@ function App() {
             {/* Monthly Stats Section */}
             <div className="mt-8 mb-6">
               <div onClick={() => {
-                setPanelTitle(`${monthNames[month - 1]}`);
-                setPanelNumbers(allNumbers);
-                // Clear any action since this is from daily view, not monthly view
-                setAction(undefined);
-                setActionLabel(undefined);
-                setActionIcon(undefined);
-                setPanelOpen(true);
+                setPanelProps({
+                  isOpen: true,
+                  title: `${monthNames[month - 1]}`,
+                  numbers: allNumbers,
+                  editableNumbers: false,
+                  showExpressionInput: false,
+                  actionLabel: undefined,
+                  actionOnClick: undefined,
+                  actionIcon: undefined,
+                });
               }} className="cursor-pointer">
               <MonthSummary 
                 numbers={allNumbers} 
