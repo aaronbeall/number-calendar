@@ -136,7 +136,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           )}
 
           <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-wrap gap-1 pr-2 flex-1 min-w-0 max-h-80 overflow-y-auto">
+            <div className="flex flex-wrap gap-1 pr-2 flex-1 min-w-0 max-h-80 overflow-y-auto p-2">
               {sortedItems.length > 0 ? (
                 sortedItems.map(({ value: n, index: originalIndex }) => (
                   <EditableNumberBadge
