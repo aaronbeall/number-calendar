@@ -61,11 +61,7 @@ export interface NumbersPanelProps {
   actionIcon?: React.ReactNode;
 }
 
-// Utility
-const buildExpressionFromNumbers = (nums: number[]) => {
-  if (!nums.length) return "";
-  return nums.reduce((acc, n, i) => (i === 0 ? `${n}` : `${acc}${n >= 0 ? "+" : ""}${n}`), "");
-};
+import { buildExpressionFromNumbers } from '@/lib/expression';
 
 export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   isOpen,

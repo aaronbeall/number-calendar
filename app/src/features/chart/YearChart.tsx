@@ -24,11 +24,6 @@ function groupByMonth(yearData: Record<string, number[]>): { month: number; numb
   return months;
 }
 
-// Helper to group data by day
-function groupByDay(yearData: Record<string, number[]>): { date: string; numbers: number[] }[] {
-  return Object.entries(yearData).map(([date, numbers]) => ({ date, numbers }));
-}
-
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, group }) => {

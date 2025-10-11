@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DayEditor } from './DayEditor';
+import { parseNumbers, buildExpressionFromNumbers } from '@/lib/expression';
 
 export interface DayCellProps {
   date: Date;
@@ -7,30 +8,14 @@ export interface DayCellProps {
   onSave: (numbers: number[]) => void;
 }
 
-function parseNumbers(input: string): number[] {
-  if (!input.trim()) return [];
-  return input
-    .replace(/\s+/g, '')
-    .split(/(?=[+-])/) // split at + or -
-    .map(Number)
-    .filter(n => !isNaN(n));
-}
-
-function buildExpressionFromNumbers(nums: number[]): string {
-  if (!nums.length) return '';
-  return nums.reduce((acc, n, i) => (i === 0 ? `${n}` : `${acc}${n >= 0 ? '+' : ''}${n}`), '');
-}
-
 export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const [editMode, setEditMode] = useState(false);
   const [input, setInput] = useState(buildExpressionFromNumbers(numbers));
-  const [originalExpression, setOriginalExpression] = useState(buildExpressionFromNumbers(numbers));
 
   // Update input when numbers prop changes (external updates)
   React.useEffect(() => {
     const expression = buildExpressionFromNumbers(numbers);
     setInput(expression);
-    setOriginalExpression(expression);
   }, [numbers]);
 
   const handleSave = () => {
@@ -38,17 +23,11 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
     onSave(parsed);
   };
 
-  const handleCancel = () => {
-    setInput(originalExpression);
-    setEditMode(false);
-  };
-
-  const hasChanges = input !== originalExpression;
   const currentNumbers = parseNumbers(input);
 
   const isToday = date.toDateString() === new Date().toDateString();
 
-  const total = numbers.reduce((a, b) => a + b, 0);
+  const total = numbers.reduce((a: number, b: number) => a + b, 0);
   const count = numbers.length;
   const hasData = count > 0;
   const isPast = date < new Date(new Date().toDateString());
@@ -71,6 +50,9 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
     bgColor = isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900';
   }
 
+  function handleCancel(): void {
+    setEditMode(false);
+  }
   return (
     <div className="relative h-full">
       <div
@@ -113,8 +95,6 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
           input={input}
           onInputChange={setInput}
           onSave={handleSave}
-          onCancel={handleCancel}
-          hasChanges={hasChanges}
           currentNumbers={currentNumbers}
         />
       </div>
