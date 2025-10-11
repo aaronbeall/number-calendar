@@ -39,8 +39,8 @@
       <feMergeNode in="SourceGraphic"/>
     </feMerge>
   </filter>
-  <!-- Glow shape above arrow -->
-  <ellipse cx="32" cy="20" rx="14" ry="8" fill="url(#arrowTopGlow)" style="mix-blend-mode:overlay;" filter="url(#arrowGlowFilter)"/>
+  <!-- Glow shape above arrow (larger reflection) -->
+  <ellipse cx="32" cy="18" rx="22" ry="12" fill="url(#arrowTopGlow)" style="mix-blend-mode:overlay;" filter="url(#arrowGlowFilter)"/>
   <!-- Large upward arrow with top glow effect -->
   <path d="M 32 16 L 20 28 L 26 28 L 26 48 L 38 48 L 38 28 L 44 28 Z" fill="#fff" stroke="#fff" stroke-width="1.5"/>
 </svg>
