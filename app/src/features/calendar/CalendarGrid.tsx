@@ -61,7 +61,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
   }
   
   return (
-    <div className="space-y-4">
+    <>
       {/* Weekday headers */}
       <div className={`grid gap-2 px-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
         {weekdays.map(day => (
@@ -78,9 +78,7 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
             {week.map((date, di) => (
               <div
                 key={date ? date.toISOString() : `empty-${wi}-${di}`}
-                className={`min-h-[90px] bg-white border border-slate-100 shadow-sm hover:shadow-md rounded-lg transition-all duration-200 ${
-                  date ? '' : 'invisible'
-                }`}
+                className={date ? 'transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl' : 'invisible'}
               >
                 {date ? renderDay(date) : null}
               </div>
@@ -97,6 +95,6 @@ export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderD
           </React.Fragment>
         ))}
       </div>
-    </div>
+    </>
   );
 };

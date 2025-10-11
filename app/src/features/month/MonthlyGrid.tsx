@@ -31,24 +31,30 @@ export function MonthlyGrid({ year, yearData, onMonthClick }: MonthlyGridProps) 
   const isFutureYear = year > currentDate.getFullYear();
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-      {monthNames.map((monthName, index) => {
-        const monthNumber = index + 1;
-        const monthNumbers = getMonthNumbers(monthNumber);
-        const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
-        const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
+    <>
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+        {monthNames.map((monthName, index) => {
+          const monthNumber = index + 1;
+          const monthNumbers = getMonthNumbers(monthNumber);
+          const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
+          const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
 
-        return (
-          <MonthCell
-            key={monthNumber}
-            monthName={monthName}
-            numbers={monthNumbers}
-            isCurrentMonth={isCurrentMonth}
-            isFutureMonth={isFutureMonth}
-            onClick={() => onMonthClick(monthNumber, monthName, monthNumbers)}
-          />
-        );
-      })}
-    </div>
+          return (
+            <div
+              key={monthNumber}
+              className="transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl"
+            >
+              <MonthCell
+                monthName={monthName}
+                numbers={monthNumbers}
+                isCurrentMonth={isCurrentMonth}
+                isFutureMonth={isFutureMonth}
+                onClick={() => onMonthClick(monthNumber, monthName, monthNumbers)}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }

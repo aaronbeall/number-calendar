@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Database, Trophy, Target, Plus, ChevronRight as ChevronRightIcon, Download, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Database, Trophy, Target, Plus, ChevronRight as ChevronRightIcon, Download, Sparkles, Sun, Moon } from 'lucide-react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
@@ -27,7 +27,10 @@ function getMonthDays(year: number, month: number) {
   return days;
 }
 
+import { useTheme } from './components/ThemeProvider';
+
 function App() {
+  const { theme, setTheme } = useTheme();
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -76,10 +79,10 @@ function App() {
     "July", "August", "September", "October", "November", "December"];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+  <div className="min-h-screen bg-white dark:bg-slate-900/80"> 
       {/* Main App Header */}
-      <header className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+  <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+  <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <DropdownMenu>
@@ -94,9 +97,9 @@ function App() {
                   </DropdownMenuLabel>
                   {/* Current dataset with submenu for others and new */}
                   <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md mx-1 mb-1">
-                      <Database className="h-4 w-4 text-blue-600" />
-                      <span className="font-semibold text-blue-900">Personal Tracking</span>
+                    <DropdownMenuSubTrigger className="gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md mx-1 mb-1 hover:from-blue-100 hover:to-indigo-100 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
+                      <Database className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                      <span className="font-semibold text-blue-900 dark:text-blue-200">Personal Tracking</span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Other Datasets</DropdownMenuLabel>
@@ -119,9 +122,9 @@ function App() {
                     <Target className="h-4 w-4" />
                     Milestones
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1">
-                    <Sparkles className="h-4 w-4 text-purple-600" />
-                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent font-semibold">AI Insights</span>
+                  <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
+                    <Sparkles className="h-4 w-4 text-purple-600 dark:text-pink-300" />
+                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-pink-700 dark:to-purple-700 bg-clip-text text-transparent font-semibold">AI Insights</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="gap-2">
@@ -144,10 +147,22 @@ function App() {
             </div>
             
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-label="Toggle light/dark mode"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              >
+                {theme === 'dark' ? (
+                  <Moon className="h-4 w-4 text-blue-500" />
+                ) : (
+                  <Sun className="h-4 w-4 text-yellow-400" />
+                )}
+              </Button>
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <Settings className="h-4 w-4" />
               </Button>
-              
               <Button variant="ghost" size="icon" className="h-8 w-8">
                 <User className="h-4 w-4" />
               </Button>
@@ -157,8 +172,8 @@ function App() {
       </header>
 
       {/* Navigation Header */}
-      <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 border-b border-slate-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-3">
+  <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+  <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center gap-4">
             {/* View Toggle */}
             <ToggleGroup
@@ -173,11 +188,11 @@ function App() {
             >
               <ToggleGroupItem value="daily" aria-label="Daily View">
                 <CalendarDays className="h-4 w-4 mr-1" />
-                Daily
+        <span>Daily</span>
               </ToggleGroupItem>
               <ToggleGroupItem value="monthly" aria-label="Monthly View">
                 <Grid3X3 className="h-4 w-4 mr-1" />
-                Monthly
+        <span>Monthly</span>
               </ToggleGroupItem>
             </ToggleGroup>
             
@@ -189,10 +204,10 @@ function App() {
                 setYear(today.getFullYear()); 
                 setMonth(today.getMonth() + 1); 
               }}
-              className="gap-1 h-8"
+              className="gap-1 h-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              <Calendar className="h-3 w-3" />
-              Today
+              <Calendar className="h-3 w-3 text-slate-700 dark:text-blue-300" />
+              <span className="text-slate-700 dark:text-blue-300">Today</span>
             </Button>
             
             {/* Date Navigation */}
@@ -212,9 +227,9 @@ function App() {
                     setYear(y => y - 1);
                   }
                 }}
-                className="h-8 w-8"
+                className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-4 w-4 text-slate-700 dark:text-blue-300" />
               </Button>
               
               <Button 
@@ -232,15 +247,17 @@ function App() {
                     setYear(y => y + 1);
                   }
                 }}
-                className="h-8 w-8"
+                className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4 text-slate-700 dark:text-blue-300" />
               </Button>
             </div>
             
             {/* Current Month/Year */}
             <div className="text-lg font-semibold text-slate-700">
-              {view === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
+              <span className="text-slate-700 dark:text-blue-200">
+                {view === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
+              </span>
             </div>
             
             {/* Weekend Toggle (Daily view only) */}
@@ -251,10 +268,10 @@ function App() {
                 onClick={() => setShowWeekends(v => !v)}
                 aria-pressed={showWeekends}
                 title={showWeekends ? "Hide weekends" : "Show weekends"}
-                className="gap-1 h-8"
+                className="gap-1 h-8 text-slate-700 dark:text-slate-200"
               >
-                <CalendarOff className={`h-4 w-4 ${showWeekends ? "text-slate-400" : "text-blue-500"}`} />
-                {showWeekends ? "Hide weekends" : "Show weekends"}
+                <CalendarOff className={`h-4 w-4 ${showWeekends ? "text-slate-400 dark:text-slate-500" : "text-blue-500 dark:text-blue-300"}`} />
+                <span className="text-slate-700 dark:text-blue-300">{showWeekends ? "Hide weekends" : "Show weekends"}</span>
               </Button>
             )}
           </div>
@@ -341,7 +358,7 @@ function App() {
 
             {/* Chart Section */}
             <div className="space-y-4">
-              <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-900/60 p-6 shadow-lg dark:shadow-xl hover:shadow-xl dark:hover:shadow-2xl transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex gap-2">
                     <ToggleGroup
@@ -354,8 +371,8 @@ function App() {
                       variant="outline"
                       aria-label="Group Mode"
                     >
-                      <ToggleGroupItem value="daily" aria-label="Daily">Daily</ToggleGroupItem>
-                      <ToggleGroupItem value="all" aria-label="All">All</ToggleGroupItem>
+                      <ToggleGroupItem value="daily" aria-label="Daily"><span>Daily</span></ToggleGroupItem>
+                      <ToggleGroupItem value="all" aria-label="All"><span>All</span></ToggleGroupItem>
                     </ToggleGroup>
                   </div>
                   <ToggleGroup
@@ -369,13 +386,13 @@ function App() {
                     variant="outline"
                     aria-label="Chart Mode"
                   >
-                    <ToggleGroupItem value="serial" aria-label="Serial">
-                      <BarChartIcon className="size-4 mr-1" />
-                      <span className="hidden sm:inline">Serial</span>
+                      <ToggleGroupItem value="serial" aria-label="Serial">
+                        <BarChartIcon className="size-4 mr-1" />
+                        <span className="hidden sm:inline">Serial</span>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="cumulative" aria-label="Cumulative">
-                      <LineChartIcon className="size-4 mr-1" />
-                      <span className="hidden sm:inline">Cumulative</span>
+                      <ToggleGroupItem value="cumulative" aria-label="Cumulative">
+                        <LineChartIcon className="size-4 mr-1" />
+                        <span className="hidden sm:inline">Cumulative</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
@@ -426,7 +443,7 @@ function App() {
 
             {/* Year Chart Section */}
             <div className="space-y-4 mb-6">
-              <div className="rounded-lg border bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
+              <div className="rounded-lg bg-slate-50 dark:bg-slate-900/60 p-6 shadow-lg dark:shadow-xl hover:shadow-xl dark:hover:shadow-2xl transition-shadow">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex gap-2">
                     <ToggleGroup
@@ -441,10 +458,10 @@ function App() {
                       aria-label="Chart Group"
                     >
                       <ToggleGroupItem value="daily" aria-label="Daily">
-                        Daily
+                        <span>Daily</span>
                       </ToggleGroupItem>
                       <ToggleGroupItem value="monthly" aria-label="Monthly">
-                        Monthly
+                        <span>Monthly</span>
                       </ToggleGroupItem>
                     </ToggleGroup>
                   </div>

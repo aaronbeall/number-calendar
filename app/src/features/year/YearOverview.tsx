@@ -27,15 +27,15 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
     const isFuture = date > today;
     
     if (isFuture) {
-      return 'bg-slate-200'; // Future days - faded
+      return 'bg-slate-200 dark:bg-slate-700/40'; // Future days - faded
     } else if (numbers.length === 0) {
-      return 'bg-slate-400'; // No data - gray
+      return 'bg-slate-400 dark:bg-slate-700/40'; // No data - gray
     } else if (total > 0) {
-      return 'bg-green-500'; // Positive - green
+      return 'bg-green-500 dark:bg-green-800/40'; // Positive - green
     } else if (total < 0) {
-      return 'bg-red-500'; // Negative - red
+      return 'bg-red-500 dark:bg-red-800/40'; // Negative - red
     } else {
-      return 'bg-slate-400'; // Zero total - gray
+      return 'bg-slate-400 dark:bg-slate-700/40'; // Zero total - gray
     }
   };
 
@@ -47,7 +47,6 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month - 1, day);
       const color = getDayColor(date);
-      
       days.push(
         <div
           key={day}
@@ -88,11 +87,11 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
       <div
         key={month}
         className={`flex flex-col items-center space-y-1 cursor-pointer transition-all duration-200 p-2
-          ${isCurrentMonth ? 'ring-2 ring-blue-500 ring-offset-1 rounded-lg' : ''}
-          hover:bg-slate-100 hover:shadow-sm hover:scale-105 rounded-lg`}
+          ${isCurrentMonth ? 'ring-2 ring-blue-400/80 ring-offset-1 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900 rounded-lg' : ''}
+          hover:bg-slate-100 dark:hover:bg-slate-900 hover:shadow-sm dark:hover:shadow-md hover:scale-105 rounded-lg`}
         onClick={() => onMonthClick(month)}
       >
-        <div className={`text-xs font-medium ${isCurrentMonth ? 'text-blue-600 font-semibold' : 'text-slate-600'}`}>
+        <div className={`text-xs font-medium ${isCurrentMonth ? 'text-blue-700 dark:text-blue-300 font-semibold' : 'text-slate-600 dark:text-slate-300'}`}>
           {monthNames[month - 1]}
         </div>
         <div className="grid grid-cols-7 gap-0.5 w-fit">
@@ -103,7 +102,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-lg p-4 mb-6 shadow-sm">
+  <div className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-6 shadow-sm dark:shadow-md">
       <div className="grid grid-cols-12 gap-2 justify-items-center">
         {Array.from({ length: 12 }, (_, i) => renderMonth(i + 1))}
       </div>

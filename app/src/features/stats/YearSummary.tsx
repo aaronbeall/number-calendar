@@ -20,33 +20,33 @@ export function YearSummary({ numbers, yearName, isCurrentYear }: YearSummaryPro
 
   // Color classes for background
   const bgClasses = isCurrentYear 
-    ? 'bg-gradient-to-r from-white to-blue-50' 
-    : 'bg-white';
+    ? 'bg-gradient-to-r from-white to-blue-50 dark:from-[#232a26] dark:to-[#1a3a2a]' 
+    : 'bg-white dark:bg-[#232a26]';
 
   // Color classes for bottom border
   const bottomBorderClasses = stats.total > 0
-    ? 'border-b-4 border-green-400'
+    ? 'border-b-4 border-green-400 dark:border-green-700'
     : stats.total < 0
-    ? 'border-b-4 border-red-400'
-    : 'border-b-4 border-slate-400';
+    ? 'border-b-4 border-red-400 dark:border-red-700'
+    : 'border-b-4 border-slate-400 dark:border-slate-600';
 
   return (
-    <div className={`${bgClasses} ${bottomBorderClasses} rounded-lg shadow-lg p-6`}>
-      <div className="flex items-center justify-between gap-4">
+  <div className={`${bgClasses} ${bottomBorderClasses} rounded-lg shadow-lg dark:shadow-xl p-6`}>
+  <div className="flex items-center justify-between gap-4">
         {/* Left: Year name and entries */}
         <div className="flex items-center gap-3">
           <div className={`p-3 rounded-full ${
             stats.total > 0 
-              ? 'bg-green-100 text-green-600' 
+              ? 'bg-green-100 dark:bg-[#1a3a2a] text-green-600 dark:text-green-200' 
               : stats.total < 0
-              ? 'bg-red-100 text-red-600'
-              : 'bg-slate-100 text-slate-600'
+              ? 'bg-red-100 dark:bg-[#3a1a1a] text-red-600 dark:text-red-200'
+              : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
           }`}>
             <IconComponent className="h-5 w-5" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-slate-700">{yearName}</h3>
-            <p className="text-xs text-slate-500">{stats.count} entries</p>
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">{yearName}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.count} entries</p>
           </div>
         </div>
 
@@ -87,12 +87,12 @@ export function YearSummary({ numbers, yearName, isCurrentYear }: YearSummaryPro
           {/* Total (most prominent, right-most, own container) */}
           <div className={`flex items-center gap-3 px-5 py-4 rounded-lg font-mono font-black shadow-lg ${
             stats.total > 0
-              ? 'bg-green-200 text-green-700 shadow-green-200/50'
+              ? 'bg-green-200 dark:bg-[#1a3a2a] text-green-700 dark:text-green-200 shadow-green-200/50 dark:shadow-green-900/30'
               : stats.total < 0
-              ? 'bg-red-200 text-red-700 shadow-red-200/50'
-              : 'bg-slate-300 text-slate-700 shadow-slate-200/50'
+              ? 'bg-red-200 dark:bg-[#3a1a1a] text-red-700 dark:text-red-200 shadow-red-200/50 dark:shadow-red-900/30'
+              : 'bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-slate-200/50 dark:shadow-slate-900/30'
           }`}>
-            <div className="text-[11px] uppercase tracking-wide text-slate-600 font-bold">Total</div>
+            <div className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-400 font-bold">Total</div>
             <div className={`text-2xl sm:text-3xl font-black tracking-tight`}>{stats.total}</div>
           </div>
         </div>

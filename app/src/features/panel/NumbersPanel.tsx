@@ -245,55 +245,47 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           </div>
 
           {stats && stats.count > 0 && (
-            <div className="bg-slate-50 rounded-lg p-4 space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-4">
               {/* Centered Total with colored box */}
               <div className="flex justify-center">
-                <div className={`rounded-lg p-4 text-center shadow-sm ${
+                <div className={`rounded-lg p-4 text-center shadow-sm border font-mono text-xl font-bold ${
                   stats.total > 0 
-                    ? 'bg-green-100 border border-green-200' 
+                    ? 'bg-green-100 dark:bg-green-950/60 border-green-200 dark:border-green-900 text-green-600 dark:text-green-300' 
                     : stats.total < 0 
-                      ? 'bg-red-100 border border-red-200'
-                      : 'bg-slate-100 border border-slate-200'
+                      ? 'bg-red-100 dark:bg-red-950/60 border-red-200 dark:border-red-900 text-red-600 dark:text-red-300'
+                      : 'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                 }`}>
-                  <div className="text-slate-600 text-sm font-medium mb-2">Total</div>
-                  <div className={`font-mono text-xl font-bold ${
-                    stats.total > 0 
-                      ? 'text-green-600' 
-                      : stats.total < 0 
-                        ? 'text-red-600'
-                        : 'text-slate-600'
-                  }`}>
-                    {stats.total}
-                  </div>
+                  <div className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">Total</div>
+                  {stats.total}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
-                  <div className="text-slate-500 text-xs mb-1">Mean</div>
+                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Mean</div>
                   <div className={`font-mono text-sm font-semibold ${
-                    stats.mean > 0 ? 'text-green-600' : stats.mean < 0 ? 'text-red-600' : 'text-slate-600'
+                    stats.mean > 0 ? 'text-green-600 dark:text-green-300' : stats.mean < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>{stats.mean.toFixed(1)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-slate-500 text-xs mb-1">Median</div>
+                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Median</div>
                   <div className={`font-mono text-sm font-semibold ${
-                    stats.median > 0 ? 'text-green-600' : stats.median < 0 ? 'text-red-600' : 'text-slate-600'
+                    stats.median > 0 ? 'text-green-600 dark:text-green-300' : stats.median < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>{stats.median}</div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
-                  <div className="text-slate-500 text-xs mb-1">Min</div>
+                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Min</div>
                   <div className={`font-mono text-sm font-semibold ${
-                    stats.min > 0 ? 'text-green-600' : stats.min < 0 ? 'text-red-600' : 'text-slate-600'
+                    stats.min > 0 ? 'text-green-600 dark:text-green-300' : stats.min < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>{stats.min}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-slate-500 text-xs mb-1">Max</div>
+                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Max</div>
                   <div className={`font-mono text-sm font-semibold ${
-                    stats.max > 0 ? 'text-green-600' : stats.max < 0 ? 'text-red-600' : 'text-slate-600'
+                    stats.max > 0 ? 'text-green-600 dark:text-green-300' : stats.max < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>{stats.max}</div>
                 </div>
               </div>

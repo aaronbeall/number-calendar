@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 export type YearChartMode = 'serial' | 'cumulative';
@@ -74,14 +75,18 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
     });
   }
 
+  const { theme } = useTheme();
+  const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const axisColor = isDark ? '#64748b' : '#334155';
+  const gridColor = isDark ? '#334155' : '#e5e7eb'; // slate-200 for light mode
   return (
-    <div className="w-full h-48">
+    <div className="w-full h-48 bg-white dark:bg-slate-900 rounded-lg shadow-sm dark:shadow-md">
       {data.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No data to display</div>
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">No data to display</div>
       ) : (
         <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
               <XAxis
                 dataKey="label"
                 tickFormatter={d => {
@@ -93,8 +98,10 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
                 }}
                 fontSize={12}
                 minTickGap={20}
+                stroke={axisColor}
+                tick={{ fill: axisColor }}
               />
-              <YAxis fontSize={12} domain={['dataMin', 'dataMax']} />
+              <YAxis fontSize={12} domain={['dataMin', 'dataMax']} stroke={axisColor} tick={{ fill: axisColor }} />
               <Tooltip
                 cursor={{ fill: 'rgba(16,185,129,0.08)' }}
                 content={({ active, payload, label }) => {
@@ -113,8 +120,8 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
                       formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                     }
                     return (
-                      <div className="rounded-md bg-white px-3 py-2 shadow-lg border border-gray-200">
-                        <div className="text-xs text-gray-500 mb-1">{formattedDate}</div>
+                      <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{formattedDate}</div>
                         <span style={{ color, fontWeight: 600, fontSize: 16 }}>{value}</span>
                       </div>
                     );
