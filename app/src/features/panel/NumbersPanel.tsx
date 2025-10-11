@@ -5,8 +5,7 @@ import { Sheet, SheetHeader, SheetTitle, SheetContent } from '@/components/ui/sh
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { computeNumberStats } from '@/lib/stats';
-
-// Custom SheetContent without overlay (Escape disabled)
+import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -15,16 +14,13 @@ export interface NumbersPanelProps {
   numbers: number[];
   editableNumbers?: boolean; // default false
   showExpressionInput?: boolean; // default false
-  expression?: string;
-  onExpressionChange?: (value: string) => void;
-  onSave?: () => void;
+  onSave?: (numbers: number[]) => void;
   // Optional action button displayed in the header (right side)
   actionLabel?: string;
   actionOnClick?: () => void;
   actionIcon?: React.ReactNode;
 }
 
-import { buildExpressionFromNumbers } from '@/lib/expression';
 
 export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   isOpen,
@@ -33,28 +29,33 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   numbers,
   editableNumbers = false,
   showExpressionInput = false,
-  expression,
-  onExpressionChange,
   onSave,
   actionLabel,
   actionOnClick,
   actionIcon,
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
-  const [originalExpression, setOriginalExpression] = React.useState<string>('');
 
-  // Update original expression when expression prop changes
+
+  // Local state for the expression input, initialized from numbers
+  const [expression, setExpression] = React.useState<string>(buildExpressionFromNumbers(numbers));
+
+  // Derive parsedNumbers from expression
+  const parsedNumbers = React.useMemo(() => parseExpression(expression), [expression]);
+
+  // Update expression when numbers change
   React.useEffect(() => {
-    if (expression !== undefined) {
-      setOriginalExpression(expression);
-    }
-  }, [expression]);
+    setExpression(buildExpressionFromNumbers(numbers));
+  }, [numbers]);
+
+  // Use parsedNumbers if available, otherwise fallback to numbers
+  const displayNumbers = parsedNumbers !== null ? parsedNumbers : numbers;
 
   // Stats computed via util
-  const stats = React.useMemo(() => computeNumberStats(numbers), [numbers]);
+  const stats = React.useMemo(() => computeNumberStats(displayNumbers), [displayNumbers]);
 
   // Prepare items with original indices for stable mapping when sorting
-  const items = React.useMemo(() => numbers.map((value, index) => ({ value, index })), [numbers]);
+  const items = React.useMemo(() => displayNumbers.map((value, index) => ({ value, index })), [displayNumbers]);
   const sortedItems = React.useMemo(() => {
     if (sortMode === 'original') return items;
     const arr = [...items];
@@ -66,42 +67,20 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     return arr;
   }, [items, sortMode]);
 
-  // Simple expression parser - returns null if invalid, empty array if blank
-  const parseExpression = (expr: string): number[] | null => {
-    if (!expr.trim()) return []; // blank = delete
-    
-    try {
-      // Simple math expression evaluation
-      const result = Function(`"use strict"; return (${expr})`)();
-      if (typeof result === 'number' && !isNaN(result)) {
-        return [result];
+  const handleExpressionSave = (value: string) => {
+    const inputNumbers = parseExpression(value);
+    if (inputNumbers !== null) {
+      // Only save if inputNumbers differs from numbers
+      const isDifferent = inputNumbers.length !== numbers.length || inputNumbers.some((n, i) => n !== numbers[i]);
+      if (isDifferent) {
+        onSave?.(inputNumbers);
+      } else {
+        // Revert expression to current numbers
+        setExpression(buildExpressionFromNumbers(numbers));
       }
-      
-      // Try parsing as comma/space separated numbers
-      const numbers = expr.split(/[,\s]+/)
-        .map(s => s.trim())
-        .filter(s => s.length > 0)
-        .map(s => parseFloat(s));
-      
-      if (numbers.every(n => !isNaN(n))) {
-        return numbers;
-      }
-      
-      return null; // invalid
-    } catch {
-      return null; // invalid
-    }
-  };
-
-  const handleExpressionSave = (expr: string) => {
-    const parsed = parseExpression(expr);
-    if (parsed !== null) {
-      // Valid expression - save it
-      onSave && onSave();
-      setOriginalExpression(expr);
     } else {
-      // Invalid expression - revert to original
-      onExpressionChange && onExpressionChange(originalExpression);
+      // Invalid expression - revert to current numbers
+      setExpression(buildExpressionFromNumbers(numbers));
     }
   };
 
@@ -111,7 +90,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
-      <SheetContent className="w-full max-w-md">
+      <SheetContent className="w-full max-w-md" disableEscapeClose>
         <SheetHeader>
           <div className="flex items-center justify-between gap-3 pr-8">
             <div>
@@ -135,20 +114,22 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           {showExpressionInput && (
             <Input
               value={expression}
-              onChange={e => onExpressionChange && onExpressionChange(e.target.value)}
-              onBlur={() => handleExpressionSave(expression || '')}
+              onChange={e => {
+                setExpression(e.target.value);
+              }}
+              onBlur={e => handleExpressionSave(e.target.value)}
               placeholder="Example: 1+2-5"
               className="text-sm border-blue-300 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
               autoFocus
               onKeyDown={e => {
                 if (e.key === 'Enter') {
                   e.currentTarget.blur(); // Trigger onBlur which will save
-                  e.preventDefault(); // Prevent any form submission or panel closing
                 }
                 if (e.key === 'Escape') {
-                  onExpressionChange && onExpressionChange(originalExpression);
+                  const originalExpr = buildExpressionFromNumbers(numbers);
+                  setExpression(originalExpr);
+                  (e.target as HTMLInputElement).value = originalExpr;
                   e.currentTarget.blur();
-                  e.preventDefault(); // Prevent panel from closing
                 }
               }}
             />
@@ -163,15 +144,16 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     value={n}
                     editable={!!editableNumbers}
                     onCommit={editableNumbers ? (next) => {
-                      if (!onExpressionChange) return;
+                      // Removed: onExpressionChange reference
                       let nextNumbers: number[];
                       if (next === null) {
                         nextNumbers = numbers.filter((_, idx) => idx !== originalIndex);
                       } else {
                         nextNumbers = numbers.map((val, idx) => (idx === originalIndex ? next : val));
                       }
-                      const expr = buildExpressionFromNumbers(nextNumbers);
-                      onExpressionChange(expr);
+                      // Removed: expr variable, now handled by setExpression
+                      onSave?.(nextNumbers);
+                      setExpression(buildExpressionFromNumbers(nextNumbers));
                     } : undefined}
                   />
                 ))

@@ -45,13 +45,15 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
     cancel();
   };
 
-  const neutralClasses = 'bg-slate-500 text-white border-slate-600';
-  const positiveClasses = 'bg-green-500 text-white border-green-600';
-  const negativeClasses = 'bg-red-500 text-white border-red-600';
 
-  const neutralHover = 'hover:bg-slate-600 hover:border-slate-700';
-  const positiveHover = 'hover:bg-green-600 hover:border-green-700';
-  const negativeHover = 'hover:bg-red-600 hover:border-red-700';
+  // Color classes for light/dark mode
+  const neutralClasses = 'bg-slate-500 text-white border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:border-slate-500';
+  const positiveClasses = 'bg-green-500 text-white border-green-600 dark:bg-green-700 dark:text-green-100 dark:border-green-500';
+  const negativeClasses = 'bg-red-500 text-white border-red-600 dark:bg-red-700 dark:text-red-100 dark:border-red-500';
+
+  const neutralHover = 'hover:bg-slate-600 hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:border-slate-400';
+  const positiveHover = 'hover:bg-green-600 hover:border-green-700 dark:hover:bg-green-800 dark:hover:border-green-400';
+  const negativeHover = 'hover:bg-red-600 hover:border-red-700 dark:hover:bg-red-800 dark:hover:border-red-400';
 
   const displayClasses =
     value > 0 ? positiveClasses : value < 0 ? negativeClasses : neutralClasses;
@@ -80,7 +82,7 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
             commit();
           }
         }}
-        className={`h-6 px-2 py-0.5 text-xs font-mono w-20 ${computeEditClasses()} border`}
+  className={`h-6 px-2 py-0.5 text-xs font-mono w-20 ${computeEditClasses()} border transition-colors`}
         aria-label={`Edit number`}
       />
     );

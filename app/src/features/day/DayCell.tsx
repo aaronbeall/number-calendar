@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { DayEditor } from './DayEditor';
-import { parseNumbers, buildExpressionFromNumbers } from '@/lib/expression';
+import { NumbersPanel } from '../panel/NumbersPanel';
 
 export interface DayCellProps {
   date: Date;
@@ -10,20 +9,6 @@ export interface DayCellProps {
 
 export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   const [editMode, setEditMode] = useState(false);
-  const [input, setInput] = useState(buildExpressionFromNumbers(numbers));
-
-  // Update input when numbers prop changes (external updates)
-  React.useEffect(() => {
-    const expression = buildExpressionFromNumbers(numbers);
-    setInput(expression);
-  }, [numbers]);
-
-  const handleSave = () => {
-    const parsed = parseNumbers(input);
-    onSave(parsed);
-  };
-
-  const currentNumbers = parseNumbers(input);
 
   const isToday = date.toDateString() === new Date().toDateString();
 
@@ -88,14 +73,14 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
           </div>
         )}
       </div>
-      <DayEditor
-        date={date}
+      <NumbersPanel
         isOpen={editMode}
         onClose={handleClose}
-        input={input}
-        onInputChange={setInput}
-        onSave={handleSave}
-        currentNumbers={currentNumbers}
+        title={date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+        numbers={numbers}
+        editableNumbers
+        showExpressionInput
+        onSave={onSave}
       />
     </div>
   );
