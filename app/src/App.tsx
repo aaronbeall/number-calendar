@@ -99,6 +99,7 @@ function App() {
                       <span className="font-semibold text-blue-900">Personal Tracking</span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
+                      <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Other Datasets</DropdownMenuLabel>
                       <DropdownMenuItem>Work Goals</DropdownMenuItem>
                       <DropdownMenuItem>Fitness Journey</DropdownMenuItem>
                       <DropdownMenuItem>Study Progress</DropdownMenuItem>
