@@ -1,49 +1,12 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetHeader, SheetTitle, SheetPortal } from '@/components/ui/sheet';
-import * as SheetPrimitive from "@radix-ui/react-dialog";
-import { cn } from "@/lib/utils";
-import { X, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Sheet, SheetHeader, SheetTitle, SheetContent } from '@/components/ui/sheet';
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { computeNumberStats } from '@/lib/stats';
 
 // Custom SheetContent without overlay (Escape disabled)
-const SheetContentNoOverlay = React.forwardRef<
-  React.ElementRef<typeof SheetPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content> & {
-    side?: "top" | "right" | "bottom" | "left";
-  }
->(({ side = "right", className, children, ...props }, ref) => {
-  const sheetVariants = cn(
-    "fixed z-50 gap-4 bg-white p-6 shadow-lg transition ease-in-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:duration-500 dark:bg-slate-950",
-    side === "right" && "inset-y-0 right-0 h-full w-3/4 border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",
-    className
-  );
-
-  return (
-    <SheetPortal>
-      {/* Invisible overlay that allows pointer events through */}
-      <div className="fixed inset-0 z-40 pointer-events-none" />
-      <SheetPrimitive.Content
-        ref={ref}
-        className={sheetVariants}
-        onEscapeKeyDown={(e) => {
-          // Prevent Radix Dialog from closing the sheet on Escape
-          e.preventDefault();
-        }}
-        {...props}
-      >
-        {children}
-        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-slate-100 dark:ring-offset-slate-950 dark:focus:ring-slate-300 dark:data-[state=open]:bg-slate-800">
-          <X className="h-4 w-4" />
-          <span className="sr-only">Close</span>
-        </SheetPrimitive.Close>
-      </SheetPrimitive.Content>
-    </SheetPortal>
-  );
-});
-SheetContentNoOverlay.displayName = "SheetContentNoOverlay";
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -148,7 +111,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
-      <SheetContentNoOverlay className="w-full max-w-md">
+      <SheetContent className="w-full max-w-md">
         <SheetHeader>
           <div className="flex items-center justify-between gap-3 pr-8">
             <div>
@@ -288,7 +251,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             </div>
           )}
         </div>
-      </SheetContentNoOverlay>
+  </SheetContent>
     </Sheet>
   );
 };

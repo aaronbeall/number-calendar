@@ -50,7 +50,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
     bgColor = isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900';
   }
 
-  function handleCancel(): void {
+  function handleClose(): void {
     setEditMode(false);
   }
   return (
@@ -87,17 +87,16 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
             </div>
           </div>
         )}
-        {/* DayEditor is rendered as a sibling, not a child, to avoid layout issues */}
-        <DayEditor
-          date={date}
-          isOpen={editMode}
-          onClose={handleCancel}
-          input={input}
-          onInputChange={setInput}
-          onSave={handleSave}
-          currentNumbers={currentNumbers}
-        />
       </div>
+      <DayEditor
+        date={date}
+        isOpen={editMode}
+        onClose={handleClose}
+        input={input}
+        onInputChange={setInput}
+        onSave={handleSave}
+        currentNumbers={currentNumbers}
+      />
     </div>
   );
 };
