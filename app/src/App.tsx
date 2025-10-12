@@ -536,7 +536,21 @@ function App() {
         {...panelProps}
         onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
       />
+      <AppFooter />
     </div>
+  );
+}
+
+function AppFooter() {
+  return (
+    <footer className="w-full py-4 text-center text-xs text-slate-400 bg-transparent mt-8">
+      <span>
+        Made with <span aria-label="love" role="img">❤️</span> and <span aria-label="banana" role="img">🍌</span> by Meta Modern Monkey &copy; {new Date().getFullYear()}.
+        {' '}<a href="https://buymeacoffee.com/metamodernmonkey" target="_blank" rel="noopener noreferrer" className="underline hover:text-yellow-600 mx-1">Buy Me a Coffee</a>
+        {' '}|{' '}
+        <a href="https://patreon.com/aaronbeall" target="_blank" rel="noopener noreferrer" className="underline hover:text-pink-600 mx-1">Patreon</a>
+      </span>
+    </footer>
   );
 }
 
