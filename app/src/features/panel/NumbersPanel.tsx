@@ -7,6 +7,8 @@ import { EditableNumberBadge } from './EditableNumberBadge';
 import { computeNumberStats } from '@/lib/stats';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
+import { ChartContainer } from '@/components/ui/chart';
+import { LineChart, Line, Tooltip } from 'recharts';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -88,6 +90,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   const toggleSortMode = () => {
     setSortMode((m) => (m === 'original' ? 'asc' : m === 'asc' ? 'desc' : 'original'));
   };
+
+  // Cumulative numbers for line chart
+  const cumulativeNumbers = React.useMemo(() => {
+    let sum = 0;
+    return displayNumbers.map(n => (sum += n));
+  }, [displayNumbers]);
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
@@ -236,6 +244,55 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   }`}>{stats.max}</div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Micro cumulative line chart below numbers, in its own box */}
+          {stats && stats.count > 1 && (
+            <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 mt-2 flex items-center justify-center">
+              <ChartContainer config={{ numbers: { color: stats.total >= 0 ? '#22c55e' : '#ef4444' } }} className="w-full h-10">
+                <LineChart width={120} height={32} data={cumulativeNumbers.map((y, i) => ({ x: i, y }))} margin={{ top: 8, right: 0, left: 0, bottom: 8 }}>
+                  <Line
+                    type="monotone"
+                    dataKey="y"
+                    stroke={stats.total >= 0 ? '#22c55e' : '#ef4444'}
+                    strokeWidth={2}
+                    dot={{ r: 2, stroke: 'none', fill: stats.total >= 0 ? '#22c55e' : '#ef4444' }}
+                    activeDot={{ r: 3, stroke: 'none', fill: stats.total >= 0 ? '#22c55e' : '#ef4444' }}
+                    isAnimationActive={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(16,185,129,0.08)' }}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        const cumulative = payload[0].value as number;
+                        const entryIndex = payload[0].payload.x;
+                        const entryValue = entryIndex === 0 ? cumulative : cumulative - cumulativeNumbers[entryIndex - 1];
+                        let entryColor = '#22c55e';
+                        if (entryValue < 0) entryColor = '#ef4444';
+                        if (entryValue === 0) entryColor = '#64748b';
+                        let totalColor = '#22c55e';
+                        if (cumulative < 0) totalColor = '#ef4444';
+                        if (cumulative === 0) totalColor = '#64748b';
+                        return (
+                          <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+                            <div style={{ color: entryColor, fontWeight: 600, fontSize: 16 }}>
+                              {entryValue > 0 ? `+${entryValue}` : entryValue < 0 ? `-${Math.abs(entryValue)}` : entryValue}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                              <span>Total</span>
+                              <span style={{ color: totalColor, fontWeight: 600, fontSize: 16 }}>
+                                {cumulative}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </LineChart>
+              </ChartContainer>
             </div>
           )}
         </div>
