@@ -6,6 +6,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { computeNumberStats } from '@/lib/stats';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
+import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -186,7 +187,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           </div>
 
           {stats && stats.count > 0 && (
-            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-4">
+            <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-4 relative">
+              <CopyButton
+                className="absolute top-2 right-2"
+                content={`Total: ${stats.total}\nMean: ${stats.mean.toFixed(1)}\nMedian: ${stats.median}\nMin: ${stats.min}\nMax: ${stats.max}`}
+                variant="ghost"
+              />
               {/* Centered Total with colored box */}
               <div className="flex justify-center">
                 <div className={`rounded-lg p-4 text-center shadow-sm border font-mono text-xl font-bold ${
@@ -233,7 +239,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             </div>
           )}
         </div>
-  </SheetContent>
+      </SheetContent>
     </Sheet>
   );
-};
+}
