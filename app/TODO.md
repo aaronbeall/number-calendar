@@ -50,6 +50,7 @@ I'm liking this one.
 - [ ] Prev/Next in the panel
 - [ ] Time tracking with data
 - [ ] View cusotmization (weekly, order, etc)
+- [ ] Preserve dates for numbers in numbers panel (tooltip, display by date)
 
 ## Product
 - [x] Dark mode
@@ -63,7 +64,9 @@ I'm liking this one.
 - [ ] Share
 - [ ] Copywrite/authorship
 - [ ] About
+- [ ] Routing (deep linking)
 
 ## Bugs
 - [ ] System color mode doesn't match light/dark selection
 - [ ] Chart days are off by 1 (timezone issue?)
+- [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
