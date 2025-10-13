@@ -297,7 +297,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   />
                   <Tooltip
                     cursor={{ fill: 'rgba(16,185,129,0.08)' }}
-                    content={({ active, payload, label }) => {
+                    content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const cumulative = payload[0].value as number;
                         const entryIndex = payload[0].payload.x as number;

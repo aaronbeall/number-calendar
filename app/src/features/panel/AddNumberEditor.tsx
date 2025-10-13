@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { motion } from 'framer-motion';
-import { Plus, X, ArrowUpRight, ArrowRight, PlusCircle, Equal } from 'lucide-react';
+import { Plus, X, Equal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { parseSingleNumberExpression } from '@/lib/expression';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -92,7 +92,7 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
         >
           Add
           <span className="ml-1">
-            <EditableNumberBadge value={finalNumber ?? 0} editable={false} className="scale-90 opacity-80" />
+            <EditableNumberBadge value={finalNumber ?? 0} editable={false} />
           </span>
         </Button>
       </div>
