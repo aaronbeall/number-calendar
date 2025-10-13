@@ -23,6 +23,8 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
   React.useEffect(() => {
     if (input.startsWith('=')) {
       if (addMode !== 'total') setAddMode('total');
+    } else if (input.startsWith('+')) {
+      if (addMode !== 'entry') setAddMode('entry');
     }
   }, [input, addMode]);
 
