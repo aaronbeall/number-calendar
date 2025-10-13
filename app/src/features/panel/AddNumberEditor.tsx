@@ -17,15 +17,28 @@ interface AddNumberEditorProps {
 export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCancel, priorTotal }) => {
   const [input, setInput] = useState('');
   const [addMode, setAddMode] = useState<'entry' | 'total'>('entry');
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  // Automatically switch to Total mode if input starts with '='
+  React.useEffect(() => {
+    if (input.startsWith('=')) {
+      if (addMode !== 'total') setAddMode('total');
+    }
+  }, [input, addMode]);
 
   // Parse and preview number from input using extracted function
-  const previewNumber = parseSingleNumberExpression(input);
+  const previewNumber = parseSingleNumberExpression(input.startsWith('=') ? input.slice(1) : input);
 
   // Calculate the final number to add
   let finalNumber: number | null = null;
   if (previewNumber !== null) {
     finalNumber = addMode === 'entry' ? previewNumber : previewNumber - priorTotal;
   }
+
+  // Focus input when mode changes
+  React.useEffect(() => {
+    inputRef.current?.focus();
+  }, [addMode]);
 
   return (
     <motion.div
@@ -71,6 +84,7 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
           placeholder={addMode === 'entry' ? 'Enter next number' : 'Enter new total'}
           className="flex-1 text-sm border-blue-300 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
           autoFocus
+          ref={inputRef}
           onKeyDown={e => {
             if (e.key === 'Enter' && finalNumber !== null) onAdd(finalNumber);
             if (e.key === 'Escape') onCancel();
