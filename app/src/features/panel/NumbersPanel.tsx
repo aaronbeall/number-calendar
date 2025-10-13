@@ -188,7 +188,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 </div>
               )}
               {/* Add (+) badge */}
-              {editableNumbers && !adding && numbers.length > 0 && (
+              {editableNumbers && !adding && parsedNumbers && parsedNumbers.length > 0 && (
                 <Badge
                   variant="outline"
                   onClick={() => setAdding(true)}
@@ -199,7 +199,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 </Badge>
               )}
             </div>
-            {numbers.length > 1 && (
+            {parsedNumbers && parsedNumbers.length > 1 && (
               <Button
                 variant="ghost"
                 size="icon"
