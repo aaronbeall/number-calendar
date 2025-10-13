@@ -25,7 +25,7 @@ I'm liking this one.
 - [ ] Week summary microchart
 - [ ] Month summary microchart
 - [ ] Month cell microchart
-- [ ] Microcharts in numbers panel
+- [x] Microcharts in numbers panel
 - [ ] Day dots on month cell
 - [ ] Calendar options
   - [ ] Heatmap
@@ -39,11 +39,14 @@ I'm liking this one.
   - [ ] Line chart
   - [ ] Rolling average
   - [ ] Compare
-  - [ ] Cummulative starting value
+  - [ ] Cummulative starting point
+  - [ ] Expand/fullscreen
+  - [ ] Export image/pdf
 - [ ] Data integrations
 - [ ] Additional add options
   - [ ] Add by diff
   - [ ] Global quick add (with options)
+  - [ ] Add from rollups (week, month, year)
 - [ ] Configure stats
   - [ ] Rolling averages
   - [ ] Percentage change
@@ -51,6 +54,7 @@ I'm liking this one.
 - [ ] Time tracking with data
 - [ ] View cusotmization (weekly, order, etc)
 - [ ] Preserve dates for numbers in numbers panel (tooltip, display by date)
+- [ ] Cell tooltips (consise number panel info)
 
 ## Product
 - [x] Dark mode
