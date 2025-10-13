@@ -1,3 +1,31 @@
+// Parses a single number or arithmetic expression (e.g. '10+8-2') and returns the result, or null if invalid
+export function parseSingleNumberExpression(expr: string): number | null {
+  if (!expr.trim()) return null;
+  try {
+    // Remove currency symbols and locale-specific thousands separators
+    let cleaned = expr.replace(/[$€£¥₹]/g, '')
+      .replace(/(?<=\d)[,\s](?=\d{3}\b)/g, '')
+      .replace(/,/g, '')
+      .replace(/\s+/g, '');
+
+    // Only allow numbers, parentheses, and basic arithmetic operators
+    // Accepts: + - * / ( ) .
+    if (!/^[\d+\-*/().]+$/.test(cleaned)) return null;
+
+    // Evaluate the arithmetic expression safely
+    // Example: '10+8-2*3/2' => 13
+    // Use Function constructor for simple arithmetic
+    // (no variables, no function calls)
+    // eslint-disable-next-line no-new-func
+    const result = Function(`"use strict";return (${cleaned})`)();
+    if (typeof result === 'number' && !isNaN(result)) {
+      return result;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 // Expression utilities for number parsing/building
 export function parseNumbers(input: string): number[] {
   if (!input.trim()) return [];

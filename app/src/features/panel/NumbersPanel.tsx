@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetHeader, SheetTitle, SheetContent } from '@/components/ui/sheet';
@@ -9,6 +9,9 @@ import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, Tooltip } from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import { AddNumberEditor } from './AddNumberEditor';
+import { AnimatePresence } from 'framer-motion';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -97,6 +100,18 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     return displayNumbers.map(n => (sum += n));
   }, [displayNumbers]);
 
+  const [adding, setAdding] = useState(false);
+
+  // Helper to get current total for delta mode
+  const currentTotal = displayNumbers.reduce((a, b) => a + b, 0);
+
+  // Handler for add number
+  const handleAddNumber = (finalNumber: number) => {
+    onSave?.([...numbers, finalNumber]);
+    setExpression(buildExpressionFromNumbers([...numbers, finalNumber]));
+    setAdding(false);
+  };
+
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
       <SheetContent className="w-full max-w-md" disableEscapeClose>
@@ -153,14 +168,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     value={n}
                     editable={!!editableNumbers}
                     onCommit={editableNumbers ? (next) => {
-                      // Removed: onExpressionChange reference
                       let nextNumbers: number[];
                       if (next === null) {
                         nextNumbers = numbers.filter((_, idx) => idx !== originalIndex);
                       } else {
                         nextNumbers = numbers.map((val, idx) => (idx === originalIndex ? next : val));
                       }
-                      // Removed: expr variable, now handled by setExpression
                       onSave?.(nextNumbers);
                       setExpression(buildExpressionFromNumbers(nextNumbers));
                     } : undefined}
@@ -173,6 +186,17 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     <div className="text-xs">Add some data to see statistics</div>
                   </div>
                 </div>
+              )}
+              {/* Add (+) badge */}
+              {editableNumbers && !adding && numbers.length > 0 && (
+                <Badge
+                  variant="outline"
+                  onClick={() => setAdding(true)}
+                  aria-label="Add number"
+                  className="px-2 py-0.5 text-xs shadow-sm hover:shadow-md border border-dashed border-blue-300 dark:border-blue-700 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-slate-800 hover:border-blue-400 dark:hover:border-blue-500 transition-colors cursor-pointer bg-transparent dark:bg-transparent"
+                >
+                  +
+                </Badge>
               )}
             </div>
             {numbers.length > 1 && (
@@ -193,6 +217,16 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               </Button>
             )}
           </div>
+          {/* Inline add number editor */}
+          <AnimatePresence>
+            {editableNumbers && adding && (
+              <AddNumberEditor
+                onAdd={handleAddNumber}
+                onCancel={() => setAdding(false)}
+                priorTotal={currentTotal}
+              />
+            )}
+          </AnimatePresence>
 
           {stats && stats.count > 0 && (
             <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-4 relative">
@@ -266,14 +300,10 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     content={({ active, payload, label }) => {
                       if (active && payload && payload.length) {
                         const cumulative = payload[0].value as number;
-                        const entryIndex = payload[0].payload.x;
+                        const entryIndex = payload[0].payload.x as number;
                         const entryValue = entryIndex === 0 ? cumulative : cumulative - cumulativeNumbers[entryIndex - 1];
-                        let entryColor = '#22c55e';
-                        if (entryValue < 0) entryColor = '#ef4444';
-                        if (entryValue === 0) entryColor = '#64748b';
-                        let totalColor = '#22c55e';
-                        if (cumulative < 0) totalColor = '#ef4444';
-                        if (cumulative === 0) totalColor = '#64748b';
+                        const entryColor = entryValue > 0 ? '#22c55e' : entryValue < 0 ? '#ef4444' : '#64748b';
+                        const totalColor = cumulative > 0 ? '#22c55e' : cumulative < 0 ? '#ef4444' : '#64748b';
                         return (
                           <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                             <div style={{ color: entryColor, fontWeight: 600, fontSize: 16 }}>
