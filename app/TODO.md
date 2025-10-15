@@ -20,22 +20,26 @@ I'm liking this one.
   - [ ] Formatting (currency, precision, time)
   - [ ] Tracking: trend (weight, etc), log (P&L, etc)
   - [ ] Presets (weight, profit & loss, etc)
+  - [ ] Computed data (formula)
 - [ ] Notes (Day, Week, Month) with rich text/markdown support
   - [ ] Paste images (Day, Week, Month)
 - [ ] Week summary microchart
 - [ ] Month summary microchart
-- [ ] Month cell microchart
+- [ ] Day cell microdots/chart
+- [ ] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
 - [ ] Day dots on month cell
 - [ ] Calendar options
   - [ ] Heatmap
   - [ ] Week summary across months
+  - [ ] Number abbreviations
 - [ ] Customize stats
   - [ ] Rolling averages
   - [ ] Percentage change
 - [ ] Full math support, ex `1+(100/23)`
   - [ ] Sub-expression parsing in numbers input, ex `1+2-(4+6)` = `[1, 2, -10]`
   - [x] Support math expressions in individual number editor
+  - [ ] Support accounting format negatives `($455)` is `-455`
 - [ ] Combined datasets view
 - [ ] Dashboards (for multiple data sets)
 - [ ] Chart improvements
@@ -43,6 +47,7 @@ I'm liking this one.
   - [ ] Rolling averages
   - [ ] Compare
   - [ ] Cummulative starting point
+  - [ ] Formula
   - [ ] Expand/fullscreen
   - [ ] Export image/pdf
 - [ ] Data integrations
@@ -75,4 +80,4 @@ I'm liking this one.
 - [ ] Chart days are off by 1 (timezone offset?)
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
 - [ ] Re-render on page activation to sync with current date
-- [ ] Megative month summary has green
+- [ ] Megative year summary has green
