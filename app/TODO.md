@@ -29,27 +29,27 @@ I'm liking this one.
 - [ ] Day dots on month cell
 - [ ] Calendar options
   - [ ] Heatmap
-  - [ ] Customize stats to show
-- [ ] Sub-expression parsing support, ex `1+2-(4+6)` = `[1, 2, -10]`
-  - [ ] Full math support, ex `1+(100/23)`
-  - [ ] Support math expressions in individual number editor
+  - [ ] Week summary across months
+- [ ] Customize stats
+  - [ ] Rolling averages
+  - [ ] Percentage change
+- [ ] Full math support, ex `1+(100/23)`
+  - [ ] Sub-expression parsing in numbers input, ex `1+2-(4+6)` = `[1, 2, -10]`
+  - [x] Support math expressions in individual number editor
 - [ ] Combined datasets view
-- [ ] Dashboard (for multiple data sets)
-- [ ] Chart improvments
+- [ ] Dashboards (for multiple data sets)
+- [ ] Chart improvements
   - [ ] Line chart
-  - [ ] Rolling average
+  - [ ] Rolling averages
   - [ ] Compare
   - [ ] Cummulative starting point
   - [ ] Expand/fullscreen
   - [ ] Export image/pdf
 - [ ] Data integrations
 - [ ] Additional add options
-  - [ ] Add by diff
+  - [x] Add by diff
   - [ ] Global quick add (with options)
   - [ ] Add from rollups (week, month, year)
-- [ ] Configure stats
-  - [ ] Rolling averages
-  - [ ] Percentage change
 - [ ] Prev/Next in the panel
 - [ ] Time tracking with data
 - [ ] View cusotmization (weekly, order, etc)
@@ -72,5 +72,7 @@ I'm liking this one.
 
 ## Bugs
 - [ ] System color mode doesn't match light/dark selection
-- [ ] Chart days are off by 1 (timezone issue?)
+- [ ] Chart days are off by 1 (timezone offset?)
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
+- [ ] Re-render on page activation to sync with current date
+- [ ] Megative month summary has green
