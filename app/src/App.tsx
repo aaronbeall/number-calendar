@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Database, Trophy, Target, Plus, Download, Sparkles, Sun, Moon } from 'lucide-react';
 import LogoIcon from '../public/icon.svg?react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
@@ -12,7 +12,8 @@ import { MonthlyGrid } from './features/month/MonthlyGrid';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
-import { loadMonth, saveDay } from './features/db/localdb';
+import { useMonth, useYear, useSaveDay } from './features/db/useCalendarData';
+import { useDatasets, useCreateDataset } from './features/db/useDatasetData';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { NumbersPanel } from './features/panel/NumbersPanel';
 import YearChart from './features/chart/YearChart';
@@ -31,12 +32,84 @@ function getMonthDays(year: number, month: number) {
 import { useTheme } from './components/ThemeProvider';
 
 function App() {
+
+  // Datasets
+  const { data: datasets = [], isLoading: datasetsLoading } = useDatasets();
+  const createDatasetMutation = useCreateDataset();
+  const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
+
+  // If no selected dataset, show landing page
+  if (!selectedDataset) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
+        <div className="max-w-md w-full p-8 rounded-xl shadow-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
+          <LogoIcon className="w-16 h-16 mb-6 mx-auto block" aria-label="Numbers Go Up" />
+          <h2 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Welcome to Numbers Go Up</h2>
+          <p className="text-center text-slate-500 mb-6">Select a dataset to begin tracking your progress. Datasets let you organize your numbers for different goals, projects, or journeys.</p>
+          <div className="space-y-4">
+            {datasetsLoading ? (
+              <div className="text-center text-slate-400">Loading datasets...</div>
+            ) : datasets.length === 0 ? (
+              <button
+                className="w-full py-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition flex flex-col items-center gap-2"
+                onClick={() => {
+                  createDatasetMutation.mutate({
+                    id: `ds-${Date.now()}`,
+                    name: 'My First Dataset',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                  });
+                }}
+              >
+                  <Plus className="w-7 h-7" />
+                <span className="font-semibold">Add your first dataset</span>
+                <span className="text-xs text-slate-400">Start tracking your numbers!</span>
+              </button>
+            ) : (
+              <div className="space-y-2">
+                {datasets.map(ds => (
+                  <button
+                    key={ds.id}
+                    className="block w-full py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-50 dark:hover:bg-slate-700 transition font-semibold"
+                    onClick={() => setSelectedDataset(ds.id)}
+                  >
+                    {ds.name}
+                  </button>
+                ))}
+                <button
+                  className="block w-full py-3 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition flex flex-col items-center gap-2"
+                  onClick={() => {
+                    createDatasetMutation.mutate({
+                      id: `ds-${Date.now()}`,
+                      name: `Dataset ${datasets.length + 1}`,
+                      createdAt: Date.now(),
+                      updatedAt: Date.now(),
+                    });
+                  }}
+                >
+                    <Plus className="w-6 h-6" />
+                  <span>Add another dataset</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        <AppFooter />
+      </div>
+    );
+  }
+
+  return (
+    <Main datasetId={selectedDataset} />
+  );
+  
+}
+
+function Main({ datasetId }: { datasetId: string }) {
   const { theme, setTheme } = useTheme();
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
-  const [monthData, setMonthData] = useState<Record<string, number[]>>({});
-  const [yearData, setYearData] = useState<Record<string, number[]>>({});
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
   const [monthChartGroup, setMonthChartGroup] = useState<'daily' | 'all'>(() => 'daily');
   const [chartGroup, setChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
@@ -52,27 +125,13 @@ function App() {
     actionIcon: undefined as React.ReactNode | undefined,
   });
 
-  useEffect(() => {
-    loadMonth(year, month).then(setMonthData);
-  }, [year, month]);
-
-  // Load entire year data for the year overview
-  useEffect(() => {
-    const loadYearData = async () => {
-      const yearDataPromises = Array.from({ length: 12 }, (_, i) => 
-        loadMonth(year, i + 1)
-      );
-      const yearResults = await Promise.all(yearDataPromises);
-      const combinedYearData = yearResults.reduce((acc, monthData) => ({ ...acc, ...monthData }), {});
-      setYearData(combinedYearData);
-    };
-    loadYearData();
-  }, [year]);
+  // Use selectedDataset for all data hooks
+  const { data: monthData = {} } = useMonth(datasetId, year, month);
+  const { data: yearData = {} } = useYear(datasetId, year);
+  const saveDayMutation = useSaveDay();
 
   const handleSaveDay = async (date: string, numbers: number[]) => {
-    await saveDay(date, numbers);
-    setMonthData(prev => ({ ...prev, [date]: numbers }));
-    setYearData(prev => ({ ...prev, [date]: numbers }));
+    await saveDayMutation.mutateAsync({ datasetId, date: date as `${number}-${number}-${number}`, numbers });
   };
 
   const days = getMonthDays(year, month);
@@ -84,7 +143,7 @@ function App() {
     "July", "August", "September", "October", "November", "December"];
 
   return (
-  <div className="min-h-screen bg-white dark:bg-slate-900/80"> 
+  <div className="min-h-screen bg-white dark:bg-slate-900/80">
     {/* Main App Header */}
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 py-4">
@@ -177,8 +236,8 @@ function App() {
       </header>
 
       {/* Navigation Header */}
-  <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-  <div className="max-w-4xl mx-auto px-4 py-3">
+      <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center gap-4">
             {/* View Toggle */}
             <ToggleGroup
@@ -193,11 +252,11 @@ function App() {
             >
               <ToggleGroupItem value="daily" aria-label="Daily View">
                 <CalendarDays className="h-4 w-4 mr-1" />
-        <span>Daily</span>
+                <span>Daily</span>
               </ToggleGroupItem>
               <ToggleGroupItem value="monthly" aria-label="Monthly View">
                 <Grid3X3 className="h-4 w-4 mr-1" />
-        <span>Monthly</span>
+                <span>Monthly</span>
               </ToggleGroupItem>
             </ToggleGroup>
             

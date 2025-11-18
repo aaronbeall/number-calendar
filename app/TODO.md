@@ -81,3 +81,4 @@ I'm liking this one.
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
 - [ ] Re-render on page activation to sync with current date
 - [ ] Megative year summary has green
+- [ ] Hide weekends is causing June days to be wrong
