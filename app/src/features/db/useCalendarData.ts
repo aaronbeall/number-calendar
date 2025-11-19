@@ -45,6 +45,8 @@ export function useSaveDay() {
       // Optionally invalidate month
       const [year, month] = date.split('-');
       queryClient.invalidateQueries({ queryKey: ['month', datasetId, Number(year), Number(month)] });
+      // Also invalidate the year aggregate since one of its days changed
+      queryClient.invalidateQueries({ queryKey: ['year', datasetId, Number(year)] });
     },
   });
 }
