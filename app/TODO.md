@@ -60,9 +60,11 @@ I'm liking this one.
 - [ ] View cusotmization (weekly, order, etc)
 - [ ] Preserve dates for numbers in numbers panel (tooltip, display by date)
 - [ ] Cell tooltips (consise number panel info)
+- [ ] Growth projections
 
 ## Product
 - [x] Dark mode
+- [ ] Promo landing page
 - [ ] Mobile friendly
 - [ ] PWA
 - [ ] App store
@@ -74,6 +76,12 @@ I'm liking this one.
 - [ ] Copywrite/authorship
 - [ ] About
 - [ ] Routing (deep linking)
+- [ ] Premium features
+  - [ ] Number of datasets
+  - [ ] AI assistance
+  - [ ] Syncing (via Dropbox)
+  - [ ] Data import
+  - [ ] Data integrations
 
 ## Bugs
 - [ ] System color mode doesn't match light/dark selection

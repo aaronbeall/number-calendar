@@ -1,4 +1,5 @@
 
+import type { DatasetIconName } from '@/lib/dataset-icons';
 import { openDB } from 'idb';
 
 // Dataset entity
@@ -6,6 +7,8 @@ export interface Dataset {
   id: string;
   name: string;
   description?: string;
+  icon?: DatasetIconName;
+  tracking: 'trend' | 'series'; // tracking semantics
   createdAt: number;
   updatedAt: number;
 }
@@ -61,11 +64,11 @@ const STORE_DEFS = [
   { name: 'notes', keyPath: 'date', indexes: ['datasetId', ['datasetId', 'date']] },
   { name: 'images', keyPath: 'id', indexes: ['datasetId', ['datasetId', 'date']] }
 ];
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 
 function getDb() {
   return openDB(DB_NAME, DB_VERSION, {
-    async upgrade(db, oldVersion, newVersion, transaction) {
+    async upgrade(db, oldVersion, _newVersion, transaction) {
       // Migration from old 'calendar' object store structure
       if (oldVersion < 4 && db.objectStoreNames.contains('calendar')) {
         // Get all old calendar entries
@@ -84,6 +87,8 @@ function getDb() {
           id: 'migrated-default',
           name: 'My Numbers',
           description: 'Migrated from previous version',
+          icon: 'database',
+          tracking: 'series',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -130,6 +135,25 @@ function getDb() {
           if (!store.indexNames.contains(idxName)) {
             store.createIndex(idxName, idx);
           }
+        }
+      }
+
+      // Migration for adding icon/tracking fields to datasets (version < 5)
+      if (oldVersion < 5) {
+        if (db.objectStoreNames.contains('datasets')) {
+          const dsStore = transaction.objectStore('datasets');
+          const existing = await dsStore.getAll();
+          for (const ds of existing) {
+            // Only modify if missing tracking (new field)
+            if (!('tracking' in ds)) {
+              ds.tracking = 'series';
+            }
+            if (!('icon' in ds)) {
+              ds.icon = 'database';
+            }
+            await dsStore.put(ds);
+          }
+          console.log(`Migrated ${existing.length} datasets to add icon/tracking fields`);
         }
       }
     },

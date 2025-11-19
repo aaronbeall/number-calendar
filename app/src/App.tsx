@@ -1,6 +1,6 @@
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Database, Trophy, Target, Plus, Download, Sparkles, Sun, Moon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Trophy, Target, Plus, Download, Sparkles, Sun, Moon } from 'lucide-react';
 import LogoIcon from '../public/icon.svg?react';
-import { cn, getRelativeTime } from './lib/utils';
+import { getRelativeTime } from './lib/utils';
 import { useState } from 'react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
@@ -14,7 +14,9 @@ import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
 import { useMonth, useYear, useSaveDay } from './features/db/useCalendarData';
-import { useDatasets, useCreateDataset } from './features/db/useDatasetData';
+import { getDatasetIcon } from './lib/dataset-icons';
+import { useDatasets } from './features/db/useDatasetData';
+import DatasetDialog from './features/dataset/DatasetDialog';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { NumbersPanel } from './features/panel/NumbersPanel';
@@ -38,6 +40,7 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
   const { data: monthData = {} } = useMonth(dataset.id, year, month);
   const created = new Date(dataset.createdAt).toLocaleDateString();
   const updated = getRelativeTime(dataset.updatedAt);
+  const IconComponent = getDatasetIcon(dataset.icon);
   
   // Prepare chart data from current month
   const daysInMonth = new Date(year, month, 0).getDate();
@@ -57,8 +60,7 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
     >
       <div className="flex items-start gap-4">
         <div className="w-12 h-12 rounded-md bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-slate-300 dark:border-slate-600 group-hover:from-blue-100 group-hover:to-indigo-200 dark:group-hover:from-slate-600 dark:group-hover:to-slate-500 flex-shrink-0">
-          {/* Icon placeholder */}
-          <Database className="w-6 h-6 text-slate-500 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-indigo-300" />
+          <IconComponent className="w-6 h-6 text-slate-500 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-indigo-300" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
@@ -100,26 +102,61 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
 }
 
 function App() {
-
   // Datasets
   const { data: datasets = [], isLoading: datasetsLoading } = useDatasets();
   const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
+  const [showCreateDataset, setShowCreateDataset] = useState(false);
+  const [editingDataset, setEditingDataset] = useState<Dataset | undefined>(undefined);
 
-  // If no selected dataset, show landing page
+  const handleOpenEdit = (dataset: Dataset) => {
+    setEditingDataset(dataset);
+    setShowCreateDataset(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowCreateDataset(false);
+    setEditingDataset(undefined);
+  };
+
   if (!selectedDataset) {
     return (
-      <Landing datasets={datasets} datasetsLoading={datasetsLoading} onSelectDataset={setSelectedDataset} />
+      <>
+        <Landing
+          datasets={datasets}
+          datasetsLoading={datasetsLoading}
+          onSelectDataset={setSelectedDataset}
+          onOpenCreate={() => setShowCreateDataset(true)}
+        />
+        <DatasetDialog
+          open={showCreateDataset}
+          onOpenChange={handleCloseDialog}
+          onSaved={(id) => setSelectedDataset(id)}
+          dataset={editingDataset}
+        />
+      </>
     );
   }
 
   return (
-    <Main datasetId={selectedDataset} />
+    <>
+      <Main
+        datasetId={selectedDataset}
+        datasets={datasets}
+        onSelectDataset={setSelectedDataset}
+        onOpenCreate={() => setShowCreateDataset(true)}
+        onOpenEdit={handleOpenEdit}
+      />
+      <DatasetDialog
+        open={showCreateDataset}
+        onOpenChange={handleCloseDialog}
+        onSaved={(id) => setSelectedDataset(id)}
+        dataset={editingDataset}
+      />
+    </>
   );
-  
 }
 
-function Landing({ datasets, datasetsLoading, onSelectDataset }: { datasets: Dataset[]; datasetsLoading: boolean; onSelectDataset: (datasetId: string) => void }) {
-  const createDatasetMutation = useCreateDataset();
+function Landing({ datasets, datasetsLoading, onSelectDataset, onOpenCreate }: { datasets: Dataset[]; datasetsLoading: boolean; onSelectDataset: (datasetId: string) => void; onOpenCreate: () => void }) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -136,16 +173,7 @@ function Landing({ datasets, datasetsLoading, onSelectDataset }: { datasets: Dat
             ) : datasets.length === 0 ? (
               <button
                 className="block w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-6 text-left"
-                onClick={() => {
-                  const now = Date.now();
-                  createDatasetMutation.mutate({
-                    id: `ds-${now}`,
-                    name: 'My First Dataset',
-                    description: 'Default dataset created from landing page.',
-                    createdAt: now,
-                    updatedAt: now,
-                  });
-                }}
+                onClick={onOpenCreate}
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-md bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-blue-200 dark:border-slate-600">
@@ -163,16 +191,7 @@ function Landing({ datasets, datasetsLoading, onSelectDataset }: { datasets: Dat
                 {datasets.map(ds => <DatasetCard key={ds.id} dataset={ds} year={currentYear} month={currentMonth} onSelect={onSelectDataset} />)}
                 <button
                   className="w-full rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-5 text-left"
-                  onClick={() => {
-                    const now = Date.now();
-                    createDatasetMutation.mutate({
-                      id: `ds-${now}`,
-                      name: `Dataset ${datasets.length + 1}`,
-                      description: 'Additional dataset',
-                      createdAt: now,
-                      updatedAt: now,
-                    });
-                  }}
+                  onClick={onOpenCreate}
                 >
                   <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-md bg-gradient-to-br from-green-100 to-emerald-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-green-200 dark:border-slate-600">
@@ -194,7 +213,7 @@ function Landing({ datasets, datasetsLoading, onSelectDataset }: { datasets: Dat
   );
 }
 
-function Main({ datasetId }: { datasetId: string }) {
+function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }: { datasetId: string; datasets: Dataset[]; onSelectDataset: (id: string) => void; onOpenCreate: () => void; onOpenEdit: (dataset: Dataset) => void }) {
   const { theme, setTheme } = useTheme();
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
@@ -213,6 +232,10 @@ function Main({ datasetId }: { datasetId: string }) {
     actionOnClick: undefined as (() => void) | undefined,
     actionIcon: undefined as React.ReactNode | undefined,
   });
+
+  // Dataset helpers
+  const currentDataset = datasets.find(d => d.id === datasetId);
+  const otherDatasets = datasets.filter(d => d.id !== datasetId);
 
   // Use selectedDataset for all data hooks
   const { data: monthData = {} } = useMonth(datasetId, year, month);
@@ -248,19 +271,35 @@ function Main({ datasetId }: { datasetId: string }) {
                   <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                     Dataset
                   </DropdownMenuLabel>
-                  {/* Current dataset with submenu for others and new */}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger className="gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md mx-1 mb-1 hover:from-blue-100 hover:to-indigo-100 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
-                      <Database className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                      <span className="font-semibold text-blue-900 dark:text-blue-200">Personal Tracking</span>
+                      {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className="h-4 w-4 text-blue-600 dark:text-blue-300" />; })()}
+                      <span className="font-semibold text-blue-900 dark:text-blue-200">{currentDataset?.name || 'Dataset'}</span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Other Datasets</DropdownMenuLabel>
-                      <DropdownMenuItem>Work Goals</DropdownMenuItem>
-                      <DropdownMenuItem>Fitness Journey</DropdownMenuItem>
-                      <DropdownMenuItem>Study Progress</DropdownMenuItem>
+                      {otherDatasets.length === 0 && (
+                        <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
+                      )}
+                      {otherDatasets.map(ds => (
+                        <DropdownMenuItem key={ds.id} onClick={() => onSelectDataset(ds.id)}>
+                          {ds.name}
+                        </DropdownMenuItem>
+                      ))}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2">
+                      <DropdownMenuItem
+                        className="gap-2"
+                        onClick={() => currentDataset && onOpenEdit(currentDataset)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        Settings…
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="gap-2"
+                        onClick={() => {
+                          onOpenCreate();
+                        }}
+                      >
                         <Plus className="h-4 w-4" />
                         New Dataset
                       </DropdownMenuItem>
@@ -283,10 +322,6 @@ function Main({ datasetId }: { datasetId: string }) {
                   <DropdownMenuItem className="gap-2">
                     <Download className="h-4 w-4" />
                     Import/Export
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2">
-                    <Settings className="h-4 w-4" />
-                    Settings
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
