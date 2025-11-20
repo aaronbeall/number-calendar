@@ -24,7 +24,7 @@ I'm liking this one.
 - [ ] Notes (Day, Week, Month) with rich text/markdown support
   - [ ] Paste images (Day, Week, Month)
 - [x] Week summary microchart
-- [ ] Day cell microdots/chart
+- [x] Day cell microdots/chart
 - [x] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
 - [ ] Highligh maxes on calendar
