@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Database, Trophy, Target, Plus, Download, Sparkles, Sun, Moon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Trophy, Target, Plus, Download, Sparkles, Sun, Moon, Award } from 'lucide-react';
 import LogoIcon from '../public/icon.svg?react';
-import { useState, useEffect } from 'react';
+import { getRelativeTime } from './lib/utils';
+import { useState } from 'react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
@@ -12,7 +13,11 @@ import { MonthlyGrid } from './features/month/MonthlyGrid';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
-import { loadMonth, saveDay } from './features/db/localdb';
+import { useMonth, useYear, useSaveDay } from './features/db/useCalendarData';
+import { getDatasetIcon } from './lib/dataset-icons';
+import { useDatasets } from './features/db/useDatasetData';
+import DatasetDialog from './features/dataset/DatasetDialog';
+import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { NumbersPanel } from './features/panel/NumbersPanel';
 import YearChart from './features/chart/YearChart';
@@ -29,14 +34,190 @@ function getMonthDays(year: number, month: number) {
 }
 
 import { useTheme } from './components/ThemeProvider';
+import type { Dataset } from './features/db/localdb';
+
+function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; year: number; month: number; onSelect: (id: string) => void }) {
+  const { data: monthData = {} } = useMonth(dataset.id, year, month);
+  const created = new Date(dataset.createdAt).toLocaleDateString();
+  const updated = getRelativeTime(dataset.updatedAt);
+  const IconComponent = getDatasetIcon(dataset.icon);
+  
+  // Prepare chart data from current month
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const chartData = [];
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const numbers = monthData[dateKey] || [];
+    const total = numbers.reduce((sum, num) => sum + num, 0);
+    chartData.push({ day, value: total });
+  }
+  
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(dataset.id)}
+      className="group w-full text-left rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-400 transition relative"
+    >
+      <div className="flex items-start gap-4">
+        <div className="w-12 h-12 rounded-md bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-slate-300 dark:border-slate-600 group-hover:from-blue-100 group-hover:to-indigo-200 dark:group-hover:from-slate-600 dark:group-hover:to-slate-500 flex-shrink-0">
+          <IconComponent className="w-6 h-6 text-slate-500 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-indigo-300" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="font-semibold text-slate-700 dark:text-slate-100 truncate group-hover:text-blue-700 dark:group-hover:text-indigo-200">{dataset.name}</h3>
+            <span className="text-[10px] uppercase tracking-wide font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded flex-shrink-0">Dataset</span>
+          </div>
+          {dataset.description && (
+            <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 line-clamp-2">{dataset.description}</p>
+          )}
+          <div className="flex items-center gap-3 mb-3 h-12">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="rgb(59, 130, 246)" 
+                  strokeWidth={2}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 flex-shrink-0">This month</span>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1">
+              <span className="opacity-60">Created:</span>
+              <span className="font-medium text-slate-600 dark:text-slate-300">{created}</span>
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="opacity-60">Updated:</span>
+              <span className="font-medium text-slate-600 dark:text-slate-300">{updated}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </button>
+  );
+}
 
 function App() {
+  // Datasets
+  const { data: datasets = [], isLoading: datasetsLoading } = useDatasets();
+  const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
+  const [showCreateDataset, setShowCreateDataset] = useState(false);
+  const [editingDataset, setEditingDataset] = useState<Dataset | undefined>(undefined);
+
+  const handleOpenEdit = (dataset: Dataset) => {
+    setEditingDataset(dataset);
+    setShowCreateDataset(true);
+  };
+
+  const handleCloseDialog = () => {
+    setShowCreateDataset(false);
+    setEditingDataset(undefined);
+  };
+
+  if (!selectedDataset) {
+    return (
+      <>
+        <Landing
+          datasets={datasets}
+          datasetsLoading={datasetsLoading}
+          onSelectDataset={setSelectedDataset}
+          onOpenCreate={() => setShowCreateDataset(true)}
+        />
+        <DatasetDialog
+          open={showCreateDataset}
+          onOpenChange={handleCloseDialog}
+          onSaved={(id) => setSelectedDataset(id)}
+          dataset={editingDataset}
+        />
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Main
+        datasetId={selectedDataset}
+        datasets={datasets}
+        onSelectDataset={setSelectedDataset}
+        onOpenCreate={() => setShowCreateDataset(true)}
+        onOpenEdit={handleOpenEdit}
+      />
+      <DatasetDialog
+        open={showCreateDataset}
+        onOpenChange={handleCloseDialog}
+        onSaved={(id) => setSelectedDataset(id)}
+        dataset={editingDataset}
+      />
+    </>
+  );
+}
+
+function Landing({ datasets, datasetsLoading, onSelectDataset, onOpenCreate }: { datasets: Dataset[]; datasetsLoading: boolean; onSelectDataset: (datasetId: string) => void; onOpenCreate: () => void }) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
+      <div className="max-w-md w-full p-8 rounded-xl shadow-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
+        <LogoIcon className="w-16 h-16 mb-6 mx-auto block" aria-label="Numbers Go Up" />
+        <h2 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Welcome to Numbers Go Up</h2>
+        <p className="text-center text-slate-500 mb-6">Select a dataset to begin tracking your progress. Datasets let you organize your numbers for different goals, projects, or journeys.</p>
+        <div className="space-y-4">
+          {datasetsLoading ? (
+            <div className="text-center text-slate-400">Loading datasets...</div>
+            ) : datasets.length === 0 ? (
+              <button
+                className="block w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-6 text-left"
+                onClick={onOpenCreate}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-md bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-blue-200 dark:border-slate-600">
+                    <Plus className="w-6 h-6 text-blue-600 dark:text-indigo-300" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-1">Add your first dataset</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Start tracking your numbers by creating a dataset. You can have separate datasets for different goals.</p>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">No datasets yet.</div>
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <div className="space-y-4">
+                {datasets.map(ds => <DatasetCard key={ds.id} dataset={ds} year={currentYear} month={currentMonth} onSelect={onSelectDataset} />)}
+                <button
+                  className="w-full rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-5 text-left"
+                  onClick={onOpenCreate}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-md bg-gradient-to-br from-green-100 to-emerald-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-green-200 dark:border-slate-600">
+                      <Plus className="w-6 h-6 text-green-600 dark:text-emerald-300" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-1">Add another dataset</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Create a new space for tracking a different goal or category.</p>
+                      <div className="text-xs text-slate-400 dark:text-slate-500">You currently have {datasets.length} dataset{datasets.length === 1 ? '' : 's'}.</div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+        </div>
+      </div>
+      <AppFooter />
+    </div>
+  );
+}
+
+function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }: { datasetId: string; datasets: Dataset[]; onSelectDataset: (id: string) => void; onOpenCreate: () => void; onOpenEdit: (dataset: Dataset) => void }) {
   const { theme, setTheme } = useTheme();
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
-  const [monthData, setMonthData] = useState<Record<string, number[]>>({});
-  const [yearData, setYearData] = useState<Record<string, number[]>>({});
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
   const [monthChartGroup, setMonthChartGroup] = useState<'daily' | 'all'>(() => 'daily');
   const [chartGroup, setChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
@@ -52,27 +233,17 @@ function App() {
     actionIcon: undefined as React.ReactNode | undefined,
   });
 
-  useEffect(() => {
-    loadMonth(year, month).then(setMonthData);
-  }, [year, month]);
+  // Dataset helpers
+  const currentDataset = datasets.find(d => d.id === datasetId);
+  const otherDatasets = datasets.filter(d => d.id !== datasetId);
 
-  // Load entire year data for the year overview
-  useEffect(() => {
-    const loadYearData = async () => {
-      const yearDataPromises = Array.from({ length: 12 }, (_, i) => 
-        loadMonth(year, i + 1)
-      );
-      const yearResults = await Promise.all(yearDataPromises);
-      const combinedYearData = yearResults.reduce((acc, monthData) => ({ ...acc, ...monthData }), {});
-      setYearData(combinedYearData);
-    };
-    loadYearData();
-  }, [year]);
+  // Use selectedDataset for all data hooks
+  const { data: monthData = {} } = useMonth(datasetId, year, month);
+  const { data: yearData = {} } = useYear(datasetId, year);
+  const saveDayMutation = useSaveDay();
 
   const handleSaveDay = async (date: string, numbers: number[]) => {
-    await saveDay(date, numbers);
-    setMonthData(prev => ({ ...prev, [date]: numbers }));
-    setYearData(prev => ({ ...prev, [date]: numbers }));
+    await saveDayMutation.mutateAsync({ datasetId, date: date as `${number}-${number}-${number}`, numbers });
   };
 
   const days = getMonthDays(year, month);
@@ -84,7 +255,7 @@ function App() {
     "July", "August", "September", "October", "November", "December"];
 
   return (
-  <div className="min-h-screen bg-white dark:bg-slate-900/80"> 
+  <div className="min-h-screen bg-white dark:bg-slate-900/80">
     {/* Main App Header */}
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 py-4">
@@ -100,19 +271,35 @@ function App() {
                   <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
                     Dataset
                   </DropdownMenuLabel>
-                  {/* Current dataset with submenu for others and new */}
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger className="gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md mx-1 mb-1 hover:from-blue-100 hover:to-indigo-100 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
-                      <Database className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                      <span className="font-semibold text-blue-900 dark:text-blue-200">Personal Tracking</span>
+                      {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className="h-4 w-4 text-blue-600 dark:text-blue-300" />; })()}
+                      <span className="font-semibold text-blue-900 dark:text-blue-200">{currentDataset?.name || 'Dataset'}</span>
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Other Datasets</DropdownMenuLabel>
-                      <DropdownMenuItem>Work Goals</DropdownMenuItem>
-                      <DropdownMenuItem>Fitness Journey</DropdownMenuItem>
-                      <DropdownMenuItem>Study Progress</DropdownMenuItem>
+                      {otherDatasets.length === 0 && (
+                        <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
+                      )}
+                      {otherDatasets.map(ds => (
+                        <DropdownMenuItem key={ds.id} onClick={() => onSelectDataset(ds.id)}>
+                          {ds.name}
+                        </DropdownMenuItem>
+                      ))}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="gap-2">
+                      <DropdownMenuItem
+                        className="gap-2"
+                        onClick={() => currentDataset && onOpenEdit(currentDataset)}
+                      >
+                        <Settings className="h-4 w-4" />
+                        Settings…
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="gap-2"
+                        onClick={() => {
+                          onOpenCreate();
+                        }}
+                      >
                         <Plus className="h-4 w-4" />
                         New Dataset
                       </DropdownMenuItem>
@@ -127,6 +314,10 @@ function App() {
                     <Target className="h-4 w-4" />
                     Milestones
                   </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2">
+                    <Award className="h-4 w-4" />
+                    Records
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
                     <Sparkles className="h-4 w-4 text-purple-600 dark:text-pink-300" />
                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-pink-700 dark:to-purple-700 bg-clip-text text-transparent font-semibold">AI Insights</span>
@@ -135,10 +326,6 @@ function App() {
                   <DropdownMenuItem className="gap-2">
                     <Download className="h-4 w-4" />
                     Import/Export
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2">
-                    <Settings className="h-4 w-4" />
-                    Settings
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -177,8 +364,8 @@ function App() {
       </header>
 
       {/* Navigation Header */}
-  <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-  <div className="max-w-4xl mx-auto px-4 py-3">
+      <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="max-w-4xl mx-auto px-4 py-3">
           <div className="flex items-center gap-4">
             {/* View Toggle */}
             <ToggleGroup
@@ -193,11 +380,11 @@ function App() {
             >
               <ToggleGroupItem value="daily" aria-label="Daily View">
                 <CalendarDays className="h-4 w-4 mr-1" />
-        <span>Daily</span>
+                <span>Daily</span>
               </ToggleGroupItem>
               <ToggleGroupItem value="monthly" aria-label="Monthly View">
                 <Grid3X3 className="h-4 w-4 mr-1" />
-        <span>Monthly</span>
+                <span>Monthly</span>
               </ToggleGroupItem>
             </ToggleGroup>
             
