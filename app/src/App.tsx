@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Trophy, Target, Plus, Download, Sparkles, Sun, Moon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Trophy, Target, Plus, Download, Sparkles, Sun, Moon, Award } from 'lucide-react';
 import LogoIcon from '../public/icon.svg?react';
 import { getRelativeTime } from './lib/utils';
 import { useState } from 'react';
@@ -313,6 +313,10 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                   <DropdownMenuItem className="gap-2">
                     <Target className="h-4 w-4" />
                     Milestones
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2">
+                    <Award className="h-4 w-4" />
+                    Records
                   </DropdownMenuItem>
                   <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
                     <Sparkles className="h-4 w-4 text-purple-600 dark:text-pink-300" />
