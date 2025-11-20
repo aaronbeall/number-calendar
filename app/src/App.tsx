@@ -248,6 +248,10 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
 
   const days = getMonthDays(year, month);
   const allNumbers = Object.values(monthData).flat();
+  
+  // Calculate min/max for the month (for dot scaling in DayCell)
+  const monthMin = allNumbers.length > 0 ? Math.min(...allNumbers) : undefined;
+  const monthMax = allNumbers.length > 0 ? Math.max(...allNumbers) : undefined;
 
   // Week stats are rendered inline beneath the calendar using renderWeekFooter
 
@@ -545,6 +549,8 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                     date={date}
                     numbers={monthData[dateStr] || []}
                     onSave={nums => handleSaveDay(dateStr, nums)}
+                    monthMin={monthMin}
+                    monthMax={monthMax}
                   />
                 );
               }}

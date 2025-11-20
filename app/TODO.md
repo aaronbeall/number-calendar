@@ -23,12 +23,11 @@ I'm liking this one.
   - [ ] Computed data (formula)
 - [ ] Notes (Day, Week, Month) with rich text/markdown support
   - [ ] Paste images (Day, Week, Month)
-- [ ] Week summary microchart
-- [ ] Month summary microchart
+- [x] Week summary microchart
 - [ ] Day cell microdots/chart
-- [ ] Month cell microdots/microchart
+- [x] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
-- [ ] Day dots on month cell
+- [ ] Highligh maxes on calendar
 - [ ] Calendar options
   - [ ] Heatmap
   - [ ] Week summary across months
@@ -40,13 +39,14 @@ I'm liking this one.
   - [ ] Sub-expression parsing in numbers input, ex `1+2-(4+6)` = `[1, 2, -10]`
   - [x] Support math expressions in individual number editor
   - [ ] Support accounting format negatives `($455)` is `-455`
+  - [x] Support `=` in expression parsing
 - [ ] Combined datasets view
 - [ ] Dashboards (for multiple data sets)
 - [ ] Chart improvements
   - [ ] Line chart
   - [ ] Rolling averages
   - [ ] Compare
-  - [ ] Cummulative starting point
+  - [ ] Rolling start from
   - [ ] Formula
   - [ ] Expand/fullscreen
   - [ ] Export image/pdf

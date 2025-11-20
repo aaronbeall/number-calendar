@@ -5,9 +5,11 @@ export interface DayCellProps {
   date: Date;
   numbers: number[];
   onSave: (numbers: number[]) => void;
+  monthMin?: number;
+  monthMax?: number;
 }
 
-export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
+export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMin, monthMax }) => {
   const [editMode, setEditMode] = useState(false);
 
   const isToday = date.toDateString() === new Date().toDateString();
@@ -38,6 +40,19 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
   function handleClose(): void {
     setEditMode(false);
   }
+
+  // Calculate dot sizes based on month's min/max
+  const getRelativeSize = (value: number): number => {
+    if (monthMin === undefined || monthMax === undefined) return 1;
+    const absValue = Math.abs(value);
+    const absMin = Math.abs(monthMin);
+    const absMax = Math.abs(monthMax);
+    const maxMagnitude = Math.max(absMin, absMax);
+    if (maxMagnitude === 0) return 1;
+    // Scale from 0.4 to 1.0 based on relative magnitude
+    return 0.4 + (absValue / maxMagnitude) * 0.6;
+  };
+
   return (
     <div className="relative h-full">
       <div
@@ -64,10 +79,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
 
         {hasData && (
           <div className="flex-1 flex flex-col gap-2 text-xs">
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
-              {count} entries
-            </div>
-            <div className={`w-full px-3 py-2 rounded text-center font-mono font-bold ${
+            {/* Total - Primary metric */}
+            <div className={`w-full px-3 rounded text-center font-mono font-bold text-lg ${
               total > 0 
                 ? 'bg-green-100 dark:bg-[#1a3a2a] text-green-700 dark:text-green-200' 
                 : total < 0 
@@ -75,6 +88,38 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
             }`}>
               {total}
+            </div>
+
+            {/* Entry count */}
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
+              {count} {count === 1 ? 'entry' : 'entries'}
+            </div>
+
+            {/* Micro dots visualization - Shows composition */}
+            <div className="flex flex-wrap gap-1 justify-center items-center min-h-[16px] px-1">
+              {numbers.map((num, idx) => {
+                const scale = getRelativeSize(num);
+                const size = scale * 8; // Base size 8px, scaled down to ~3.2px min
+                let colorClass;
+                if (num > 0) {
+                  colorClass = 'bg-green-500 dark:bg-green-600';
+                } else if (num < 0) {
+                  colorClass = 'bg-red-500 dark:bg-red-600';
+                } else {
+                  colorClass = 'bg-slate-400 dark:bg-slate-500';
+                }
+                return (
+                  <div
+                    key={idx}
+                    className={`rounded-full ${colorClass} transition-all duration-200`}
+                    style={{
+                      width: `${size}px`,
+                      height: `${size}px`,
+                    }}
+                    title={`${num}`}
+                  />
+                );
+              })}
             </div>
           </div>
         )}
