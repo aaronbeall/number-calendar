@@ -20,7 +20,15 @@ export function YearSummary({ numbers, yearName, isCurrentYear }: YearSummaryPro
 
   // Color classes for background
   const bgClasses = isCurrentYear 
-    ? 'bg-gradient-to-r from-white to-blue-50 dark:from-[#232a26] dark:to-[#1a3a2a]' 
+    ? stats.total > 0
+      ? 'bg-gradient-to-r from-white to-blue-50 dark:from-[#232a26] dark:to-[#1a3a2a]'
+      : stats.total < 0
+      ? 'bg-gradient-to-r from-white to-red-50 dark:from-[#232a26] dark:to-[#3a1a1a]'
+      : 'bg-gradient-to-r from-white to-slate-50 dark:from-[#232a26] dark:to-slate-800'
+    : stats.total > 0
+    ? 'bg-white dark:bg-[#232a26]'
+    : stats.total < 0
+    ? 'bg-white dark:bg-[#232a26]'
     : 'bg-white dark:bg-[#232a26]';
 
   // Color classes for bottom border
@@ -55,34 +63,34 @@ export function YearSummary({ numbers, yearName, isCurrentYear }: YearSummaryPro
           {/* Mean / Median (secondary) */}
           <div className="hidden sm:flex items-center gap-6">
             <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Mean</div>
-              <div className={`font-mono text-lg font-bold ${stats.mean && stats.mean >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
+              <div className={`font-mono text-lg font-bold ${stats.mean && stats.mean > 0 ? 'text-green-700 dark:text-green-300' : stats.mean && stats.mean < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>
                 {stats.mean?.toFixed(1) ?? '-'}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Median</div>
-              <div className={`font-mono text-lg font-bold ${stats.median && stats.median >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
+              <div className={`font-mono text-lg font-bold ${stats.median && stats.median > 0 ? 'text-green-700 dark:text-green-300' : stats.median && stats.median < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>
                 {stats.median?.toFixed(1) ?? '-'}
               </div>
             </div>
           </div>
 
-          <div className="hidden md:block w-px h-7 bg-slate-300/50" />
+          <div className="hidden md:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
 
           {/* Min / Max (tertiary) */}
           <div className="hidden md:flex items-center gap-4">
             <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Min</div>
-              <div className={`font-mono text-base font-bold ${stats.min >= 0 ? 'text-green-700' : 'text-red-700'}`}>{stats.min}</div>
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
+              <div className={`font-mono text-base font-bold ${stats.min > 0 ? 'text-green-700 dark:text-green-300' : stats.min < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>{stats.min}</div>
             </div>
             <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 font-medium">Max</div>
-              <div className={`font-mono text-base font-bold ${stats.max >= 0 ? 'text-green-700' : 'text-red-700'}`}>{stats.max}</div>
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
+              <div className={`font-mono text-base font-bold ${stats.max > 0 ? 'text-green-700 dark:text-green-300' : stats.max < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>{stats.max}</div>
             </div>
           </div>
 
-          <div className="hidden sm:block w-px h-7 bg-slate-300/50" />
+          <div className="hidden sm:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
 
           {/* Total (most prominent, right-most, own container) */}
           <div className={`flex items-center gap-3 px-5 py-4 rounded-lg font-mono font-black shadow-lg ${
