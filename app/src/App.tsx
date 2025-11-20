@@ -516,19 +516,24 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                   d.getDate() === today.getDate()
                 );
                 
+                const isSelectedWeek = panelProps.isOpen && panelProps.title === `Week ${weekNumber}`;
+                const ringClasses = 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900';
                 return (
-                  <div onClick={() => {
-                    setPanelProps({
-                      isOpen: true,
-                      title: `Week ${weekNumber}`,
-                      numbers: weekNumbers,
-                      editableNumbers: false,
-                      showExpressionInput: false,
-                      actionLabel: undefined,
-                      actionOnClick: undefined,
-                      actionIcon: undefined,
-                    });
-                  }} className="cursor-pointer">
+                  <div
+                    onClick={() => {
+                      setPanelProps({
+                        isOpen: true,
+                        title: `Week ${weekNumber}`,
+                        numbers: weekNumbers,
+                        editableNumbers: false,
+                        showExpressionInput: false,
+                        actionLabel: undefined,
+                        actionOnClick: undefined,
+                        actionIcon: undefined,
+                      });
+                    }}
+                    className={`cursor-pointer transition-shadow rounded-md ${isSelectedWeek ? ringClasses : ''}`}
+                  >
                     <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} />
                   </div>
                 );
@@ -621,6 +626,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
             <MonthlyGrid
               year={year}
               yearData={yearData}
+              selectedPanelTitle={panelProps.isOpen ? panelProps.title : undefined}
               onMonthClick={(monthNumber, monthName, numbers) => {
                 setPanelProps({
                   isOpen: true,

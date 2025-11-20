@@ -6,10 +6,11 @@ interface MonthCellProps {
   numbers: number[];
   isCurrentMonth: boolean;
   isFutureMonth?: boolean;
+  isSelected?: boolean;
   onClick: () => void;
 }
 
-export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = false, onClick }: MonthCellProps) {
+export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = false, isSelected = false, onClick }: MonthCellProps) {
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   
   // Unified tile style for monthly grid, with color effect
@@ -46,14 +47,20 @@ export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = 
         relative p-4 rounded-lg transition-all duration-200 shadow-sm dark:shadow-md
         ${isFutureMonth ? ghostClasses : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'}
         ${!isFutureMonth ? getColorClasses() : ''}
-        ${isCurrentMonth ? 'ring-2 ring-blue-400 dark:ring-blue-500 ring-opacity-60' : ''}
+        ${isSelected ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : ''}
       `}
       tabIndex={isFutureMonth ? -1 : 0}
       aria-disabled={isFutureMonth}
     >
       {/* Month name */}
-  <div className="text-sm font-semibold mb-3 text-center text-slate-700 dark:text-slate-200">
+      <div className={`text-sm font-semibold mb-3 text-center relative ${isCurrentMonth ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
         {monthName}
+        {isCurrentMonth && (
+          <span
+            className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400"
+            aria-label="Current month indicator"
+          />
+        )}
       </div>
 
       {/* Stats grid */}
@@ -99,11 +106,6 @@ export function MonthCell({ monthName, numbers, isCurrentMonth, isFutureMonth = 
         </div>
       ) : (
   <div className="text-center text-slate-400 dark:text-slate-500 text-sm py-4"></div>
-      )}
-
-      {/* Current month indicator */}
-      {isCurrentMonth && (
-        <div className="absolute top-2 right-2 w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full"></div>
       )}
     </div>
   );

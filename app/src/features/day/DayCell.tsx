@@ -43,9 +43,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
       <div
         className={`p-3 h-full flex flex-col rounded-lg transition-all duration-200 shadow-sm dark:shadow-md ${
           isFuture ? '' : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'
-        } hover:shadow-md dark:hover:shadow-lg ${
-          isToday ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : ''
-        } ${bgColor} ${ghostClasses}`}
+        } hover:shadow-md dark:hover:shadow-lg ${editMode ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : ''} ${bgColor} ${ghostClasses}`}
         onClick={isFuture ? undefined : () => setEditMode(true)}
         tabIndex={isFuture ? -1 : 0}
         role="button"
@@ -53,7 +51,15 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave }) => {
         aria-disabled={isFuture}
       >
         <div className={`text-sm font-bold mb-2 text-right ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
-          {date.getDate()}
+          <span className="inline-flex items-center justify-end gap-1">
+            <span>{date.getDate()}</span>
+            {isToday && (
+              <span
+                className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400"
+                aria-label="Today indicator"
+              />
+            )}
+          </span>
         </div>
 
         {hasData && (

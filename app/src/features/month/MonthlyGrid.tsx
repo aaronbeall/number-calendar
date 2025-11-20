@@ -4,9 +4,10 @@ interface MonthlyGridProps {
   year: number;
   yearData: Record<string, number[]>;
   onMonthClick: (monthNumber: number, monthName: string, numbers: number[]) => void;
+  selectedPanelTitle?: string;
 }
 
-export function MonthlyGrid({ year, yearData, onMonthClick }: MonthlyGridProps) {
+export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -39,6 +40,8 @@ export function MonthlyGrid({ year, yearData, onMonthClick }: MonthlyGridProps) 
           const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
           const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
 
+          const expectedTitlePrefix = `${monthName} '`; // panel title format `${monthName} 'YY`
+          const isSelected = !!selectedPanelTitle && selectedPanelTitle.startsWith(expectedTitlePrefix);
           return (
             <div
               key={monthNumber}
@@ -49,6 +52,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick }: MonthlyGridProps) 
                 numbers={monthNumbers}
                 isCurrentMonth={isCurrentMonth}
                 isFutureMonth={isFutureMonth}
+                isSelected={isSelected}
                 onClick={() => onMonthClick(monthNumber, monthName, monthNumbers)}
               />
             </div>
