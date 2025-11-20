@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { Trophy, Skull } from 'lucide-react';
 import { NumbersPanel } from '../panel/NumbersPanel';
+import type { MonthExtremes } from '@/lib/day-stats';
 
 export interface DayCellProps {
   date: Date;
@@ -7,9 +9,10 @@ export interface DayCellProps {
   onSave: (numbers: number[]) => void;
   monthMin?: number;
   monthMax?: number;
+  monthExtremes?: MonthExtremes;
 }
 
-export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMin, monthMax }) => {
+export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMin, monthMax, monthExtremes }) => {
   const [editMode, setEditMode] = useState(false);
 
   const isToday = date.toDateString() === new Date().toDateString();
@@ -19,6 +22,11 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
   const hasData = count > 0;
   const isPast = date < new Date(new Date().toDateString());
   const isFuture = date > new Date(new Date().toDateString());
+
+  // Check if this day has extreme values
+  const isHighestTotal = monthExtremes && hasData && total === monthExtremes.highestTotal;
+  const isLowestTotal = monthExtremes && hasData && total === monthExtremes.lowestTotal;
+  const isHighestCount = monthExtremes && hasData && count === monthExtremes.highestCount;
 
   // Unified color logic for future tiles
   let bgColor;
@@ -65,7 +73,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         aria-label={`Edit day ${date.getDate()}`}
         aria-disabled={isFuture}
       >
-        <div className={`text-sm font-bold mb-2 text-right ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
+        <div className={`text-sm font-bold mb-2 flex items-center justify-end ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
+          {/* Day number on right */}
           <span className="inline-flex items-center justify-end gap-1">
             <span>{date.getDate()}</span>
             {isToday && (
@@ -80,19 +89,48 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         {hasData && (
           <div className="flex-1 flex flex-col gap-2 text-xs">
             {/* Total - Primary metric */}
-            <div className={`w-full px-3 rounded text-center font-mono font-bold text-lg ${
+            <div className={`w-full px-3 py-1 rounded text-center font-mono font-bold text-lg flex items-center justify-center gap-1.5 ${
               total > 0 
                 ? 'bg-green-100 dark:bg-[#1a3a2a] text-green-700 dark:text-green-200' 
                 : total < 0 
                   ? 'bg-red-100 dark:bg-[#3a1a1a] text-red-700 dark:text-red-200' 
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
             }`}>
-              {total}
+              {(isHighestTotal || isLowestTotal) ? (
+                <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
+                  isHighestTotal
+                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
+                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
+                }`}>
+                  <span>{total}</span>
+                  {isHighestTotal && (
+                    <div title="Highest total">
+                      <Trophy className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                    </div>
+                  )}
+                  {isLowestTotal && (
+                    <div title="Lowest total">
+                      <Skull className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <span>{total}</span>
+              )}
             </div>
 
             {/* Entry count */}
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 text-center">
-              {count} {count === 1 ? 'entry' : 'entries'}
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 text-center flex items-center justify-center gap-1">
+              {isHighestCount ? (
+                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">
+                  <div title="Most entries">
+                    <Trophy className="h-2.5 w-2.5 text-slate-600 dark:text-slate-400" />
+                  </div>
+                  <span>{count} {count === 1 ? 'entry' : 'entries'}</span>
+                </div>
+              ) : (
+                <span>{count} {count === 1 ? 'entry' : 'entries'}</span>
+              )}
             </div>
 
             {/* Micro dots visualization - Shows composition */}
@@ -132,6 +170,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         editableNumbers
         showExpressionInput
         onSave={onSave}
+        monthExtremes={monthExtremes}
       />
     </div>
   );

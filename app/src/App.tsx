@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Trophy, Target, Plus, Download, Sparkles, Sun, Moon, Award } from 'lucide-react';
 import LogoIcon from '../public/icon.svg?react';
 import { getRelativeTime } from './lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { CalendarGrid } from './features/calendar/CalendarGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
@@ -19,6 +19,7 @@ import { useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { calculateDayStats, calculateMonthExtremes } from './lib/day-stats';
 import { NumbersPanel } from './features/panel/NumbersPanel';
 import YearChart from './features/chart/YearChart';
 
@@ -252,6 +253,10 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
   // Calculate min/max for the month (for dot scaling in DayCell)
   const monthMin = allNumbers.length > 0 ? Math.min(...allNumbers) : undefined;
   const monthMax = allNumbers.length > 0 ? Math.max(...allNumbers) : undefined;
+
+  // Calculate extremes across all days for highlighting
+  const dayStats = useMemo(() => calculateDayStats(monthData), [monthData]);
+  const monthExtremes = useMemo(() => calculateMonthExtremes(dayStats), [dayStats]);
 
   // Week stats are rendered inline beneath the calendar using renderWeekFooter
 
@@ -544,13 +549,15 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
               }}
               renderDay={date => {
                 const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const dayNumbers = monthData[dateStr] || [];
                 return (
                   <DayCell
                     date={date}
-                    numbers={monthData[dateStr] || []}
+                    numbers={dayNumbers}
                     onSave={nums => handleSaveDay(dateStr, nums)}
                     monthMin={monthMin}
                     monthMax={monthMax}
+                    monthExtremes={monthExtremes}
                   />
                 );
               }}
