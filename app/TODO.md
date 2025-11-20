@@ -4,7 +4,7 @@ I'm liking this one.
 
 ## Features
 - [ ] Numeric formatting
-- [ ] Manage multiple datasets
+- [x] Manage multiple datasets
   - [ ] Copy dataset
 - [ ] Achievements
 - [ ] Milestones

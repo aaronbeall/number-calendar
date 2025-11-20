@@ -1,5 +1,7 @@
 import React from 'react';
 import { CheckCircle, XCircle, Minus, Clock } from 'lucide-react';
+import { ChartContainer } from '@/components/ui/chart';
+import { LineChart, Line, Tooltip } from 'recharts';
 import { computeNumberStats } from '@/lib/stats';
 
 export interface WeekSummaryProps {
@@ -30,6 +32,18 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
   const meanText = mean > 0 ? 'text-green-700 dark:text-green-300' : mean < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200';
   const medianText = median > 0 ? 'text-green-700 dark:text-green-300' : median < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200';
 
+  // Cumulative numbers for micro line chart
+  const cumulativeNumbers = React.useMemo(() => {
+    let sum = 0;
+    return numbers.map(n => (sum += n));
+  }, [numbers]);
+
+  const chartBgClasses = total > 0
+    ? 'bg-green-100 dark:bg-green-900/40'
+    : total < 0
+    ? 'bg-red-100 dark:bg-red-900/40'
+    : 'bg-slate-100 dark:bg-slate-800/40';
+
   // Choose icon based on total
   const getStatusIcon = () => {
     if (isCurrentWeek) {
@@ -45,19 +59,62 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
 
   return (
   <div className={`rounded-md ${bgClasses} ${borderClasses} shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg transition-shadow`} aria-label="Weekly summary">
-      <div className="w-full flex items-center justify-between gap-3 sm:gap-5 px-3 py-2">
-        {/* Week Label + entries */}
-        <div className="flex-shrink-0">
-          <div className="flex items-center gap-2">
-            {getStatusIcon()}
-            <div>
-              <div className="text-xs font-medium text-slate-600 dark:text-slate-300">Week {weekNumber || '?'}</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400">{count} entries</div>
-            </div>
+      <div className="w-full flex items-stretch gap-3 sm:gap-5 px-3 py-2">
+        {/* TITLE (left) */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {getStatusIcon()}
+          <div className="leading-tight">
+            <div className="text-xs font-medium text-slate-600 dark:text-slate-300">Week {weekNumber || '?'}</div>
+            <div className="text-[10px] text-slate-500 dark:text-slate-400">{count} entries</div>
           </div>
         </div>
-
-        <div className="flex items-center gap-3 sm:gap-5">
+        {/* CHART (middle, flex-grow) */}
+        <div className="hidden sm:flex items-center flex-1">
+          {count > 1 && (
+            <div className={`w-full h-8 rounded-md ${chartBgClasses} flex items-center justify-center px-2`} aria-label="Weekly trend mini chart">
+              <ChartContainer config={{ numbers: { color: total >= 0 ? '#22c55e' : '#ef4444' } }} className="w-full h-6">
+                <LineChart width={160} height={24} data={cumulativeNumbers.map((y, i) => ({ x: i, y }))} margin={{ top: 4, right: 0, left: 0, bottom: 4 }}>
+                  <Line
+                    type="monotone"
+                    dataKey="y"
+                    stroke={total >= 0 ? '#22c55e' : '#ef4444'}
+                    strokeWidth={2}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: total >= 0 ? 'rgba(16,185,129,0.10)' : 'rgba(239,68,68,0.10)' }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const cumulative = payload[0].value as number;
+                        const entryIndex = payload[0].payload.x as number;
+                        const entryValue = entryIndex === 0 ? cumulative : cumulative - cumulativeNumbers[entryIndex - 1];
+                        const entryColor = entryValue > 0 ? '#22c55e' : entryValue < 0 ? '#ef4444' : '#64748b';
+                        const totalColor = cumulative > 0 ? '#22c55e' : cumulative < 0 ? '#ef4444' : '#64748b';
+                        return (
+                          <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+                            <div style={{ color: entryColor, fontWeight: 600, fontSize: 12 }}>
+                              {entryValue > 0 ? `+${entryValue}` : entryValue < 0 ? `-${Math.abs(entryValue)}` : entryValue}
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              <span>Total</span>
+                              <span style={{ color: totalColor, fontWeight: 600, fontSize: 12 }}>
+                                {cumulative}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </LineChart>
+              </ChartContainer>
+            </div>
+          )}
+        </div>
+        {/* STATS (right) */}
+        <div className="flex items-center gap-3 sm:gap-5 justify-end flex-shrink-0">
           {/* spacer removed */}
 
           {/* Mean / Median (secondary) */}
