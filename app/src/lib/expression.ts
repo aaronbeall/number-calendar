@@ -45,16 +45,44 @@ export function buildExpressionFromNumbers(nums: number[]): string {
 export function parseExpression(expr: string): number[] | null {
   if (!expr.trim()) return [];
   try {
-    // Remove currency symbols and locale-specific thousands separators (commas, spaces, etc.)
-    let cleaned = expr.replace(/[$€£¥₹]/g, '') // Remove common currency symbols
-      .replace(/(?<=\d)[,\s](?=\d{3}\b)/g, '') // Remove thousands separators between digits
-      .replace(/,/g, '') // Remove any remaining commas
-      .replace(/\s+/g, ''); // Remove all whitespace
+    // Normalize input (remove currency symbols, thousands separators, whitespace)
+    const normalize = (s: string) => s
+      .replace(/[$€£¥₹]/g, '')
+      .replace(/(?<=\d)[,\s](?=\d{3}\b)/g, '')
+      .replace(/,/g, '')
+      .replace(/\s+/g, '');
 
-    // Split on + or - (keep sign with number)
-    const parts = cleaned.split(/(?=[+-])/);
-    const numbers = parts.map(Number).filter(n => !isNaN(n));
-    if (numbers.length === 0) return null;
+    // Split on '=' to support delta targets. The first segment provides base numbers.
+    const segments = expr.split('=');
+    if (segments.length === 0) return [];
+
+    // Parse first segment into signed numbers by splitting at + or - boundaries.
+    const firstCleaned = normalize(segments[0]);
+    if (!firstCleaned) return [];
+
+    const baseParts = firstCleaned.split(/(?=[+-])/);
+    const numbers: number[] = baseParts.map(Number).filter(n => !isNaN(n));
+    if (numbers.length === 0) return null; // nothing valid before '='
+
+    // Running sum after initial numbers
+    let runningSum = numbers.reduce((a, b) => a + b, 0);
+
+    // For each subsequent '=' segment, treat segment as a target total and append the delta (target - current runningSum)
+    for (let i = 1; i < segments.length; i++) {
+      const segRaw = segments[i];
+      if (!segRaw.trim()) continue; // skip empty (e.g., trailing '=')
+      const segClean = normalize(segRaw);
+      if (!segClean) continue;
+
+      // Allow arithmetic expressions in target segments using parseSingleNumberExpression for flexibility
+      const target = parseSingleNumberExpression(segClean);
+      if (target === null) return null; // invalid target expression
+
+      const delta = target - runningSum;
+      numbers.push(delta);
+      runningSum = runningSum + delta; // should equal target
+    }
+
     return numbers;
   } catch {
     return null;
