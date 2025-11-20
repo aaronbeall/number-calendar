@@ -13,18 +13,18 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle }
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const getMonthNumbers = (monthNumber: number): number[] => {
-    const monthData: number[] = [];
-    
-    // Get all days in the month
+  const getMonthNumbersAndDays = (monthNumber: number): { all: number[]; days: { date: Date; numbers: number[] }[] } => {
+    const all: number[] = [];
+    const days: { date: Date; numbers: number[] }[] = [];
     const lastDay = new Date(year, monthNumber, 0).getDate();
     for (let day = 1; day <= lastDay; day++) {
+      const date = new Date(year, monthNumber - 1, day);
       const dateStr = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const dayNumbers = yearData[dateStr] || [];
-      monthData.push(...dayNumbers);
+      all.push(...dayNumbers);
+      days.push({ date, numbers: dayNumbers });
     }
-    
-    return monthData;
+    return { all, days };
   };
 
   const currentDate = new Date();
@@ -36,7 +36,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle }
       <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
         {monthNames.map((monthName, index) => {
           const monthNumber = index + 1;
-          const monthNumbers = getMonthNumbers(monthNumber);
+          const { all: monthNumbers, days: monthDays } = getMonthNumbersAndDays(monthNumber);
           const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
           const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
 
@@ -50,6 +50,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle }
               <MonthCell
                 monthName={monthName}
                 numbers={monthNumbers}
+                monthDays={monthDays}
                 isCurrentMonth={isCurrentMonth}
                 isFutureMonth={isFutureMonth}
                 isSelected={isSelected}
