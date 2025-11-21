@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Trophy, Skull } from 'lucide-react';
 import { NumbersPanel } from '../panel/NumbersPanel';
-import type { MonthExtremes } from '@/lib/day-stats';
+import type { StatsExtremes } from '@/lib/stats';
 
 export interface DayCellProps {
   date: Date;
@@ -9,7 +9,7 @@ export interface DayCellProps {
   onSave: (numbers: number[]) => void;
   monthMin?: number;
   monthMax?: number;
-  monthExtremes?: MonthExtremes;
+  monthExtremes?: StatsExtremes;
 }
 
 export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMin, monthMax, monthExtremes }) => {
@@ -170,7 +170,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         editableNumbers
         showExpressionInput
         onSave={onSave}
-        monthExtremes={monthExtremes}
+        extremes={monthExtremes}
       />
     </div>
   );

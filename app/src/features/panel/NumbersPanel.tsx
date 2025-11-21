@@ -12,7 +12,7 @@ import { LineChart, Line, Tooltip } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { AddNumberEditor } from './AddNumberEditor';
 import { AnimatePresence } from 'framer-motion';
-import type { MonthExtremes } from '@/lib/day-stats';
+import type { StatsExtremes } from '@/lib/stats';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ export interface NumbersPanelProps {
   actionLabel?: string;
   actionOnClick?: () => void;
   actionIcon?: React.ReactNode;
-  monthExtremes?: MonthExtremes;
+  extremes?: StatsExtremes;
 }
 
 
@@ -41,7 +41,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   actionLabel,
   actionOnClick,
   actionIcon,
-  monthExtremes,
+  extremes,
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
 
@@ -248,19 +248,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       : 'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                 }`}>
                   <div className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">Total</div>
-                  {(monthExtremes && (stats.total === monthExtremes.highestTotal || stats.total === monthExtremes.lowestTotal)) ? (
+                  {(extremes && (stats.total === extremes.highestTotal || stats.total === extremes.lowestTotal)) ? (
                     <div className={`flex items-center justify-center gap-1.5 px-3 py-1 rounded border ${
-                      stats.total === monthExtremes.highestTotal
+                      stats.total === extremes.highestTotal
                         ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
                         : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
                     }`}>
                       <span>{stats.total}</span>
-                      {stats.total === monthExtremes.highestTotal && (
+                      {stats.total === extremes.highestTotal && (
                         <div title="Highest total">
                           <Trophy className="h-4 w-4 text-green-600 dark:text-green-400" />
                         </div>
                       )}
-                      {stats.total === monthExtremes.lowestTotal && (
+                      {stats.total === extremes.lowestTotal && (
                         <div title="Lowest total">
                           <Skull className="h-4 w-4 text-red-600 dark:text-red-400" />
                         </div>
@@ -278,19 +278,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
                     stats.mean > 0 ? 'text-green-600 dark:text-green-300' : stats.mean < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>
-                    {(monthExtremes && (stats.mean === monthExtremes.highestMean || stats.mean === monthExtremes.lowestMean)) ? (
+                    {(extremes && (stats.mean === extremes.highestMean || stats.mean === extremes.lowestMean)) ? (
                       <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.mean === monthExtremes.highestMean
+                        stats.mean === extremes.highestMean
                           ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
                           : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
                       }`}>
                         <span>{stats.mean.toFixed(1)}</span>
-                        {stats.mean === monthExtremes.highestMean && (
+                        {stats.mean === extremes.highestMean && (
                           <div title="Highest mean">
                             <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
                           </div>
                         )}
-                        {stats.mean === monthExtremes.lowestMean && (
+                        {stats.mean === extremes.lowestMean && (
                           <div title="Lowest mean">
                             <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
                           </div>
@@ -306,19 +306,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
                     stats.median > 0 ? 'text-green-600 dark:text-green-300' : stats.median < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>
-                    {(monthExtremes && (stats.median === monthExtremes.highestMedian || stats.median === monthExtremes.lowestMedian)) ? (
+                    {(extremes && (stats.median === extremes.highestMedian || stats.median === extremes.lowestMedian)) ? (
                       <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.median === monthExtremes.highestMedian
+                        stats.median === extremes.highestMedian
                           ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
                           : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
                       }`}>
                         <span>{stats.median}</span>
-                        {stats.median === monthExtremes.highestMedian && (
+                        {stats.median === extremes.highestMedian && (
                           <div title="Highest median">
                             <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
                           </div>
                         )}
-                        {stats.median === monthExtremes.lowestMedian && (
+                        {stats.median === extremes.lowestMedian && (
                           <div title="Lowest median">
                             <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
                           </div>
@@ -337,19 +337,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
                     stats.min > 0 ? 'text-green-600 dark:text-green-300' : stats.min < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>
-                    {(monthExtremes && (stats.min === monthExtremes.highestMin || stats.min === monthExtremes.lowestMin)) ? (
+                    {(extremes && (stats.min === extremes.highestMin || stats.min === extremes.lowestMin)) ? (
                       <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.min === monthExtremes.highestMin
+                        stats.min === extremes.highestMin
                           ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
                           : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
                       }`}>
                         <span>{stats.min}</span>
-                        {stats.min === monthExtremes.highestMin && (
+                        {stats.min === extremes.highestMin && (
                           <div title="Highest min">
                             <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
                           </div>
                         )}
-                        {stats.min === monthExtremes.lowestMin && (
+                        {stats.min === extremes.lowestMin && (
                           <div title="Lowest min">
                             <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
                           </div>
@@ -365,19 +365,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
                     stats.max > 0 ? 'text-green-600 dark:text-green-300' : stats.max < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>
-                    {(monthExtremes && (stats.max === monthExtremes.highestMax || stats.max === monthExtremes.lowestMax)) ? (
+                    {(extremes && (stats.max === extremes.highestMax || stats.max === extremes.lowestMax)) ? (
                       <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.max === monthExtremes.highestMax
+                        stats.max === extremes.highestMax
                           ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
                           : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
                       }`}>
                         <span>{stats.max}</span>
-                        {stats.max === monthExtremes.highestMax && (
+                        {stats.max === extremes.highestMax && (
                           <div title="Highest max">
                             <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
                           </div>
                         )}
-                        {stats.max === monthExtremes.lowestMax && (
+                        {stats.max === extremes.lowestMax && (
                           <div title="Lowest max">
                             <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
                           </div>

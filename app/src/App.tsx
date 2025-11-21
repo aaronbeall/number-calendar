@@ -19,9 +19,12 @@ import { useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { calculateDayStats, calculateMonthExtremes } from './lib/day-stats';
+import { calculateDayStats, calculateMonthExtremes } from './lib/stats';
 import { NumbersPanel } from './features/panel/NumbersPanel';
 import YearChart from './features/chart/YearChart';
+import { useTheme } from './components/ThemeProvider';
+import type { Dataset } from './features/db/localdb';
+import type { StatsExtremes } from './lib/stats';
 
 const today = new Date();
 
@@ -33,9 +36,6 @@ function getMonthDays(year: number, month: number) {
   }
   return days;
 }
-
-import { useTheme } from './components/ThemeProvider';
-import type { Dataset } from './features/db/localdb';
 
 function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; year: number; month: number; onSelect: (id: string) => void }) {
   const { data: monthData = {} } = useMonth(dataset.id, year, month);
@@ -232,6 +232,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
     actionLabel: undefined as string | undefined,
     actionOnClick: undefined as (() => void) | undefined,
     actionIcon: undefined as React.ReactNode | undefined,
+    extremes: undefined as StatsExtremes | undefined,
   });
 
   // Dataset helpers
@@ -250,11 +251,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
   const days = getMonthDays(year, month);
   const allNumbers = Object.values(monthData).flat();
   
-  // Calculate min/max for the month (for dot scaling in DayCell)
-  const monthMin = allNumbers.length > 0 ? Math.min(...allNumbers) : undefined;
-  const monthMax = allNumbers.length > 0 ? Math.max(...allNumbers) : undefined;
-
-  // Calculate extremes across all days for highlighting
+  // Calculate extremes across all days for highlighting and dot scaling
   const dayStats = useMemo(() => calculateDayStats(monthData), [monthData]);
   const monthExtremes = useMemo(() => calculateMonthExtremes(dayStats), [dayStats]);
 
@@ -539,6 +536,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                         actionLabel: undefined,
                         actionOnClick: undefined,
                         actionIcon: undefined,
+                        extremes: undefined,
                       });
                     }}
                     className={`cursor-pointer transition-shadow rounded-md ${isSelectedWeek ? ringClasses : ''}`}
@@ -555,8 +553,8 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                     date={date}
                     numbers={dayNumbers}
                     onSave={nums => handleSaveDay(dateStr, nums)}
-                    monthMin={monthMin}
-                    monthMax={monthMax}
+                    monthMin={monthExtremes?.lowestMin}
+                    monthMax={monthExtremes?.highestMax}
                     monthExtremes={monthExtremes}
                   />
                 );
@@ -570,6 +568,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                   isOpen: true,
                   title: `${monthNames[month - 1]}`,
                   numbers: allNumbers,
+                  extremes: undefined,
                   editableNumbers: false,
                   showExpressionInput: false,
                   actionLabel: undefined,
@@ -640,7 +639,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
               year={year}
               yearData={yearData}
               selectedPanelTitle={panelProps.isOpen ? panelProps.title : undefined}
-              onMonthClick={(monthNumber, monthName, numbers) => {
+              onMonthClick={(monthNumber, monthName, numbers, yearExtremes) => {
                 setPanelProps({
                   isOpen: true,
                   title: `${monthName} '${String(year).slice(-2)}`,
@@ -655,6 +654,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                     setPanelProps(prev => ({ ...prev, isOpen: false }));
                   },
                   actionIcon: <CalendarDays className="h-4 w-4" />,
+                  extremes: yearExtremes,
                 });
               }}
             />
@@ -667,6 +667,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                   isOpen: true,
                   title: `${year} Year Summary`,
                   numbers: allYearNumbers,
+                  extremes: undefined,
                   editableNumbers: false,
                   showExpressionInput: false,
                   actionLabel: undefined,

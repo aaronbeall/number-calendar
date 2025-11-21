@@ -1,9 +1,12 @@
 import { MonthCell } from './MonthCell';
+import { calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
+import { useMemo } from 'react';
+import type { StatsExtremes } from '@/lib/stats';
 
 interface MonthlyGridProps {
   year: number;
   yearData: Record<string, number[]>;
-  onMonthClick: (monthNumber: number, monthName: string, numbers: number[]) => void;
+  onMonthClick: (monthNumber: number, monthName: string, numbers: number[], yearExtremes: StatsExtremes) => void;
   selectedPanelTitle?: string;
 }
 
@@ -13,19 +16,34 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle }
     "July", "August", "September", "October", "November", "December"
   ];
 
-  const getMonthNumbersAndDays = (monthNumber: number): { all: number[]; days: { date: Date; numbers: number[] }[] } => {
-    const all: number[] = [];
-    const days: { date: Date; numbers: number[] }[] = [];
-    const lastDay = new Date(year, monthNumber, 0).getDate();
-    for (let day = 1; day <= lastDay; day++) {
-      const date = new Date(year, monthNumber - 1, day);
-      const dateStr = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayNumbers = yearData[dateStr] || [];
-      all.push(...dayNumbers);
-      days.push({ date, numbers: dayNumbers });
+  // Calculate year extremes across all months
+  const yearExtremes = useMemo(() => {
+    const monthStats = calculateMonthStats(yearData, year);
+    return calculateYearExtremes(monthStats);
+  }, [yearData, year]);
+
+  // Memoized map of month data
+  const monthDataMap = useMemo(() => {
+    const map = new Map<number, { all: number[]; days: { date: Date; numbers: number[] }[] }>();
+    
+    for (let monthNumber = 1; monthNumber <= 12; monthNumber++) {
+      const all: number[] = [];
+      const days: { date: Date; numbers: number[] }[] = [];
+      const lastDay = new Date(year, monthNumber, 0).getDate();
+      
+      for (let day = 1; day <= lastDay; day++) {
+        const date = new Date(year, monthNumber - 1, day);
+        const dateStr = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayNumbers = yearData[dateStr] || [];
+        all.push(...dayNumbers);
+        days.push({ date, numbers: dayNumbers });
+      }
+      
+      map.set(monthNumber, { all, days });
     }
-    return { all, days };
-  };
+    
+    return map;
+  }, [yearData, year]);
 
   const currentDate = new Date();
   const isCurrentYear = year === currentDate.getFullYear();
@@ -36,7 +54,8 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle }
       <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
         {monthNames.map((monthName, index) => {
           const monthNumber = index + 1;
-          const { all: monthNumbers, days: monthDays } = getMonthNumbersAndDays(monthNumber);
+          const monthData = monthDataMap.get(monthNumber)!;
+          const { all: monthNumbers, days: monthDays } = monthData;
           const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
           const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
 
@@ -54,7 +73,8 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle }
                 isCurrentMonth={isCurrentMonth}
                 isFutureMonth={isFutureMonth}
                 isSelected={isSelected}
-                onClick={() => onMonthClick(monthNumber, monthName, monthNumbers)}
+                yearExtremes={yearExtremes}
+                onClick={() => onMonthClick(monthNumber, monthName, monthNumbers, yearExtremes)}
               />
             </div>
           );
