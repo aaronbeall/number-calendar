@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import { computeNumberStats, type StatsExtremes } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
@@ -11,11 +11,11 @@ export interface MonthSummaryProps {
 }
 
 export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, isCurrentMonth, yearExtremes }) => {
-  const s = computeNumberStats(numbers);
-  if (!s) return (
+  const rawStats = useMemo(() => computeNumberStats(numbers), [numbers]);
+  if (!rawStats) return (
     <div className="text-sm text-slate-500">No data</div>
   );
-  const stats = { ...s, mean: s.mean };
+  const stats = { ...rawStats, mean: rawStats.mean };
 
   // Check if this month has any extreme values across the year
   const isHighestTotal = yearExtremes?.highestTotal !== undefined && stats.total === yearExtremes.highestTotal;

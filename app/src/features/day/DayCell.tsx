@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Trophy, Skull } from 'lucide-react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { NumberText } from '@/components/ui/number-text';
@@ -24,7 +24,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
   const hasData = count > 0;
   const isPast = date < new Date(new Date().toDateString());
   const isFuture = date > new Date(new Date().toDateString());
-  const dayStats = hasData ? computeNumberStats(numbers) : null;
+  const dayStats = useMemo(() => hasData ? computeNumberStats(numbers)  : null, [numbers, hasData]);
 
   // Check if this day has extreme values
   const isHighestTotal = monthExtremes && hasData && total === monthExtremes.highestTotal;

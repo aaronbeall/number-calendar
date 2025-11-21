@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { CheckCircle, XCircle, Minus, Clock } from 'lucide-react';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, Tooltip } from 'recharts';
@@ -13,7 +13,7 @@ export interface WeekSummaryProps {
 export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek }) => {
   if (!numbers || numbers.length === 0) return null;
 
-  const stats = computeNumberStats(numbers);
+  const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   if (!stats) return null;
   const { count, total, mean, median, min, max } = stats;
 
