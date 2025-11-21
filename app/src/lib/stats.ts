@@ -61,7 +61,7 @@ export function calculateDayStats(monthData: Record<string, number[]>): DayStats
  * Calculate extreme values across all days in the month
  */
 export function calculateMonthExtremes(dayStats: DayStatsData[]): StatsExtremes {
-  if (dayStats.length === 0) return {};
+  if (dayStats.length <= 1) return {};
 
   return {
     highestTotal: Math.max(...dayStats.map(d => d.total)),
@@ -110,7 +110,7 @@ export function calculateMonthStats(yearData: Record<string, number[]>, year: nu
  * Calculate extreme values across all months in the year
  */
 export function calculateYearExtremes(monthStats: MonthStatsData[]): StatsExtremes {
-  if (monthStats.length === 0) return {};
+  if (monthStats.length <= 1) return {};
 
   return {
     highestTotal: Math.max(...monthStats.map(m => m.total)),
