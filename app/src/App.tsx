@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Trophy, Target, Plus, Download, Sparkles, Sun, Moon, Award } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays, Menu, Settings, User, Trophy, Target, Plus, Download, Sparkles, Sun, Moon, Award, TrendingUp } from 'lucide-react';
 import LogoIcon from '../public/icon.svg?react';
 import { getRelativeTime } from './lib/utils';
 import { useState, useMemo } from 'react';
@@ -42,16 +42,26 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
   const created = new Date(dataset.createdAt).toLocaleDateString();
   const updated = getRelativeTime(dataset.updatedAt);
   const IconComponent = getDatasetIcon(dataset.icon);
-  
-  // Prepare chart data from current month
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const chartData = [];
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    const numbers = monthData[dateKey] || [];
-    const total = numbers.reduce((sum, num) => sum + num, 0);
-    chartData.push({ day, value: total });
-  }
+
+  // Memoized chart data (daily + cumulative)
+  const { chartData, finalCumulative } = useMemo(() => {
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const data: { day: number; dailyTotal: number; cumulativeTotal: number }[] = [];
+    let running = 0;
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const numbers = monthData[dateKey] || [];
+      const dailyTotal = numbers.reduce((sum, num) => sum + num, 0);
+      running += dailyTotal;
+      data.push({ day, dailyTotal, cumulativeTotal: running });
+    }
+    return {
+      chartData: data,
+      finalCumulative: data.length > 0 ? data[data.length - 1].cumulativeTotal : 0,
+    };
+  }, [monthData, year, month, dataset.id]);
+
+  const lineColor = finalCumulative >= 0 ? 'rgb(34 197 94)' : 'rgb(239 68 68)'; // green-500 / red-500
   
   return (
     <button
@@ -66,18 +76,31 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-semibold text-slate-700 dark:text-slate-100 truncate group-hover:text-blue-700 dark:group-hover:text-indigo-200">{dataset.name}</h3>
-            <span className="text-[10px] uppercase tracking-wide font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded flex-shrink-0">Dataset</span>
+            {(() => {
+              const tracking = dataset.tracking; // 'trend' | 'series'
+              const TagIcon = tracking === 'trend' ? TrendingUp : BarChartIcon;
+              const label = tracking === 'trend' ? 'Trend' : 'Series';
+              return (
+                <span
+                  className="flex items-center gap-1 text-[10px] uppercase tracking-wide font-medium text-slate-400 dark:text-slate-500 bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded flex-shrink-0"
+                  title={`Tracking ${label}`}
+                >
+                  <TagIcon className="h-3 w-3" />
+                  <span>{label}</span>
+                </span>
+              );
+            })()}
           </div>
           {dataset.description && (
             <p className="text-sm text-slate-600 dark:text-slate-300 mb-3 line-clamp-2">{dataset.description}</p>
           )}
           <div className="flex items-center gap-3 mb-3 h-12">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData}>
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="rgb(59, 130, 246)" 
+              <LineChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                <Line
+                  type="monotone"
+                  dataKey="cumulativeTotal"
+                  stroke={lineColor}
                   strokeWidth={2}
                   dot={false}
                   isAnimationActive={false}
