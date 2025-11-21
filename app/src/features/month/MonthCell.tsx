@@ -26,8 +26,8 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
     const absMax = Math.abs(yearExtremes.highestMax ?? 0);
     const maxMagnitude = Math.max(absMin, absMax);
     if (maxMagnitude === 0) return 1;
-    // Scale from 0.6 to 1.4 based on relative magnitude
-    return .6 + (absValue / maxMagnitude) * .8;
+    // Scale from 0.6 to 2.4 based on relative magnitude
+    return .6 + (absValue / maxMagnitude) * 1.8;
   };
   
     // Check if this month has extreme values
