@@ -18,6 +18,18 @@ interface MonthCellProps {
 export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, isSelected = false, yearExtremes, onClick }: MonthCellProps) {
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   
+  // Calculate dot sizes based on year's extremes
+  const getRelativeSize = (value: number): number => {
+    if (!yearExtremes || (yearExtremes.highestMax === undefined && yearExtremes.lowestMin === undefined)) return 1;
+    const absValue = Math.abs(value);
+    const absMin = Math.abs(yearExtremes.lowestMin ?? 0);
+    const absMax = Math.abs(yearExtremes.highestMax ?? 0);
+    const maxMagnitude = Math.max(absMin, absMax);
+    if (maxMagnitude === 0) return 1;
+    // Scale from 0.6 to 1.4 based on relative magnitude
+    return .6 + (absValue / maxMagnitude) * .8;
+  };
+  
     // Check if this month has extreme values
     const isHighestTotal = yearExtremes && stats && stats.total === yearExtremes.highestTotal;
     const isLowestTotal = yearExtremes && stats && stats.total === yearExtremes.lowestTotal;
@@ -122,6 +134,7 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
                   const numbersForDay = dayObj.numbers;
                   const totalDay = numbersForDay.reduce((a, b) => a + b, 0);
                   const isFuture = date > today;
+                  const scale = getRelativeSize(totalDay);
                   const baseClass = 'w-1.5 h-1.5 rounded-full transition-all duration-200';
                   let colorClass;
                   
@@ -141,6 +154,9 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
                     <div
                       key={`day-${d}`}
                       className={`${baseClass} ${colorClass}`}
+                      style={{
+                        transform: `scale(${scale})`,
+                      }}
                       title={`${monthName} ${d}: ${totalDay}`}
                     />
                   );
