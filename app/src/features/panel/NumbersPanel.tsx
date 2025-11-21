@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetHeader, SheetTitle, SheetContent } from '@/components/ui/sheet';
-import { ArrowUpDown, ArrowUp, ArrowDown, Trophy, Skull } from "lucide-react";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { NumberText } from '@/components/ui/number-text';
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { computeNumberStats } from '@/lib/stats';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
@@ -248,85 +249,37 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       : 'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
                 }`}>
                   <div className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">Total</div>
-                  {(extremes && (stats.total === extremes.highestTotal || stats.total === extremes.lowestTotal)) ? (
-                    <div className={`flex items-center justify-center gap-1.5 px-3 py-1 rounded border ${
-                      stats.total === extremes.highestTotal
-                        ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                        : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                    }`}>
-                      <span>{stats.total}</span>
-                      {stats.total === extremes.highestTotal && (
-                        <div title="Highest total">
-                          <Trophy className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        </div>
-                      )}
-                      {stats.total === extremes.lowestTotal && (
-                        <div title="Lowest total">
-                          <Skull className="h-4 w-4 text-red-600 dark:text-red-400" />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <span>{stats.total}</span>
-                  )}
+                  <NumberText
+                    value={stats.total}
+                    isHighest={!!(extremes && stats.total === extremes.highestTotal)}
+                    isLowest={!!(extremes && stats.total === extremes.lowestTotal)}
+                    className=""
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center">
                   <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Mean</div>
-                  <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
-                    stats.mean > 0 ? 'text-green-600 dark:text-green-300' : stats.mean < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
-                  }`}>
-                    {(extremes && (stats.mean === extremes.highestMean || stats.mean === extremes.lowestMean)) ? (
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.mean === extremes.highestMean
-                          ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                          : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                      }`}>
-                        <span>{stats.mean.toFixed(1)}</span>
-                        {stats.mean === extremes.highestMean && (
-                          <div title="Highest mean">
-                            <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
-                          </div>
-                        )}
-                        {stats.mean === extremes.lowestMean && (
-                          <div title="Lowest mean">
-                            <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span>{stats.mean.toFixed(1)}</span>
-                    )}
+                  <div className="font-mono text-sm font-semibold flex items-center justify-center">
+                    <NumberText
+                      value={stats.mean}
+                      isHighest={!!(extremes && stats.mean === extremes.highestMean)}
+                      isLowest={!!(extremes && stats.mean === extremes.lowestMean)}
+                      className=""
+                      formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                    />
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Median</div>
-                  <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
-                    stats.median > 0 ? 'text-green-600 dark:text-green-300' : stats.median < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
-                  }`}>
-                    {(extremes && (stats.median === extremes.highestMedian || stats.median === extremes.lowestMedian)) ? (
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.median === extremes.highestMedian
-                          ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                          : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                      }`}>
-                        <span>{stats.median}</span>
-                        {stats.median === extremes.highestMedian && (
-                          <div title="Highest median">
-                            <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
-                          </div>
-                        )}
-                        {stats.median === extremes.lowestMedian && (
-                          <div title="Lowest median">
-                            <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span>{stats.median}</span>
-                    )}
+                  <div className="font-mono text-sm font-semibold flex items-center justify-center">
+                    <NumberText
+                      value={stats.median}
+                      isHighest={!!(extremes && stats.median === extremes.highestMedian)}
+                      isLowest={!!(extremes && stats.median === extremes.lowestMedian)}
+                      className=""
+                    />
                   </div>
                 </div>
               </div>
@@ -337,27 +290,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
                     stats.min > 0 ? 'text-green-600 dark:text-green-300' : stats.min < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>
-                    {(extremes && (stats.min === extremes.highestMin || stats.min === extremes.lowestMin)) ? (
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.min === extremes.highestMin
-                          ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                          : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                      }`}>
-                        <span>{stats.min}</span>
-                        {stats.min === extremes.highestMin && (
-                          <div title="Highest min">
-                            <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
-                          </div>
-                        )}
-                        {stats.min === extremes.lowestMin && (
-                          <div title="Lowest min">
-                            <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span>{stats.min}</span>
-                    )}
+                    <NumberText
+                      value={stats.min}
+                      isHighest={!!(extremes && stats.min === extremes.highestMin)}
+                      isLowest={!!(extremes && stats.min === extremes.lowestMin)}
+                      className=""
+                    />
                   </div>
                 </div>
                 <div className="text-center">
@@ -365,27 +303,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
                     stats.max > 0 ? 'text-green-600 dark:text-green-300' : stats.max < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
                   }`}>
-                    {(extremes && (stats.max === extremes.highestMax || stats.max === extremes.lowestMax)) ? (
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded border ${
-                        stats.max === extremes.highestMax
-                          ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                          : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                      }`}>
-                        <span>{stats.max}</span>
-                        {stats.max === extremes.highestMax && (
-                          <div title="Highest max">
-                            <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
-                          </div>
-                        )}
-                        {stats.max === extremes.lowestMax && (
-                          <div title="Lowest max">
-                            <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <span>{stats.max}</span>
-                    )}
+                    <NumberText
+                      value={stats.max}
+                      isHighest={!!(extremes && stats.max === extremes.highestMax)}
+                      isLowest={!!(extremes && stats.max === extremes.lowestMax)}
+                      className=""
+                    />
                   </div>
                 </div>
               </div>

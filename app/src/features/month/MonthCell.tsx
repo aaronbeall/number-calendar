@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { computeNumberStats } from '@/lib/stats';
-import { Trophy, Skull } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import type { StatsExtremes } from '@/lib/stats';
+import { NumberText } from '@/components/ui/number-text';
 
 interface MonthCellProps {
   monthName: string;
@@ -45,13 +46,7 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
 
   // Removed: getTextColorClass (replaced by per-stat getValueColorClass)
 
-  // Per-stat value color (positive/negative/neutral)
-  const getValueColorClass = (val?: number) => {
-    if (val === undefined || val === null) return 'text-slate-700 dark:text-slate-200';
-    if (val > 0) return 'text-green-700 dark:text-green-300';
-    if (val < 0) return 'text-red-700 dark:text-red-300';
-    return 'text-slate-700 dark:text-slate-200';
-  };
+  // Per-stat value color handled by NumberText component
 
   // Total uses same coloring as other stats via getValueColorClass
 
@@ -85,31 +80,7 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
         <div className="space-y-3">
           {/* Total - Most important metric, centered and prominent */}
           <div className="text-center">
-            {(isHighestTotal || isLowestTotal) ? (
-              <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
-                isHighestTotal
-                  ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                  : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-              }`}>
-                <div className={`text-3xl font-bold ${getValueColorClass(stats.total)}`}>
-                  {stats.total}
-                </div>
-                {isHighestTotal && (
-                  <div title="Highest total">
-                    <Trophy className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                )}
-                {isLowestTotal && (
-                  <div title="Lowest total">
-                    <Skull className="h-4 w-4 text-red-600 dark:text-red-400" />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className={`text-3xl font-bold ${getValueColorClass(stats.total)}`}>
-                {stats.total}
-              </div>
-            )}
+            <NumberText value={stats.total} isHighest={!!isHighestTotal} isLowest={!!isLowestTotal} className="text-3xl font-bold" />
             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {isHighestCount ? (
                 <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">
@@ -198,113 +169,25 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Mean
               </div>
-              {(isHighestMean || isLowestMean) ? (
-                <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border text-sm font-semibold ${
-                  isHighestMean
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                } ${getValueColorClass(stats.mean)}`}>
-                  <span>{stats.mean?.toFixed(1) ?? '-'}</span>
-                  {isHighestMean && (
-                    <div title="Highest mean">
-                      <Trophy className="h-2.5 w-2.5 text-green-600 dark:text-green-400" />
-                    </div>
-                  )}
-                  {isLowestMean && (
-                    <div title="Lowest mean">
-                      <Skull className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className={`font-semibold text-sm ${getValueColorClass(stats.mean)}`}>
-                  {stats.mean?.toFixed(1) ?? '-'}
-                </div>
-              )}
+              <NumberText value={stats.mean as number} isHighest={!!isHighestMean} isLowest={!!isLowestMean} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Median
               </div>
-              {(isHighestMedian || isLowestMedian) ? (
-                <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border text-sm font-semibold ${
-                  isHighestMedian
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                } ${getValueColorClass(stats.median)}`}>
-                  <span>{stats.median?.toFixed(1) ?? '-'}</span>
-                  {isHighestMedian && (
-                    <div title="Highest median">
-                      <Trophy className="h-2.5 w-2.5 text-green-600 dark:text-green-400" />
-                    </div>
-                  )}
-                  {isLowestMedian && (
-                    <div title="Lowest median">
-                      <Skull className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className={`font-semibold text-sm ${getValueColorClass(stats.median)}`}>
-                  {stats.median?.toFixed(1) ?? '-'}
-                </div>
-              )}
+              <NumberText value={stats.median as number} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Min
               </div>
-              {(isHighestMin || isLowestMin) ? (
-                <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border text-sm font-semibold ${
-                  isHighestMin
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                } ${getValueColorClass(stats.min)}`}>
-                  <span>{stats.min}</span>
-                  {isHighestMin && (
-                    <div title="Highest min">
-                      <Trophy className="h-2.5 w-2.5 text-green-600 dark:text-green-400" />
-                    </div>
-                  )}
-                  {isLowestMin && (
-                    <div title="Lowest min">
-                      <Skull className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className={`font-semibold text-sm ${getValueColorClass(stats.min)}`}>
-                  {stats.min}
-                </div>
-              )}
+              <NumberText value={stats.min} isHighest={!!isHighestMin} isLowest={!!isLowestMin} className="font-semibold text-sm" />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Max
               </div>
-              {(isHighestMax || isLowestMax) ? (
-                <div className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded border text-sm font-semibold ${
-                  isHighestMax
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                } ${getValueColorClass(stats.max)}`}>
-                  <span>{stats.max}</span>
-                  {isHighestMax && (
-                    <div title="Highest max">
-                      <Trophy className="h-2.5 w-2.5 text-green-600 dark:text-green-400" />
-                    </div>
-                  )}
-                  {isLowestMax && (
-                    <div title="Lowest max">
-                      <Skull className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className={`font-semibold text-sm ${getValueColorClass(stats.max)}`}>
-                  {stats.max}
-                </div>
-              )}
+              <NumberText value={stats.max} isHighest={!!isHighestMax} isLowest={!!isLowestMax} className="font-semibold text-sm" />
             </div>
           </div>
         </div>

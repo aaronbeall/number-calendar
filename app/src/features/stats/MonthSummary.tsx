@@ -1,6 +1,7 @@
 import React from 'react';
-import { CheckCircle, XCircle, Clock, Trophy, Skull } from 'lucide-react';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
 import { computeNumberStats, type StatsExtremes } from '@/lib/stats';
+import { NumberText } from '@/components/ui/number-text';
 
 export interface MonthSummaryProps {
   numbers: number[];
@@ -40,8 +41,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
     ? 'border-b-4 border-red-400 dark:border-red-600'
     : 'border-b-4 border-slate-400 dark:border-slate-600';
 
-  const meanText = stats.mean > 0 ? 'text-green-700 dark:text-green-300' : stats.mean < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200';
-  const medianText = stats.median > 0 ? 'text-green-700 dark:text-green-300' : stats.median < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200';
+  // Value coloring handled by NumberText defaults
 
   // Determine icon based on total and current month status
   const getStatusIcon = () => {
@@ -76,49 +76,11 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
           <div className="hidden sm:flex items-center gap-4">
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
-              {(isHighestMean || isLowestMean) ? (
-                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
-                  isHighestMean
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                }`}>
-                  <span className={`font-mono text-sm sm:text-base font-bold ${meanText}`}>
-                    {Number.isFinite(stats.mean) ? stats.mean.toFixed(1) : '-'}
-                  </span>
-                  {isHighestMean ? (
-                    <Trophy className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <Skull className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                  )}
-                </div>
-              ) : (
-                <div className={`font-mono text-sm sm:text-base font-bold ${meanText}`}>
-                  {Number.isFinite(stats.mean) ? stats.mean.toFixed(1) : '-'}
-                </div>
-              )}
+              <NumberText value={stats.mean} isHighest={isHighestMean} isLowest={isLowestMean} className="font-mono text-sm sm:text-base font-bold" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
             </div>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
-              {(isHighestMedian || isLowestMedian) ? (
-                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
-                  isHighestMedian
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                }`}>
-                  <span className={`font-mono text-sm sm:text-base font-bold ${medianText}`}>
-                    {Number.isFinite(stats.median) ? stats.median : '-'}
-                  </span>
-                  {isHighestMedian ? (
-                    <Trophy className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <Skull className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                  )}
-                </div>
-              ) : (
-                <div className={`font-mono text-sm sm:text-base font-bold ${medianText}`}>
-                  {Number.isFinite(stats.median) ? stats.median : '-'}
-                </div>
-              )}
+              <NumberText value={stats.median} isHighest={isHighestMedian} isLowest={isLowestMedian} className="font-mono text-sm sm:text-base font-bold" />
             </div>
           </div>
 
@@ -128,49 +90,11 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
           <div className="hidden md:flex items-center gap-4">
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
-              {(isHighestMin || isLowestMin) ? (
-                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
-                  isHighestMin
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                }`}>
-                  <span className={`font-mono text-base font-bold ${stats.min >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                    {stats.min}
-                  </span>
-                  {isHighestMin ? (
-                    <Trophy className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <Skull className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                  )}
-                </div>
-              ) : (
-                <div className={`font-mono text-base font-bold ${stats.min >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                  {stats.min}
-                </div>
-              )}
+              <NumberText value={stats.min} isHighest={isHighestMin} isLowest={isLowestMin} className="font-mono text-base font-bold" />
             </div>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
-              {(isHighestMax || isLowestMax) ? (
-                <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border ${
-                  isHighestMax
-                    ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                    : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-                }`}>
-                  <span className={`font-mono text-base font-bold ${stats.max >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                    {stats.max}
-                  </span>
-                  {isHighestMax ? (
-                    <Trophy className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
-                  ) : (
-                    <Skull className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
-                  )}
-                </div>
-              ) : (
-                <div className={`font-mono text-base font-bold ${stats.max >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
-                  {stats.max}
-                </div>
-              )}
+              <NumberText value={stats.max} isHighest={isHighestMax} isLowest={isLowestMax} className="font-mono text-base font-bold" />
             </div>
           </div>
 
@@ -185,22 +109,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, monthName, 
               : 'bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-slate-200/50 dark:shadow-slate-900/50'
           }`}>
             <div className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-400 font-bold">Total</div>
-            {(isHighestTotal || isLowestTotal) ? (
-              <div className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border ${
-                isHighestTotal
-                  ? 'bg-green-50/40 dark:bg-green-950/20 border-green-200/40 dark:border-green-800/40'
-                  : 'bg-red-50/40 dark:bg-red-950/20 border-red-200/40 dark:border-red-800/40'
-              }`}>
-                <span className="text-2xl sm:text-3xl font-black tracking-tight">{stats.total}</span>
-                {isHighestTotal ? (
-                  <Trophy className="w-5 h-5 text-green-600 dark:text-green-400" />
-                ) : (
-                  <Skull className="w-5 h-5 text-red-600 dark:text-red-400" />
-                )}
-              </div>
-            ) : (
-              <div className="text-2xl sm:text-3xl font-black tracking-tight">{stats.total}</div>
-            )}
+            <NumberText value={stats.total} isHighest={isHighestTotal} isLowest={isLowestTotal} className="text-2xl sm:text-3xl font-black tracking-tight" />
           </div>
         </div>
       </div>
