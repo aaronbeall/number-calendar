@@ -27,7 +27,7 @@ I'm liking this one.
 - [x] Day cell microdots/chart
 - [x] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
-- [ ] Highligh maxes on calendar
+- [x] Highlight extremes on calendar
 - [ ] Calendar options
   - [ ] Heatmap
   - [ ] Week summary across months
@@ -57,7 +57,7 @@ I'm liking this one.
   - [ ] Add from rollups (week, month, year)
 - [ ] Prev/Next in the panel
 - [ ] Time tracking with data
-- [ ] View cusotmization (weekly, order, etc)
+- [ ] View customization (weekly, order, etc)
 - [ ] Preserve dates for numbers in numbers panel (tooltip, display by date)
 - [ ] Cell tooltips (consise number panel info)
 - [ ] Growth projections
@@ -88,5 +88,5 @@ I'm liking this one.
 - [ ] Chart days are off by 1 (timezone offset?)
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
 - [ ] Re-render on page activation to sync with current date
-- [ ] Megative year summary has green
+- [x] Negative year summary has green
 - [ ] Hide weekends is causing June days to be wrong
