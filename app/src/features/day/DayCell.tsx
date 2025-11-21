@@ -108,8 +108,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
             >
               {mixedExtremes ? (
                 <span className="flex items-center gap-0.5">
-                  <Trophy className="h-3 w-3" />
-                  <Skull className="h-3 w-3" />
+                  <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
+                  <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
                   <span className="opacity-70">×{highExtremesCount + lowExtremesCount}</span>
                 </span>
               ) : highExtremesCount > 0 ? (
