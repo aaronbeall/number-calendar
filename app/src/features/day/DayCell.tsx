@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Trophy } from 'lucide-react';
+import { Trophy, Skull } from 'lucide-react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { NumberText } from '@/components/ui/number-text';
 import type { StatsExtremes } from '@/lib/stats';
+import { computeNumberStats } from '@/lib/stats';
 
 export interface DayCellProps {
   date: Date;
@@ -23,11 +24,30 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
   const hasData = count > 0;
   const isPast = date < new Date(new Date().toDateString());
   const isFuture = date > new Date(new Date().toDateString());
+  const dayStats = hasData ? computeNumberStats(numbers) : null;
 
   // Check if this day has extreme values
   const isHighestTotal = monthExtremes && hasData && total === monthExtremes.highestTotal;
   const isLowestTotal = monthExtremes && hasData && total === monthExtremes.lowestTotal;
   const isHighestCount = monthExtremes && hasData && count === monthExtremes.highestCount;
+  const isHighestMean = monthExtremes && dayStats && dayStats.mean === monthExtremes.highestMean;
+  const isLowestMean = monthExtremes && dayStats && dayStats.mean === monthExtremes.lowestMean;
+  const isHighestMedian = monthExtremes && dayStats && dayStats.median === monthExtremes.highestMedian;
+  const isLowestMedian = monthExtremes && dayStats && dayStats.median === monthExtremes.lowestMedian;
+  const isHighestMin = monthExtremes && dayStats && dayStats.min === monthExtremes.highestMin;
+  const isLowestMin = monthExtremes && dayStats && dayStats.min === monthExtremes.lowestMin;
+  const isHighestMax = monthExtremes && dayStats && dayStats.max === monthExtremes.highestMax;
+  const isLowestMax = monthExtremes && dayStats && dayStats.max === monthExtremes.lowestMax;
+
+  // Count extremes including totals; separate non-total for display logic
+  const highExtremesCount = [isHighestTotal, isHighestMean, isHighestMedian, isHighestMin, isHighestMax].filter(Boolean).length;
+  const lowExtremesCount = [isLowestTotal, isLowestMean, isLowestMedian, isLowestMin, isLowestMax].filter(Boolean).length;
+  const nonTotalHighCount = [isHighestMean, isHighestMedian, isHighestMin, isHighestMax].filter(Boolean).length;
+  const nonTotalLowCount = [isLowestMean, isLowestMedian, isLowestMin, isLowestMax].filter(Boolean).length;
+  const nonTotalExtremesCount = nonTotalHighCount + nonTotalLowCount;
+  const mixedExtremes = highExtremesCount > 0 && lowExtremesCount > 0;
+  // Show badge only if there is at least one non-total extreme (total alone already highlighted in main cell)
+  const showExtremesBadge = hasData && nonTotalExtremesCount > 0;
 
   // Unified color logic for future tiles
   let bgColor;
@@ -74,17 +94,48 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         aria-label={`Edit day ${date.getDate()}`}
         aria-disabled={isFuture}
       >
-        <div className={`text-sm font-bold mb-2 flex items-center justify-end ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
-          {/* Day number on right */}
-          <span className="inline-flex items-center justify-end gap-1">
-            <span>{date.getDate()}</span>
-            {isToday && (
-              <span
-                className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400"
-                aria-label="Today indicator"
-              />
-            )}
-          </span>
+        <div className="flex items-start mb-2">
+          {showExtremesBadge && (
+            <div
+              className={`flex items-center gap-1 text-[10px] font-mono font-medium px-0 py-0 ${
+                mixedExtremes
+                  ? 'text-slate-500 dark:text-slate-400'
+                  : highExtremesCount > 0
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-red-600 dark:text-red-400'
+              }`}
+              title={`Day has ${highExtremesCount} high and ${lowExtremesCount} low extremes (total/mean/median/min/max)`}
+            >
+              {mixedExtremes ? (
+                <span className="flex items-center gap-0.5">
+                  <Trophy className="h-3 w-3" />
+                  <Skull className="h-3 w-3" />
+                  <span className="opacity-70">×{highExtremesCount + lowExtremesCount}</span>
+                </span>
+              ) : highExtremesCount > 0 ? (
+                <span className="flex items-center gap-0.5">
+                  <Trophy className="h-3 w-3" />
+                  <span className="opacity-70">×{highExtremesCount}</span>
+                </span>
+              ) : (
+                <span className="flex items-center gap-0.5">
+                  <Skull className="h-3 w-3" />
+                  <span className="opacity-70">×{lowExtremesCount}</span>
+                </span>
+              )}
+            </div>
+          )}
+          <div className={`ml-auto text-sm font-bold flex items-center justify-end ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
+            <span className="inline-flex items-center justify-end gap-1">
+              <span>{date.getDate()}</span>
+              {isToday && (
+                <span
+                  className="w-2 h-2 rounded-full bg-blue-500 dark:bg-blue-400"
+                  aria-label="Today indicator"
+                />
+              )}
+            </span>
+          </div>
         </div>
 
         {hasData && (
