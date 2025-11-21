@@ -19,7 +19,7 @@ import { useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { calculateDayStats, calculateMonthExtremes } from './lib/stats';
+import { calculateDayStats, calculateMonthExtremes, calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
 import { NumbersPanel } from './features/panel/NumbersPanel';
 import YearChart from './features/chart/YearChart';
 import { useTheme } from './components/ThemeProvider';
@@ -254,6 +254,12 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
   // Calculate extremes across all days for highlighting and dot scaling
   const dayStats = useMemo(() => calculateDayStats(monthData), [monthData]);
   const monthExtremes = useMemo(() => calculateMonthExtremes(dayStats), [dayStats]);
+
+  // Calculate extremes across all months in the year for MonthSummary highlighting
+  const yearExtremes = useMemo(() => {
+    const monthStats = calculateMonthStats(yearData, year);
+    return calculateYearExtremes(monthStats);
+  }, [yearData, year]);
 
   // Week stats are rendered inline beneath the calendar using renderWeekFooter
 
@@ -580,6 +586,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                 numbers={allNumbers} 
                 monthName={monthNames[month - 1]} 
                 isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
+                yearExtremes={yearExtremes}
               />
               </div>
             </div>
