@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCreateDataset, useUpdateDataset, useDeleteDataset } from '../db/useDatasetData';
+import { Confirmation } from '@/components/ui/confirmation';
 import type { Dataset, Tracking, Valance } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { TrendingUp, BarChart3 } from 'lucide-react';
@@ -31,7 +32,6 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
   const [icon, setIcon] = useState<DatasetIconName>('database');
   const [tracking, setTracking] = useState<Tracking>('series');
   const [valence, setValence] = useState<Valance>('positive');
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   // Trend preview sequences for valence buttons (show direction evaluation by deltas)
   const trendPositiveSeq = [10, 14, 13, 18, 21]; // upward changes good (green), dips bad (red)
@@ -130,7 +130,6 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
     if (!dataset) return;
     deleteDatasetMutation.mutate(dataset.id, {
       onSuccess: () => {
-        setConfirmDelete(false);
         onOpenChange(false);
       }
     });
@@ -393,40 +392,26 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
           </div>{/* End scrollable content area */}
 
           <DialogFooter className="gap-2 flex-shrink-0 px-6 pb-6 pt-4 flex items-center justify-between">
-            {isEditMode && (
-              <div className="flex items-center gap-3">
-                {!confirmDelete && (
+            {isEditMode && dataset && (
+              <Confirmation
+                title={`Delete ${dataset.name} dataset?`}
+                description="This action cannot be undone."
+                confirmLabel={deleteDatasetMutation.isPending ? 'Deleting…' : 'Delete'}
+                tone="destructive"
+                disabled={deleteDatasetMutation.isPending}
+              >
+                {(confirm) => (
                   <button
                     type="button"
-                    onClick={() => setConfirmDelete(true)}
+                    onClick={confirm(handleDelete)}
                     className="text-xs text-red-600 dark:text-red-400 hover:underline"
                   >
-                    Delete Dataset
+                    Delete
                   </button>
                 )}
-                {confirmDelete && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-red-600 dark:text-red-400">Confirm delete?</span>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={handleDelete}
-                      disabled={deleteDatasetMutation.isPending}
-                    >
-                      {deleteDatasetMutation.isPending ? 'Deleting…' : 'Yes, Delete'}
-                    </Button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDelete(false)}
-                      className="text-xs text-slate-500 dark:text-slate-400 hover:underline"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
+              </Confirmation>
             )}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
               <Button
                 type="submit"
