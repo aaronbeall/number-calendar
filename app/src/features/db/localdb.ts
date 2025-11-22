@@ -8,10 +8,14 @@ export interface Dataset {
   name: string;
   description?: string;
   icon?: DatasetIconName;
-  tracking: 'trend' | 'series'; // tracking semantics
+  tracking: Tracking;
+  valence: Valance;
   createdAt: number;
   updatedAt: number;
 }
+
+export type Tracking = 'trend' | 'series'; // tracking semantics
+export type Valance = 'positive' | 'negative' | 'neutral'; // unified valence semantics
 
 export type DayNumbers = number[];
 export type DayEntry = {
@@ -64,7 +68,7 @@ const STORE_DEFS = [
   { name: 'notes', keyPath: 'date', indexes: ['datasetId', ['datasetId', 'date']] },
   { name: 'images', keyPath: 'id', indexes: ['datasetId', ['datasetId', 'date']] }
 ];
-const DB_VERSION = 5;
+const DB_VERSION = 7;
 
 function getDb() {
   return openDB(DB_NAME, DB_VERSION, {
@@ -89,6 +93,7 @@ function getDb() {
           description: 'Migrated from previous version',
           icon: 'database',
           tracking: 'series',
+          valence: 'positive',
           createdAt: Date.now(),
           updatedAt: Date.now(),
         };
@@ -154,6 +159,24 @@ function getDb() {
             await dsStore.put(ds);
           }
           console.log(`Migrated ${existing.length} datasets to add icon/tracking fields`);
+        }
+      }
+
+      // Migration for adding unified valence field directly (version < 6)
+      // Note: legacy expanded valence values were never deployed, so we assign
+      // the unified semantics immediately.
+      if (oldVersion < 6) {
+        if (db.objectStoreNames.contains('datasets')) {
+          const dsStore = transaction.objectStore('datasets');
+          const existing = await dsStore.getAll();
+          for (const ds of existing) {
+            if (!('valence' in ds)) {
+              // Default to positive; callers may edit later.
+              ds.valence = 'positive';
+            }
+            await dsStore.put(ds);
+          }
+          console.log(`Migrated ${existing.length} datasets to unified valence field`);
         }
       }
     },
