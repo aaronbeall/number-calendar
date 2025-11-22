@@ -9,6 +9,7 @@ import { useCreateDataset, useUpdateDataset, useDeleteDataset } from '../db/useD
 import { Confirmation } from '@/components/ui/confirmation';
 import type { Dataset, Tracking, Valance } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
+import { cn } from '@/lib/utils';
 import { TrendingUp, BarChart3 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
@@ -169,7 +170,7 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
 
           <div className="space-y-2">
             <Label>Icon</Label>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-7 gap-1">
               {ICON_OPTIONS.map(({ name, label, Icon }) => {
                 const selected = icon === name;
                 return (
@@ -177,14 +178,17 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
                     type="button"
                     key={name}
                     onClick={() => setIcon(name)}
-                    className={
-                      `flex flex-col items-center justify-center gap-1 rounded-md border p-2 text-xs transition ${selected ? 'border-blue-500 bg-blue-50 text-blue-600 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-300' : 'border-slate-300 dark:border-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800'}`
-                    }
+                    className={cn(
+                      'flex flex-col items-center justify-center gap-0.5 rounded-sm border px-2 py-1 text-[10px] leading-tight transition',
+                      selected
+                        ? 'border-blue-500 bg-blue-50 text-blue-600 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-300'
+                        : 'border-slate-300 dark:border-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                    )}
                     aria-pressed={selected}
                     aria-label={label}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span>{label}</span>
+                    <Icon className="h-4 w-4" />
+                    <span className="truncate max-w-[48px]">{label}</span>
                   </button>
                 );
               })}
@@ -200,11 +204,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
               {/* Series Option */}
               <label
                 htmlFor="tracking-series"
-                className={`flex flex-col gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
+                className={cn(
+                  'flex flex-col gap-3 p-4 rounded-lg border-2 cursor-pointer transition',
                   tracking === 'series'
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
                     : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
-                }`}
+                )}
               >
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="series" id="tracking-series" />
@@ -239,11 +244,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
               {/* Trend Option */}
               <label
                 htmlFor="tracking-trend"
-                className={`flex flex-col gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
+                className={cn(
+                  'flex flex-col gap-3 p-4 rounded-lg border-2 cursor-pointer transition',
                   tracking === 'trend'
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
                     : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
-                }`}
+                )}
               >
                 <div className="flex items-center gap-2">
                   <RadioGroupItem value="trend" id="tracking-trend" />
@@ -296,7 +302,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
               <div className="grid grid-cols-3 gap-3">
                 {/* Positive is good */}
                 <button type="button" onClick={() => setValence('positive')}
-                  className={`flex flex-col gap-1.5 p-3 rounded-md border text-left transition ${valence === 'positive' ? 'border-green-500 bg-green-50 dark:bg-green-950 dark:border-green-400' : 'border-slate-200 dark:border-slate-700 hover:border-green-400'}`}>
+                  className={cn(
+                    'flex flex-col gap-1.5 p-3 rounded-md border text-left transition',
+                    valence === 'positive'
+                      ? 'border-green-500 bg-green-50 dark:bg-green-950 dark:border-green-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-green-400'
+                  )}>
                   <div className="text-xs font-semibold flex items-center gap-1"><span className="text-green-600 dark:text-green-400">Positive is Good</span></div>
                   <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">Good when numbers are above zero.</p>
                   <div className="text-[10px] text-slate-500 dark:text-slate-500 italic">Examples: net calories, profit, score delta</div>
@@ -308,7 +319,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
                 </button>
                 {/* Positive is bad */}
                 <button type="button" onClick={() => setValence('negative')}
-                  className={`flex flex-col gap-1.5 p-3 rounded-md border text-left transition ${valence === 'negative' ? 'border-red-500 bg-red-50 dark:bg-red-950 dark:border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-red-400'}`}>
+                  className={cn(
+                    'flex flex-col gap-1.5 p-3 rounded-md border text-left transition',
+                    valence === 'negative'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-950 dark:border-red-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-red-400'
+                  )}>
                   <div className="text-xs font-semibold flex items-center gap-1"><span className="text-red-600 dark:text-red-400">Negative is Good</span></div>
                   <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">Good when numbers are below zero.</p>
                   <div className="text-[10px] text-slate-500 dark:text-slate-500 italic">Examples: expenses variance, bugs introduced, injury count</div>
@@ -320,7 +336,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
                 </button>
                 {/* Neutral series */}
                 <button type="button" onClick={() => setValence('neutral')}
-                  className={`flex flex-col gap-1.5 p-3 rounded-md border text-left transition ${valence === 'neutral' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400' : 'border-slate-200 dark:border-slate-700 hover:border-blue-400'}`}>
+                  className={cn(
+                    'flex flex-col gap-1.5 p-3 rounded-md border text-left transition',
+                    valence === 'neutral'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                  )}>
                   <div className="text-xs font-semibold flex items-center gap-1"><span className="text-blue-600 dark:text-blue-300">Neutral</span></div>
                   <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">Sign doesn't matter.</p>
                   <div className="text-[10px] text-slate-500 dark:text-slate-500 italic">Examples: steps, workouts, tasks completed</div>
@@ -336,7 +357,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
               <div className="grid grid-cols-3 gap-3">
                 {/* Higher better */}
                 <button type="button" onClick={() => setValence('positive')}
-                  className={`flex flex-col gap-1.5 p-3 rounded-md border text-left transition ${valence === 'positive' ? 'border-green-500 bg-green-50 dark:bg-green-950 dark:border-green-400' : 'border-slate-200 dark:border-slate-700 hover:border-green-400'}`}>
+                  className={cn(
+                    'flex flex-col gap-1.5 p-3 rounded-md border text-left transition',
+                    valence === 'positive'
+                      ? 'border-green-500 bg-green-50 dark:bg-green-950 dark:border-green-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-green-400'
+                  )}>
                   <div className="text-xs font-semibold flex items-center gap-1"><span className="text-green-600 dark:text-green-400">Higher is Better</span></div>
                   <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">Increasing value is good.</p>
                   <div className="text-[10px] text-slate-500 dark:text-slate-500 italic">Examples: savings balance, skill rating, portfolio value</div>
@@ -356,7 +382,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
                 </button>
                 {/* Lower better */}
                 <button type="button" onClick={() => setValence('negative')}
-                  className={`flex flex-col gap-1.5 p-3 rounded-md border text-left transition ${valence === 'negative' ? 'border-red-500 bg-red-50 dark:bg-red-950 dark:border-red-400' : 'border-slate-200 dark:border-slate-700 hover:border-red-400'}`}>
+                  className={cn(
+                    'flex flex-col gap-1.5 p-3 rounded-md border text-left transition',
+                    valence === 'negative'
+                      ? 'border-red-500 bg-red-50 dark:bg-red-950 dark:border-red-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-red-400'
+                  )}>
                   <div className="text-xs font-semibold flex items-center gap-1"><span className="text-red-600 dark:text-red-400">Lower is Better</span></div>
                   <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">Decreasing value is good.</p>
                   <div className="text-[10px] text-slate-500 dark:text-slate-500 italic">Examples: weight, resting heart rate, debt outstanding</div>
@@ -376,7 +407,12 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
                 </button>
                 {/* Neutral trend */}
                 <button type="button" onClick={() => setValence('neutral')}
-                  className={`flex flex-col gap-1.5 p-3 rounded-md border text-left transition ${valence === 'neutral' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400' : 'border-slate-200 dark:border-slate-700 hover:border-blue-400'}`}>
+                  className={cn(
+                    'flex flex-col gap-1.5 p-3 rounded-md border text-left transition',
+                    valence === 'neutral'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                  )}>
                   <div className="text-xs font-semibold flex items-center gap-1"><span className="text-blue-600 dark:text-blue-300">Neutral</span></div>
                   <p className="text-[11px] leading-snug text-slate-700 dark:text-slate-300">Direction not evaluated.</p>
                   <div className="text-[10px] text-slate-500 dark:text-slate-500 italic">Examples: daily temperature, ambient noise level, mood score</div>
