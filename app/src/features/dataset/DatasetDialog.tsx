@@ -8,6 +8,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCreateDataset, useUpdateDataset } from '../db/useDatasetData';
 import type { Dataset } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
+import { TrendingUp, BarChart3 } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, ResponsiveContainer } from 'recharts';
 
 interface DatasetDialogProps {
   open: boolean;
@@ -92,19 +94,30 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <DialogHeader>
+      <DialogContent className="max-h-[90vh] p-0 gap-0">
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
+          <DialogHeader className="flex-shrink-0 px-6 pt-6">
             <DialogTitle>{isEditMode ? 'Edit Dataset' : 'Create New Dataset'}</DialogTitle>
             <DialogDescription>
               {isEditMode ? 'Update your dataset settings.' : 'Organize numbers for a goal or project.'}
             </DialogDescription>
+            {isEditMode && dataset && (
+              <div className="flex gap-2 pt-2">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                  Created {new Date(dataset.createdAt).toLocaleDateString()}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                  Updated {new Date(dataset.updatedAt).toLocaleDateString()}
+                </span>
+              </div>
+            )}
           </DialogHeader>
 
-          <div className="space-y-2">
-            <Label htmlFor="dataset-name">Name</Label>
-            <Input id="dataset-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fitness Journey" required />
-          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">{/* Scrollable content area */}
+            <div className="space-y-2">
+              <Label htmlFor="dataset-name">Name</Label>
+              <Input id="dataset-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fitness Journey" required />
+            </div>
 
             <div className="space-y-2">
               <Label htmlFor="dataset-description">Description</Label>
@@ -135,21 +148,91 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Label>Tracking Mode</Label>
-            <RadioGroup value={tracking} onValueChange={(v) => setTracking(v as 'series' | 'trend')} className="flex gap-4">
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="series" id="tracking-series" />
-                <Label htmlFor="tracking-series" className="cursor-pointer">Series <span className="text-[10px] uppercase ml-1 text-slate-400">(individual values)</span></Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="trend" id="tracking-trend" />
-                <Label htmlFor="tracking-trend" className="cursor-pointer">Trend <span className="text-[10px] uppercase ml-1 text-slate-400">(directional change)</span></Label>
-              </div>
+            <RadioGroup value={tracking} onValueChange={(v) => setTracking(v as 'series' | 'trend')} className="grid grid-cols-2 gap-3">
+              {/* Series Option */}
+              <label
+                htmlFor="tracking-series"
+                className={`flex flex-col gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
+                  tracking === 'series'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="series" id="tracking-series" />
+                  <BarChart3 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <span className="font-semibold text-sm">Series</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Track individual numbers that can accumulate over time. Each entry is independent.
+                  </p>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-500">
+                    Examples: steps, calories, revenue, expenses, tasks completed
+                  </div>
+                  <div className="h-12">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={[
+                        { day: 1, value: 5 },
+                        { day: 2, value: 8 },
+                        { day: 3, value: 3 },
+                        { day: 4, value: 7 },
+                        { day: 5, value: 6 },
+                        { day: 6, value: 9 },
+                        { day: 7, value: 4 }
+                      ]} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                        <Bar dataKey="value" fill="rgb(59 130 246)" isAnimationActive={false} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </label>
+
+              {/* Trend Option */}
+              <label
+                htmlFor="tracking-trend"
+                className={`flex flex-col gap-3 p-4 rounded-lg border-2 cursor-pointer transition ${
+                  tracking === 'trend'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 dark:border-blue-400'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value="trend" id="tracking-trend" />
+                  <TrendingUp className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <span className="font-semibold text-sm">Trend</span>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Track a single value that changes over time. Each entry replaces the previous.
+                  </p>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-500">
+                    Examples: weight, skill rating, mood score, blood pressure
+                  </div>
+                  <div className="h-12">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={[
+                        { day: 1, value: 15 },
+                        { day: 2, value: 22 },
+                        { day: 3, value: 18 },
+                        { day: 4, value: 28 },
+                        { day: 5, value: 24 },
+                        { day: 6, value: 35 },
+                        { day: 7, value: 32 }
+                      ]} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                        <Line type="monotone" dataKey="value" stroke="rgb(34 197 94)" strokeWidth={2} dot={false} isAnimationActive={false} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </label>
             </RadioGroup>
           </div>
+          </div>{/* End scrollable content area */}
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 flex-shrink-0 px-6 pb-6 pt-4">
             <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
             <Button 
               type="submit" 
