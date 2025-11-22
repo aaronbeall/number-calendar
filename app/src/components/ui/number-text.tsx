@@ -28,6 +28,13 @@ export const NumberText: React.FC<NumberTextProps> = ({
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
   const num = isFiniteNumber ? (value as number) : undefined;
 
+  // Default formatting: thousands separators, 0-2 fractional digits.
+  const defaultNumberFormat: Intl.NumberFormatOptions = {
+    useGrouping: true,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  };
+
   const signClass = isFiniteNumber
     ? num! > 0
       ? positiveClassName
@@ -35,10 +42,13 @@ export const NumberText: React.FC<NumberTextProps> = ({
         ? negativeClassName
         : neutralClassName
     : neutralClassName;
-
-  const formatted = isFiniteNumber
-    ? (formatOptions ? new Intl.NumberFormat(undefined, formatOptions).format(num as number) : (num as number))
-    : placeholder;
+  let formatted: React.ReactNode;
+  if (isFiniteNumber) {
+    const merged = formatOptions ? { ...defaultNumberFormat, ...formatOptions } : defaultNumberFormat;
+    formatted = new Intl.NumberFormat(undefined, merged).format(num as number);
+  } else {
+    formatted = placeholder;
+  }
 
   const textEl = (
     <span className={cn(signClass, className)}>

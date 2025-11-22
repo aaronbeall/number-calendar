@@ -3,6 +3,7 @@ import { CheckCircle, XCircle, Minus, Clock } from 'lucide-react';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, Tooltip } from 'recharts';
 import { computeNumberStats } from '@/lib/stats';
+import { NumberText } from '@/components/ui/number-text';
 
 export interface WeekSummaryProps {
   numbers: number[];
@@ -29,8 +30,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
     ? 'border-r-4 border-red-400 dark:border-red-600'
     : 'border-r-4 border-slate-400 dark:border-slate-600';
 
-  const meanText = mean > 0 ? 'text-green-700 dark:text-green-300' : mean < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200';
-  const medianText = median > 0 ? 'text-green-700 dark:text-green-300' : median < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200';
+  // Number coloring handled by NumberText component based on sign.
 
   // Cumulative numbers for micro line chart
   const cumulativeNumbers = React.useMemo(() => {
@@ -121,11 +121,11 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
           <div className="hidden sm:flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mean</div>
-              <div className={`font-mono text-xs sm:text-sm font-semibold ${meanText}`}>{Number.isFinite(mean) ? mean.toFixed(1) : '-'}</div>
+              <NumberText value={Number.isFinite(mean) ? mean : null} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={{ maximumFractionDigits: 1 }} />
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Median</div>
-              <div className={`font-mono text-xs sm:text-sm font-semibold ${medianText}`}>{Number.isFinite(median) ? median : '-'}</div>
+              <NumberText value={Number.isFinite(median) ? median : null} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={{ maximumFractionDigits: 1 }} />
             </div>
           </div>
 
@@ -135,11 +135,11 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
           <div className="hidden md:flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Min</div>
-              <div className={`font-mono text-sm font-semibold ${min >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{min}</div>
+              <NumberText value={min} className="font-mono text-sm font-semibold" />
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Max</div>
-              <div className={`font-mono text-sm font-semibold ${max >= 0 ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>{max}</div>
+              <NumberText value={max} className="font-mono text-sm font-semibold" />
             </div>
           </div>
 
@@ -154,7 +154,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
               : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200'
           }`}>
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</div>
-            <div className={`text-lg sm:text-xl font-extrabold`}>{total}</div>
+            <NumberText value={total} className="text-lg sm:text-xl font-extrabold" />
           </div>
         </div>
       </div>

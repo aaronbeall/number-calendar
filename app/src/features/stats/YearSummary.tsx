@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { computeNumberStats } from '@/lib/stats';
+import { NumberText } from '@/components/ui/number-text';
 
 interface YearSummaryProps {
   numbers: number[];
@@ -64,15 +65,19 @@ export function YearSummary({ numbers, yearName, isCurrentYear }: YearSummaryPro
           <div className="hidden sm:flex items-center gap-6">
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
-              <div className={`font-mono text-lg font-bold ${stats.mean && stats.mean > 0 ? 'text-green-700 dark:text-green-300' : stats.mean && stats.mean < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>
-                {stats.mean?.toFixed(1) ?? '-'}
-              </div>
+              <NumberText
+                value={stats.mean ?? null}
+                className="font-mono text-lg font-bold"
+                formatOptions={{ maximumFractionDigits: 1 }}
+              />
             </div>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
-              <div className={`font-mono text-lg font-bold ${stats.median && stats.median > 0 ? 'text-green-700 dark:text-green-300' : stats.median && stats.median < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>
-                {stats.median?.toFixed(1) ?? '-'}
-              </div>
+              <NumberText
+                value={stats.median ?? null}
+                className="font-mono text-lg font-bold"
+                formatOptions={{ maximumFractionDigits: 1 }}
+              />
             </div>
           </div>
 
@@ -82,11 +87,11 @@ export function YearSummary({ numbers, yearName, isCurrentYear }: YearSummaryPro
           <div className="hidden md:flex items-center gap-4">
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
-              <div className={`font-mono text-base font-bold ${stats.min > 0 ? 'text-green-700 dark:text-green-300' : stats.min < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>{stats.min}</div>
+              <NumberText value={stats.min} className="font-mono text-base font-bold" />
             </div>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
-              <div className={`font-mono text-base font-bold ${stats.max > 0 ? 'text-green-700 dark:text-green-300' : stats.max < 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-700 dark:text-slate-200'}`}>{stats.max}</div>
+              <NumberText value={stats.max} className="font-mono text-base font-bold" />
             </div>
           </div>
 
@@ -101,7 +106,7 @@ export function YearSummary({ numbers, yearName, isCurrentYear }: YearSummaryPro
               : 'bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-slate-200/50 dark:shadow-slate-900/30'
           }`}>
             <div className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-400 font-bold">Total</div>
-            <div className={`text-2xl sm:text-3xl font-black tracking-tight`}>{stats.total}</div>
+            <NumberText value={stats.total} className="text-2xl sm:text-3xl font-black tracking-tight" />
           </div>
         </div>
       </div>
