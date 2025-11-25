@@ -2,6 +2,15 @@ import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays
 import LogoIcon from '../public/icon.svg?react';
 import { getRelativeTime } from './lib/utils';
 import { useState, useMemo } from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useParams,
+  useNavigate,
+  Navigate,
+  Link,
+} from 'react-router-dom';
 import { DayGrid } from './features/day/DayGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
@@ -125,120 +134,324 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
   );
 }
 
+
+
+
 function App() {
-  // Datasets
+  return (
+    <Router basename='/number-calendar/'>
+      <AppLayout />
+    </Router>
+  );
+}
+
+
+function AppLayout() {
   const { data: datasets = [], isLoading: datasetsLoading } = useDatasets();
-  const [selectedDataset, setSelectedDataset] = useState<string | null>(null);
   const [showCreateDataset, setShowCreateDataset] = useState(false);
   const [editingDataset, setEditingDataset] = useState<Dataset | undefined>(undefined);
+  const navigate = useNavigate();
 
+  // Helper for dialog
   const handleOpenEdit = (dataset: Dataset) => {
     setEditingDataset(dataset);
     setShowCreateDataset(true);
   };
-
   const handleCloseDialog = () => {
     setShowCreateDataset(false);
     setEditingDataset(undefined);
   };
 
-  if (!selectedDataset) {
+  if (datasetsLoading) {
     return (
-      <>
-        <Landing
-          datasets={datasets}
-          datasetsLoading={datasetsLoading}
-          onSelectDataset={setSelectedDataset}
-          onOpenCreate={() => setShowCreateDataset(true)}
-        />
-        <DatasetDialog
-          open={showCreateDataset}
-          onOpenChange={handleCloseDialog}
-          onSaved={(id) => setSelectedDataset(id)}
-          dataset={editingDataset}
-        />
-      </>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
+        <div className="text-center text-slate-400 text-lg mt-32">Loading datasets...</div>
+        <AppFooter />
+      </div>
     );
   }
-
   return (
-    <>
-      <Main
-        datasetId={selectedDataset}
-        datasets={datasets}
-        onSelectDataset={setSelectedDataset}
-        onOpenCreate={() => setShowCreateDataset(true)}
-        onOpenEdit={handleOpenEdit}
-      />
-      <DatasetDialog
-        open={showCreateDataset}
-        onOpenChange={handleCloseDialog}
-        onSaved={(id) => setSelectedDataset(id)}
-        dataset={editingDataset}
-      />
-    </>
+    <Routes>
+      <Route index element={
+        <>
+          <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+            <Landing
+              datasets={datasets}
+              onSelectDataset={id => navigate(`/dataset/${id}`)}
+              onOpenCreate={() => setShowCreateDataset(true)}
+            />
+            <DatasetDialog
+              open={showCreateDataset}
+              onOpenChange={handleCloseDialog}
+              onSaved={id => navigate(`/dataset/${id}`)}
+              dataset={editingDataset}
+            />
+            <AppFooter />
+          </div>
+        </>
+      } />
+      <Route path="dataset/:datasetId/*" element={
+        <DatasetLayout
+          datasets={datasets}
+          onOpenCreate={() => setShowCreateDataset(true)}
+          onOpenEdit={handleOpenEdit}
+          showCreateDataset={showCreateDataset}
+          editingDataset={editingDataset}
+          handleCloseDialog={handleCloseDialog}
+        />
+      } />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
-function Landing({ datasets, datasetsLoading, onSelectDataset, onOpenCreate }: { datasets: Dataset[]; datasetsLoading: boolean; onSelectDataset: (datasetId: string) => void; onOpenCreate: () => void }) {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  
+function DatasetLayout({
+  datasets,
+  onOpenCreate,
+  onOpenEdit,
+  showCreateDataset,
+  editingDataset,
+  handleCloseDialog,
+}: {
+  datasets: Dataset[];
+  onOpenCreate: () => void;
+  onOpenEdit: (dataset: Dataset) => void;
+  showCreateDataset: boolean;
+  editingDataset: Dataset | undefined;
+  handleCloseDialog: () => void;
+}) {
+  const { datasetId } = useParams();
+  const navigate = useNavigate();
+  const currentDataset = datasets.find(d => d.id === datasetId);
+  if (!currentDataset) return <Navigate to="/" replace />;
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
-      <div className="max-w-md w-full p-8 rounded-xl shadow-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
-        <LogoIcon className="w-16 h-16 mb-6 mx-auto block" aria-label="Numbers Go Up" />
-        <h2 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Welcome to Numbers Go Up</h2>
-        <p className="text-center text-slate-500 mb-6">Select a dataset to begin tracking your progress. Datasets let you organize your numbers for different goals, projects, or journeys.</p>
-        <div className="space-y-4">
-          {datasetsLoading ? (
-            <div className="text-center text-slate-400">Loading datasets...</div>
-            ) : datasets.length === 0 ? (
-              <button
-                className="block w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-6 text-left"
-                onClick={onOpenCreate}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-md bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-blue-200 dark:border-slate-600">
-                    <Plus className="w-6 h-6 text-blue-600 dark:text-indigo-300" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-1">Add your first dataset</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Start tracking your numbers by creating a dataset. You can have separate datasets for different goals.</p>
-                    <div className="text-xs text-slate-400 dark:text-slate-500">No datasets yet.</div>
-                  </div>
-                </div>
-              </button>
-            ) : (
-              <div className="space-y-4">
-                {datasets.map(ds => <DatasetCard key={ds.id} dataset={ds} year={currentYear} month={currentMonth} onSelect={onSelectDataset} />)}
-                <button
-                  className="w-full rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-5 text-left"
-                  onClick={onOpenCreate}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-md bg-gradient-to-br from-green-100 to-emerald-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-green-200 dark:border-slate-600">
-                      <Plus className="w-6 h-6 text-green-600 dark:text-emerald-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-1">Add another dataset</h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Create a new space for tracking a different goal or category.</p>
-                      <div className="text-xs text-slate-400 dark:text-slate-500">You currently have {datasets.length} dataset{datasets.length === 1 ? '' : 's'}.</div>
-                    </div>
-                  </div>
-                </button>
-              </div>
-            )}
-        </div>
+    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+      <AppHeader
+        currentDataset={currentDataset}
+        datasets={datasets}
+        onSelectDataset={id => navigate(`/dataset/${id}`)}
+        onOpenCreate={onOpenCreate}
+        onOpenEdit={onOpenEdit}
+      />
+      <div className="flex-1 w-full">
+        <Routes>
+          <Route index element={
+            <Main
+              datasetId={currentDataset.id}
+              datasets={datasets}
+            />
+          } />
+          <Route path="achievements" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Achievements</h2></div>} />
+          <Route path="milestones" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Milestones</h2></div>} />
+          <Route path="records" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Records</h2></div>} />
+          <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
+        </Routes>
       </div>
+      <DatasetDialog
+        open={showCreateDataset}
+        onOpenChange={handleCloseDialog}
+        onSaved={id => navigate(`/dataset/${id}`)}
+        dataset={editingDataset}
+      />
       <AppFooter />
     </div>
   );
 }
 
-function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }: { datasetId: string; datasets: Dataset[]; onSelectDataset: (id: string) => void; onOpenCreate: () => void; onOpenEdit: (dataset: Dataset) => void }) {
+
+// Extracted AppHeader for persistent header/nav
+function AppHeader({
+  currentDataset,
+  datasets,
+  onSelectDataset,
+  onOpenCreate,
+  onOpenEdit,
+}: {
+  currentDataset: Dataset;
+  datasets: Dataset[];
+  onSelectDataset: (id: string) => void;
+  onOpenCreate: () => void;
+  onOpenEdit: (dataset: Dataset) => void;
+}) {
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
+  return (
+    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+      <div className="max-w-4xl mx-auto px-4 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  Dataset
+                </DropdownMenuLabel>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md mx-1 mb-1 hover:from-blue-100 hover:to-indigo-100 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
+                    {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className="h-4 w-4 text-blue-600 dark:text-blue-300" />; })()}
+                    <span className="font-semibold text-blue-900 dark:text-blue-200">{currentDataset?.name || 'Dataset'}</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Other Datasets</DropdownMenuLabel>
+                    {datasets.filter(ds => ds.id !== currentDataset?.id).length === 0 && (
+                      <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
+                    )}
+                    {datasets.filter(ds => ds.id !== currentDataset?.id).map(ds => {
+                      const Icon = getDatasetIcon(ds.icon);
+                      return (
+                        <DropdownMenuItem key={ds.id} onClick={() => navigate(`/dataset/${ds.id}`)} className="gap-2">
+                          <Icon className="h-4 w-4 text-slate-500 dark:text-slate-300" />
+                          {ds.name}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onClick={() => currentDataset && onOpenEdit(currentDataset)}
+                    >
+                      <Settings className="h-4 w-4" />
+                      Settings…
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onClick={() => {
+                        onOpenCreate();
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      New Dataset
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
+                    <Trophy className="h-4 w-4" />
+                    Achievements
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
+                    <Target className="h-4 w-4" />
+                    Milestones
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/records` : '#'}>
+                    <Award className="h-4 w-4" />
+                    Records
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
+                  <Sparkles className="h-4 w-4 text-purple-600 dark:text-pink-300" />
+                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-pink-700 dark:to-purple-700 bg-clip-text text-transparent font-semibold">AI Insights</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/settings` : '#'}>
+                    <Settings className="h-4 w-4" />
+                    Import/Export
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link to="/" className="flex items-center gap-2 group">
+              <LogoIcon className="w-10 h-10 transition-transform group-hover:scale-105" aria-label="Numbers Go Up" />
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline">
+                  Numbers Go Up
+                </h1>
+                <p className="text-xs text-slate-500 font-medium">Daily progress tracking for numberphiles</p>
+              </div>
+            </Link>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-label="Toggle light/dark mode"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            >
+              {theme === 'dark' ? (
+                <Moon className="h-4 w-4 text-blue-500" />
+              ) : (
+                <Sun className="h-4 w-4 text-yellow-400" />
+              )}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <User className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Landing({ datasets, onSelectDataset, onOpenCreate }: { datasets: Dataset[]; onSelectDataset: (datasetId: string) => void; onOpenCreate: () => void }) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center">
+      <div className="max-w-md w-full p-8 rounded-xl shadow-lg bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800">
+        <LogoIcon className="w-16 h-16 mb-6 mx-auto block" aria-label="Numbers Go Up" />
+        <h2 className="text-2xl font-bold text-center mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Welcome to Numbers Go Up</h2>
+        <p className="text-center text-slate-500 mb-6">Select a dataset to begin tracking your progress. Datasets let you organize your numbers for different goals, projects, or journeys.</p>
+        <div className="space-y-4">
+          {datasets.length === 0 ? (
+            <button
+              className="block w-full rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-6 text-left"
+              onClick={onOpenCreate}
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-md bg-gradient-to-br from-blue-100 to-indigo-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-blue-200 dark:border-slate-600">
+                  <Plus className="w-6 h-6 text-blue-600 dark:text-indigo-300" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-1">Add your first dataset</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Start tracking your numbers by creating a dataset. You can have separate datasets for different goals.</p>
+                  <div className="text-xs text-slate-400 dark:text-slate-500">No datasets yet.</div>
+                </div>
+              </div>
+            </button>
+          ) : (
+            <div className="space-y-4">
+              {datasets.map(ds => <DatasetCard key={ds.id} dataset={ds} year={currentYear} month={currentMonth} onSelect={onSelectDataset} />)}
+              <button
+                className="w-full rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-500 bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 transition p-5 text-left"
+                onClick={onOpenCreate}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-md bg-gradient-to-br from-green-100 to-emerald-200 dark:from-slate-700 dark:to-slate-600 flex items-center justify-center border border-green-200 dark:border-slate-600">
+                    <Plus className="w-6 h-6 text-green-600 dark:text-emerald-300" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-1">Add another dataset</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">Create a new space for tracking a different goal or category.</p>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">You currently have {datasets.length} dataset{datasets.length === 1 ? '' : 's'}.</div>
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Main({ datasetId, datasets }: { datasetId: string; datasets: Dataset[]; }) {
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -257,10 +470,6 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
     actionIcon: undefined as React.ReactNode | undefined,
     extremes: undefined as StatsExtremes | undefined,
   });
-
-  // Dataset helpers
-  const currentDataset = datasets.find(d => d.id === datasetId);
-  const otherDatasets = datasets.filter(d => d.id !== datasetId);
 
   // Use selectedDataset for all data hooks
   const { data: monthData = {} } = useMonth(datasetId, year, month);
@@ -290,117 +499,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
     "July", "August", "September", "October", "November", "December"];
 
   return (
-  <div className="min-h-screen bg-white dark:bg-slate-900/80">
-    {/* Main App Header */}
-    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-      <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Menu className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-48">
-                  <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                    Dataset
-                  </DropdownMenuLabel>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger className="gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md mx-1 mb-1 hover:from-blue-100 hover:to-indigo-100 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
-                      {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className="h-4 w-4 text-blue-600 dark:text-blue-300" />; })()}
-                      <span className="font-semibold text-blue-900 dark:text-blue-200">{currentDataset?.name || 'Dataset'}</span>
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Other Datasets</DropdownMenuLabel>
-                      {otherDatasets.length === 0 && (
-                        <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
-                      )}
-                      {otherDatasets.map(ds => {
-                        const Icon = getDatasetIcon(ds.icon);
-                        return (
-                          <DropdownMenuItem key={ds.id} onClick={() => onSelectDataset(ds.id)} className="gap-2">
-                            <Icon className="h-4 w-4 text-slate-500 dark:text-slate-300" />
-                            {ds.name}
-                          </DropdownMenuItem>
-                        );
-                      })}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="gap-2"
-                        onClick={() => currentDataset && onOpenEdit(currentDataset)}
-                      >
-                        <Settings className="h-4 w-4" />
-                        Settings…
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="gap-2"
-                        onClick={() => {
-                          onOpenCreate();
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                        New Dataset
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2">
-                    <Trophy className="h-4 w-4" />
-                    Achievements
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2">
-                    <Target className="h-4 w-4" />
-                    Milestones
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2">
-                    <Award className="h-4 w-4" />
-                    Records
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
-                    <Sparkles className="h-4 w-4 text-purple-600 dark:text-pink-300" />
-                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-pink-700 dark:to-purple-700 bg-clip-text text-transparent font-semibold">AI Insights</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Import/Export
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <LogoIcon className="w-10 h-10" aria-label="Numbers Go Up" />
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight">
-                  Numbers Go Up
-                </h1>
-                <p className="text-xs text-slate-500 font-medium">Daily progress tracking for numberphiles</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                aria-label="Toggle light/dark mode"
-                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              >
-                {theme === 'dark' ? (
-                  <Moon className="h-4 w-4 text-blue-500" />
-                ) : (
-                  <Sun className="h-4 w-4 text-yellow-400" />
-                )}
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <Settings className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <User className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+  <div className="min-h-screen">
 
       {/* Navigation Header */}
       <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
@@ -777,7 +876,6 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
         {...panelProps}
         onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
       />
-      <AppFooter />
     </div>
   );
 }
