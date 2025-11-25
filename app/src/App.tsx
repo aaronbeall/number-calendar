@@ -316,11 +316,15 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
                       {otherDatasets.length === 0 && (
                         <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
                       )}
-                      {otherDatasets.map(ds => (
-                        <DropdownMenuItem key={ds.id} onClick={() => onSelectDataset(ds.id)}>
-                          {ds.name}
-                        </DropdownMenuItem>
-                      ))}
+                      {otherDatasets.map(ds => {
+                        const Icon = getDatasetIcon(ds.icon);
+                        return (
+                          <DropdownMenuItem key={ds.id} onClick={() => onSelectDataset(ds.id)} className="gap-2">
+                            <Icon className="h-4 w-4 text-slate-500 dark:text-slate-300" />
+                            {ds.name}
+                          </DropdownMenuItem>
+                        );
+                      })}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         className="gap-2"
