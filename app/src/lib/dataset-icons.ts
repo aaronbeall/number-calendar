@@ -16,12 +16,6 @@ import {
   type LucideIcon
 } from 'lucide-react';
 
-export interface DatasetIconOption {
-  name: string;
-  label: string;
-  Icon: LucideIcon;
-}
-
 export const DATASET_ICON_OPTIONS = [
   { name: 'database', label: 'Database', Icon: Database },
   { name: 'target', label: 'Target', Icon: Target },
@@ -37,7 +31,7 @@ export const DATASET_ICON_OPTIONS = [
   { name: 'trophy', label: 'Trophy', Icon: Trophy },
   { name: 'zap', label: 'Zap', Icon: Zap },
   { name: 'dollar', label: 'Money', Icon: DollarSign },
-] as const satisfies readonly DatasetIconOption[];
+] as const;
 
 export type DatasetIconName = (typeof DATASET_ICON_OPTIONS)[number]['name'];
 
