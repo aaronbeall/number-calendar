@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface CalendarGridProps {
+export interface DayGridProps {
   year: number;
   month: number;
   renderDay: (date: Date) => React.ReactNode;
@@ -10,7 +10,7 @@ export interface CalendarGridProps {
 
 const allWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export const CalendarGrid: React.FC<CalendarGridProps> = ({ year, month, renderDay, showWeekends = true, renderWeekFooter }) => {
+export const DayGrid: React.FC<DayGridProps> = ({ year, month, renderDay, showWeekends = true, renderWeekFooter }) => {
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
   const days: Date[] = [];

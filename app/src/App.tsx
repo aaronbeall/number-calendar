@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight, Calendar, CalendarOff, Grid3X3, CalendarDays
 import LogoIcon from '../public/icon.svg?react';
 import { getRelativeTime } from './lib/utils';
 import { useState, useMemo } from 'react';
-import { CalendarGrid } from './features/calendar/CalendarGrid';
+import { DayGrid } from './features/day/DayGrid';
 import { DayCell } from './features/day/DayCell';
 import { MonthSummary } from './features/stats/MonthSummary';
 import { YearSummary } from './features/stats/YearSummary';
@@ -522,7 +522,7 @@ function Main({ datasetId, datasets, onSelectDataset, onOpenCreate, onOpenEdit }
             />
 
             {/* Calendar Grid */}
-            <CalendarGrid
+            <DayGrid
               year={year}
               month={month}
               showWeekends={showWeekends}
