@@ -1,14 +1,17 @@
 import React, { useMemo } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { getValueForValence } from '@/lib/valence';
+import type { Valence } from '@/features/db/localdb';
 
 export interface MonthChartProps {
   days: { date: string; numbers: number[] }[];
   mode: 'serial' | 'cumulative';
   group: 'daily' | 'all';
+  valence: Valence;
 }
 
-export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group }) => {
+export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group, valence }) => {
   const data = useMemo(() => {
     if (group === 'daily') {
       // Daily mode: aggregate all numbers per day
@@ -70,6 +73,14 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group }) => 
   const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb'; // slate-200 for light mode
+
+  // Valence-aware bar and tooltip colors
+  const barColors = {
+    good: '#10b981', // green-500
+    bad: '#ef4444',  // red-500
+    neutral: '#3b82f6', // blue-500
+  };
+
   return (
     <div className="w-full h-48 bg-white dark:bg-slate-900 rounded-lg shadow-sm dark:shadow-md">
       {data.length === 0 ? (
@@ -101,9 +112,7 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group }) => 
                 if (active && payload && payload.length) {
                   const value = payload[0].value;
                   if (typeof value !== 'number') return null;
-                  let color = '#059669';
-                  if (value < 0) color = '#dc2626';
-                  if (value === 0) color = '#374151';
+                  const color = getValueForValence(value, valence, barColors);
                   let formattedDate = '';
                   if (group === 'daily') {
                     const date = new Date(label);
@@ -128,7 +137,7 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group }) => 
             />
             <Bar dataKey="value" radius={[4, 4, 0, 0]}>
               {data.map((entry, idx) => (
-                <Cell key={`cell-${idx}`} fill={entry.value >= 0 ? '#10b981' : '#ef4444'} />
+                <Cell key={`cell-${idx}`} fill={getValueForValence(entry.value, valence, barColors)} />
               ))}
             </Bar>
           </BarChart>

@@ -10,10 +10,12 @@ import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, Tooltip } from 'recharts';
+import { getValueForValence } from '@/lib/valence';
 import { Badge } from '@/components/ui/badge';
 import { AddNumberEditor } from './AddNumberEditor';
 import { AnimatePresence } from 'framer-motion';
 import type { StatsExtremes } from '@/lib/stats';
+import type { Valence } from '@/features/db/localdb';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -28,6 +30,7 @@ export interface NumbersPanelProps {
   actionOnClick?: () => void;
   actionIcon?: React.ReactNode;
   extremes?: StatsExtremes;
+  valence: Valence;
 }
 
 
@@ -43,6 +46,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   actionOnClick,
   actionIcon,
   extremes,
+  valence,
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
 
@@ -171,6 +175,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     key={`${originalIndex}-${n}`}
                     value={n}
                     editable={!!editableNumbers}
+                    valence={valence}
                     onCommit={editableNumbers ? (next) => {
                       let nextNumbers: number[];
                       if (next === null) {
@@ -228,6 +233,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 onAdd={handleAddNumber}
                 onCancel={() => setAdding(false)}
                 priorTotal={currentTotal}
+                valence={valence}
               />
             )}
           </AnimatePresence>
@@ -241,18 +247,22 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               />
               {/* Centered Total with colored box */}
               <div className="flex justify-center">
-                <div className={`rounded-lg p-4 text-center shadow-sm border font-mono text-xl font-bold ${
-                  stats.total > 0 
-                    ? 'bg-green-100 dark:bg-green-950/60 border-green-200 dark:border-green-900 text-green-600 dark:text-green-300' 
-                    : stats.total < 0 
-                      ? 'bg-red-100 dark:bg-red-950/60 border-red-200 dark:border-red-900 text-red-600 dark:text-red-300'
-                      : 'bg-slate-100 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
-                }`}>
+                <div
+                  className={
+                    'rounded-lg p-4 text-center shadow-sm border font-mono text-xl font-bold ' +
+                    getValueForValence(stats.total, valence, {
+                      good: 'bg-green-100 dark:bg-green-950/60 border-green-200 dark:border-green-900 text-green-600 dark:text-green-300',
+                      bad: 'bg-red-100 dark:bg-red-950/60 border-red-200 dark:border-red-900 text-red-600 dark:text-red-300',
+                      neutral: 'bg-blue-100 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-300',
+                    })
+                  }
+                >
                   <div className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">Total</div>
                   <NumberText
                     value={stats.total}
                     isHighest={!!(extremes && stats.total === extremes.highestTotal)}
                     isLowest={!!(extremes && stats.total === extremes.lowestTotal)}
+                    valence={valence}
                     className=""
                   />
                 </div>
@@ -266,6 +276,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       value={stats.mean}
                       isHighest={!!(extremes && stats.mean === extremes.highestMean)}
                       isLowest={!!(extremes && stats.mean === extremes.lowestMean)}
+                      valence={valence}
                       className=""
                       formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
                     />
@@ -278,6 +289,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       value={stats.median}
                       isHighest={!!(extremes && stats.median === extremes.highestMedian)}
                       isLowest={!!(extremes && stats.median === extremes.lowestMedian)}
+                      valence={valence}
                       className=""
                     />
                   </div>
@@ -294,6 +306,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       value={stats.min}
                       isHighest={!!(extremes && stats.min === extremes.highestMin)}
                       isLowest={!!(extremes && stats.min === extremes.lowestMin)}
+                      valence={valence}
                       className=""
                     />
                   </div>
@@ -307,6 +320,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       value={stats.max}
                       isHighest={!!(extremes && stats.max === extremes.highestMax)}
                       isLowest={!!(extremes && stats.max === extremes.lowestMax)}
+                      valence={valence}
                       className=""
                     />
                   </div>
@@ -318,45 +332,64 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           {/* Micro cumulative line chart below numbers, in its own box */}
           {stats && stats.count > 1 && (
             <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 mt-2 flex items-center justify-center">
-              <ChartContainer config={{ numbers: { color: stats.total >= 0 ? '#22c55e' : '#ef4444' } }} className="w-full h-10">
-                <LineChart width={120} height={32} data={cumulativeNumbers.map((y, i) => ({ x: i, y }))} margin={{ top: 8, right: 0, left: 0, bottom: 8 }}>
-                  <Line
-                    type="monotone"
-                    dataKey="y"
-                    stroke={stats.total >= 0 ? '#22c55e' : '#ef4444'}
-                    strokeWidth={2}
-                    dot={{ r: 2, stroke: 'none', fill: stats.total >= 0 ? '#22c55e' : '#ef4444' }}
-                    activeDot={{ r: 3, stroke: 'none', fill: stats.total >= 0 ? '#22c55e' : '#ef4444' }}
-                    isAnimationActive={false}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'rgba(16,185,129,0.08)' }}
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const cumulative = payload[0].value as number;
-                        const entryIndex = payload[0].payload.x as number;
-                        const entryValue = entryIndex === 0 ? cumulative : cumulative - cumulativeNumbers[entryIndex - 1];
-                        const entryColor = entryValue > 0 ? '#22c55e' : entryValue < 0 ? '#ef4444' : '#64748b';
-                        const totalColor = cumulative > 0 ? '#22c55e' : cumulative < 0 ? '#ef4444' : '#64748b';
-                        return (
-                          <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
-                            <div style={{ color: entryColor, fontWeight: 600, fontSize: 16 }}>
-                              {entryValue > 0 ? `+${entryValue}` : entryValue < 0 ? `-${Math.abs(entryValue)}` : entryValue}
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                              <span>Total</span>
-                              <span style={{ color: totalColor, fontWeight: 600, fontSize: 16 }}>
-                                {cumulative}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                </LineChart>
-              </ChartContainer>
+              {(() => {
+                const chartColor = getValueForValence(stats.total, valence, {
+                  good: '#22c55e',
+                  bad: '#ef4444',
+                  neutral: '#3b82f6', // Tailwind blue-500
+                });
+                const tooltipBg = getValueForValence(stats.total, valence, {
+                  good: 'rgba(16,185,129,0.08)',
+                  bad: 'rgba(239,68,68,0.08)',
+                  neutral: 'rgba(59,130,246,0.08)',
+                });
+                const entryColorFn = (v: number) => getValueForValence(v, valence, {
+                  good: '#22c55e',
+                  bad: '#ef4444',
+                  neutral: '#64748b', // Tailwind slate-500
+                });
+                return (
+                  <ChartContainer config={{ numbers: { color: chartColor } }} className="w-full h-10">
+                    <LineChart width={120} height={32} data={cumulativeNumbers.map((y, i) => ({ x: i, y }))} margin={{ top: 8, right: 0, left: 0, bottom: 8 }}>
+                      <Line
+                        type="monotone"
+                        dataKey="y"
+                        stroke={chartColor}
+                        strokeWidth={2}
+                        dot={{ r: 2, stroke: 'none', fill: chartColor }}
+                        activeDot={{ r: 3, stroke: 'none', fill: chartColor }}
+                        isAnimationActive={false}
+                      />
+                      <Tooltip
+                        cursor={{ fill: tooltipBg }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const cumulative = payload[0].value as number;
+                            const entryIndex = payload[0].payload.x as number;
+                            const entryValue = entryIndex === 0 ? cumulative : cumulative - cumulativeNumbers[entryIndex - 1];
+                            const entryColor = entryColorFn(entryValue);
+                            const totalColor = entryColorFn(cumulative);
+                            return (
+                              <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+                                <div style={{ color: entryColor, fontWeight: 600, fontSize: 16 }}>
+                                  {entryValue > 0 ? `+${entryValue}` : entryValue < 0 ? `-${Math.abs(entryValue)}` : entryValue}
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                  <span>Total</span>
+                                  <span style={{ color: totalColor, fontWeight: 600, fontSize: 16 }}>
+                                    {cumulative}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                    </LineChart>
+                  </ChartContainer>
+                );
+              })()}
             </div>
           )}
         </div>

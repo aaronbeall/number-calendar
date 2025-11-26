@@ -3,6 +3,8 @@ import { computeNumberStats } from '@/lib/stats';
 import { Trophy } from 'lucide-react';
 import type { StatsExtremes } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
+import { getValueForValence } from '@/lib/valence';
+import type { Valence } from '@/features/db/localdb';
 
 interface MonthCellProps {
   monthName: string;
@@ -13,9 +15,10 @@ interface MonthCellProps {
   isSelected?: boolean;
   yearExtremes?: StatsExtremes;
   onClick: () => void;
+  valence: Valence;
 }
 
-export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, isSelected = false, yearExtremes, onClick }: MonthCellProps) {
+export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, isSelected = false, yearExtremes, onClick, valence }: MonthCellProps) {
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   
   // Calculate dot sizes based on year's extremes
@@ -43,23 +46,19 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
     const isHighestMax = yearExtremes && stats && stats.max === yearExtremes.highestMax;
     const isLowestMax = yearExtremes && stats && stats.max === yearExtremes.lowestMax;
   
-  // Unified tile style for monthly grid, with color effect
+  // Unified tile style for monthly grid, with color effect (valence-aware)
   const getColorClasses = () => {
     if (!stats) {
       return 'bg-slate-50 dark:bg-slate-800 shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200';
-    } else if (stats.total > 0) {
-      return 'bg-green-50 dark:bg-[#1a3a2a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200';
-    } else if (stats.total < 0) {
-      return 'bg-red-50 dark:bg-[#3a1a1a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200';
-    } else {
-      return 'bg-slate-50 dark:bg-slate-800 shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200';
     }
+    return getValueForValence(stats.total, valence, {
+      good: 'bg-green-50 dark:bg-[#1a3a2a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
+      bad: 'bg-red-50 dark:bg-[#3a1a1a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
+      neutral: 'bg-slate-50 dark:bg-slate-800 shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
+    });
   };
 
-  // Removed: getTextColorClass (replaced by per-stat getValueColorClass)
-
   // Per-stat value color handled by NumberText component
-
   // Total uses same coloring as other stats via getValueColorClass
 
   const ghostClasses = isFutureMonth ? 'bg-slate-100 dark:bg-slate-800/60 opacity-50 saturate-0 cursor-default hover:shadow-none' : '';
@@ -92,7 +91,7 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
         <div className="space-y-3">
           {/* Total - Most important metric, centered and prominent */}
           <div className="text-center">
-            <NumberText value={stats.total} isHighest={!!isHighestTotal} isLowest={!!isLowestTotal} className="text-3xl font-bold" />
+            <NumberText value={stats.total} isHighest={!!isHighestTotal} isLowest={!!isLowestTotal} className="text-3xl font-bold" valence={valence} />
             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {isHighestCount ? (
                 <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">
@@ -137,19 +136,17 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
                   const scale = getRelativeSize(totalDay);
                   const baseClass = 'w-1.5 h-1.5 rounded-full transition-all duration-200';
                   let colorClass;
-                  
                   if (isFuture) {
                     colorClass = 'bg-slate-200 dark:bg-slate-700/30';
                   } else if (numbersForDay.length === 0) {
                     colorClass = 'bg-slate-300 dark:bg-slate-600/40';
-                  } else if (totalDay > 0) {
-                    colorClass = 'bg-green-500 dark:bg-green-600 ring-1 ring-green-400/20';
-                  } else if (totalDay < 0) {
-                    colorClass = 'bg-red-500 dark:bg-red-600 ring-1 ring-red-400/20';
                   } else {
-                    colorClass = 'bg-slate-400 dark:bg-slate-500';
+                    colorClass = getValueForValence(totalDay, valence, {
+                      good: 'bg-green-500 dark:bg-green-600 ring-1 ring-green-400/20',
+                      bad: 'bg-red-500 dark:bg-red-600 ring-1 ring-red-400/20',
+                      neutral: 'bg-slate-400 dark:bg-slate-500',
+                    });
                   }
-                  
                   dayCells.push(
                     <div
                       key={`day-${d}`}
@@ -185,25 +182,25 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Mean
               </div>
-              <NumberText value={stats.mean as number} isHighest={!!isHighestMean} isLowest={!!isLowestMean} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
+              <NumberText value={stats.mean as number} isHighest={!!isHighestMean} isLowest={!!isLowestMean} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} valence={valence} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Median
               </div>
-              <NumberText value={stats.median as number} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} />
+              <NumberText value={stats.median as number} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} valence={valence} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Min
               </div>
-              <NumberText value={stats.min} isHighest={!!isHighestMin} isLowest={!!isLowestMin} className="font-semibold text-sm" />
+              <NumberText value={stats.min} isHighest={!!isHighestMin} isLowest={!!isLowestMin} className="font-semibold text-sm" valence={valence} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Max
               </div>
-              <NumberText value={stats.max} isHighest={!!isHighestMax} isLowest={!!isLowestMax} className="font-semibold text-sm" />
+              <NumberText value={stats.max} isHighest={!!isHighestMax} isLowest={!!isLowestMax} className="font-semibold text-sm" valence={valence} />
             </div>
           </div>
         </div>

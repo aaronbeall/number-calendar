@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
+import { getValueForValence } from '@/lib/valence';
+import type { Valence } from '@/features/db/localdb';
 
 export type YearChartMode = 'serial' | 'cumulative';
 export type YearChartGroup = 'daily' | 'monthly';
@@ -10,6 +12,7 @@ interface YearChartProps {
   yearData: Record<string, number[]>;
   mode: YearChartMode;
   group: YearChartGroup;
+  valence: Valence;
 }
 
 // Helper to group data by month
@@ -26,7 +29,7 @@ function groupByMonth(yearData: Record<string, number[]>): { month: number; numb
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, group }) => {
+export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, group, valence }) => {
   // Prepare chart data
   const chartDataMonthly = useMemo(() => groupByMonth(yearData), [yearData]);
 
@@ -74,6 +77,14 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
   const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb'; // slate-200 for light mode
+
+  // Valence-aware bar and tooltip colors
+  const barColors = {
+    good: '#10b981', // green-500
+    bad: '#ef4444',  // red-500
+    neutral: '#3b82f6', // blue-500
+  };
+
   return (
     <div className="w-full h-48 bg-white dark:bg-slate-900 rounded-lg shadow-sm dark:shadow-md">
       {data.length === 0 ? (
@@ -103,9 +114,7 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
                   if (active && payload && payload.length) {
                     const value = payload[0].value;
                     if (typeof value !== 'number') return null;
-                    let color = '#10b981';
-                    if (value < 0) color = '#ef4444';
-                    if (value === 0) color = '#64748b';
+                    const color = getValueForValence(value, valence, barColors);
                     let formattedDate = '';
                     if (group === 'monthly') {
                       formattedDate = label;
@@ -125,12 +134,9 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
                 }}
               />
               <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {data.map((entry, idx) => {
-                  let color = '#10b981';
-                  if (entry.value < 0) color = '#ef4444';
-                  if (entry.value === 0) color = '#64748b';
-                  return <Cell key={`cell-${idx}`} fill={color} />;
-                })}
+                {data.map((entry, idx) => (
+                  <Cell key={`cell-${idx}`} fill={getValueForValence(entry.value, valence, barColors)} />
+                ))}
               </Bar>
             </BarChart>
         </ResponsiveContainer>

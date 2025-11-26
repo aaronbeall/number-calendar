@@ -6,15 +6,18 @@ import { Plus, X, Equal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { parseSingleNumberExpression } from '@/lib/expression';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { getValueForValence } from '@/lib/valence';
+import type { Valence } from '@/features/db/localdb';
 
 
 interface AddNumberEditorProps {
   onAdd: (finalNumber: number) => void;
   onCancel: () => void;
   priorTotal: number;
+  valence: Valence;
 }
 
-export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCancel, priorTotal }) => {
+export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCancel, priorTotal, valence }) => {
   const [input, setInput] = useState('');
   const [addMode, setAddMode] = useState<'entry' | 'total'>('entry');
   const inputRef = React.useRef<HTMLInputElement>(null);
@@ -108,7 +111,7 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
         >
           Add
           <span className="ml-1">
-            <EditableNumberBadge value={finalNumber ?? 0} editable={false} />
+            <EditableNumberBadge value={finalNumber ?? 0} editable={false} valence={valence} />
           </span>
         </Button>
       </div>

@@ -1,9 +1,12 @@
+
 import React, { useState, useMemo } from 'react';
-import { Trophy, Skull } from 'lucide-react';
+import { Trophy, Skull, TrendingUp, TrendingDown, TrendingUpDown } from 'lucide-react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { NumberText } from '@/components/ui/number-text';
 import type { StatsExtremes } from '@/lib/stats';
 import { computeNumberStats } from '@/lib/stats';
+import type { Valence } from '@/features/db/localdb';
+import { getValueForValence } from '@/lib/valence';
 
 export interface DayCellProps {
   date: Date;
@@ -12,9 +15,10 @@ export interface DayCellProps {
   monthMin?: number;
   monthMax?: number;
   monthExtremes?: StatsExtremes;
+  valence: Valence;
 }
 
-export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMin, monthMax, monthExtremes }) => {
+export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMin, monthMax, monthExtremes, valence }) => {
   const [editMode, setEditMode] = useState(false);
 
   const isToday = date.toDateString() === new Date().toDateString();
@@ -57,13 +61,12 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
     ghostClasses = 'opacity-50 saturate-0 cursor-default hover:shadow-none';
   } else if (!hasData) {
     bgColor = isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900';
-  } else if (total > 0) {
-    bgColor = 'bg-green-50 dark:bg-[#1a3a2a]'; // Muted dark green
-  } else if (total < 0) {
-    bgColor = 'bg-red-50 dark:bg-[#3a1a1a]'; // Muted dark red
   } else {
-    // total === 0, neutral
-    bgColor = isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900';
+    bgColor = getValueForValence(total, valence, {
+      good: 'bg-green-50 dark:bg-[#1a3a2a]',
+      bad: 'bg-red-50 dark:bg-[#3a1a1a]',
+      neutral: isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900',
+    });
   }
 
   function handleClose(): void {
@@ -100,28 +103,46 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
               className={`flex items-center gap-1 text-[10px] font-mono font-medium px-0 py-0 ${
                 mixedExtremes
                   ? 'text-slate-500 dark:text-slate-400'
-                  : highExtremesCount > 0
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-red-600 dark:text-red-400'
+                  : getValueForValence(
+                      highExtremesCount > 0 ? 1 : -1,
+                      valence,
+                      {
+                        good: 'text-green-600 dark:text-green-400',
+                        bad: 'text-red-600 dark:text-red-400',
+                        neutral: 'text-slate-500 dark:text-slate-400',
+                      }
+                    )
               }`}
               title={`Day has ${highExtremesCount} high and ${lowExtremesCount} low extremes (total/mean/median/min/max)`}
             >
               {mixedExtremes ? (
                 <span className="flex items-center gap-0.5">
-                  <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
-                  <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
+                  { valence == 'neutral' ? (
+                    <TrendingUpDown className="h-3 w-3 text-slate-500 dark:text-slate-400" />
+                  ) : (
+                    <>
+                      <Trophy className="h-3 w-3 text-green-600 dark:text-green-400" />
+                      <Skull className="h-3 w-3 text-red-600 dark:text-red-400" />
+                    </>
+                  )}
                   <span className="opacity-70">×{highExtremesCount + lowExtremesCount}</span>
                 </span>
-              ) : highExtremesCount > 0 ? (
-                <span className="flex items-center gap-0.5">
-                  <Trophy className="h-3 w-3" />
-                  <span className="opacity-70">×{highExtremesCount}</span>
-                </span>
               ) : (
-                <span className="flex items-center gap-0.5">
-                  <Skull className="h-3 w-3" />
-                  <span className="opacity-70">×{lowExtremesCount}</span>
-                </span>
+                (() => {
+                  const isHigh = highExtremesCount > 0;
+                  const count = isHigh ? highExtremesCount : lowExtremesCount;
+                  const icon = getValueForValence(isHigh, valence, {
+                    good: <Trophy className="h-3 w-3" />,
+                    bad: <Skull className="h-3 w-3" />,
+                    neutral: isHigh ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />,
+                  });
+                  return (
+                    <span className="flex items-center gap-0.5">
+                      {icon}
+                      <span className="opacity-70">×{count}</span>
+                    </span>
+                  );
+                })()
               )}
             </div>
           )}
@@ -141,14 +162,12 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         {hasData && (
           <div className="flex-1 flex flex-col gap-2 text-xs">
             {/* Total - Primary metric */}
-            <div className={`w-full px-3 py-1 rounded text-center flex items-center justify-center gap-1.5 ${
-              total > 0 
-                ? 'bg-green-100 dark:bg-[#1a3a2a] text-green-700 dark:text-green-200' 
-                : total < 0 
-                  ? 'bg-red-100 dark:bg-[#3a1a1a] text-red-700 dark:text-red-200' 
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-            }`}>
-              <NumberText value={total} isHighest={!!isHighestTotal} isLowest={!!isLowestTotal} className="font-mono font-bold text-lg" />
+            <div className={`w-full px-3 py-1 rounded text-center flex items-center justify-center gap-1.5 ${getValueForValence(total, valence, {
+              good: 'bg-green-100 dark:bg-[#1a3a2a] text-green-700 dark:text-green-200',
+              bad: 'bg-red-100 dark:bg-[#3a1a1a] text-red-700 dark:text-red-200',
+              neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
+            })}`}>
+              <NumberText value={total} isHighest={!!isHighestTotal} isLowest={!!isLowestTotal} valence={valence} className="font-mono font-bold text-lg" />
             </div>
 
             {/* Entry count */}
@@ -170,14 +189,11 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
               {numbers.map((num, idx) => {
                 const scale = getRelativeSize(num);
                 const size = scale * 8; // Base size 8px, scaled down to ~3.2px min
-                let colorClass;
-                if (num > 0) {
-                  colorClass = 'bg-green-500 dark:bg-green-600';
-                } else if (num < 0) {
-                  colorClass = 'bg-red-500 dark:bg-red-600';
-                } else {
-                  colorClass = 'bg-slate-400 dark:bg-slate-500';
-                }
+                const colorClass = getValueForValence(num, valence, {
+                  good: 'bg-green-500 dark:bg-green-600',
+                  bad: 'bg-red-500 dark:bg-red-600',
+                  neutral: 'bg-slate-400 dark:bg-slate-500',
+                });
                 return (
                   <div
                     key={idx}
@@ -203,6 +219,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         showExpressionInput
         onSave={onSave}
         extremes={monthExtremes}
+        valence={valence}
       />
     </div>
   );

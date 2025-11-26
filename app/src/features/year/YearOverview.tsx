@@ -1,10 +1,13 @@
 import React from 'react';
+import { getValueForValence } from '@/lib/valence';
+import type { Valence } from '@/features/db/localdb';
 
 export interface YearOverviewProps {
   year: number;
   data: Record<string, number[]>; // dateKey -> numbers
   currentMonth: number;
   onMonthClick: (month: number) => void;
+  valence: Valence;
 }
 
 const monthNames = [
@@ -16,7 +19,8 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
   year, 
   data, 
   currentMonth, 
-  onMonthClick 
+  onMonthClick,
+  valence
 }) => {
   const today = new Date();
 
@@ -25,17 +29,17 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
     const numbers = data[dateKey] || [];
     const total = numbers.reduce((a, b) => a + b, 0);
     const isFuture = date > today;
-    
     if (isFuture) {
-      return 'bg-slate-200 dark:bg-slate-700/40'; // Future days - faded
+      return 'bg-slate-200 dark:bg-slate-700/40 opacity-40'; // Future days - faded
     } else if (numbers.length === 0) {
-      return 'bg-slate-400 dark:bg-slate-700/40'; // No data - gray
-    } else if (total > 0) {
-      return 'bg-green-500 dark:bg-green-800/40'; // Positive - green
-    } else if (total < 0) {
-      return 'bg-red-500 dark:bg-red-800/40'; // Negative - red
+      return 'bg-slate-400 dark:bg-slate-700/40 opacity-40'; // No data - gray
     } else {
-      return 'bg-slate-400 dark:bg-slate-700/40'; // Zero total - gray
+      // Valence-aware color, more opaque for days with data
+      return getValueForValence(total, valence, {
+        good: 'bg-green-500 dark:bg-green-800/70 opacity-90',
+        bad: 'bg-red-500 dark:bg-red-800/70 opacity-90',
+        neutral: 'bg-blue-500 dark:bg-blue-800/70 opacity-90',
+      });
     }
   };
 

@@ -1,14 +1,17 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { getValueForValence } from '@/lib/valence';
+import type { Valence } from '@/features/db/localdb';
 
 export interface EditableNumberBadgeProps {
   value: number;
   editable?: boolean; // default true
   onCommit?: (nextValue: number | null) => void; // null indicates delete
+  valence: Valence;
 }
 
-export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value, editable = true, onCommit }) => {
+export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value, editable = true, onCommit, valence }) => {
   const [isEditing, setIsEditing] = React.useState(false);
   const [draft, setDraft] = React.useState<string>('');
   // Track whether blur should auto-commit or if we've already handled via Enter/Escape
@@ -46,24 +49,28 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
   };
 
 
-  // Color classes for light/dark mode
-  const neutralClasses = 'bg-slate-500 text-white border-slate-600 dark:bg-slate-700 dark:text-slate-100 dark:border-slate-500';
-  const positiveClasses = 'bg-green-500 text-white border-green-600 dark:bg-green-700 dark:text-green-100 dark:border-green-500';
-  const negativeClasses = 'bg-red-500 text-white border-red-600 dark:bg-red-700 dark:text-red-100 dark:border-red-500';
-
-  const neutralHover = 'hover:bg-slate-600 hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:border-slate-400';
-  const positiveHover = 'hover:bg-green-600 hover:border-green-700 dark:hover:bg-green-800 dark:hover:border-green-400';
-  const negativeHover = 'hover:bg-red-600 hover:border-red-700 dark:hover:bg-red-800 dark:hover:border-red-400';
-
-  const displayClasses =
-    value > 0 ? positiveClasses : value < 0 ? negativeClasses : neutralClasses;
+  // Valence-aware color classes
+  const displayClasses = getValueForValence(value, valence, {
+    good: 'bg-green-500 text-white border-green-600 dark:bg-green-700 dark:text-green-100 dark:border-green-500',
+    bad: 'bg-red-500 text-white border-red-600 dark:bg-red-700 dark:text-red-100 dark:border-red-500',
+    neutral: 'bg-blue-500 text-white border-blue-600 dark:bg-blue-700 dark:text-blue-100 dark:border-blue-500',
+  });
+  const displayHoverClasses = getValueForValence(value, valence, {
+    good: 'hover:bg-green-600 hover:border-green-700 dark:hover:bg-green-800 dark:hover:border-green-400',
+    bad: 'hover:bg-red-600 hover:border-red-700 dark:hover:bg-red-800 dark:hover:border-red-400',
+    neutral: 'hover:bg-blue-600 hover:border-blue-700 dark:hover:bg-blue-800 dark:hover:border-blue-400',
+  });
 
   const computeEditClasses = () => {
     const raw = draft.trim();
-    if (raw === '') return neutralClasses;
+    if (raw === '') return displayClasses;
     const n = Number(raw);
-    if (Number.isNaN(n)) return neutralClasses;
-    return n > 0 ? positiveClasses : n < 0 ? negativeClasses : neutralClasses;
+    if (Number.isNaN(n)) return displayClasses;
+    return getValueForValence(n, valence, {
+      good: 'bg-green-500 text-white border-green-600 dark:bg-green-700 dark:text-green-100 dark:border-green-500',
+      bad: 'bg-red-500 text-white border-red-600 dark:bg-red-700 dark:text-red-100 dark:border-red-500',
+      neutral: 'bg-blue-500 text-white border-blue-600 dark:bg-blue-700 dark:text-blue-100 dark:border-blue-500',
+    });
   };
 
   if (editable && isEditing) {
@@ -82,13 +89,11 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
             commit();
           }
         }}
-  className={`h-6 px-2 py-0.5 text-xs font-mono w-20 ${computeEditClasses()} border transition-colors`}
+        className={`h-6 px-2 py-0.5 text-xs font-mono w-20 ${computeEditClasses()} border transition-colors`}
         aria-label={`Edit number`}
       />
     );
   }
-
-  const displayHoverClasses = value > 0 ? positiveHover : value < 0 ? negativeHover : neutralHover;
 
   return (
     <Badge

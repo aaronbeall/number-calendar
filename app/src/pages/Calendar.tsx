@@ -16,6 +16,7 @@ import { calculateDayStats, calculateMonthExtremes, calculateMonthStats, calcula
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import YearChart from '@/features/chart/YearChart';
 import type { StatsExtremes } from '@/lib/stats';
+import type { Dataset } from '@/features/db/localdb';
 
 const today = new Date();
 
@@ -28,7 +29,7 @@ function getMonthDays(year: number, month: number) {
   return days;
 }
 
-export function Calendar({ datasetId }: { datasetId: string; }) {
+export function Calendar({ dataset }: { dataset: Dataset; }) {
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -49,12 +50,12 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
   });
 
   // Use selectedDataset for all data hooks
-  const { data: monthData = {} } = useMonth(datasetId, year, month);
-  const { data: yearData = {} } = useYear(datasetId, year);
+  const { data: monthData = {} } = useMonth(dataset.id, year, month);
+  const { data: yearData = {} } = useYear(dataset.id, year);
   const saveDayMutation = useSaveDay();
 
   const handleSaveDay = async (date: string, numbers: number[]) => {
-    await saveDayMutation.mutateAsync({ datasetId, date: date as `${number}-${number}-${number}`, numbers });
+    await saveDayMutation.mutateAsync({ datasetId: dataset.id, date: date as `${number}-${number}-${number}`, numbers });
   };
 
   const days = getMonthDays(year, month);
@@ -195,6 +196,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
               data={yearData}
               currentMonth={month}
               onMonthClick={(selectedMonth) => setMonth(selectedMonth)}
+              valence={dataset.valence}
             />
 
             {/* Calendar Grid */}
@@ -209,7 +211,6 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                   return monthData[ds] || [];
                 });
                 if (weekNumbers.length === 0) return null; // Only render if any data exists
-                
                 // Calculate week number: weeks start on Sunday, so week 1 is the week containing the 1st of the month, week 2 starts on the first Sunday after the 1st, etc.
                 const firstOfMonth = new Date(year, month - 1, 1);
                 const firstDayOfWeek = firstOfMonth.getDay(); // 0=Sun, 1=Mon, ...
@@ -222,7 +223,6 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                 } else {
                   weekNumber = 1 + Math.floor((minDate - firstSunday) / 7) + 1;
                 }
-                
                 // Check if this week contains today
                 const today = new Date();
                 const isCurrentWeek = datesInWeek.some(d => 
@@ -230,7 +230,6 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                   d.getMonth() === today.getMonth() &&
                   d.getDate() === today.getDate()
                 );
-                
                 const isSelectedWeek = panelProps.isOpen && panelProps.title === `Week ${weekNumber}`;
                 const ringClasses = 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900';
                 return (
@@ -250,7 +249,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                     }}
                     className={`cursor-pointer transition-shadow rounded-md ${isSelectedWeek ? ringClasses : ''}`}
                   >
-                    <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} />
+                    <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} valence={dataset.valence} />
                   </div>
                 );
               }}
@@ -265,6 +264,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                     monthMin={monthExtremes?.lowestMin}
                     monthMax={monthExtremes?.highestMax}
                     monthExtremes={monthExtremes}
+                    valence={dataset.valence}
                   />
                 );
               }}
@@ -290,6 +290,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                 monthName={monthNames[month - 1]} 
                 isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
                 yearExtremes={yearExtremes}
+                valence={dataset.valence}
               />
               </div>
             </div>
@@ -338,6 +339,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                   days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
                   mode={chartMode}
                   group={monthChartGroup}
+                  valence={dataset.valence}
                 />
               </div>
             </div>
@@ -367,6 +369,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                   extremes: yearExtremes,
                 });
               }}
+              valence={dataset.valence}
             />
 
             {/* Year Summary */}
@@ -389,6 +392,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                   numbers={Object.values(yearData).flat()} 
                   yearName={`${year}`} 
                   isCurrentYear={year === today.getFullYear()}
+                  valence={dataset.valence}
                 />
               </div>
             </div>
@@ -443,6 +447,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
                   yearData={yearData}
                   mode={chartMode}
                   group={chartGroup}
+                  valence={dataset.valence}
                 />
               </div>
             </div>
@@ -451,6 +456,7 @@ export function Calendar({ datasetId }: { datasetId: string; }) {
       </div>
       <NumbersPanel
         {...panelProps}
+        valence={dataset.valence}
         onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
