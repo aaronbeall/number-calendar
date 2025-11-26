@@ -3,6 +3,7 @@ import {
   loadDay,
   loadMonth,
   loadYear,
+  loadAllDays,
   saveDay,
   type DateKey,
 } from './localdb';
@@ -31,6 +32,13 @@ export function useYear(datasetId: string, year: number) {
   });
 }
 
+// Hook to load all daily DayEntry[] for a dataset
+export function useAllDays(datasetId: string) {
+  return useQuery({
+    queryKey: ['allDays', datasetId],
+    queryFn: () => loadAllDays(datasetId),
+  });
+}
 
 // Hook to save a day's numbers and invalidate queries
 export function useSaveDay() {
@@ -47,6 +55,8 @@ export function useSaveDay() {
       queryClient.invalidateQueries({ queryKey: ['month', datasetId, Number(year), Number(month)] });
       // Also invalidate the year aggregate since one of its days changed
       queryClient.invalidateQueries({ queryKey: ['year', datasetId, Number(year)] });
+      // Invalidate allDays as well
+      queryClient.invalidateQueries({ queryKey: ['allDays', datasetId] });
     },
   });
 }

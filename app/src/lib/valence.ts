@@ -1,5 +1,5 @@
 // Valence helpers for stat/number semantics
-import type { Valance as Valence } from '@/features/db/localdb';
+import type { Valence } from '@/features/db/localdb';
 
 /**
  * Determines if a value (boolean or number) is considered "good" for the given valence.

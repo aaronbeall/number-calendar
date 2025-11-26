@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCreateDataset, useUpdateDataset, useDeleteDataset } from '../db/useDatasetData';
 import { Confirmation } from '@/components/ui/confirmation';
-import type { Dataset, Tracking, Valance } from '../db/localdb';
+import type { Dataset, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { cn } from '@/lib/utils';
 import { TrendingUp, BarChart3 } from 'lucide-react';
@@ -32,7 +32,7 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
   const [description, setDescription] = useState('');
   const [icon, setIcon] = useState<DatasetIconName>('database');
   const [tracking, setTracking] = useState<Tracking>('series');
-  const [valence, setValence] = useState<Valance>('positive');
+  const [valence, setValence] = useState<Valence>('positive');
 
   // Trend preview sequences for valence buttons (show direction evaluation by deltas)
   const trendPositiveSeq = [10, 14, 13, 18, 21]; // upward changes good (green), dips bad (red)

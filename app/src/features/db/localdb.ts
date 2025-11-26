@@ -1,4 +1,3 @@
-
 import type { DatasetIconName } from '@/lib/dataset-icons';
 import { openDB } from 'idb';
 
@@ -9,13 +8,13 @@ export interface Dataset {
   description?: string;
   icon?: DatasetIconName;
   tracking: Tracking;
-  valence: Valance;
+  valence: Valence;
   createdAt: number;
   updatedAt: number;
 }
 
 export type Tracking = 'trend' | 'series'; // tracking semantics
-export type Valance = 'positive' | 'negative' | 'neutral'; // unified valence semantics
+export type Valence = 'positive' | 'negative' | 'neutral'; // unified valence semantics
 
 export type DayNumbers = number[];
 export type DayEntry = {
@@ -240,4 +239,13 @@ export async function loadYear(datasetId: string, year: number): Promise<Record<
   const range = IDBKeyRange.bound([datasetId, yearStr], [datasetId, yearStr + '\uffff']);
   const all: DayEntry[] = await index.getAll(range);
   return Object.fromEntries(all.map(entry => [entry.date, entry.numbers]));
+}
+
+export async function loadAllDays(datasetId: string): Promise<DayEntry[]> {
+  const db = await getDb();
+  const index = db.transaction('entries').store.index('datasetId');
+  // Get all entries for this datasetId
+  const range = IDBKeyRange.only(datasetId);
+  const all: DayEntry[] = await index.getAll(range);
+  return all;
 }

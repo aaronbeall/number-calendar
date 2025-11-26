@@ -19,6 +19,7 @@ import { useTheme } from './components/ThemeProvider';
 import type { Dataset } from './features/db/localdb';
 import { Landing } from './pages/Landing';
 import { Calendar } from './pages/Calendar';
+import Records from './pages/Records';
 
 
 function App() {
@@ -118,14 +119,10 @@ function DatasetLayout({
       />
       <div className="flex-1 w-full">
         <Routes>
-          <Route index element={
-            <Calendar
-              datasetId={currentDataset.id}
-            />
-          } />
+          <Route index element={<Calendar datasetId={currentDataset.id} />} />
           <Route path="achievements" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Achievements</h2></div>} />
           <Route path="milestones" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Milestones</h2></div>} />
-          <Route path="records" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Records</h2></div>} />
+          <Route path="records" element={<Records datasetId={currentDataset.id} />} />
           <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
         </Routes>
       </div>

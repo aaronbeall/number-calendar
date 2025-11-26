@@ -1,7 +1,7 @@
 import React from 'react';
 import { Trophy, Skull, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Valance as Valence } from '@/features/db/localdb';
+import type { Valence } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
 
 export interface NumberTextProps {
