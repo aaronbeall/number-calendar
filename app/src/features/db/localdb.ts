@@ -18,24 +18,24 @@ export type Valence = 'positive' | 'negative' | 'neutral'; // unified valence se
 
 export type DayNumbers = number[];
 export type DayEntry = {
-  date: DateKey; // YYYY-MM-DD
+  date: DayKey; // YYYY-MM-DD
   numbers: DayNumbers;
   datasetId: string;
 };
 
 // Date/Week/Month/Year key types
-export type DateKey = `${number}-${number}-${number}`; // YYYY-MM-DD
+export type DayKey = `${number}-${number}-${number}`;  // YYYY-MM-DD
 export type WeekKey = `${number}-W${number}`;          // YYYY-Www
 export type MonthKey = `${number}-${number}`;          // YYYY-MM
 export type YearKey = `${number}`;                     // YYYY
 
 // Unified time key type
-export type TimeKey = DateKey | WeekKey | MonthKey | YearKey;
+export type DateKey = DayKey | WeekKey | MonthKey | YearKey;
 
 // Note type
 export interface Note {
   datasetId: string;
-  date: TimeKey;
+  date: DateKey;
   text: string;
   createdAt: number;
   updatedAt: number;
@@ -45,7 +45,7 @@ export interface Note {
 export interface ImageAttachment {
   id: string;
   datasetId: string;
-  date: TimeKey;
+  date: DateKey;
   imageData: string; // base64 or Blob string
   mimeType: string;
   createdAt: number;
@@ -113,7 +113,7 @@ function getDb() {
         for (const oldEntry of oldEntries) {
           if (oldEntry.date && Array.isArray(oldEntry.numbers)) {
             await entriesStore.put({
-              date: oldEntry.date as DateKey,
+              date: oldEntry.date as DayKey,
               numbers: oldEntry.numbers,
               datasetId: defaultDataset.id,
             });
@@ -208,12 +208,12 @@ export async function listDatasets(): Promise<Dataset[]> {
   return await db.getAll('datasets');
 }
 
-export async function saveDay(datasetId: string, date: DateKey, numbers: number[]) {
+export async function saveDay(datasetId: string, date: DayKey, numbers: number[]) {
   const db = await getDb();
   await db.put('entries', { datasetId, date, numbers });
 }
 
-export async function loadDay(datasetId: string, date: DateKey): Promise<number[]> {
+export async function loadDay(datasetId: string, date: DayKey): Promise<number[]> {
   const db = await getDb();
   // Use the composite index [datasetId, date]
   const index = db.transaction('entries').store.index('datasetId_date');

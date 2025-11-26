@@ -1,11 +1,12 @@
+import { formatFriendlyDate, parseDateKey } from '../lib/friendly-date';
 import { Link } from 'react-router-dom';
 import { useDatasets } from '../features/db/useDatasetData';
-import { calculateRecords } from '../lib/records';
+import { calculateRecordsForValence } from '../lib/records';
 import { useAllDays } from '../features/db/useCalendarData';
 import { CalendarDays, TrendingUp, TrendingDown, Award, Flame, Trophy, Skull } from 'lucide-react';
 import { getValueForValence } from '../lib/valence';
 import { useMemo } from 'react';
-import type { Valence } from '@/features/db/localdb';
+import type { DateKey, Valence } from '@/features/db/localdb';
 
 
 
@@ -14,8 +15,8 @@ export function Records({ datasetId }: { datasetId: string }) {
   const dataset = datasets.find(d => d.id === datasetId);
   const { data: allDays, isLoading, error } = useAllDays(datasetId);
   const records = useMemo(() =>
-    allDays ? calculateRecords(allDays) : null,
-    [allDays]
+    (dataset && allDays) ? calculateRecordsForValence(allDays, dataset.valence) : null,
+    [allDays, dataset]
   );
 
   if (!dataset) return <div className="max-w-4xl mx-auto p-8">Dataset not found.</div>;
@@ -23,35 +24,56 @@ export function Records({ datasetId }: { datasetId: string }) {
   if (error) return <div className="max-w-4xl mx-auto p-8 text-red-500">Failed to load records.</div>;
   if (!records) return null;
 
-  // Prepare all records as an array for sorting
-  const recordCards = [
-    // Highest
-    { label: `Day`, value: records.highestDay.value, date: records.highestDay.date, valence: dataset.valence, type: "highest", sortDate: records.highestDay.date },
-    { label: `Day Median`, value: records.highestDayMedian.value, date: records.highestDayMedian.date, valence: dataset.valence, type: "highest", sortDate: records.highestDayMedian.date },
-    { label: `Week`, value: records.highestWeek.value, date: records.highestWeek.date, valence: dataset.valence, type: "highest", sortDate: records.highestWeek.date },
-    { label: `Week Median`, value: records.highestWeekMedian.value, date: records.highestWeekMedian.date, valence: dataset.valence, type: "highest", sortDate: records.highestWeekMedian.date },
-    { label: `Month`, value: records.highestMonth.value, date: records.highestMonth.date, valence: dataset.valence, type: "highest", sortDate: records.highestMonth.date },
-    { label: `Monthly Median`, value: records.highestMonthMedian.value, date: records.highestMonthMedian.date, valence: dataset.valence, type: "highest", sortDate: records.highestMonthMedian.date },
-    // Streaks
-    { label: 'Daily Streak', value: records.longestDailyStreak.length, date: records.longestDailyStreak.start + (records.longestDailyStreak.length > 1 ? ' → ' + records.longestDailyStreak.end : ''), valence: 'neutral', type: "streak", sortDate: records.longestDailyStreak.end || records.longestDailyStreak.start },
-    { label: 'Weekly Streak', value: records.longestWeeklyStreak.length, date: records.longestWeeklyStreak.start + (records.longestWeeklyStreak.length > 1 ? ' → ' + records.longestWeeklyStreak.end : ''), valence: 'neutral', type: "streak", sortDate: records.longestWeeklyStreak.end || records.longestWeeklyStreak.start },
-    { label: 'Monthly Streak', value: records.longestMonthlyStreak.length, date: records.longestMonthlyStreak.start + (records.longestMonthlyStreak.length > 1 ? ' → ' + records.longestMonthlyStreak.end : ''), valence: 'neutral', type: "streak", sortDate: records.longestMonthlyStreak.end || records.longestMonthlyStreak.start },
-    // Lowest
-    { label: `Day`, value: records.lowestDay.value, date: records.lowestDay.date, valence: dataset.valence, type: "lowest", sortDate: records.lowestDay.date },
-    { label: `Day Median`, value: records.lowestDayMedian.value, date: records.lowestDayMedian.date, valence: dataset.valence, type: "lowest", sortDate: records.lowestDayMedian.date },
-    { label: `Week`, value: records.lowestWeek.value, date: records.lowestWeek.date, valence: dataset.valence, type: "lowest", sortDate: records.lowestWeek.date },
-    { label: `Week Median`, value: records.lowestWeekMedian.value, date: records.lowestWeekMedian.date, valence: dataset.valence, type: "lowest", sortDate: records.lowestWeekMedian.date },
-    { label: `Month`, value: records.lowestMonth.value, date: records.lowestMonth.date, valence: dataset.valence, type: "lowest", sortDate: records.lowestMonth.date },
-    { label: `Monthly Median`, value: records.lowestMonthMedian.value, date: records.lowestMonthMedian.date, valence: dataset.valence, type: "lowest", sortDate: records.lowestMonthMedian.date },
-  ] as (RecordCardProps & { sortDate: string } )[];
+  // Prepare all records as an array for sorting, based on tracking type
+  let recordCards: RecordCardProps[] = [];
+  const valence = dataset.valence
+  if (dataset.tracking === 'series') {
+    recordCards = [
+      // Best
+      { type: "best", label: `Day`, ...records.bestDay, valence },
+      { type: "best", label: `Day Median`, ...records.bestDayMedian, valence },
+      { type: "best", label: `Week`, ...records.bestWeek, valence },
+      { type: "best", label: `Week Median`, ...records.bestWeekMedian, valence },
+      { type: "best", label: `Month`, ...records.bestMonth, valence },
+      { type: "best", label: `Monthly Median`, ...records.bestMonthMedian, valence },
+      // Worst
+      { type: "worst", label: `Day`, ...records.worstDay, valence },
+      { type: "worst", label: `Day Median`, ...records.worstDayMedian, valence },
+      { type: "worst", label: `Week`, ...records.worstWeek, valence },
+      { type: "worst", label: `Week Median`, ...records.worstWeekMedian, valence },
+      { type: "worst", label: `Month`, ...records.worstMonth, valence },
+      { type: "worst", label: `Monthly Median`, ...records.worstMonthMedian, valence },
+      // Streaks
+      { type: "streak", label: 'Daily Streak', ...records.bestDailyStreak, date: records.bestDailyStreak.end, valence },
+      { type: "streak", label: 'Weekly Streak', ...records.bestWeeklyStreak, date: records.bestWeeklyStreak.end, valence },
+      { type: "streak", label: 'Monthly Streak', ...records.bestMonthlyStreak, date: records.bestMonthlyStreak.end, valence },
+    ];
+  } else if (dataset.tracking === 'trend') {
+    recordCards = [
+      // Best Medians
+      { type: "best", label: `Day Median`, ...records.bestDayMedian, valence },
+      { type: "best", label: `Week Median`, ...records.bestWeekMedian, valence },
+      { type: "best", label: `Monthly Median`, ...records.bestMonthMedian, valence },
+      // Worst Medians
+      { type: "worst", label: `Day Median`, ...records.worstDayMedian, valence },
+      { type: "worst", label: `Week Median`, ...records.worstWeekMedian, valence },
+      { type: "worst", label: `Monthly Median`, ...records.worstMonthMedian, valence },
+      // Streaks
+      { type: "streak", label: 'Daily Trend Streak', ...records.bestDailyTrendStreak, date: records.bestDailyTrendStreak.end, valence },
+      { type: "streak", label: 'Weekly Trend Streak', ...records.bestWeeklyTrendStreak, date: records.bestWeeklyTrendStreak.end, valence },
+      { type: "streak", label: 'Monthly Trend Streak', ...records.bestMonthlyTrendStreak, date: records.bestMonthlyTrendStreak.end, valence },
+    ];
+  }
 
-  // Sort by sortDate descending (most recent first)
+  // Sort by date descending (most recent first) using parseDateKey for proper comparison
   recordCards.sort((a, b) => {
-    // Try to parse as date, fallback to string compare
-    const da = Date.parse(a.sortDate.replace('→', '').trim()) || a.sortDate;
-    const db = Date.parse(b.sortDate.replace('→', '').trim()) || b.sortDate;
-    if (typeof da === 'number' && typeof db === 'number') return db - da;
-    return String(db).localeCompare(String(da));
+    try {
+      const da = parseDateKey(a.date);
+      const db = parseDateKey(b.date);
+      return db.getTime() - da.getTime();
+    } catch {
+      return String(b.date).localeCompare(String(a.date));
+    }
   });
 
   return (
@@ -65,8 +87,8 @@ export function Records({ datasetId }: { datasetId: string }) {
         <Award className="w-7 h-7 md:w-8 md:h-8 text-yellow-400" /> Records
       </h2>
       <ul className="flex flex-col gap-3 md:gap-4">
-        {recordCards.map(({ sortDate, ...rec }) => (
-          <li key={rec.label }>
+        {recordCards.map((rec) => (
+          <li key={`${rec.type}-${rec.label}`}>
             <RecordCard {...rec} />
           </li>
         ))}
@@ -75,88 +97,117 @@ export function Records({ datasetId }: { datasetId: string }) {
   );
 }
 
-interface RecordCardProps {
-  label: string;
-  value: number;
-  date: string;
-  valence: Valence;
-  type: "highest" | "lowest" | "streak";
-}
 
-function RecordCard({ label, value, date, valence, type }: RecordCardProps) {
-  // Polished, modern color and style choices
-    let textColor = '';
-    let bgColor = '';
-    let borderColor = '';
-    let iconBg = '';
-    let iconBorder = '';
-    let icon: React.ReactNode;
-    let displayLabel = label;
-    if (type === "streak") {
-      icon = <Flame className="w-5 h-5 text-amber-500" />;
-      textColor = 'text-amber-600 dark:text-amber-300';
-      bgColor = 'bg-amber-50/80 dark:bg-amber-900/60';
-      borderColor = 'border-amber-200 dark:border-amber-700';
-      iconBg = 'bg-amber-100/80 dark:bg-amber-900/80';
-      iconBorder = 'border-amber-200 dark:border-amber-700';
-      displayLabel = `Best ${label}`;
+type RecordCardProps = {
+  label: string;
+  date: DateKey;
+  valence: Valence;
+  type: "best" | "worst" | "streak";
+} & ({
+  type: "best" | "worst";
+  value: number;
+} | {
+  type: "streak";
+  start: DateKey;
+  end: DateKey;
+  length: number;
+});
+
+function RecordCard(props: RecordCardProps) {
+  const { label, valence, date, type } = props;
+  // Grouped class names for container, date badge, icon, and text
+  let icon: React.ReactNode;
+  let displayLabel = label;
+  let containerClass = '';
+  let dateBadgeClass = '';
+  let iconClass = '';
+  let textClass = '';
+
+  // Set icon and regular styles first
+  if (type === "streak") {
+    // Streak record
+    icon = <Flame className="w-5 h-5 text-amber-500" />;
+    containerClass = 'border-amber-200 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-900/60';
+    dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+    iconClass = 'bg-amber-100/80 dark:bg-amber-900/80 border-amber-200 dark:border-amber-700';
+    textClass = 'text-amber-600 dark:text-amber-300';
+    displayLabel = `Best ${label}`;
+  } else if (type === "best") {
+    if (valence === 'neutral') {
+      // Neutral valence uses trending icon
+      icon = <TrendingUp className="w-5 h-5 text-blue-500" />;
+      containerClass = 'border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-900/60';
+      dateBadgeClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-300';
+      iconClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700';
+      textClass = 'text-blue-600 dark:text-blue-300';
+      displayLabel = `Highest ${label}`;
     } else {
-      const isHighest = type === "highest";
-      icon = getValueForValence(isHighest, valence, {
-        good: <Trophy className="w-5 h-5 text-green-500" />,
-        bad: <Skull className="w-5 h-5 text-red-400" />,
-        neutral: isHighest
-          ? <TrendingUp className="w-5 h-5 text-blue-500" />
-          : <TrendingDown className="w-5 h-5 text-blue-400" />,
-      });
-      textColor = getValueForValence(isHighest, valence, {
-        good: 'text-green-600 dark:text-green-300',
-        bad: 'text-red-600 dark:text-red-300',
-        neutral: 'text-blue-600 dark:text-blue-300',
-      });
-      bgColor = getValueForValence(isHighest, valence, {
-        good: 'bg-green-50/80 dark:bg-green-900/60',
-        bad: 'bg-red-50/80 dark:bg-red-900/60',
-        neutral: 'bg-blue-50/80 dark:bg-blue-900/60',
-      });
-      borderColor = getValueForValence(isHighest, valence, {
-        good: 'border-green-300 dark:border-green-700',
-        bad: 'border-red-300 dark:border-red-700',
-        neutral: 'border-blue-300 dark:border-blue-700',
-      });
-      iconBg = getValueForValence(isHighest, valence, {
-        good: 'bg-green-100/80 dark:bg-green-900/80',
-        bad: 'bg-red-100/80 dark:bg-red-900/80',
-        neutral: 'bg-blue-100/80 dark:bg-blue-900/80',
-      });
-      iconBorder = getValueForValence(isHighest, valence, {
-        good: 'border-green-200 dark:border-green-700',
-        bad: 'border-red-200 dark:border-red-700',
-        neutral: 'border-blue-200 dark:border-blue-700',
-      });
-      displayLabel = getValueForValence(isHighest, valence, {
-        good: `Best ${label}`,
-        bad: `Worst ${label}`,
-        neutral: isHighest ? `Highest ${label}` : `Lowest ${label}`,
-      });
+      // Positive/Negative valence uses trophy icon
+      icon = <Trophy className="w-5 h-5 text-green-500" />;
+      containerClass = 'border-green-300 dark:border-green-700 bg-green-50/80 dark:bg-green-900/60';
+      dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+      iconClass = 'bg-green-100/80 dark:bg-green-900/80 border-green-200 dark:border-green-700';
+      textClass = 'text-green-600 dark:text-green-300';
+      displayLabel = `Best ${label}`;
     }
+  } else if (type === "worst") {
+    if (valence === 'neutral') {
+      // Neutral valence uses trending down icon
+      icon = <TrendingDown className="w-5 h-5 text-blue-400" />;
+      containerClass = 'border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-900/60';
+      dateBadgeClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-300';
+      iconClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700';
+      textClass = 'text-blue-600 dark:text-blue-300';
+      displayLabel = `Lowest ${label}`;
+    } else {
+      // Positive/Negative valence uses skull icon
+      icon = <Skull className="w-5 h-5 text-red-400" />;
+      containerClass = 'border-red-300 dark:border-red-700 bg-red-50/80 dark:bg-red-900/60';
+      dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+      iconClass = 'bg-red-100/80 dark:bg-red-900/80 border-red-200 dark:border-red-700';
+      textClass = 'text-red-600 dark:text-red-300';
+      displayLabel = `Worst ${label}`;
+    }
+  }
+;
+  let displayDate = '';
+  let displayValue = '';
+
+  if (!date) {
+    // No record case
+    displayDate = 'Never';
+    displayValue = '—';
+    containerClass = 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 opacity-60';
+    dateBadgeClass = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500';
+    iconClass = 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
+    textClass = 'text-slate-400 dark:text-slate-500';
+  } else {
+    // Normal record case
+    displayValue = Intl.NumberFormat().format(type == 'streak' ? props.length : props.value)
+    displayDate = type === 'streak'
+      ? formatFriendlyDate(props.start, props.end)
+      : formatFriendlyDate(date);
+  }
+
+
+
   return (
-    <div className={`rounded-xl border ${borderColor} ${bgColor} flex items-center px-4 py-3 md:py-4 md:px-6 shadow-sm hover:shadow-md transition-shadow`}>
+    <div className={`rounded-xl border flex items-center px-4 py-3 md:py-4 md:px-6 shadow-sm hover:shadow-md transition-shadow ${containerClass}`}>
       {/* Left: icon, label, value */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className={`flex-shrink-0 rounded-full p-2 ${iconBg} ${iconBorder} border shadow-sm`}>
+        <div className={`flex-shrink-0 rounded-full p-2 border shadow-sm ${iconClass}`}>
           {icon}
         </div>
         <div className="min-w-0">
           <div className="text-xs font-semibold mb-0.5 truncate opacity-80">{displayLabel}</div>
-          <div className={`text-xl md:text-2xl font-extrabold leading-tight ${textColor}`}>{Intl.NumberFormat().format(value)}</div>
+          <div className={`text-xl md:text-2xl font-extrabold leading-tight ${textClass}`}>{displayValue}</div>
         </div>
       </div>
       {/* Right: date badge */}
       <div className="flex-shrink-0 pl-2 flex items-center h-full">
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-medium ${dateBadgeClass}`}>
           <CalendarDays className="w-3.5 h-3.5 opacity-70" />
-          {date}
+          {displayDate}
         </span>
       </div>
     </div>

@@ -5,11 +5,11 @@ import {
   loadYear,
   loadAllDays,
   saveDay,
-  type DateKey,
+  type DayKey,
 } from './localdb';
 
 // Hook to load a day's numbers for a dataset
-export function useDay(datasetId: string, date: DateKey) {
+export function useDay(datasetId: string, date: DayKey) {
   return useQuery({
     queryKey: ['day', datasetId, date],
     queryFn: () => loadDay(datasetId, date),
@@ -44,7 +44,7 @@ export function useAllDays(datasetId: string) {
 export function useSaveDay() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { datasetId: string; date: DateKey; numbers: number[] }) => {
+    mutationFn: async (params: { datasetId: string; date: DayKey; numbers: number[] }) => {
       await saveDay(params.datasetId, params.date, params.numbers);
       return params;
     },
