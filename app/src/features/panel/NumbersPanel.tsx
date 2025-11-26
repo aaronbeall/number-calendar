@@ -5,7 +5,7 @@ import { Sheet, SheetHeader, SheetTitle, SheetContent } from '@/components/ui/sh
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { NumberText } from '@/components/ui/number-text';
 import { EditableNumberBadge } from './EditableNumberBadge';
-import { computeNumberStats } from '@/lib/stats';
+import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes } from '@/lib/stats';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { ChartContainer } from '@/components/ui/chart';
@@ -15,13 +15,14 @@ import { Badge } from '@/components/ui/badge';
 import { AddNumberEditor } from './AddNumberEditor';
 import { AnimatePresence } from 'framer-motion';
 import type { StatsExtremes } from '@/lib/stats';
-import type { Valence } from '@/features/db/localdb';
+import type { Valence, Tracking } from '@/features/db/localdb';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   numbers: number[];
+  priorNumbers?: number[]; // previous period's numbers
   editableNumbers?: boolean; // default false
   showExpressionInput?: boolean; // default false
   onSave?: (numbers: number[]) => void;
@@ -31,6 +32,7 @@ export interface NumbersPanelProps {
   actionIcon?: React.ReactNode;
   extremes?: StatsExtremes;
   valence: Valence;
+  tracking: Tracking;
 }
 
 
@@ -39,6 +41,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   onClose,
   title,
   numbers,
+  priorNumbers,
   editableNumbers = false,
   showExpressionInput = false,
   onSave,
@@ -47,6 +50,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   actionIcon,
   extremes,
   valence,
+  tracking,
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
 
@@ -67,6 +71,10 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
   // Stats computed via util
   const stats = React.useMemo(() => computeNumberStats(displayNumbers), [displayNumbers]);
+  const primaryMetric = stats ? stats[getPrimaryMetric(tracking)] : 0;
+  const primaryLabel = getPrimaryMetricLabel(tracking);
+  const isHighestPrimary = extremes && stats && primaryMetric === getPrimaryMetricHighFromExtremes(extremes, tracking);
+  const isLowestPrimary = extremes && stats && primaryMetric === getPrimaryMetricLowFromExtremes(extremes, tracking);
 
   // Prepare items with original indices for stable mapping when sorting
   const items = React.useMemo(() => displayNumbers.map((value, index) => ({ value, index })), [displayNumbers]);
@@ -242,26 +250,26 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-4 relative">
               <CopyButton
                 className="absolute top-2 right-2"
-                content={`Total: ${stats.total}\nMean: ${stats.mean.toFixed(1)}\nMedian: ${stats.median}\nMin: ${stats.min}\nMax: ${stats.max}`}
+                content={`${primaryLabel}: ${primaryMetric}\nMean: ${stats.mean.toFixed(1)}\nMedian: ${stats.median}\nMin: ${stats.min}\nMax: ${stats.max}`}
                 variant="ghost"
               />
-              {/* Centered Total with colored box */}
+              {/* Centered Primary Metric with colored box */}
               <div className="flex justify-center">
                 <div
                   className={
                     'rounded-lg p-4 text-center shadow-sm border font-mono text-xl font-bold ' +
-                    getValueForValence(stats.total, valence, {
+                    getValueForValence(primaryMetric, valence, {
                       good: 'bg-green-100 dark:bg-green-950/60 border-green-200 dark:border-green-900 text-green-600 dark:text-green-300',
                       bad: 'bg-red-100 dark:bg-red-950/60 border-red-200 dark:border-red-900 text-red-600 dark:text-red-300',
                       neutral: 'bg-blue-100 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-300',
                     })
                   }
                 >
-                  <div className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">Total</div>
+                  <div className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">{primaryLabel}</div>
                   <NumberText
-                    value={stats.total}
-                    isHighest={!!(extremes && stats.total === extremes.highestTotal)}
-                    isLowest={!!(extremes && stats.total === extremes.lowestTotal)}
+                    value={primaryMetric}
+                    isHighest={!!isHighestPrimary}
+                    isLowest={!!isLowestPrimary}
                     valence={valence}
                     className=""
                   />

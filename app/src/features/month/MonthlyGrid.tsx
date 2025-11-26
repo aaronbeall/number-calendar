@@ -2,7 +2,7 @@ import { MonthCell } from './MonthCell';
 import { calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
 import type { StatsExtremes } from '@/lib/stats';
-import type { Valence } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
 
 interface MonthlyGridProps {
   year: number;
@@ -10,9 +10,10 @@ interface MonthlyGridProps {
   onMonthClick: (monthNumber: number, monthName: string, numbers: number[], yearExtremes: StatsExtremes) => void;
   selectedPanelTitle?: string;
   valence: Valence;
+  tracking: Tracking;
 }
 
-export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle, valence }: MonthlyGridProps) {
+export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle, valence, tracking }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -78,6 +79,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle, 
                 yearExtremes={yearExtremes}
                 onClick={() => onMonthClick(monthNumber, monthName, monthNumbers, yearExtremes)}
                 valence={valence}
+                tracking={tracking}
               />
             </div>
           );

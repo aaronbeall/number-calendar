@@ -14,17 +14,18 @@ import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-rea
 import { useMonth, useYear, useSaveDay } from '@/features/db/useCalendarData';
 import { calculateDayStats, calculateMonthExtremes, calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
+import { getPriorDateKey, formatDateAsKey } from '@/lib/friendly-date';
 import YearChart from '@/features/chart/YearChart';
 import type { StatsExtremes } from '@/lib/stats';
-import type { Dataset } from '@/features/db/localdb';
+import type { Dataset, DayKey } from '@/features/db/localdb';
 
 const today = new Date();
 
 function getMonthDays(year: number, month: number) {
-  const days: string[] = [];
+  const days: DayKey[] = [];
   const lastDay = new Date(year, month, 0).getDate();
   for (let d = 1; d <= lastDay; d++) {
-    days.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+    days.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}` as DayKey);
   }
   return days;
 }
@@ -207,7 +208,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               renderWeekFooter={(datesInWeek) => {
                 // Compute numbers for the week from monthData
                 const weekNumbers = datesInWeek.flatMap(d => {
-                  const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                  const ds = formatDateAsKey(d, 'day');
                   return monthData[ds] || [];
                 });
                 if (weekNumbers.length === 0) return null; // Only render if any data exists
@@ -249,13 +250,15 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                     }}
                     className={`cursor-pointer transition-shadow rounded-md ${isSelectedWeek ? ringClasses : ''}`}
                   >
-                    <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} valence={dataset.valence} />
+                    <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} valence={dataset.valence} tracking={dataset.tracking} />
                   </div>
                 );
               }}
               renderDay={date => {
-                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                const dateStr = formatDateAsKey(date, 'day');
                 const dayNumbers = monthData[dateStr] || [];
+                const priorDateStr = getPriorDateKey(dateStr);
+                const priorNumbers = monthData[priorDateStr] || [];
                 return (
                   <DayCell
                     date={date}
@@ -265,6 +268,8 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                     monthMax={monthExtremes?.highestMax}
                     monthExtremes={monthExtremes}
                     valence={dataset.valence}
+                    priorNumbers={priorNumbers}
+                    tracking={dataset.tracking}
                   />
                 );
               }}
@@ -291,6 +296,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                 isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
                 yearExtremes={yearExtremes}
                 valence={dataset.valence}
+                tracking={dataset.tracking}
               />
               </div>
             </div>
@@ -370,6 +376,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                 });
               }}
               valence={dataset.valence}
+              tracking={dataset.tracking}
             />
 
             {/* Year Summary */}
@@ -393,6 +400,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   yearName={`${year}`} 
                   isCurrentYear={year === today.getFullYear()}
                   valence={dataset.valence}
+                  tracking={dataset.tracking}
                 />
               </div>
             </div>
@@ -457,6 +465,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
       <NumbersPanel
         {...panelProps}
         valence={dataset.valence}
+        tracking={dataset.tracking}
         onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
       />
     </div>

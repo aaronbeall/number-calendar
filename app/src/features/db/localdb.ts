@@ -221,7 +221,7 @@ export async function loadDay(datasetId: string, date: DayKey): Promise<number[]
   return entry?.numbers || [];
 }
 
-export async function loadMonth(datasetId: string, year: number, month: number): Promise<Record<string, number[]>> {
+export async function loadMonth(datasetId: string, year: number, month: number): Promise<Record<DayKey, number[]>> {
   const db = await getDb();
   const index = db.transaction('entries').store.index('datasetId_date');
   const monthStr = `${year}-${String(month).padStart(2, '0')}`;
@@ -231,7 +231,7 @@ export async function loadMonth(datasetId: string, year: number, month: number):
   return Object.fromEntries(all.map(entry => [entry.date, entry.numbers]));
 }
 
-export async function loadYear(datasetId: string, year: number): Promise<Record<string, number[]>> {
+export async function loadYear(datasetId: string, year: number): Promise<Record<DayKey, number[]>> {
   const db = await getDb();
   const index = db.transaction('entries').store.index('datasetId_date');
   const yearStr = `${year}`;

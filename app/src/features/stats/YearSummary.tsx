@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { computeNumberStats } from '@/lib/stats';
+import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
-import type { Valence } from '@/features/db/localdb';
+import type { Valence, Tracking } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
 
 interface YearSummaryProps {
@@ -10,25 +10,29 @@ interface YearSummaryProps {
   yearName: string;
   isCurrentYear: boolean;
   valence: Valence;
+  tracking: Tracking;
 }
 
-export function YearSummary({ numbers, yearName, isCurrentYear, valence }: YearSummaryProps) {
+export function YearSummary({ numbers, yearName, isCurrentYear, valence, tracking }: YearSummaryProps) {
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
 
   if (!stats) {
     return null;
   }
 
-  // Choose icon based on valence and total
-  const IconComponent = getValueForValence(stats.total, valence, {
+  // Use primary metric and label
+  const primaryMetric = stats[getPrimaryMetric(tracking)];
+  const primaryLabel = getPrimaryMetricLabel(tracking);
+  // Choose icon based on valence and primary metric
+  const IconComponent = getValueForValence(primaryMetric, valence, {
     good: TrendingUp,
     bad: TrendingDown,
-    neutral: stats.total > 0 ? TrendingUp : stats.total < 0 ? TrendingDown : Minus,
+    neutral: primaryMetric > 0 ? TrendingUp : primaryMetric < 0 ? TrendingDown : Minus,
   });
 
   // Color classes for background
   const bgClasses = isCurrentYear
-    ? getValueForValence(stats.total, valence, {
+    ? getValueForValence(primaryMetric, valence, {
         good: 'bg-gradient-to-r from-white to-blue-50 dark:from-[#232a26] dark:to-[#1a3a2a]',
         bad: 'bg-gradient-to-r from-white to-red-50 dark:from-[#232a26] dark:to-[#3a1a1a]',
         neutral: 'bg-gradient-to-r from-white to-slate-50 dark:from-[#232a26] dark:to-slate-800',
@@ -36,7 +40,7 @@ export function YearSummary({ numbers, yearName, isCurrentYear, valence }: YearS
     : 'bg-white dark:bg-[#232a26]';
 
   // Color classes for bottom border
-  const bottomBorderClasses = getValueForValence(stats.total, valence, {
+  const bottomBorderClasses = getValueForValence(primaryMetric, valence, {
     good: 'border-b-4 border-green-400 dark:border-green-700',
     bad: 'border-b-4 border-red-400 dark:border-red-700',
     neutral: 'border-b-4 border-slate-400 dark:border-slate-600',
@@ -100,14 +104,14 @@ export function YearSummary({ numbers, yearName, isCurrentYear, valence }: YearS
 
           <div className="hidden sm:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
 
-          {/* Total (most prominent, right-most, own container) */}
-          <div className={`flex items-center gap-3 px-5 py-4 rounded-lg font-mono font-black shadow-lg ${getValueForValence(stats.total, valence, {
+          {/* Primary metric (most prominent, right-most, own container) */}
+          <div className={`flex items-center gap-3 px-5 py-4 rounded-lg font-mono font-black shadow-lg ${getValueForValence(primaryMetric, valence, {
             good: 'bg-green-200 dark:bg-[#1a3a2a] text-green-700 dark:text-green-200 shadow-green-200/50 dark:shadow-green-900/30',
             bad: 'bg-red-200 dark:bg-[#3a1a1a] text-red-700 dark:text-red-200 shadow-red-200/50 dark:shadow-red-900/30',
             neutral: 'bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shadow-slate-200/50 dark:shadow-slate-900/30',
           })}`}>
-            <div className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-400 font-bold">Total</div>
-            <NumberText value={stats.total} valence={valence} className="text-2xl sm:text-3xl font-black tracking-tight" />
+            <div className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-400 font-bold">{primaryLabel}</div>
+            <NumberText value={primaryMetric} valence={valence} className="text-2xl sm:text-3xl font-black tracking-tight" />
           </div>
         </div>
       </div>

@@ -1,3 +1,5 @@
+
+import { subDays, subWeeks, subMonths, subYears } from 'date-fns';
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
 import { format, parseISO, isValid, parse, startOfISOWeek, endOfISOWeek } from 'date-fns';
 
@@ -125,6 +127,57 @@ export function parseDateKey(key: DateKey): Date {
   }
   if (isYearKey(key)) {
     return parseISO(key + '-01-01');
+  }
+  throw new Error('Invalid DateKey: ' + key);
+}
+
+/**
+ * Formats a Date as a DateKey of the specified type ('day', 'week', 'month', 'year').
+ * The return type is inferred based on the type argument.
+ */
+export function formatDateAsKey(date: Date, type: 'day'): DayKey;
+export function formatDateAsKey(date: Date, type: 'week'): WeekKey;
+export function formatDateAsKey(date: Date, type: 'month'): MonthKey;
+export function formatDateAsKey(date: Date, type: 'year'): YearKey;
+export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'year'): DateKey {
+  switch (type) {
+    case 'day':
+      return format(date, 'yyyy-MM-dd') as DayKey;
+    case 'week':
+      return format(date, "RRRR-'W'II") as WeekKey;
+    case 'month':
+      return format(date, 'yyyy-MM') as MonthKey;
+    case 'year':
+      return format(date, 'yyyy') as YearKey;
+    default:
+      throw new Error('Invalid key type');
+  }
+}
+
+/**
+ * Returns the prior DateKey for a given DateKey (day, week, month, year).
+ * For day: previous day (YYYY-MM-DD)
+ * For week: previous ISO week (YYYY-Www)
+ * For month: previous month (YYYY-MM)
+ * For year: previous year (YYYY)
+ */
+export function getPriorDateKey<K extends DateKey>(key: K): K {
+  if (isDayKey(key)) {
+    const prev = subDays(parseISO(key), 1);
+    return format(prev, 'yyyy-MM-dd') as K;
+  }
+  if (isWeekKey(key)) {
+    const prev = subWeeks(parseISO(weekToISODate(key)), 1);
+    // Convert back to ISO week string
+    return format(prev, "RRRR-'W'II") as K;
+  }
+  if (isMonthKey(key)) {
+    const prev = subMonths(parseISO(key + '-01'), 1);
+    return format(prev, 'yyyy-MM') as K;
+  }
+  if (isYearKey(key)) {
+    const prev = subYears(parseISO(key + '-01-01'), 1);
+    return format(prev, 'yyyy') as K;
   }
   throw new Error('Invalid DateKey: ' + key);
 }

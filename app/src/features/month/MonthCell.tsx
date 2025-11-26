@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
-import { computeNumberStats } from '@/lib/stats';
+import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes } from '@/lib/stats';
 import { Trophy } from 'lucide-react';
 import type { StatsExtremes } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
 import { getValueForValence } from '@/lib/valence';
-import type { Valence } from '@/features/db/localdb';
+import type { Valence, Tracking } from '@/features/db/localdb';
 
 interface MonthCellProps {
   monthName: string;
@@ -16,10 +16,13 @@ interface MonthCellProps {
   yearExtremes?: StatsExtremes;
   onClick: () => void;
   valence: Valence;
+  tracking: Tracking;
 }
 
-export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, isSelected = false, yearExtremes, onClick, valence }: MonthCellProps) {
+export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, isSelected = false, yearExtremes, onClick, valence, tracking }: MonthCellProps) {
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
+  const primaryMetric = stats ? stats[getPrimaryMetric(tracking)] : 0;
+  const primaryLabel = getPrimaryMetricLabel(tracking);
   
   // Calculate dot sizes based on year's extremes
   const getRelativeSize = (value: number): number => {
@@ -33,25 +36,25 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
     return .6 + (absValue / maxMagnitude) * 1.8;
   };
   
-    // Check if this month has extreme values
-    const isHighestTotal = yearExtremes && stats && stats.total === yearExtremes.highestTotal;
-    const isLowestTotal = yearExtremes && stats && stats.total === yearExtremes.lowestTotal;
-    const isHighestCount = yearExtremes && stats && stats.count === yearExtremes.highestCount;
-    const isHighestMean = yearExtremes && stats && stats.mean === yearExtremes.highestMean;
-    const isLowestMean = yearExtremes && stats && stats.mean === yearExtremes.lowestMean;
-    const isHighestMedian = yearExtremes && stats && stats.median === yearExtremes.highestMedian;
-    const isLowestMedian = yearExtremes && stats && stats.median === yearExtremes.lowestMedian;
-    const isHighestMin = yearExtremes && stats && stats.min === yearExtremes.highestMin;
-    const isLowestMin = yearExtremes && stats && stats.min === yearExtremes.lowestMin;
-    const isHighestMax = yearExtremes && stats && stats.max === yearExtremes.highestMax;
-    const isLowestMax = yearExtremes && stats && stats.max === yearExtremes.lowestMax;
+  // Check if this month has extreme values
+  const isHighestPrimary = yearExtremes && stats && primaryMetric === getPrimaryMetricHighFromExtremes(yearExtremes, tracking);
+  const isLowestPrimary = yearExtremes && stats && primaryMetric === getPrimaryMetricLowFromExtremes(yearExtremes, tracking);
+  const isHighestCount = yearExtremes && stats && stats.count === yearExtremes.highestCount;
+  const isHighestMean = yearExtremes && stats && stats.mean === yearExtremes.highestMean;
+  const isLowestMean = yearExtremes && stats && stats.mean === yearExtremes.lowestMean;
+  const isHighestMedian = yearExtremes && stats && stats.median === yearExtremes.highestMedian;
+  const isLowestMedian = yearExtremes && stats && stats.median === yearExtremes.lowestMedian;
+  const isHighestMin = yearExtremes && stats && stats.min === yearExtremes.highestMin;
+  const isLowestMin = yearExtremes && stats && stats.min === yearExtremes.lowestMin;
+  const isHighestMax = yearExtremes && stats && stats.max === yearExtremes.highestMax;
+  const isLowestMax = yearExtremes && stats && stats.max === yearExtremes.lowestMax;
   
   // Unified tile style for monthly grid, with color effect (valence-aware)
   const getColorClasses = () => {
     if (!stats) {
       return 'bg-slate-50 dark:bg-slate-800 shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200';
     }
-    return getValueForValence(stats.total, valence, {
+    return getValueForValence(primaryMetric, valence, {
       good: 'bg-green-50 dark:bg-[#1a3a2a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
       bad: 'bg-red-50 dark:bg-[#3a1a1a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
       neutral: 'bg-slate-50 dark:bg-slate-800 shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
@@ -89,9 +92,10 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
       {/* Stats grid */}
       {stats && stats.count > 0 ? (
         <div className="space-y-3">
-          {/* Total - Most important metric, centered and prominent */}
+          {/* Primary metric - Most important metric, centered and prominent */}
           <div className="text-center">
-            <NumberText value={stats.total} isHighest={!!isHighestTotal} isLowest={!!isLowestTotal} className="text-3xl font-bold" valence={valence} />
+            <NumberText value={primaryMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} className="text-3xl font-bold" valence={valence} />
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">{primaryLabel}</div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {isHighestCount ? (
                 <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">

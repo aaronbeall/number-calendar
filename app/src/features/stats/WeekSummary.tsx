@@ -2,9 +2,9 @@ import React, { useMemo } from 'react';
 import { CheckCircle, XCircle, Minus, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { ChartContainer } from '@/components/ui/chart';
 import { LineChart, Line, Tooltip } from 'recharts';
-import { computeNumberStats } from '@/lib/stats';
+import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
-import type { Valence } from '@/features/db/localdb';
+import type { Valence, Tracking } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
 
 export interface WeekSummaryProps {
@@ -12,22 +12,25 @@ export interface WeekSummaryProps {
   weekNumber?: number;
   isCurrentWeek?: boolean;
   valence: Valence;
+  tracking: Tracking;
 }
 
-export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek, valence }) => {
+export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek, valence, tracking }) => {
   if (!numbers || numbers.length === 0) return null;
 
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   if (!stats) return null;
   const { count, total, mean, median, min, max } = stats;
+  const primaryMetric = stats[getPrimaryMetric(tracking)];
+  const primaryLabel = getPrimaryMetricLabel(tracking);
 
-  const bgClasses = getValueForValence(total, valence, {
+  const bgClasses = getValueForValence(primaryMetric, valence, {
     good: 'bg-green-50 dark:bg-[#1a3a2a]',
     bad: 'bg-red-50 dark:bg-[#3a1a1a]',
     neutral: 'bg-slate-50 dark:bg-slate-800',
   });
 
-  const borderClasses = getValueForValence(total, valence, {
+  const borderClasses = getValueForValence(primaryMetric, valence, {
     good: 'border-r-4 border-green-400 dark:border-green-600',
     bad: 'border-r-4 border-red-400 dark:border-red-600',
     neutral: 'border-r-4 border-slate-400 dark:border-slate-600',
@@ -42,14 +45,14 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
     return numbers.map(n => (sum += n));
   }, [numbers]);
 
-  const chartBgClasses = getValueForValence(total, valence, {
+  const chartBgClasses = getValueForValence(primaryMetric, valence, {
     good: 'bg-green-100 dark:bg-green-900/40',
     bad: 'bg-red-100 dark:bg-red-900/40',
     neutral: 'bg-slate-100 dark:bg-slate-800/40',
   });
 
   // Chart line color based on valence
-  const chartLineColor = getValueForValence(total, valence, {
+  const chartLineColor = getValueForValence(primaryMetric, valence, {
     good: '#22c55e', // green
     bad: '#ef4444',  // red
     neutral: '#2563eb', // blue-600
@@ -60,10 +63,10 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
     if (isCurrentWeek) {
       return <Clock className="w-4 h-4 text-blue-600" />;
     }
-    return getValueForValence(total, valence, {
+    return getValueForValence(primaryMetric, valence, {
       good: <CheckCircle className="w-4 h-4 text-green-600" />,
       bad: <XCircle className="w-4 h-4 text-red-600" />,
-      neutral: total > 0 ? <TrendingUp className="w-4 h-4 text-slate-600" /> : total < 0 ? <TrendingDown className="w-4 h-4 text-slate-600" /> : <Minus className="w-4 h-4 text-slate-600" />,
+      neutral: primaryMetric > 0 ? <TrendingUp className="w-4 h-4 text-slate-600" /> : primaryMetric < 0 ? <TrendingDown className="w-4 h-4 text-slate-600" /> : <Minus className="w-4 h-4 text-slate-600" />,
     });
   };
 
@@ -167,14 +170,14 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
 
           <div className="hidden sm:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
 
-          {/* Total (most prominent, right-most, own container) */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded font-mono font-bold ${getValueForValence(total, valence, {
+          {/* Primary metric (most prominent, right-most, own container) */}
+          <div className={`flex items-center gap-2 px-3 py-2 rounded font-mono font-bold ${getValueForValence(primaryMetric, valence, {
             good: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300',
             bad: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300',
             neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
           })}`}>
-            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Total</div>
-            <NumberText value={total} valence={valence} className="text-lg sm:text-xl font-extrabold" />
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{primaryLabel}</div>
+            <NumberText value={primaryMetric} valence={valence} className="text-lg sm:text-xl font-extrabold" />
           </div>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import type { Tracking } from "@/features/db/localdb";
+
 export interface NumberStats {
   count: number;
   total: number;
@@ -125,4 +127,28 @@ export function calculateYearExtremes(monthStats: MonthStatsData[]): StatsExtrem
     highestMin: Math.max(...monthStats.map(m => m.min)),
     lowestMin: Math.min(...monthStats.map(m => m.min)),
   };
+}
+
+export function getPrimaryMetric(tracking: Tracking): 'total' | 'mean' {
+  return tracking === 'series' ? 'total' : 'mean';
+}
+
+export function getPrimaryMetricLabel(tracking: Tracking): string {
+  return tracking === 'series' ? 'Total' : 'Average';
+}
+
+export function getPrimaryMetricFromStats(stats: NumberStats, tracking: Tracking): number {
+  return stats[getPrimaryMetric(tracking)];
+}
+
+export function getPrimaryMetricHighFromExtremes(extremes: StatsExtremes, tracking: Tracking): number | undefined {
+  const key = getPrimaryMetric(tracking);
+  const extremeKey = `highest${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof StatsExtremes;
+  return extremes[extremeKey];
+}
+
+export function getPrimaryMetricLowFromExtremes(extremes: StatsExtremes, tracking: Tracking): number | undefined {
+  const key = getPrimaryMetric(tracking);
+  const extremeKey = `lowest${key.charAt(0).toUpperCase() + key.slice(1)}` as keyof StatsExtremes;
+  return extremes[extremeKey];
 }
