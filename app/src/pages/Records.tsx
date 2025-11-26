@@ -153,11 +153,11 @@ function RecordCard(props: RecordCardProps) {
   } else if (type === "worst") {
     if (valence === 'neutral') {
       // Neutral valence uses trending down icon
-      icon = <TrendingDown className="w-5 h-5 text-blue-400" />;
-      containerClass = 'border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-900/60';
-      dateBadgeClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-300';
-      iconClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700';
-      textClass = 'text-blue-600 dark:text-blue-300';
+      icon = <TrendingDown className="w-5 h-5 text-purple-500" />;
+      containerClass = 'border-purple-300 dark:border-purple-700 bg-purple-50/80 dark:bg-purple-900/60';
+      dateBadgeClass = 'bg-purple-100/80 dark:bg-purple-900/80 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300';
+      iconClass = 'bg-purple-100/80 dark:bg-purple-900/80 border-purple-200 dark:border-purple-700';
+      textClass = 'text-purple-600 dark:text-purple-300';
       displayLabel = `Lowest ${label}`;
     } else {
       // Positive/Negative valence uses skull icon
