@@ -128,7 +128,7 @@ function RecordCard(props: RecordCardProps) {
     // Streak record
     icon = <Flame className="w-5 h-5 text-amber-500" />;
     containerClass = 'border-amber-200 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-900/60';
-    dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+    dateBadgeClass = 'bg-amber-100/80 dark:bg-amber-900/80 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-200';
     iconClass = 'bg-amber-100/80 dark:bg-amber-900/80 border-amber-200 dark:border-amber-700';
     textClass = 'text-amber-600 dark:text-amber-300';
     displayLabel = `Best ${label}`;
@@ -137,7 +137,7 @@ function RecordCard(props: RecordCardProps) {
       // Neutral valence uses trending icon
       icon = <TrendingUp className="w-5 h-5 text-blue-500" />;
       containerClass = 'border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-900/60';
-      dateBadgeClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-300';
+      dateBadgeClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-200';
       iconClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700';
       textClass = 'text-blue-600 dark:text-blue-300';
       displayLabel = `Highest ${label}`;
@@ -145,7 +145,7 @@ function RecordCard(props: RecordCardProps) {
       // Positive/Negative valence uses trophy icon
       icon = <Trophy className="w-5 h-5 text-green-500" />;
       containerClass = 'border-green-300 dark:border-green-700 bg-green-50/80 dark:bg-green-900/60';
-      dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+      dateBadgeClass = 'bg-green-100/80 dark:bg-green-900/80 border-green-200 dark:border-green-700 text-green-700 dark:text-green-200';
       iconClass = 'bg-green-100/80 dark:bg-green-900/80 border-green-200 dark:border-green-700';
       textClass = 'text-green-600 dark:text-green-300';
       displayLabel = `Best ${label}`;
@@ -155,7 +155,7 @@ function RecordCard(props: RecordCardProps) {
       // Neutral valence uses trending down icon
       icon = <TrendingDown className="w-5 h-5 text-purple-500" />;
       containerClass = 'border-purple-300 dark:border-purple-700 bg-purple-50/80 dark:bg-purple-900/60';
-      dateBadgeClass = 'bg-purple-100/80 dark:bg-purple-900/80 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-300';
+      dateBadgeClass = 'bg-purple-100/80 dark:bg-purple-900/80 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-200';
       iconClass = 'bg-purple-100/80 dark:bg-purple-900/80 border-purple-200 dark:border-purple-700';
       textClass = 'text-purple-600 dark:text-purple-300';
       displayLabel = `Lowest ${label}`;
@@ -163,7 +163,7 @@ function RecordCard(props: RecordCardProps) {
       // Positive/Negative valence uses skull icon
       icon = <Skull className="w-5 h-5 text-red-400" />;
       containerClass = 'border-red-300 dark:border-red-700 bg-red-50/80 dark:bg-red-900/60';
-      dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300';
+      dateBadgeClass = 'bg-red-100/80 dark:bg-red-900/80 border-red-200 dark:border-red-700 text-red-700 dark:text-red-200';
       iconClass = 'bg-red-100/80 dark:bg-red-900/80 border-red-200 dark:border-red-700';
       textClass = 'text-red-600 dark:text-red-300';
       displayLabel = `Worst ${label}`;
@@ -178,7 +178,7 @@ function RecordCard(props: RecordCardProps) {
     displayDate = 'Never';
     displayValue = '—';
     containerClass = 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 opacity-60';
-    dateBadgeClass = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500';
+    dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500';
     iconClass = 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
     textClass = 'text-slate-400 dark:text-slate-500';
   } else {
