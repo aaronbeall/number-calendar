@@ -15,7 +15,7 @@ I'm liking this one.
 - [ ] App preferences
 - [ ] Data import/export
 - [ ] Data settings
-  - [ ] Which is better: higher, lower, etc
+  - [x] Which is better: higher, lower, etc
   - [ ] Allowed range
   - [ ] Formatting (currency, precision, time)
   - [ ] Tracking: trend (weight, etc), log (P&L, etc)
