@@ -50,19 +50,28 @@ function longestStreakByPredicate<T, K extends DateKey>(
   for (const { key, value } of items) {
     if (predicate(value, prevValue)) {
       if (curLen === 0) {
+        // Start new streak
         curLen = 1;
         curStart = key;
         curEnd = key;
       } else if (prevKey && isConsecutive(prevKey, key)) {
+        // Continue streak
         curLen++;
         curEnd = key;
+      } else {
+        // Not consecutive, reset streak
+        curLen = 0;
+        curStart = '';
+        curEnd = '';
       }
       if (curLen > maxLen) {
+        // New max streak
         maxLen = curLen;
         maxStart = curStart;
         maxEnd = curEnd
       }
     } else {
+      // Predicate failed, reset streak
       curLen = 0;
       curStart = '';
       curEnd = '';
