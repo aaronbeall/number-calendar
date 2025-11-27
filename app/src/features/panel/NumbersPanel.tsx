@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetHeader, SheetTitle, SheetContent } from '@/components/ui/sheet';
@@ -16,6 +16,7 @@ import { AddNumberEditor } from './AddNumberEditor';
 import { AnimatePresence } from 'framer-motion';
 import type { StatsExtremes } from '@/lib/stats';
 import type { Valence, Tracking } from '@/features/db/localdb';
+import { getCalendarData } from '@/lib/calendar';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -69,12 +70,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   // Use parsedNumbers if available, otherwise fallback to numbers
   const displayNumbers = parsedNumbers !== null ? parsedNumbers : numbers;
 
-  // Stats computed via util
-  const stats = React.useMemo(() => computeNumberStats(displayNumbers), [displayNumbers]);
-  const primaryMetric = stats ? stats[getPrimaryMetric(tracking)] : 0;
-  const primaryLabel = getPrimaryMetricLabel(tracking);
-  const isHighestPrimary = extremes && stats && primaryMetric === getPrimaryMetricHighFromExtremes(extremes, tracking);
-  const isLowestPrimary = extremes && stats && primaryMetric === getPrimaryMetricLowFromExtremes(extremes, tracking);
+  // Use getCalendarData for all stats, deltas, extremes, valence, etc.
+  const {
+    stats,
+    valenceStats,
+    deltas,
+    percents,
+    primaryMetric,
+    primaryMetricLabel,
+    primaryMetricDelta,
+    primaryValenceMetric,
+    isHighestPrimary,
+    isLowestPrimary,
+  } = useMemo(() => getCalendarData(displayNumbers, priorNumbers, extremes, tracking), [displayNumbers, priorNumbers, extremes, tracking]);;
 
   // Prepare items with original indices for stable mapping when sorting
   const items = React.useMemo(() => displayNumbers.map((value, index) => ({ value, index })), [displayNumbers]);
@@ -250,89 +258,80 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             <div className="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 space-y-4 relative">
               <CopyButton
                 className="absolute top-2 right-2"
-                content={`${primaryLabel}: ${primaryMetric}\nMean: ${stats.mean.toFixed(1)}\nMedian: ${stats.median}\nMin: ${stats.min}\nMax: ${stats.max}`}
+                content={`${primaryMetricLabel}: ${primaryMetric}\nMean: ${stats.mean.toFixed(1)}\nMedian: ${stats.median}\nMin: ${stats.min}\nMax: ${stats.max}`}
                 variant="ghost"
               />
-              {/* Centered Primary Metric with colored box */}
-              <div className="flex justify-center">
+              {/* Revamped stats box: large primary metric, then grid of stats with deltas/percents */}
+              <div className="flex flex-col items-center mb-4">
                 <div
-                  className={
-                    'rounded-lg p-4 text-center shadow-sm border font-mono text-xl font-bold ' +
-                    getValueForValence(primaryMetric, valence, {
-                      good: 'bg-green-100 dark:bg-green-950/60 border-green-200 dark:border-green-900 text-green-600 dark:text-green-300',
-                      bad: 'bg-red-100 dark:bg-red-950/60 border-red-200 dark:border-red-900 text-red-600 dark:text-red-300',
-                      neutral: 'bg-blue-100 dark:bg-blue-950/60 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-300',
-                    })
-                  }
+                  className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5"
                 >
-                  <div className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-2">{primaryLabel}</div>
-                  <NumberText
-                    value={primaryMetric}
-                    isHighest={!!isHighestPrimary}
-                    isLowest={!!isLowestPrimary}
-                    valence={valence}
-                    className=""
-                  />
+                  {primaryMetricLabel.toUpperCase()}
                 </div>
+                <NumberText
+                  value={primaryMetric}
+                  valenceValue={primaryValenceMetric}
+                  isHighest={!!isHighestPrimary}
+                  isLowest={!!isLowestPrimary}
+                  valence={valence}
+                  className="text-3xl font-mono font-extrabold"
+                />
+                {deltas && percents && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                      <NumberText
+                        value={deltas[getPrimaryMetric(tracking)]}
+                        valenceValue={deltas[getPrimaryMetric(tracking)]}
+                        valence={valence}
+                        className="text-xs font-mono font-semibold"
+                        formatOptions={{ signDisplay: 'always' }}
+                      />
+                    </span>
+                    {percents[getPrimaryMetric(tracking)] !== undefined && !isNaN(percents[getPrimaryMetric(tracking)] as number) && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
+                        {new Intl.NumberFormat(undefined, { signDisplay: 'always', maximumFractionDigits: 1 }).format(percents[getPrimaryMetric(tracking)]!)}%
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-
               <div className="grid grid-cols-2 gap-3">
-                <div className="text-center">
-                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Mean</div>
-                  <div className="font-mono text-sm font-semibold flex items-center justify-center">
+                {[
+                  { label: 'Mean', value: stats.mean, valenceValue: valenceStats?.mean, isHighest: extremes && stats.mean === extremes.highestMean, isLowest: extremes && stats.mean === extremes.lowestMean, delta: deltas?.mean, percent: percents?.mean },
+                  { label: 'Median', value: stats.median, valenceValue: valenceStats?.median, isHighest: extremes && stats.median === extremes.highestMedian, isLowest: extremes && stats.median === extremes.lowestMedian, delta: deltas?.median, percent: percents?.median },
+                  { label: 'Min', value: stats.min, valenceValue: valenceStats?.min, isHighest: extremes && stats.min === extremes.highestMin, isLowest: extremes && stats.min === extremes.lowestMin, delta: deltas?.min, percent: percents?.min },
+                  { label: 'Max', value: stats.max, valenceValue: valenceStats?.max, isHighest: extremes && stats.max === extremes.highestMax, isLowest: extremes && stats.max === extremes.lowestMax, delta: deltas?.max, percent: percents?.max },
+                ].map(({ label, value, valenceValue, isHighest, isLowest, delta, percent }) => (
+                  <div key={label} className="flex flex-col items-center">
+                    <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</div>
                     <NumberText
-                      value={stats.mean}
-                      isHighest={!!(extremes && stats.mean === extremes.highestMean)}
-                      isLowest={!!(extremes && stats.mean === extremes.lowestMean)}
+                      value={value}
+                      valenceValue={valenceValue}
+                      isHighest={!!isHighest}
+                      isLowest={!!isLowest}
                       valence={valence}
-                      className=""
-                      formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                      className="text-base font-mono font-bold"
                     />
+                    {deltas && percents && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                          <NumberText
+                            value={delta}
+                            valenceValue={delta}
+                            valence={valence}
+                            className="text-xs font-mono font-semibold"
+                            formatOptions={{ signDisplay: 'always' }}
+                          />
+                        </span>
+                        {percent !== undefined && !isNaN(percent as number) && (
+                          <span className="text-[11px] text-slate-400 font-mono font-medium">
+                            {new Intl.NumberFormat(undefined, { signDisplay: 'always', maximumFractionDigits: 1 }).format(percent!)}%
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Median</div>
-                  <div className="font-mono text-sm font-semibold flex items-center justify-center">
-                    <NumberText
-                      value={stats.median}
-                      isHighest={!!(extremes && stats.median === extremes.highestMedian)}
-                      isLowest={!!(extremes && stats.median === extremes.lowestMedian)}
-                      valence={valence}
-                      className=""
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="text-center">
-                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Min</div>
-                  <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
-                    stats.min > 0 ? 'text-green-600 dark:text-green-300' : stats.min < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
-                  }`}>
-                    <NumberText
-                      value={stats.min}
-                      isHighest={!!(extremes && stats.min === extremes.highestMin)}
-                      isLowest={!!(extremes && stats.min === extremes.lowestMin)}
-                      valence={valence}
-                      className=""
-                    />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-slate-500 dark:text-slate-400 text-xs mb-1">Max</div>
-                  <div className={`font-mono text-sm font-semibold flex items-center justify-center ${
-                    stats.max > 0 ? 'text-green-600 dark:text-green-300' : stats.max < 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-600 dark:text-slate-300'
-                  }`}>
-                    <NumberText
-                      value={stats.max}
-                      isHighest={!!(extremes && stats.max === extremes.highestMax)}
-                      isLowest={!!(extremes && stats.max === extremes.lowestMax)}
-                      valence={valence}
-                      className=""
-                    />
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           )}

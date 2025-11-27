@@ -15,6 +15,7 @@ import { useMonth, useYear, useSaveDay } from '@/features/db/useCalendarData';
 import { calculateDayStats, calculateMonthExtremes, calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { getPriorDateKey, formatDateAsKey } from '@/lib/friendly-date';
+import { getPriorNumbersMap } from '@/lib/stats';
 import YearChart from '@/features/chart/YearChart';
 import type { StatsExtremes } from '@/lib/stats';
 import type { Dataset, DayKey } from '@/features/db/localdb';
@@ -76,6 +77,9 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
+
+  // Precompute prior populated numbers map for all days in the month
+  const priorDayNumbers = useMemo(() => getPriorNumbersMap(days, monthData), [days, monthData]);
 
   return (
   <div className="min-h-screen">
@@ -257,8 +261,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               renderDay={date => {
                 const dateStr = formatDateAsKey(date, 'day');
                 const dayNumbers = monthData[dateStr] || [];
-                const priorDateStr = getPriorDateKey(dateStr);
-                const priorNumbers = monthData[priorDateStr] || [];
+                const priorNumbers = priorDayNumbers[dateStr] || [];
                 return (
                   <DayCell
                     date={date}

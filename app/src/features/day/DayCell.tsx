@@ -3,8 +3,8 @@ import React, { useState, useMemo } from 'react';
 import { Trophy, Skull, TrendingUp, TrendingDown, TrendingUpDown } from 'lucide-react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { NumberText } from '@/components/ui/number-text';
-import type { StatsExtremes } from '@/lib/stats';
-import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes } from '@/lib/stats';
+import { getPrimaryMetric, type StatsExtremes } from '@/lib/stats';
+import { getCalendarData } from '@/lib/calendar';
 import type { Valence, Tracking } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
 
@@ -25,28 +25,29 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
 
   const isToday = date.toDateString() === new Date().toDateString();
 
-  const count = numbers.length;
-  const hasData = count > 0;
-  const dayStats = useMemo(() => hasData ? computeNumberStats(numbers)  : null, [numbers, hasData]);
-  const primaryMetric = dayStats ? dayStats[getPrimaryMetric(tracking)] : 0;
+
   const isPast = date < new Date(new Date().toDateString());
   const isFuture = date > new Date(new Date().toDateString());
 
-  // Check if this day has extreme values
-  const isHighestPrimary = monthExtremes && hasData && primaryMetric === getPrimaryMetricHighFromExtremes(monthExtremes, tracking);
-  const isLowestPrimary = monthExtremes && hasData && primaryMetric === getPrimaryMetricLowFromExtremes(monthExtremes, tracking);
-  const isHighestCount = monthExtremes && hasData && count === monthExtremes.highestCount;
-  // For badge, keep other extremes logic for now (mean, median, min, max)
-  const isHighestMean = monthExtremes && dayStats && dayStats.mean === monthExtremes.highestMean;
-  const isLowestMean = monthExtremes && dayStats && dayStats.mean === monthExtremes.lowestMean;
-  const isHighestMedian = monthExtremes && dayStats && dayStats.median === monthExtremes.highestMedian;
-  const isLowestMedian = monthExtremes && dayStats && dayStats.median === monthExtremes.lowestMedian;
-  const isHighestMin = monthExtremes && dayStats && dayStats.min === monthExtremes.highestMin;
-  const isLowestMin = monthExtremes && dayStats && dayStats.min === monthExtremes.lowestMin;
-  const isHighestMax = monthExtremes && dayStats && dayStats.max === monthExtremes.highestMax;
-  const isLowestMax = monthExtremes && dayStats && dayStats.max === monthExtremes.lowestMax;
-
-  // Count extremes including primary; separate non-primary for display logic
+  // Use getCalendarData for all stats, deltas, extremes, valence, etc.
+  const {
+    primaryMetric,
+    primaryValenceMetric,
+    isHighestPrimary,
+    isLowestPrimary,
+    isHighestCount,
+    isHighestMean,
+    isLowestMean,
+    isHighestMedian,
+    isLowestMedian,
+    isHighestMin,
+    isLowestMin,
+    isHighestMax,
+    isLowestMax,
+  } = useMemo(() => getCalendarData(numbers, priorNumbers, monthExtremes, tracking), [numbers, priorNumbers, monthExtremes, tracking]);
+  
+  const count = numbers.length;
+  const hasData = count > 0;
   const highExtremesCount = [isHighestPrimary, isHighestMean, isHighestMedian, isHighestMin, isHighestMax].filter(Boolean).length;
   const lowExtremesCount = [isLowestPrimary, isLowestMean, isLowestMedian, isLowestMin, isLowestMax].filter(Boolean).length;
   const nonPrimaryHighCount = [isHighestMean, isHighestMedian, isHighestMin, isHighestMax].filter(Boolean).length;
@@ -65,7 +66,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
   } else if (!hasData) {
     bgColor = isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900';
   } else {
-    bgColor = getValueForValence(primaryMetric, valence, {
+    bgColor = getValueForValence(primaryValenceMetric, valence, {
       good: 'bg-green-50 dark:bg-[#1a3a2a]',
       bad: 'bg-red-50 dark:bg-[#3a1a1a]',
       neutral: isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900',
@@ -165,12 +166,15 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
         {hasData && (
           <div className="flex-1 flex flex-col gap-2 text-xs">
             {/* Primary metric (total or mean) */}
-            <div className={`w-full px-3 py-1 rounded text-center flex items-center justify-center gap-1.5 ${getValueForValence(primaryMetric, valence, {
-              good: 'bg-green-100 dark:bg-[#1a3a2a] text-green-700 dark:text-green-200',
-              bad: 'bg-red-100 dark:bg-[#3a1a1a] text-red-700 dark:text-red-200',
-              neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300',
-            })}`}>
-              <NumberText value={primaryMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} valence={valence} className="font-mono font-bold text-lg" />
+            <div className={`w-full px-3 py-1 rounded text-center flex items-center justify-center gap-1.5`}>
+              <NumberText
+                value={primaryMetric}
+                valenceValue={primaryValenceMetric}
+                isHighest={!!isHighestPrimary}
+                isLowest={!!isLowestPrimary}
+                valence={valence}
+                className="font-mono font-bold text-lg"
+              />
             </div>
 
             {/* Entry count */}

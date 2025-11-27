@@ -25,3 +25,7 @@ export function getRelativeTime(timestamp: number): string {
   if (absDiff >= minute) return rtf.format(Math.round(diff / minute), 'minute');
   return rtf.format(Math.round(diff / 1000), 'second');
 }
+
+export const capitalize = <S extends string>(str: S): Capitalize<S> => {
+  return (str.charAt(0).toUpperCase() + str.slice(1)) as Capitalize<S>;
+}

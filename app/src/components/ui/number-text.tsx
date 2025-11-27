@@ -6,6 +6,7 @@ import { getValueForValence } from '@/lib/valence';
 
 export interface NumberTextProps {
   value: number | null | undefined;
+  valenceValue?: number | null | undefined;
   isHighest?: boolean;
   isLowest?: boolean;
   valence?: Valence;
@@ -19,6 +20,7 @@ export interface NumberTextProps {
 
 export const NumberText: React.FC<NumberTextProps> = ({
   value,
+  valenceValue,
   isHighest = false,
   isLowest = false,
   valence = 'positive',
@@ -30,7 +32,6 @@ export const NumberText: React.FC<NumberTextProps> = ({
   formatOptions,
 }) => {
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
-
   // Default formatting: thousands separators, 0-2 fractional digits.
   const defaultNumberFormat: Intl.NumberFormatOptions = {
     useGrouping: true,
@@ -38,8 +39,9 @@ export const NumberText: React.FC<NumberTextProps> = ({
     maximumFractionDigits: 2,
   };
 
+
   const signClass = getValueForValence(
-    isFiniteNumber ? value : 0,
+    valenceValue ?? 0,
     valence,
     {
       good: positiveClassName,
