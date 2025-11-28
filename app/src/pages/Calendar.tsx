@@ -3,19 +3,16 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { MonthChart } from '@/features/chart/MonthChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
-import { DayCell } from '@/features/day/DayCell';
 import type { Dataset } from '@/features/db/localdb';
 import { useMonth, useMostRecentPopulatedEntryBefore, useSaveDay, useYear } from '@/features/db/useCalendarData';
 import { MonthlyGrid } from '@/features/month/MonthlyGrid';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { MonthSummary } from '@/features/stats/MonthSummary';
-import WeekSummary from '@/features/stats/WeekSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorNumbersMap } from "@/lib/calendar";
-import { formatDateAsKey } from '@/lib/friendly-date';
 import type { StatsExtremes } from '@/lib/stats';
-import { calculateDayStats, calculateMonthExtremes, calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
+import { calculateDailyStats, calculateMonthExtremes, calculateMonthlyStats, calculateYearExtremes } from '@/lib/stats';
 import { BarChart as BarChartIcon, CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3, LineChart as LineChartIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -54,16 +51,16 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const allNumbers = Object.values(monthData).flat();
   
   // Calculate extremes across all days for highlighting and dot scaling
-  const dayStats = useMemo(() => calculateDayStats(monthData), [monthData]);
-  const monthExtremes = useMemo(() => calculateMonthExtremes(dayStats), [dayStats]);
+  const monthExtremes = useMemo(() => {
+    const dailyStats = calculateDailyStats(monthData);
+    return calculateMonthExtremes(dailyStats);
+  }, [yearData, year]);
 
   // Calculate extremes across all months in the year for MonthSummary highlighting
   const yearExtremes = useMemo(() => {
-    const monthStats = calculateMonthStats(yearData, year);
-    return calculateYearExtremes(monthStats);
+    const monthlyStats = calculateMonthlyStats(yearData, year);
+    return calculateYearExtremes(monthlyStats);
   }, [yearData, year]);
-
-  // Week stats are rendered inline beneath the calendar using renderWeekFooter
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
@@ -204,73 +201,12 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               year={year}
               month={month}
               showWeekends={showWeekends}
-              renderWeekFooter={(datesInWeek) => {
-                // Compute numbers for the week from monthData
-                const weekNumbers = datesInWeek.flatMap(d => {
-                  const ds = formatDateAsKey(d, 'day');
-                  return monthData[ds] || [];
-                });
-                if (weekNumbers.length === 0) return null; // Only render if any data exists
-                // Calculate week number: weeks start on Sunday, so week 1 is the week containing the 1st of the month, week 2 starts on the first Sunday after the 1st, etc.
-                const firstOfMonth = new Date(year, month - 1, 1);
-                const firstDayOfWeek = firstOfMonth.getDay(); // 0=Sun, 1=Mon, ...
-                const firstSunday = firstDayOfWeek === 0 ? 1 : 8 - firstDayOfWeek;
-                const datesInCurrentMonth = datesInWeek.filter(d => d.getMonth() === month - 1);
-                const minDate = datesInCurrentMonth.length > 0 ? Math.min(...datesInCurrentMonth.map(d => d.getDate())) : 1;
-                let weekNumber;
-                if (minDate < firstSunday) {
-                  weekNumber = 1;
-                } else {
-                  weekNumber = 1 + Math.floor((minDate - firstSunday) / 7) + 1;
-                }
-                // Check if this week contains today
-                const today = new Date();
-                const isCurrentWeek = datesInWeek.some(d => 
-                  d.getFullYear() === today.getFullYear() &&
-                  d.getMonth() === today.getMonth() &&
-                  d.getDate() === today.getDate()
-                );
-                const isSelectedWeek = panelProps.isOpen && panelProps.title === `Week ${weekNumber}`;
-                const ringClasses = 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900';
-                return (
-                  <div
-                    onClick={() => {
-                      setPanelProps({
-                        isOpen: true,
-                        title: `Week ${weekNumber}`,
-                        numbers: weekNumbers,
-                        editableNumbers: false,
-                        showExpressionInput: false,
-                        actionLabel: undefined,
-                        actionOnClick: undefined,
-                        actionIcon: undefined,
-                        extremes: undefined,
-                      });
-                    }}
-                    className={`cursor-pointer transition-shadow rounded-md ${isSelectedWeek ? ringClasses : ''}`}
-                  >
-                    <WeekSummary numbers={weekNumbers} weekNumber={weekNumber} isCurrentWeek={isCurrentWeek} valence={dataset.valence} tracking={dataset.tracking} />
-                  </div>
-                );
-              }}
-              renderDay={date => {
-                const dateStr = formatDateAsKey(date, 'day');
-                const dayNumbers = monthData[dateStr] || [];
-                const priorNumbers = priorDayNumbers[dateStr] || [];
-                return (
-                  <DayCell
-                    date={date}
-                    numbers={dayNumbers}
-                    onSave={nums => handleSaveDay(dateStr, nums)}
-                    monthMin={monthExtremes?.lowestMin}
-                    monthMax={monthExtremes?.highestMax}
-                    monthExtremes={monthExtremes}
-                    valence={dataset.valence}
-                    priorNumbers={priorNumbers}
-                    tracking={dataset.tracking}
-                  />
-                );
-              }}
+              monthData={monthData}
+              priorDayNumbers={priorDayNumbers}
+              valence={dataset.valence}
+              tracking={dataset.tracking}
+              monthExtremes={monthExtremes}
+              onSaveDay={handleSaveDay}
             />
             
             {/* Monthly Stats Section */}
@@ -354,6 +290,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
             <MonthlyGrid
               year={year}
               yearData={yearData}
+              yearExtremes={yearExtremes}
               selectedPanelTitle={panelProps.isOpen ? panelProps.title : undefined}
               onMonthClick={(monthNumber, monthName, numbers, yearExtremes) => {
                 setPanelProps({

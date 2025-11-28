@@ -1,30 +1,27 @@
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { toDayKey } from '@/lib/friendly-date';
 import type { StatsExtremes } from '@/lib/stats';
-import { calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
+import { calculateMonthlyStats, calculateYearExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
 import { MonthCell } from './MonthCell';
 
 interface MonthlyGridProps {
   year: number;
   yearData: Record<DayKey, number[]>;
+  yearExtremes: StatsExtremes;
   onMonthClick: (monthNumber: number, monthName: string, numbers: number[], yearExtremes: StatsExtremes) => void;
   selectedPanelTitle?: string;
   valence: Valence;
   tracking: Tracking;
 }
 
-export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle, valence, tracking }: MonthlyGridProps) {
+export function MonthlyGrid({ year, yearData, yearExtremes, onMonthClick, selectedPanelTitle, valence, tracking }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
 
-  // Calculate year extremes across all months
-  const yearExtremes = useMemo(() => {
-    const monthStats = calculateMonthStats(yearData, year);
-    return calculateYearExtremes(monthStats);
-  }, [yearData, year]);
+
 
   // Memoized map of month data
   const monthDataMap = useMemo(() => {

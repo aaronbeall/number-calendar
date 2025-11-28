@@ -12,6 +12,9 @@ export interface NumberStats {
   last: number;
 }
 
+/**
+ * Compute basic statistics for an array of numbers
+ */
 export function computeNumberStats(numbers: number[]): NumberStats | null {
   if (!numbers || numbers.length === 0) return null;
   const count = numbers.length;
@@ -57,7 +60,7 @@ export interface StatsExtremes {
 /**
  * Calculate statistics for each day in the month
  */
-export function calculateDayStats(monthData: Record<DayKey, number[]>): DayStatsData[] {
+export function calculateDailyStats(monthData: Record<DayKey, number[]>): DayStatsData[] {
   return Object.entries(monthData)
     .map(([dateStr, nums]): DayStatsData | null => {
       const stats = computeNumberStats(nums);
@@ -96,7 +99,7 @@ export function calculateMonthExtremes(dayStats: DayStatsData[]): StatsExtremes 
 /**
  * Calculate statistics for each month in the year
  */
-export function calculateMonthStats(yearData: Record<DayKey, number[]>, year: number): MonthStatsData[] {
+export function calculateMonthlyStats(yearData: Record<DayKey, number[]>, year: number): MonthStatsData[] {
   const monthStats: MonthStatsData[] = [];
   
   for (let monthNumber = 1; monthNumber <= 12; monthNumber++) {

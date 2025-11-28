@@ -1,25 +1,44 @@
-import React from 'react';
+
+
+import { DayCell } from './DayCell';
+import { WeekSummary } from '../stats/WeekSummary';
+import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
+import type { StatsExtremes } from '@/lib/stats';
+import { formatDateAsKey } from '@/lib/friendly-date';
+import { Fragment } from 'react/jsx-runtime';
 
 interface DailyGridProps {
   year: number;
   month: number;
-  renderDay: (date: Date) => React.ReactNode;
+  monthData: Record<DayKey, number[]>;
+  priorDayNumbers: Record<DayKey, number[]>;
   showWeekends?: boolean;
-  renderWeekFooter?: (datesInWeek: Date[]) => React.ReactNode;
+  monthExtremes?: StatsExtremes;
+  valence: Valence;
+  tracking: Tracking;
+  onSaveDay: (date: DayKey, numbers: number[]) => void;
 }
+
 
 const allWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export const DailyGrid: React.FC<DailyGridProps> = ({ year, month, renderDay, showWeekends = true, renderWeekFooter }) => {
+
+export const DailyGrid: React.FC<DailyGridProps> = ({
+  year,
+  month,
+  monthData,
+  priorDayNumbers,
+  showWeekends = true,
+  monthExtremes,
+  valence,
+  tracking,
+  onSaveDay,
+}) => {
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
   const days: Date[] = [];
-  // Generate all days in the month (filter weekends if needed)
   for (let d = 1; d <= lastDay.getDate(); d++) {
-    const date = new Date(year, month - 1, d);
-    if (showWeekends || (date.getDay() !== 0 && date.getDay() !== 6)) {
-      days.push(date);
-    }
+    days.push(new Date(year, month - 1, d));
   }
 
   let weekdays = allWeekdays;
@@ -27,24 +46,21 @@ export const DailyGrid: React.FC<DailyGridProps> = ({ year, month, renderDay, sh
   const cols = showWeekends ? 7 : 5;
 
   if (showWeekends) {
-    // Standard 7-day week layout
     const padStart = firstDay.getDay();
     const padEnd = 6 - lastDay.getDay();
     gridDays = [
       ...Array(padStart).fill(null),
-      ...Array.from({ length: lastDay.getDate() }, (_, i) => new Date(year, month - 1, i + 1)),
+      ...days,
       ...Array(padEnd).fill(null),
     ];
   } else {
-    // 5-day week layout (Mon-Fri only)
-    weekdays = allWeekdays.slice(1, 6); // Mon-Fri
+    weekdays = allWeekdays.slice(1, 6);
     const firstDow = firstDay.getDay();
-    const padStart = firstDow === 0 ? 4 : firstDow - 1; // Sun->Fri(4), Mon->0, ...
+    const padStart = firstDow === 0 ? 0 : firstDow - 1;
     gridDays = [
       ...Array(padStart).fill(null),
-      ...days,
+      ...days.filter(d => d.getDay() !== 0 && d.getDay() !== 6),
     ];
-    // Ensure full final row by padding the end to multiple of 5
     const remainder = gridDays.length % cols;
     if (remainder !== 0) {
       gridDays = [
@@ -55,11 +71,19 @@ export const DailyGrid: React.FC<DailyGridProps> = ({ year, month, renderDay, sh
   }
 
   // Chunk into weeks
-  const weeks: Array<(Date | null)[]> = [];
+  const weekChunks: Array<(Date | null)[]> = [];
   for (let i = 0; i < gridDays.length; i += cols) {
-    weeks.push(gridDays.slice(i, i + cols));
+    weekChunks.push(gridDays.slice(i, i + cols));
   }
-  
+
+  // Helper to get week numbers and week data
+  const getWeekNumbers = (datesInWeek: Date[]) => datesInWeek.flatMap(d => {
+    const key = formatDateAsKey(d, 'day');
+    return monthData[key] || [];
+  });
+
+  const today = new Date();
+
   return (
     <>
       {/* Weekday headers */}
@@ -71,29 +95,66 @@ export const DailyGrid: React.FC<DailyGridProps> = ({ year, month, renderDay, sh
         ))}
       </div>
 
-      {/* Calendar grid rendered by weeks with optional footer per week */}
+      {/* Calendar grid rendered by weeks with summary per week */}
       <div className={`grid gap-2 p-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
-        {weeks.map((week, wi) => (
-          <React.Fragment key={`week-${wi}`}>
-            {week.map((date, di) => (
-              <div
-                key={date ? date.toISOString() : `empty-${wi}-${di}`}
-                className={date ? 'transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl' : 'invisible'}
-              >
-                {date ? renderDay(date) : null}
-              </div>
-            ))}
-            {renderWeekFooter && (() => {
-              const datesInWeek = week.filter((d): d is Date => d instanceof Date);
-              const content = renderWeekFooter(datesInWeek);
-              return content ? (
+        {weekChunks.map((week, wi) => {
+          const datesInWeek = week.filter((d): d is Date => d instanceof Date);
+          // Calculate week number (same logic as before)
+          const firstOfMonth = firstDay;
+          const firstDayOfWeek = firstOfMonth.getDay();
+          const firstSunday = firstDayOfWeek === 0 ? 1 : 8 - firstDayOfWeek;
+          const datesInCurrentMonth = datesInWeek.filter(d => d.getMonth() === month - 1);
+          const minDate = datesInCurrentMonth.length > 0 ? Math.min(...datesInCurrentMonth.map(d => d.getDate())) : 1;
+          let weekNumber;
+          if (minDate < firstSunday) {
+            weekNumber = 1;
+          } else {
+            weekNumber = 1 + Math.floor((minDate - firstSunday) / 7) + 1;
+          }
+          const isCurrentWeek = datesInWeek.some(d =>
+            d.getFullYear() === today.getFullYear() &&
+            d.getMonth() === today.getMonth() &&
+            d.getDate() === today.getDate()
+          );
+          const weekNumbers = getWeekNumbers(datesInWeek);
+          return (
+            <Fragment key={`week-${wi}`}>
+              {week.map((date, di) => {
+                if (!date) {
+                  return <div key={`empty-${wi}-${di}`} className="invisible" />;
+                }
+                const key = formatDateAsKey(date, 'day');
+                const numbers = monthData[key] || [];
+                const priorNumbers = priorDayNumbers[key] || [];
+                return (
+                  <div key={key} className="transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl">
+                    <DayCell
+                      date={date}
+                      numbers={numbers}
+                      priorNumbers={priorNumbers}
+                      onSave={nums => onSaveDay(key, nums)}
+                      monthExtremes={monthExtremes}
+                      valence={valence}
+                      tracking={tracking}
+                    />
+                  </div>
+                );
+              })}
+              {/* Week summary below the week */}
+              {weekNumbers.length > 0 && (
                 <div className={showWeekends ? 'col-span-7' : 'col-span-5'}>
-                  {content}
+                  <WeekSummary
+                    numbers={weekNumbers}
+                    weekNumber={weekNumber}
+                    isCurrentWeek={isCurrentWeek}
+                    valence={valence}
+                    tracking={tracking}
+                  />
                 </div>
-              ) : null;
-            })()}
-          </React.Fragment>
-        ))}
+              )}
+            </Fragment>
+          );
+        })}
       </div>
     </>
   );
