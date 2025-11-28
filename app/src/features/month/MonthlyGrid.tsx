@@ -1,12 +1,13 @@
-import { MonthCell } from './MonthCell';
+import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
+import { toDayKey } from '@/lib/friendly-date';
+import type { StatsExtremes } from '@/lib/stats';
 import { calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
-import type { StatsExtremes } from '@/lib/stats';
-import type { Tracking, Valence } from '@/features/db/localdb';
+import { MonthCell } from './MonthCell';
 
 interface MonthlyGridProps {
   year: number;
-  yearData: Record<string, number[]>;
+  yearData: Record<DayKey, number[]>;
   onMonthClick: (monthNumber: number, monthName: string, numbers: number[], yearExtremes: StatsExtremes) => void;
   selectedPanelTitle?: string;
   valence: Valence;
@@ -36,7 +37,7 @@ export function MonthlyGrid({ year, yearData, onMonthClick, selectedPanelTitle, 
       
       for (let day = 1; day <= lastDay; day++) {
         const date = new Date(year, monthNumber - 1, day);
-        const dateStr = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dateStr = toDayKey(year, monthNumber, day);
         const dayNumbers = yearData[dateStr] || [];
         all.push(...dayNumbers);
         days.push({ date, numbers: dayNumbers });

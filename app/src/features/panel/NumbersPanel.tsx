@@ -1,22 +1,22 @@
-import React, { useState, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Sheet, SheetHeader, SheetTitle, SheetContent } from '@/components/ui/sheet';
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import { NumberText } from '@/components/ui/number-text';
-import { EditableNumberBadge } from './EditableNumberBadge';
-import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes } from '@/lib/stats';
-import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
-import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
-import { ChartContainer } from '@/components/ui/chart';
-import { LineChart, Line, Tooltip } from 'recharts';
-import { getValueForValence } from '@/lib/valence';
 import { Badge } from '@/components/ui/badge';
-import { AddNumberEditor } from './AddNumberEditor';
-import { AnimatePresence } from 'framer-motion';
-import type { StatsExtremes } from '@/lib/stats';
-import type { Valence, Tracking } from '@/features/db/localdb';
+import { Button } from '@/components/ui/button';
+import { ChartContainer } from '@/components/ui/chart';
+import { Input } from '@/components/ui/input';
+import { NumberText } from '@/components/ui/number-text';
+import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
+import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
+import type { StatsExtremes } from '@/lib/stats';
+import { getPrimaryMetric } from "@/lib/tracking";
+import { getValueForValence } from '@/lib/valence';
+import { AnimatePresence } from 'framer-motion';
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import React, { useMemo, useState } from 'react';
+import { Line, LineChart, Tooltip } from 'recharts';
+import { AddNumberEditor } from './AddNumberEditor';
+import { EditableNumberBadge } from './EditableNumberBadge';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -228,11 +228,10 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               <Button
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 flex-shrink-0 ${
-                  sortMode === 'original' 
-                    ? 'hover:bg-slate-100' 
+                className={`h-8 w-8 flex-shrink-0 ${sortMode === 'original'
+                    ? 'hover:bg-slate-100'
                     : 'hover:bg-blue-100'
-                }`}
+                  }`}
                 onClick={toggleSortMode}
                 title={`Sort: ${sortMode === 'original' ? 'Original order' : sortMode === 'asc' ? 'Ascending' : 'Descending'}`}
               >

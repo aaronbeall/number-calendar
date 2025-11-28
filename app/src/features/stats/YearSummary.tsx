@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
-import type { Valence, Tracking } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
+import { computeNumberStats } from '@/lib/stats';
+import { getPrimaryMetric, getPrimaryMetricLabel } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
+import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface YearSummaryProps {
   numbers: number[];

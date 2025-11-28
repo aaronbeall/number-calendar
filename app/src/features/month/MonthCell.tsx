@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
-import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes } from '@/lib/stats';
-import { Trophy } from 'lucide-react';
-import type { StatsExtremes } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
+import type { Tracking, Valence } from '@/features/db/localdb';
+import type { StatsExtremes } from '@/lib/stats';
+import { computeNumberStats } from '@/lib/stats';
+import { getPrimaryMetric, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
-import type { Valence, Tracking } from '@/features/db/localdb';
+import { Trophy } from 'lucide-react';
+import { useMemo } from 'react';
 
 interface MonthCellProps {
   monthName: string;

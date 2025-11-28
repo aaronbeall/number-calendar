@@ -1,12 +1,12 @@
-import { Plus, TrendingUp } from 'lucide-react';
 import LogoIcon from '@/assets/icon.svg?react';
-import { getRelativeTime } from '@/lib/utils';
-import { useMemo } from 'react';
-import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
-import { useMonth} from '@/features/db/useCalendarData';
-import { getDatasetIcon } from '@/lib/dataset-icons';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import type { Dataset } from '@/features/db/localdb';
+import { useMonth } from '@/features/db/useCalendarData';
+import { getDatasetIcon } from '@/lib/dataset-icons';
+import { toDayKey } from '@/lib/friendly-date';
+import { getRelativeTime } from '@/lib/utils';
+import { BarChart as BarChartIcon, Plus, TrendingUp } from 'lucide-react';
+import { useMemo } from 'react';
+import { Line, LineChart, ResponsiveContainer } from 'recharts';
 
 function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; year: number; month: number; onSelect: (id: string) => void }) {
   const { data: monthData = {} } = useMonth(dataset.id, year, month);
@@ -20,7 +20,7 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
     const data: { day: number; dailyTotal: number; cumulativeTotal: number }[] = [];
     let running = 0;
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateKey = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dateKey = toDayKey(year, month, day);
       const numbers = monthData[dateKey] || [];
       const dailyTotal = numbers.reduce((sum, num) => sum + num, 0);
       running += dailyTotal;

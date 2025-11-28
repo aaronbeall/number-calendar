@@ -1,12 +1,12 @@
 
-import React, { useState, useMemo } from 'react';
-import { Trophy, Skull, TrendingUp, TrendingDown, TrendingUpDown } from 'lucide-react';
-import { NumbersPanel } from '../panel/NumbersPanel';
 import { NumberText } from '@/components/ui/number-text';
-import { getPrimaryMetric, type StatsExtremes } from '@/lib/stats';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
-import type { Valence, Tracking } from '@/features/db/localdb';
+import { type StatsExtremes } from '@/lib/stats';
 import { getValueForValence } from '@/lib/valence';
+import { Skull, TrendingDown, TrendingUp, TrendingUpDown, Trophy } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { NumbersPanel } from '../panel/NumbersPanel';
 
 export interface DayCellProps {
   date: Date;

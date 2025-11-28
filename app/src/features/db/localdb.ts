@@ -1,4 +1,5 @@
 import type { DatasetIconName } from '@/lib/dataset-icons';
+import { toMonthKey, toYearKey } from '@/lib/friendly-date';
 import { openDB } from 'idb';
 
 // Dataset entity
@@ -13,8 +14,20 @@ export interface Dataset {
   updatedAt: number;
 }
 
-export type Tracking = 'trend' | 'series'; // tracking semantics
-export type Valence = 'positive' | 'negative' | 'neutral'; // unified valence semantics
+/**
+ * Types of tracking:
+ * - 'trend': daily values tracked as a time series (focus on deltas)
+ * - 'series': daily values tracked as a cumulative series (focus on totals)
+ */
+export type Tracking = 'trend' | 'series';
+
+/**
+ * Valence types:
+ * - 'positive': positive or higher values are better
+ * - 'negative': negative or lower values are better
+ * - 'neutral': all values are the same
+ */
+export type Valence = 'positive' | 'negative' | 'neutral';
 
 export type DayNumbers = number[];
 export type DayEntry = {
@@ -224,7 +237,7 @@ export async function loadDay(datasetId: string, date: DayKey): Promise<number[]
 export async function loadMonth(datasetId: string, year: number, month: number): Promise<Record<DayKey, number[]>> {
   const db = await getDb();
   const index = db.transaction('entries').store.index('datasetId_date');
-  const monthStr = `${year}-${String(month).padStart(2, '0')}`;
+  const monthStr = toMonthKey(year, month);
   // Get all entries for this datasetId
   const range = IDBKeyRange.bound([datasetId, monthStr], [datasetId, monthStr + '\uffff']);
   const all: DayEntry[] = await index.getAll(range);
@@ -234,7 +247,7 @@ export async function loadMonth(datasetId: string, year: number, month: number):
 export async function loadYear(datasetId: string, year: number): Promise<Record<DayKey, number[]>> {
   const db = await getDb();
   const index = db.transaction('entries').store.index('datasetId_date');
-  const yearStr = `${year}`;
+  const yearStr = toYearKey(year);
   // Range: all dates starting with year (e.g., 2025-)
   const range = IDBKeyRange.bound([datasetId, yearStr], [datasetId, yearStr + '\uffff']);
   const all: DayEntry[] = await index.getAll(range);
@@ -248,4 +261,20 @@ export async function loadAllDays(datasetId: string): Promise<DayEntry[]> {
   const range = IDBKeyRange.only(datasetId);
   const all: DayEntry[] = await index.getAll(range);
   return all;
+}
+
+// Efficiently find the most recent populated entry before a given date for a dataset
+export async function findMostRecentPopulatedEntryBefore(datasetId: string, beforeDate: DayKey): Promise<DayEntry | undefined> {
+  const db = await getDb();
+  const index = db.transaction('entries').store.index('datasetId_date');
+  // Open a cursor in reverse order, ending before the target date
+  const range = IDBKeyRange.bound([datasetId, '0000-00-00'], [datasetId, beforeDate], false, true);
+  let cursor = await index.openCursor(range, 'prev');
+  while (cursor) {
+    if (cursor.value.numbers && cursor.value.numbers.length > 0) {
+      return cursor.value;
+    }
+    cursor = await cursor.continue();
+  }
+  return undefined;
 }

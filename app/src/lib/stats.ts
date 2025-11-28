@@ -1,5 +1,5 @@
-import type { DateKey, DayKey, MonthKey, Tracking } from "@/features/db/localdb";
-import { capitalize } from "./utils";
+import type { DayKey } from "@/features/db/localdb";
+import { toDayKey } from "./friendly-date";
 
 export interface NumberStats {
   count: number;
@@ -104,7 +104,7 @@ export function calculateMonthStats(yearData: Record<DayKey, number[]>, year: nu
     const lastDay = new Date(year, monthNumber, 0).getDate();
     
     for (let day = 1; day <= lastDay; day++) {
-      const dateStr = `${year}-${String(monthNumber).padStart(2, '0')}-${String(day).padStart(2, '0')}` as DayKey;
+      const dateStr = toDayKey(year, monthNumber, day);
       const dayNumbers = yearData[dateStr] || [];
       monthNumbers.push(...dayNumbers);
     }
@@ -144,55 +144,6 @@ export function calculateYearExtremes(monthStats: MonthStatsData[]): StatsExtrem
     highestLast: Math.max(...monthStats.map(m => m.last)),
     lowestLast: Math.min(...monthStats.map(m => m.last)),
   };
-}
-
-export function getPrimaryMetric(tracking: Tracking) {
-  return tracking === 'series' ? 'total' : 'last';
-}
-
-export function getPrimaryMetricLabel(tracking: Tracking): string {
-  return tracking === 'series' ? 'Total' : 'Close';
-}
-
-export function getPrimaryMetricFromStats(stats: NumberStats, tracking: Tracking): number {
-  return stats[getPrimaryMetric(tracking)];
-}
-
-export function getPrimaryMetricHighFromExtremes(extremes: StatsExtremes, tracking: Tracking): number | undefined {
-  const key = getPrimaryMetric(tracking);
-  const extremeKey = `highest${capitalize(key)}` as const;
-  return extremes[extremeKey];
-}
-
-export function getPrimaryMetricLowFromExtremes(extremes: StatsExtremes, tracking: Tracking): number | undefined {
-  const key = getPrimaryMetric(tracking);
-  const extremeKey = `lowest${capitalize(key)}` as const;
-  return extremes[extremeKey];
-}
-
-export function getValenceSource(tracking: Tracking) {
-  return tracking === 'series' ? 'stats' : 'deltas';
-}
-
-export function getValenceMetricFromData(data: { stats: NumberStats, deltas?: NumberStats }, tracking: Tracking): number {
-  const metric = getPrimaryMetric(tracking);
-  const key = getValenceSource(tracking);
-  const source = data[key];
-  return source ? source[metric] : 0;
-}
-
-// Given an ordered array of date keys and a data map, returns a map of dateKey -> prior populated numbers (previous non-empty entry)
-export function getPriorNumbersMap<T extends DateKey>(orderedKeys: T[], data: Record<T, number[]>): Record<T, number[]> {
-  const result = {} as Record<T, number[]>;
-  let lastPopulated: number[] = [];
-  for (let i = 0; i < orderedKeys.length; i++) {
-    const key = orderedKeys[i];
-    result[key] = lastPopulated;
-    if (data[key] && data[key].length > 0) {
-      lastPopulated = data[key];
-    }
-  }
-  return result;
 }
 
 // Returns the delta (current - prior) for each metric in NumberStats

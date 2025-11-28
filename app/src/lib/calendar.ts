@@ -1,6 +1,17 @@
-import type { Tracking, Valence } from "@/features/db/localdb";
-import { computeNumberStats, getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getStatsDelta, getStatsPercentChange, getValenceMetricFromData, getValenceSource, type StatsExtremes } from "./stats";
+import type { DateKey, DayKey, Tracking } from "@/features/db/localdb";
+import { toDayKey } from "./friendly-date";
+import { computeNumberStats, getStatsDelta, getStatsPercentChange, type StatsExtremes } from "./stats";
+import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceMetricFromData, getValenceSource } from "./tracking";
 
+
+export function getMonthDays(year: number, month: number) {
+  const days: DayKey[] = [];
+  const lastDay = new Date(year, month, 0).getDate();
+  for (let d = 1; d <= lastDay; d++) {
+    days.push(toDayKey(year, month, d));
+  }
+  return days;
+}
 
 /**
  * Aggregates calendar data for a given set of numbers, prior numbers, extremes, and tracking type.
@@ -39,4 +50,18 @@ export function getCalendarData(numbers: number[], priorNumbers: number[] | unde
     isHighestMax: hasData && extremes && stats?.max === extremes.highestMax,
     isLowestMax: hasData && extremes && stats?.max === extremes.lowestMax,
   }
+}
+// Given an ordered array of date keys and a data map, returns a map of dateKey -> prior populated numbers (previous non-empty entry)
+
+export function getPriorNumbersMap<T extends DateKey>(orderedKeys: T[], data: Record<T, number[]>, initialLastPopulated: number[] = []): Record<T, number[]> {
+  const result = {} as Record<T, number[]>;
+  let lastPopulated: number[] = initialLastPopulated;
+  for (let i = 0; i < orderedKeys.length; i++) {
+    const key = orderedKeys[i];
+    result[key] = lastPopulated;
+    if (data[key] && data[key].length > 0) {
+      lastPopulated = data[key];
+    }
+  }
+  return result;
 }

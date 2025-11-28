@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
-import type { Valence } from '@/features/db/localdb';
+import type { DayKey, Valence } from '@/features/db/localdb';
+import { toDayKey } from '@/lib/friendly-date';
 
 export type YearChartMode = 'serial' | 'cumulative';
 export type YearChartGroup = 'daily' | 'monthly';
@@ -35,11 +36,11 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, mode, grou
 
   // For daily mode, generate all days in the year
   const getAllYearDays = (year: number) => {
-    const days: string[] = [];
+    const days: DayKey[] = [];
     for (let m = 1; m <= 12; m++) {
       const lastDay = new Date(year, m, 0).getDate();
       for (let d = 1; d <= lastDay; d++) {
-        days.push(`${year}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+        days.push(toDayKey(year, m, d));
       }
     }
     return days;

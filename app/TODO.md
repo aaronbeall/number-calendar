@@ -28,13 +28,13 @@ I'm liking this one.
 - [x] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
 - [x] Highlight extremes on calendar
+- [ ] Show deltas/percent change
+  - [ ] Highlight delta extremes
 - [ ] Calendar options
   - [ ] Heatmap
   - [ ] Week summary across months
   - [ ] Number abbreviations
-- [ ] Customize stats
-  - [ ] Rolling averages
-  - [ ] Percentage change
+- [ ] Customize displayed stats
 - [ ] Full math support, ex `1+(100/23)`
   - [ ] Sub-expression parsing in numbers input, ex `1+2-(4+6)` = `[1, 2, -10]`
   - [x] Support math expressions in individual number editor
@@ -90,3 +90,4 @@ I'm liking this one.
 - [ ] Re-render on page activation to sync with current date
 - [x] Negative year summary has green
 - [ ] Hide weekends is causing June days to be wrong
+- [ ] Deleting a prior day numbers does not update deltas (changing normally it does)

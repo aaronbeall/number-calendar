@@ -1,3 +1,4 @@
+import { findMostRecentPopulatedEntryBefore } from './localdb';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   loadDay,
@@ -57,6 +58,17 @@ export function useSaveDay() {
       queryClient.invalidateQueries({ queryKey: ['year', datasetId, Number(year)] });
       // Invalidate allDays as well
       queryClient.invalidateQueries({ queryKey: ['allDays', datasetId] });
+      // Invalidate mostRecentPopulatedEntryBefore queries for this dataset (all dates)
+      queryClient.invalidateQueries({ queryKey: ['mostRecentPopulatedEntryBefore', datasetId] });
     },
+  });
+}
+
+// Hook to find the most recent populated entry before a given date
+export function useMostRecentPopulatedEntryBefore(datasetId: string, beforeDate: DayKey) {
+  return useQuery({
+    queryKey: ['mostRecentPopulatedEntryBefore', datasetId, beforeDate],
+    queryFn: () => findMostRecentPopulatedEntryBefore(datasetId, beforeDate),
+    enabled: !!beforeDate,
   });
 }

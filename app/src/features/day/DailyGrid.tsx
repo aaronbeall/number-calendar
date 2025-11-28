@@ -1,6 +1,6 @@
 import React from 'react';
 
-export interface DayGridProps {
+interface DailyGridProps {
   year: number;
   month: number;
   renderDay: (date: Date) => React.ReactNode;
@@ -10,7 +10,7 @@ export interface DayGridProps {
 
 const allWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export const DayGrid: React.FC<DayGridProps> = ({ year, month, renderDay, showWeekends = true, renderWeekFooter }) => {
+export const DailyGrid: React.FC<DailyGridProps> = ({ year, month, renderDay, showWeekends = true, renderWeekFooter }) => {
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
   const days: Date[] = [];

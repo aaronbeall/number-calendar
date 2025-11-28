@@ -1,37 +1,27 @@
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, CalendarOff, Grid3X3, CalendarDays } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import { DayGrid } from '@/features/day/DayGrid';
-import { DayCell } from '@/features/day/DayCell';
-import { MonthSummary } from '@/features/stats/MonthSummary';
-import { YearSummary } from '@/features/stats/YearSummary';
-import WeekSummary from '@/features/stats/WeekSummary';
-import { MonthChart } from '@/features/chart/MonthChart';
-import { YearOverview } from '@/features/year/YearOverview';
-import { MonthlyGrid } from '@/features/month/MonthlyGrid';
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
-import { useMonth, useYear, useSaveDay } from '@/features/db/useCalendarData';
-import { calculateDayStats, calculateMonthExtremes, calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
-import { NumbersPanel } from '@/features/panel/NumbersPanel';
-import { getPriorDateKey, formatDateAsKey } from '@/lib/friendly-date';
-import { getPriorNumbersMap } from '@/lib/stats';
+import { MonthChart } from '@/features/chart/MonthChart';
 import YearChart from '@/features/chart/YearChart';
+import { DailyGrid } from '@/features/day/DailyGrid';
+import { DayCell } from '@/features/day/DayCell';
+import type { Dataset } from '@/features/db/localdb';
+import { useMonth, useMostRecentPopulatedEntryBefore, useSaveDay, useYear } from '@/features/db/useCalendarData';
+import { MonthlyGrid } from '@/features/month/MonthlyGrid';
+import { NumbersPanel } from '@/features/panel/NumbersPanel';
+import { MonthSummary } from '@/features/stats/MonthSummary';
+import WeekSummary from '@/features/stats/WeekSummary';
+import { YearSummary } from '@/features/stats/YearSummary';
+import { YearOverview } from '@/features/year/YearOverview';
+import { getMonthDays, getPriorNumbersMap } from "@/lib/calendar";
+import { formatDateAsKey } from '@/lib/friendly-date';
 import type { StatsExtremes } from '@/lib/stats';
-import type { Dataset, DayKey } from '@/features/db/localdb';
-
-const today = new Date();
-
-function getMonthDays(year: number, month: number) {
-  const days: DayKey[] = [];
-  const lastDay = new Date(year, month, 0).getDate();
-  for (let d = 1; d <= lastDay; d++) {
-    days.push(`${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}` as DayKey);
-  }
-  return days;
-}
+import { calculateDayStats, calculateMonthExtremes, calculateMonthStats, calculateYearExtremes } from '@/lib/stats';
+import { BarChart as BarChartIcon, CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3, LineChart as LineChartIcon } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 export function Calendar({ dataset }: { dataset: Dataset; }) {
+  const today = new Date();
+  
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
@@ -78,8 +68,13 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
 
-  // Precompute prior populated numbers map for all days in the month
-  const priorDayNumbers = useMemo(() => getPriorNumbersMap(days, monthData), [days, monthData]);
+  // Find the most recent populated entry before the first day of the current month
+  const firstDayStr = days[0];
+  const { data: mostRecentEntryBefore } = useMostRecentPopulatedEntryBefore(dataset.id, firstDayStr);
+  // Precompute prior populated numbers map for all days in the month, seeded with the most recent entry before the period
+  const priorDayNumbers = useMemo(() => {
+    return getPriorNumbersMap(days, monthData, mostRecentEntryBefore?.numbers ?? []);
+  }, [days, monthData, mostRecentEntryBefore]);
 
   return (
   <div className="min-h-screen">
@@ -205,7 +200,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
             />
 
             {/* Calendar Grid */}
-            <DayGrid
+            <DailyGrid
               year={year}
               month={month}
               showWeekends={showWeekends}

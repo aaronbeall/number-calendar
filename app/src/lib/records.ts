@@ -1,18 +1,19 @@
 
-import type { Dataset, DateKey, DayEntry, DayKey, MonthKey, Valence, WeekKey } from '../features/db/localdb';
+import type { DateKey, DayEntry, DayKey, MonthKey, Valence, WeekKey } from '../features/db/localdb';
+import { getISOWeek, getISOWeekYear, parseISO } from 'date-fns';
+import { toWeekKey } from './friendly-date';
 
 const entriesOf = <T extends object>(obj: T) =>
   Object.entries(obj) as [keyof T, NonNullable<T[keyof T]>][];
 
 // Helper: group entries by week and month
-import { getISOWeek, getISOWeekYear, parseISO } from 'date-fns';
 function groupByWeek(entries: DayEntry[]) {
   const weeks: Record<WeekKey, number[]> = {};
   for (const entry of entries) {
     const dateObj = parseISO(entry.date);
     const isoYear = getISOWeekYear(dateObj);
     const isoWeek = getISOWeek(dateObj);
-    const weekKey = `${isoYear}-W${String(isoWeek).padStart(2, '0')}` as WeekKey;
+    const weekKey = toWeekKey(isoYear, isoWeek);
     if (!weeks[weekKey]) weeks[weekKey] = [];
     weeks[weekKey].push(...entry.numbers);
   }

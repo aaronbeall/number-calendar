@@ -1,11 +1,12 @@
-import React, { useMemo } from 'react';
-import { CheckCircle, XCircle, Minus, Clock, TrendingUp, TrendingDown } from 'lucide-react';
 import { ChartContainer } from '@/components/ui/chart';
-import { LineChart, Line, Tooltip } from 'recharts';
-import { computeNumberStats, getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
-import type { Valence, Tracking } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
+import { computeNumberStats } from '@/lib/stats';
+import { getPrimaryMetric, getPrimaryMetricLabel } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
+import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { Line, LineChart, Tooltip } from 'recharts';
 
 export interface WeekSummaryProps {
   numbers: number[];

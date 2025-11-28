@@ -1,20 +1,34 @@
 
-import { subDays, subWeeks, subMonths, subYears } from 'date-fns';
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
-import { format, parseISO, isValid, parse, startOfISOWeek, endOfISOWeek } from 'date-fns';
+import { endOfISOWeek, format, isValid, parse, parseISO, startOfISOWeek, subDays, subMonths, subWeeks, subYears } from 'date-fns';
 
 // Type guards for date keys
 export function isDayKey(key: DateKey): key is DayKey {
-  return /^\d{4}-\d{2}-\d{2}$/.test(key);
+  return /^\d{4}-\d{2}-\d{2}$/.test(key); // YYYY-MM-DD
 }
 export function isWeekKey(key: DateKey): key is WeekKey {
-  return /^\d{4}-W\d{2}$/.test(key);
+  return /^\d{4}-W\d{2}$/.test(key); // YYYY-Www
 }
 export function isMonthKey(key: DateKey): key is MonthKey {
-  return /^\d{4}-\d{2}$/.test(key);
+  return /^\d{4}-\d{2}$/.test(key); // YYYY-MM
 }
 export function isYearKey(key: DateKey): key is YearKey {
-  return /^\d{4}$/.test(key);
+  return /^\d{4}$/.test(key); // YYYY
+}
+
+const padNumber = (n: number) => String(n).padStart(2, '0') as `${number}`;
+
+export function toDayKey(year: number, month: number, day: number): DayKey {  
+  return `${year}-${padNumber(month)}-${padNumber(day)}`; // YYYY-MM-DD
+}
+export function toWeekKey(year: number, week: number): WeekKey {  
+  return `${year}-W${padNumber(week)}`; // YYYY-Www
+}
+export function toMonthKey(year: number, month: number): MonthKey {
+  return `${year}-${padNumber(month)}`; // YYYY-MM
+}
+export function toYearKey(year: number): YearKey {
+  return `${year}`; // YYYY
 }
 
 /**

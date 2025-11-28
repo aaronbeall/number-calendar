@@ -1,9 +1,10 @@
-import React, { useMemo } from 'react';
-import { CheckCircle, XCircle, Clock, TrendingUp, TrendingDown } from 'lucide-react';
-import { computeNumberStats, type StatsExtremes, getPrimaryMetric, getPrimaryMetricLabel, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes } from '@/lib/stats';
 import { NumberText } from '@/components/ui/number-text';
-import type { Valence, Tracking } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
+import { computeNumberStats, type StatsExtremes } from '@/lib/stats';
+import { getPrimaryMetric, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
+import { CheckCircle, Clock, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
+import React, { useMemo } from 'react';
 
 export interface MonthSummaryProps {
   numbers: number[];
