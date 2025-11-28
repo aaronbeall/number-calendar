@@ -1,7 +1,6 @@
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { toDayKey } from '@/lib/friendly-date';
 import type { StatsExtremes } from '@/lib/stats';
-import { calculateMonthlyStats, calculateYearExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
 import { MonthCell } from './MonthCell';
 
