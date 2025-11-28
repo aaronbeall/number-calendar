@@ -9,13 +9,12 @@ interface MonthlyGridProps {
   year: number;
   yearData: Record<DayKey, number[]>;
   yearExtremes: StatsExtremes;
-  onMonthClick: (monthNumber: number, monthName: string, numbers: number[], yearExtremes: StatsExtremes) => void;
-  selectedPanelTitle?: string;
+  onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;
 }
 
-export function MonthlyGrid({ year, yearData, yearExtremes, onMonthClick, selectedPanelTitle, valence, tracking }: MonthlyGridProps) {
+export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence, tracking }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -51,38 +50,29 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onMonthClick, select
   const isFutureYear = year > currentDate.getFullYear();
 
   return (
-    <>
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-        {monthNames.map((monthName, index) => {
-          const monthNumber = index + 1;
-          const monthData = monthDataMap.get(monthNumber)!;
-          const { all: monthNumbers, days: monthDays } = monthData;
-          const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
-          const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
-
-          const expectedTitlePrefix = `${monthName} '`; // panel title format `${monthName} 'YY`
-          const isSelected = !!selectedPanelTitle && selectedPanelTitle.startsWith(expectedTitlePrefix);
-          return (
-            <div
-              key={monthNumber}
-              className="transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl"
-            >
-              <MonthCell
-                monthName={monthName}
-                numbers={monthNumbers}
-                monthDays={monthDays}
-                isCurrentMonth={isCurrentMonth}
-                isFutureMonth={isFutureMonth}
-                isSelected={isSelected}
-                yearExtremes={yearExtremes}
-                onClick={() => onMonthClick(monthNumber, monthName, monthNumbers, yearExtremes)}
-                valence={valence}
-                tracking={tracking}
-              />
-            </div>
-          );
-        })}
-      </div>
-    </>
+    <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+      {monthNames.map((monthName, index) => {
+        const monthNumber = index + 1;
+        const monthData = monthDataMap.get(monthNumber)!;
+        const { all: monthNumbers, days: monthDays } = monthData;
+        const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
+        const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
+        return (
+          <MonthCell
+            key={monthNumber}
+            month={monthNumber}
+            monthName={monthName}
+            numbers={monthNumbers}
+            monthDays={monthDays}
+            isCurrentMonth={isCurrentMonth}
+            isFutureMonth={isFutureMonth}
+            yearExtremes={yearExtremes}
+            onOpenMonth={onOpenMonth}
+            valence={valence}
+            tracking={tracking}
+          />
+        );
+      })}
+    </div>
   );
 }

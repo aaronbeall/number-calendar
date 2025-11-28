@@ -5,12 +5,13 @@ import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
 import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
+import { NumbersPanel } from '../panel/NumbersPanel';
 import { Line, LineChart, Tooltip } from 'recharts';
 
 export interface WeekSummaryProps {
   numbers: number[];
-  weekNumber?: number;
+  weekNumber: number;
   isCurrentWeek?: boolean;
   valence: Valence;
   tracking: Tracking;
@@ -18,6 +19,8 @@ export interface WeekSummaryProps {
 
 export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek, valence, tracking }) => {
   if (!numbers || numbers.length === 0) return null;
+
+  const [panelOpen, setPanelOpen] = useState(false);
 
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   if (!stats) return null;
@@ -38,7 +41,6 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
   });
 
   // Number coloring handled by NumberText component based on sign.
-
 
   // Cumulative numbers for micro line chart
   const cumulativeNumbers = React.useMemo(() => {
@@ -71,9 +73,18 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
     });
   };
 
+  // Selected highlight (blue ring) when panel is open
+  const selectedRing = panelOpen ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : '';
+
   return (
-  <div className={`rounded-md ${bgClasses} ${borderClasses} shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg transition-shadow`} aria-label="Weekly summary">
-      <div className="w-full flex items-stretch gap-3 sm:gap-5 px-3 py-2">
+    <div className={`relative rounded-md ${bgClasses} ${borderClasses} shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg transition-shadow ${selectedRing}`} aria-label="Weekly summary">
+      <div
+        className="w-full flex items-stretch gap-3 sm:gap-5 px-3 py-2 cursor-pointer"
+        onClick={() => setPanelOpen(true)}
+        tabIndex={0}
+        role="button"
+        aria-label={`Show week ${weekNumber} details`}
+      >
         {/* TITLE (left) */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {getStatusIcon()}
@@ -141,8 +152,6 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
         </div>
         {/* STATS (right) */}
         <div className="flex items-center gap-3 sm:gap-5 justify-end flex-shrink-0">
-          {/* spacer removed */}
-
           {/* Mean / Median (secondary) */}
           <div className="hidden sm:flex items-center gap-3">
             <div className="text-right">
@@ -169,7 +178,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
             </div>
           </div>
 
-          <div className="hidden sm:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
+          <div className="hidden md:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
 
           {/* Primary metric (most prominent, right-most, own container) */}
           <div className={`flex items-center gap-2 px-3 py-2 rounded font-mono font-bold ${getValueForValence(primaryMetric, valence, {
@@ -182,6 +191,16 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
           </div>
         </div>
       </div>
+      <NumbersPanel
+        isOpen={panelOpen}
+        onClose={() => setPanelOpen(false)}
+        title={`Week ${weekNumber}`}
+        numbers={numbers}
+        editableNumbers={false}
+        showExpressionInput={false}
+        valence={valence}
+        tracking={tracking}
+      />
     </div>
   );
 };

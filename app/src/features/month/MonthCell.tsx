@@ -5,22 +5,25 @@ import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
 import { Trophy } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { NumbersPanel } from '@/features/panel/NumbersPanel';
+import { CalendarDays } from 'lucide-react';
 
 interface MonthCellProps {
+  month: number;
   monthName: string;
   numbers: number[];
   monthDays?: { date: Date; numbers: number[] }[];
   isCurrentMonth: boolean;
   isFutureMonth?: boolean;
-  isSelected?: boolean;
   yearExtremes?: StatsExtremes;
-  onClick: () => void;
+  onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;
 }
 
-export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, isSelected = false, yearExtremes, onClick, valence, tracking }: MonthCellProps) {
+export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking }: MonthCellProps) {
+  const [panelOpen, setPanelOpen] = useState(false);
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   const primaryMetric = stats ? stats[getPrimaryMetric(tracking)] : 0;
   const primaryLabel = getPrimaryMetricLabel(tracking);
@@ -67,9 +70,12 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
 
   const ghostClasses = isFutureMonth ? 'bg-slate-100 dark:bg-slate-800/60 opacity-50 saturate-0 cursor-default hover:shadow-none' : '';
 
+  // Highlight if panel is open
+  const isSelected = panelOpen;
+
   return (
     <div
-      onClick={isFutureMonth ? undefined : onClick}
+      onClick={isFutureMonth ? undefined : () => setPanelOpen(true)}
       className={`h-full
         relative p-4 rounded-lg transition-all duration-200 shadow-sm dark:shadow-md
         ${isFutureMonth ? ghostClasses : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'}
@@ -89,6 +95,24 @@ export function MonthCell({ monthName, numbers, monthDays = [], isCurrentMonth, 
           />
         )}
       </div>
+      {/* NumbersPanel for this month */}
+      <NumbersPanel
+        isOpen={panelOpen}
+        title={`${monthName}`}
+        numbers={numbers}
+        extremes={yearExtremes}
+        editableNumbers={false}
+        showExpressionInput={false}
+        actionLabel={"Open daily view"}
+        actionOnClick={() => {
+          setPanelOpen(false);
+          onOpenMonth(month);
+        }}
+        actionIcon={<CalendarDays className="h-4 w-4" />}
+        onClose={() => setPanelOpen(false)}
+        valence={valence}
+        tracking={tracking}
+      />
 
       {/* Stats grid */}
       {stats && stats.count > 0 ? (

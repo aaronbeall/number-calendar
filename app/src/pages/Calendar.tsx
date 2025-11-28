@@ -11,7 +11,6 @@ import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorNumbersMap } from "@/lib/calendar";
-import type { StatsExtremes } from '@/lib/stats';
 import { calculateDailyStats, calculateMonthExtremes, calculateMonthlyStats, calculateYearExtremes } from '@/lib/stats';
 import { BarChart as BarChartIcon, CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3, LineChart as LineChartIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -29,13 +28,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const [panelProps, setPanelProps] = useState({
     isOpen: false,
     title: '',
-    numbers: [] as number[],
-    editableNumbers: false,
-    showExpressionInput: false,
-    actionLabel: undefined as string | undefined,
-    actionOnClick: undefined as (() => void) | undefined,
-    actionIcon: undefined as React.ReactNode | undefined,
-    extremes: undefined as StatsExtremes | undefined,
+    numbers: [] as number[]
   });
 
   // Use selectedDataset for all data hooks
@@ -216,12 +209,6 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   isOpen: true,
                   title: `${monthNames[month - 1]}`,
                   numbers: allNumbers,
-                  extremes: undefined,
-                  editableNumbers: false,
-                  showExpressionInput: false,
-                  actionLabel: undefined,
-                  actionOnClick: undefined,
-                  actionIcon: undefined,
                 });
               }} className="cursor-pointer">
               <MonthSummary 
@@ -291,24 +278,10 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               year={year}
               yearData={yearData}
               yearExtremes={yearExtremes}
-              selectedPanelTitle={panelProps.isOpen ? panelProps.title : undefined}
-              onMonthClick={(monthNumber, monthName, numbers, yearExtremes) => {
-                setPanelProps({
-                  isOpen: true,
-                  title: `${monthName} '${String(year).slice(-2)}`,
-                  numbers,
-                  editableNumbers: false,
-                  showExpressionInput: false,
-                  actionLabel: 'Open daily view',
-                  actionOnClick: () => {
-                    setView('daily');
-                    setYear(year);
-                    setMonth(monthNumber);
-                    setPanelProps(prev => ({ ...prev, isOpen: false }));
-                  },
-                  actionIcon: <CalendarDays className="h-4 w-4" />,
-                  extremes: yearExtremes,
-                });
+              onOpenMonth={(monthNumber) => {
+                setView('daily');
+                setYear(year);
+                setMonth(monthNumber);
               }}
               valence={dataset.valence}
               tracking={dataset.tracking}
@@ -322,12 +295,6 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   isOpen: true,
                   title: `${year} Year Summary`,
                   numbers: allYearNumbers,
-                  extremes: undefined,
-                  editableNumbers: false,
-                  showExpressionInput: false,
-                  actionLabel: undefined,
-                  actionOnClick: undefined,
-                  actionIcon: undefined,
                 });
               }} className="cursor-pointer">
                 <YearSummary 
