@@ -7,7 +7,7 @@ import {
   findMostRecentPopulatedEntryBefore, loadAllDays, loadDay,
   loadMonth,
   loadYear, saveDay,
-  type DayKey, type MonthKey, type WeekKey, type YearKey
+  type DayKey, type MonthKey, type WeekKey, type YearKey, type DayEntry
 } from './localdb';
 
 // Hook to load a day's numbers for a dataset
@@ -42,7 +42,7 @@ export function useAllDays(datasetId: string) {
   });
 }
 
-// Hook to save a day's numbers and invalidate queries
+// Hook to save a day's numbers and update caches using DayEntry type
 export function useSaveDay() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -50,16 +50,41 @@ export function useSaveDay() {
       await saveDay(params.datasetId, params.date, params.numbers);
       return params;
     },
-    onSuccess: ({ datasetId, date }) => {
-      queryClient.invalidateQueries({ queryKey: ['day', datasetId, date] });
-      // Optionally invalidate month
+    onSuccess: ({ datasetId, date, numbers }) => {
+      // Update 'day' cache
+      queryClient.setQueryData(['day', datasetId, date], numbers);
+
+      // Update 'allDays' cache using DayEntry type
+      const allDaysKey = ['allDays', datasetId];
+      const allDays = queryClient.getQueryData(allDaysKey) as DayEntry[] | undefined;
+      if (allDays) {
+        const idx = allDays.findIndex(d => d.date === date);
+        if (idx !== -1) {
+          // Update existing day
+          allDays[idx] = { ...allDays[idx], numbers };
+        } else {
+          // Add new day
+          allDays.push({ date, numbers, datasetId });
+        }
+        queryClient.setQueryData(allDaysKey, [...allDays]);
+      }
+
+      // Update 'month' cache
       const [year, month] = date.split('-');
-      queryClient.invalidateQueries({ queryKey: ['month', datasetId, Number(year), Number(month)] });
-      // Also invalidate the year aggregate since one of its days changed
-      queryClient.invalidateQueries({ queryKey: ['year', datasetId, Number(year)] });
-      // Invalidate allDays as well
-      queryClient.invalidateQueries({ queryKey: ['allDays', datasetId] });
-      // Invalidate mostRecentPopulatedEntryBefore queries for this dataset (all dates)
+      const monthKey = ['month', datasetId, Number(year), Number(month)];
+      const monthData = queryClient.getQueryData(monthKey) as Record<DayKey, number[]> | undefined;
+      if (monthData) {
+        queryClient.setQueryData(monthKey, { ...monthData, [date]: numbers });
+      }
+
+      // Update 'year' cache
+      const yearKey = ['year', datasetId, Number(year)];
+      const yearData = queryClient.getQueryData(yearKey) as Record<DayKey, number[]> | undefined;
+      if (yearData) {
+        queryClient.setQueryData(yearKey, { ...yearData, [date]: numbers });
+      }
+
+      // Invalidate all 'mostRecentPopulatedEntryBefore' queries for this dataset
       queryClient.invalidateQueries({ queryKey: ['mostRecentPopulatedEntryBefore', datasetId] });
     },
   });
