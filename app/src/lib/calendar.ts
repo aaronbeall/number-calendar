@@ -1,7 +1,8 @@
-import type { DateKey, DayKey, Tracking } from "@/features/db/localdb";
-import { toDayKey } from "./friendly-date";
+import type { DayKey, MonthKey, Tracking, WeekKey } from "@/features/db/localdb";
+import { toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import { computeNumberStats, getStatsDelta, getStatsPercentChange, type StatsExtremes } from "./stats";
 import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceMetricFromData, getValenceSource } from "./tracking";
+import { getISOWeek, getISOWeekYear, parseISO } from "date-fns";
 
 
 export function getMonthDays(year: number, month: number) {
@@ -53,15 +54,91 @@ export function getCalendarData(numbers: number[], priorNumbers: number[] | unde
 }
 // Given an ordered array of date keys and a data map, returns a map of dateKey -> prior populated numbers (previous non-empty entry)
 
-export function getPriorNumbersMap<T extends DateKey>(orderedKeys: T[], data: Record<T, number[]>, initialLastPopulated: number[] = []): Record<T, number[]> {
-  const result = {} as Record<T, number[]>;
-  let lastPopulated: number[] = initialLastPopulated;
-  for (let i = 0; i < orderedKeys.length; i++) {
-    const key = orderedKeys[i];
-    result[key] = lastPopulated;
-    if (data[key] && data[key].length > 0) {
-      lastPopulated = data[key];
+export function getPriorNumbersMap(
+  days: DayKey[],
+  monthData: Record<DayKey, number[]>,
+  priorMonthData: Record<DayKey, number[]> | undefined
+): Record<DayKey | WeekKey | MonthKey, number[]> {
+  const result = {} as Record<DayKey | WeekKey | MonthKey, number[]>;
+  // Seed lastPopulated with last non-empty entry from priorMonthData, if available
+  let lastPopulated: number[] = [];
+  if (priorMonthData) {
+    const priorKeys = Object.keys(priorMonthData).sort() as DayKey[];
+    for (let i = priorKeys.length - 1; i >= 0; i--) {
+      const nums = priorMonthData[priorKeys[i]];
+      if (nums && nums.length > 0) {
+        lastPopulated = nums;
+        break;
+      }
     }
   }
+  // For days
+  for (let i = 0; i < days.length; i++) {
+    const key = days[i];
+    result[key] = lastPopulated;
+    if (monthData[key] && monthData[key].length > 0) {
+      lastPopulated = monthData[key];
+    }
+  }
+
+  // For weeks
+  // Map: weekKey -> [all numbers in that week]
+  const weekMap = new Map<WeekKey, { days: DayKey[]; numbers: number[] }>();
+  for (const dayKey of days) {
+    const date = parseISO(dayKey);
+    const week = getISOWeek(date);
+    const year = getISOWeekYear(date);
+    const weekKey = toWeekKey(year, week);
+    if (!weekMap.has(weekKey)) weekMap.set(weekKey, { days: [], numbers: [] });
+    weekMap.get(weekKey)!.days.push(dayKey);
+    if (monthData[dayKey] && monthData[dayKey].length > 0) {
+      weekMap.get(weekKey)!.numbers.push(...monthData[dayKey]);
+    }
+  }
+  // See the lastPopulatedWeek with the last populated week from priorMonthData
+  let lastPopulatedWeek: number[] = [];
+  if (priorMonthData) {
+    const priorWeekMap = new Map<WeekKey, number[]>();
+    const priorKeys = Object.keys(priorMonthData).sort() as DayKey[];
+    for (const dayKey of priorKeys) {
+      const date = parseISO(dayKey);
+      const week = getISOWeek(date);
+      const year = getISOWeekYear(date);
+      const weekKey = toWeekKey(year, week);
+      if (!priorWeekMap.has(weekKey)) priorWeekMap.set(weekKey, []);
+      const nums = priorMonthData[dayKey];
+      if (nums && nums.length > 0) {
+        priorWeekMap.get(weekKey)!.push(...nums);
+      }
+    }
+    // Find the last populated week in priorWeekMap
+    const priorWeekKeys = Array.from(priorWeekMap.keys()).sort();
+    for (let i = priorWeekKeys.length - 1; i >= 0; i--) {
+      const wk = priorWeekKeys[i];
+      const nums = priorWeekMap.get(wk)!;
+      if (nums.length > 0) {
+        lastPopulatedWeek = nums;
+        break;
+      }
+    }
+  }
+  // For each week, find the prior populated week (from priorMonthData if needed)
+  const weekKeys = Array.from(weekMap.keys()).sort() as WeekKey[];
+  for (const weekKey of weekKeys) {
+    result[weekKey] = lastPopulatedWeek;
+    const weekNumbers = weekMap.get(weekKey)!.numbers;
+    if (weekNumbers.length > 0) {
+      lastPopulatedWeek = weekNumbers;
+    }
+  }
+
+  // For the month
+  // Get all numbers in prior month
+  const priorMonthNumbers = priorMonthData ? Object.values(priorMonthData).flat() : [];
+  // Assume all days are in the same month
+  const firstDay = parseISO(days[0]);
+  const monthKey = toMonthKey(firstDay.getFullYear(), firstDay.getMonth() + 1);
+  result[monthKey] = priorMonthNumbers;
+
   return result;
 }

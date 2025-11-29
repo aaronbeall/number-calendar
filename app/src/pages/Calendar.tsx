@@ -4,7 +4,7 @@ import { MonthChart } from '@/features/chart/MonthChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
 import type { Dataset } from '@/features/db/localdb';
-import { useMonth, useMostRecentPopulatedEntryBefore, useSaveDay, useYear } from '@/features/db/useCalendarData';
+import { useMonth, useMostRecentPopulatedMonthBefore, useSaveDay, useYear } from '@/features/db/useCalendarData';
 import { MonthlyGrid } from '@/features/month/MonthlyGrid';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { MonthSummary } from '@/features/stats/MonthSummary';
@@ -60,11 +60,11 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
 
   // Find the most recent populated entry before the first day of the current month
   const firstDayStr = days[0];
-  const { data: mostRecentEntryBefore } = useMostRecentPopulatedEntryBefore(dataset.id, firstDayStr);
+  const { data: priorMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, firstDayStr);
   // Precompute prior populated numbers map for all days in the month, seeded with the most recent entry before the period
-  const priorDayNumbers = useMemo(() => {
-    return getPriorNumbersMap(days, monthData, mostRecentEntryBefore?.numbers ?? []);
-  }, [days, monthData, mostRecentEntryBefore]);
+  const priorNumbersMap = useMemo(() => {
+    return getPriorNumbersMap(days, monthData, priorMonthData);
+  }, [days, monthData, priorMonthData]);
 
   return (
   <div className="min-h-screen">
@@ -195,7 +195,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               month={month}
               showWeekends={showWeekends}
               monthData={monthData}
-              priorDayNumbers={priorDayNumbers}
+              priorNumbersMap={priorNumbersMap}
               valence={dataset.valence}
               tracking={dataset.tracking}
               monthExtremes={monthExtremes}

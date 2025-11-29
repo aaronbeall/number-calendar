@@ -1,10 +1,10 @@
-import { toMonthKey, toWeekKey, toYearKey } from '@/lib/friendly-date';
+import { toDayKey, toMonthKey, toWeekKey, toYearKey } from '@/lib/friendly-date';
 import type { NumberStats } from '@/lib/stats';
 import { computeNumberStats } from '@/lib/stats';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getISOWeek, getISOWeekYear, parseISO } from 'date-fns';
 import {
-  findMostRecentPopulatedEntryBefore, loadAllDays, loadDay,
+  findMostRecentPopulatedMonthBefore, loadAllDays, loadDay,
   loadMonth,
   loadYear, saveDay,
   type DayKey, type MonthKey, type WeekKey, type YearKey, type DayEntry
@@ -84,17 +84,24 @@ export function useSaveDay() {
         queryClient.setQueryData(yearKey, { ...yearData, [date]: numbers });
       }
 
-      // Invalidate all 'mostRecentPopulatedEntryBefore' queries for this dataset
-      queryClient.invalidateQueries({ queryKey: ['mostRecentPopulatedEntryBefore', datasetId] });
+      // Invalidate all 'mostRecentPopulatedMonthBefore' queries for this dataset except the current beforeDate (first day of the current month)
+      const currentMonthFirstDay = toDayKey(Number(year), Number(month), 1);
+      const queries = queryClient.getQueryCache().findAll({ queryKey: ['mostRecentPopulatedMonthBefore', datasetId] });
+      for (const q of queries) {
+        const [, , beforeDate] = q.queryKey as [string, string, string];
+        if (beforeDate !== currentMonthFirstDay) {
+          queryClient.invalidateQueries({ queryKey: ['mostRecentPopulatedMonthBefore', datasetId, beforeDate] });
+        }
+      }
     },
   });
 }
 
-// Hook to find the most recent populated entry before a given date
-export function useMostRecentPopulatedEntryBefore(datasetId: string, beforeDate: DayKey) {
+// Hook to find the most recent populated month before a given date
+export function useMostRecentPopulatedMonthBefore(datasetId: string, beforeDate: DayKey) {
   return useQuery({
-    queryKey: ['mostRecentPopulatedEntryBefore', datasetId, beforeDate],
-    queryFn: () => findMostRecentPopulatedEntryBefore(datasetId, beforeDate),
+    queryKey: ['mostRecentPopulatedMonthBefore', datasetId, beforeDate],
+    queryFn: () => findMostRecentPopulatedMonthBefore(datasetId, beforeDate),
     enabled: !!beforeDate,
   });
 }

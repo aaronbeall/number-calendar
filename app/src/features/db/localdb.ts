@@ -263,8 +263,9 @@ export async function loadAllDays(datasetId: string): Promise<DayEntry[]> {
   return all;
 }
 
-// Efficiently find the most recent populated entry before a given date for a dataset
-export async function findMostRecentPopulatedEntryBefore(datasetId: string, beforeDate: DayKey): Promise<DayEntry | undefined> {
+
+// Efficiently find the most recent populated entry before a given date for a dataset, then load the entire month for that entry
+export async function findMostRecentPopulatedMonthBefore(datasetId: string, beforeDate: DayKey): Promise<Record<DayKey, number[]> | undefined> {
   const db = await getDb();
   const index = db.transaction('entries').store.index('datasetId_date');
   // Open a cursor in reverse order, ending before the target date
@@ -272,7 +273,11 @@ export async function findMostRecentPopulatedEntryBefore(datasetId: string, befo
   let cursor = await index.openCursor(range, 'prev');
   while (cursor) {
     if (cursor.value.numbers && cursor.value.numbers.length > 0) {
-      return cursor.value;
+      // Found the most recent populated day
+      const foundDate = cursor.value.date;
+      const [year, month] = foundDate.split('-');
+      // Load the entire month for that entry
+      return await loadMonth(datasetId, Number(year), Number(month));
     }
     cursor = await cursor.continue();
   }

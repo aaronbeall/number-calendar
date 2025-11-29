@@ -2,7 +2,7 @@
 
 import { DayCell } from './DayCell';
 import { WeekSummary } from '../stats/WeekSummary';
-import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
+import type { DayKey, MonthKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
 import type { StatsExtremes } from '@/lib/stats';
 import { formatDateAsKey } from '@/lib/friendly-date';
 import { Fragment } from 'react/jsx-runtime';
@@ -12,7 +12,7 @@ interface DailyGridProps {
   year: number;
   month: number;
   monthData: Record<DayKey, number[]>;
-  priorDayNumbers: Record<DayKey, number[]>;
+  priorNumbersMap: Record<DayKey | WeekKey | MonthKey, number[]>;
   showWeekends?: boolean;
   monthExtremes?: StatsExtremes;
   valence: Valence;
@@ -28,7 +28,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
   year,
   month,
   monthData,
-  priorDayNumbers,
+  priorNumbersMap,
   showWeekends = true,
   monthExtremes,
   valence,
@@ -36,7 +36,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
   onSaveDay,
 }) => {
 
-  const { firstDay, cols, weekdays, gridDays } = useMemo(() => {
+  const { firstDay, weekdays, gridDays } = useMemo(() => {
     // Calculdate days in month
     const firstDay = new Date(year, month - 1, 1);
     const lastDay = new Date(year, month, 0);
@@ -86,8 +86,8 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
       weekNumber: number;
       isCurrentWeek: boolean;
     }>;
-    for (let i = 0; i < gridDays.length; i += cols) {
-      const week = gridDays.slice(i, i + cols);
+    for (let i = 0; i < gridDays.length; i += weekdays.length) {
+      const week = gridDays.slice(i, i + weekdays.length);
       const datesInWeek = week.filter((d): d is Date => d instanceof Date);
       // Calculate week number (same logic as before)
       const firstOfMonth = firstDay;
@@ -113,7 +113,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
       weeks.push({ days: week, weekNumbers, weekNumber, isCurrentWeek });
     }
     return weeks;
-  }, [year, month, monthData, priorDayNumbers, showWeekends, gridDays, firstDay, cols, weekdays]);
+  }, [year, month, monthData, gridDays, firstDay, weekdays]);
 
   return (
     <>
@@ -136,7 +136,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
               }
               const key = formatDateAsKey(date, 'day');
               const numbers = monthData[key] || [];
-              const priorNumbers = priorDayNumbers[key] || [];
+              const priorNumbers = priorNumbersMap[key] || [];
               return (
                 <div key={formatDateAsKey(date, 'day')} className="transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl">
                   <DayCell
