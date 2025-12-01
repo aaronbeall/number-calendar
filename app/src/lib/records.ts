@@ -1,7 +1,7 @@
 
-import { getWeek, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 import type { DateKey, DayEntry, DayKey, MonthKey, Valence, WeekKey } from '../features/db/localdb';
-import { dateToWeekKey, toWeekKey } from './friendly-date';
+import { dateToWeekKey } from './friendly-date';
 
 const entriesOf = <T extends object>(obj: T) =>
   Object.entries(obj) as [keyof T, NonNullable<T[keyof T]>][];
@@ -37,7 +37,7 @@ function median(arr: number[]) {
 
 
 // Generic streak calculation for a predicate on value (sum or median)
-function longestStreakByPredicate<T, K extends DateKey>(
+function longestStreakByPredicate<K extends DateKey>(
   items: { key: K, value: number }[],
   isConsecutive: (a: K, b: K) => boolean,
   predicate: (value: number, prevValue?: number) => boolean

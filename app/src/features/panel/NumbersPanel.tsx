@@ -248,6 +248,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 onCancel={() => setAdding(false)}
                 priorTotal={currentTotal}
                 valence={valence}
+                tracking={tracking}
+                priorNumber={numbers[numbers.length - 1] ?? priorNumbers?.[priorNumbers?.length - 1]}
               />
             )}
           </AnimatePresence>
