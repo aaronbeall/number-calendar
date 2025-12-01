@@ -24,7 +24,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const [month, setMonth] = useState(today.getMonth() + 1);
   const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
   const [monthChartGroup, setMonthChartGroup] = useState<'daily' | 'all'>(() => 'daily');
-  const [chartGroup, setChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
+  const [yearChartGroup, setYearChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
   const [showWeekends, setShowWeekends] = useState(true);
   const [panelProps, setPanelProps] = useState({
     isOpen: false,
@@ -323,10 +323,10 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   <div className="flex gap-2">
                     <ToggleGroup
                       type="single"
-                      value={chartGroup}
+                      value={yearChartGroup}
                       onValueChange={(v: string | null) => {
                         if (!v) return;
-                        setChartGroup(v as 'daily' | 'monthly');
+                        setYearChartGroup(v as 'daily' | 'monthly');
                       }}
                       size="sm"
                       variant="outline"
@@ -365,7 +365,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   year={year}
                   yearData={yearData}
                   mode={chartMode}
-                  group={chartGroup}
+                  group={yearChartGroup}
                   valence={dataset.valence}
                 />
               </div>
