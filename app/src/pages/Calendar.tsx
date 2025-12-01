@@ -22,9 +22,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const [view, setView] = useState<'daily' | 'monthly'>('daily');
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth() + 1);
-  const [chartMode, setChartMode] = useState<'serial' | 'cumulative'>(() => 'serial');
-  const [monthChartGroup, setMonthChartGroup] = useState<'daily' | 'all'>(() => 'daily');
-  const [yearChartGroup, setYearChartGroup] = useState<'daily' | 'monthly'>(() => 'monthly');
+  // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
   const [panelProps, setPanelProps] = useState({
     isOpen: false,
@@ -231,51 +229,10 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
 
             {/* Chart Section */}
             <div className="space-y-4">
-              <div className="rounded-lg bg-slate-50 dark:bg-slate-900/60 p-6 shadow-lg dark:shadow-xl hover:shadow-xl dark:hover:shadow-2xl transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex gap-2">
-                    <ToggleGroup
-                      type="single"
-                      value={monthChartGroup}
-                      onValueChange={(v: string | null) => {
-                        if (v === 'daily' || v === 'all') setMonthChartGroup(v);
-                      }}
-                      size="sm"
-                      variant="outline"
-                      aria-label="Group Mode"
-                    >
-                      <ToggleGroupItem value="daily" aria-label="Daily"><span>Daily</span></ToggleGroupItem>
-                      <ToggleGroupItem value="all" aria-label="All"><span>All</span></ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-                  <ToggleGroup
-                    type="single"
-                    value={chartMode}
-                    onValueChange={(v: string | null) => {
-                      if (!v) return;
-                      setChartMode(v as 'serial' | 'cumulative');
-                    }}
-                    size="sm"
-                    variant="outline"
-                    aria-label="Chart Mode"
-                  >
-                      <ToggleGroupItem value="serial" aria-label="Serial">
-                        <BarChartIcon className="size-4 mr-1" />
-                        <span className="hidden sm:inline">Serial</span>
-                    </ToggleGroupItem>
-                      <ToggleGroupItem value="cumulative" aria-label="Cumulative">
-                        <LineChartIcon className="size-4 mr-1" />
-                        <span className="hidden sm:inline">Cumulative</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
-                <MonthChart
-                  days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
-                  mode={chartMode}
-                  group={monthChartGroup}
-                  valence={dataset.valence}
-                />
-              </div>
+              <MonthChart
+                days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
+                valence={dataset.valence}
+              />
             </div>
           </>
         ) : (
@@ -318,57 +275,11 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
 
             {/* Year Chart Section */}
             <div className="space-y-4 mb-6">
-              <div className="rounded-lg bg-slate-50 dark:bg-slate-900/60 p-6 shadow-lg dark:shadow-xl hover:shadow-xl dark:hover:shadow-2xl transition-shadow">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex gap-2">
-                    <ToggleGroup
-                      type="single"
-                      value={yearChartGroup}
-                      onValueChange={(v: string | null) => {
-                        if (!v) return;
-                        setYearChartGroup(v as 'daily' | 'monthly');
-                      }}
-                      size="sm"
-                      variant="outline"
-                      aria-label="Chart Group"
-                    >
-                      <ToggleGroupItem value="daily" aria-label="Daily">
-                        <span>Daily</span>
-                      </ToggleGroupItem>
-                      <ToggleGroupItem value="monthly" aria-label="Monthly">
-                        <span>Monthly</span>
-                      </ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
-                  <ToggleGroup
-                    type="single"
-                    value={chartMode}
-                    onValueChange={(v: string | null) => {
-                      if (!v) return;
-                      setChartMode(v as 'serial' | 'cumulative');
-                    }}
-                    size="sm"
-                    variant="outline"
-                    aria-label="Chart Mode"
-                  >
-                    <ToggleGroupItem value="serial" aria-label="Serial">
-                      <BarChartIcon className="size-4 mr-1" />
-                      <span className="hidden sm:inline">Serial</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="cumulative" aria-label="Cumulative">
-                      <LineChartIcon className="size-4 mr-1" />
-                      <span className="hidden sm:inline">Cumulative</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                </div>
-                <YearChart
-                  year={year}
-                  yearData={yearData}
-                  mode={chartMode}
-                  group={yearChartGroup}
-                  valence={dataset.valence}
-                />
-              </div>
+              <YearChart
+                year={year}
+                yearData={yearData}
+                valence={dataset.valence}
+              />
             </div>
           </>
         )}

@@ -1,17 +1,22 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
 import type { Valence } from '@/features/db/localdb';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
+
+type MonthChartMode = 'serial' | 'cumulative';
+type MonthChartGroup = 'daily' | 'all';
 
 export interface MonthChartProps {
   days: { date: string; numbers: number[] }[];
-  mode: 'serial' | 'cumulative';
-  group: 'daily' | 'all';
   valence: Valence;
 }
 
-export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group, valence }) => {
+export const MonthChart: React.FC<MonthChartProps> = ({ days, valence }) => {
+  const [mode, setMode] = useState<MonthChartMode>(() => 'serial');
+  const [group, setGroup] = useState<MonthChartGroup>(() => 'daily');
   const data = useMemo(() => {
     if (group === 'daily') {
       // Daily mode: aggregate all numbers per day
@@ -82,12 +87,45 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group, valen
   };
 
   return (
-    <div className="w-full h-48 bg-white dark:bg-slate-900 rounded-lg shadow-sm dark:shadow-md">
-      {data.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">No data to display</div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+    <div className="rounded-lg bg-slate-50 dark:bg-slate-900/60 p-6 shadow-lg dark:shadow-xl hover:shadow-xl dark:hover:shadow-2xl transition-shadow">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex gap-2">
+          <ToggleGroup
+            type="single"
+            value={group}
+            onValueChange={(v: MonthChartGroup) => setGroup(v) }
+            size="sm"
+            variant="outline"
+            aria-label="Group Mode"
+          >
+            <ToggleGroupItem value="daily" aria-label="Daily"><span>Daily</span></ToggleGroupItem>
+            <ToggleGroupItem value="all" aria-label="All"><span>All</span></ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <ToggleGroup
+          type="single"
+          value={mode}
+          onValueChange={(v: MonthChartMode) => setMode(v) }
+          size="sm"
+          variant="outline"
+          aria-label="Chart Mode"
+        >
+          <ToggleGroupItem value="serial" aria-label="Serial">
+            <BarChartIcon className="size-4 mr-1" />
+            <span className="hidden sm:inline">Serial</span>
+          </ToggleGroupItem>
+          <ToggleGroupItem value="cumulative" aria-label="Cumulative">
+            <LineChartIcon className="size-4 mr-1" />
+            <span className="hidden sm:inline">Cumulative</span>
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      <div className="w-full h-48 bg-white dark:bg-slate-900 rounded-lg shadow-sm dark:shadow-md">
+        {data.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400">No data to display</div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
             <XAxis 
               dataKey="date" 
@@ -135,14 +173,15 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, mode, group, valen
                 return null;
               }}
             />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-              {data.map((entry, idx) => (
-                <Cell key={`cell-${idx}`} fill={getValueForValence(entry.value, valence, barColors)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      )}
+              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                {data.map((entry, idx) => (
+                  <Cell key={`cell-${idx}`} fill={getValueForValence(entry.value, valence, barColors)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
     </div>
   );
 };
