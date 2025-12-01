@@ -11,7 +11,8 @@ import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorNumbersMap } from "@/lib/calendar";
-import { calculateDailyStats, calculateMonthExtremes, calculateMonthlyStats, calculateYearExtremes } from '@/lib/stats';
+import { toMonthKey } from '@/lib/friendly-date';
+import { calculateDailyStats, calculateMonthExtremes, calculateMonthlyStats, calculateYearExtremes, type StatsExtremes } from '@/lib/stats';
 import { BarChart as BarChartIcon, CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3, LineChart as LineChartIcon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -28,7 +29,9 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const [panelProps, setPanelProps] = useState({
     isOpen: false,
     title: '',
-    numbers: [] as number[]
+    numbers: [] as number[],
+    priorNumbers: undefined as number[] | undefined,
+    extremes: undefined as StatsExtremes | undefined,
   });
 
   // Use selectedDataset for all data hooks
@@ -209,10 +212,13 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   isOpen: true,
                   title: `${monthNames[month - 1]}`,
                   numbers: allNumbers,
+                  priorNumbers: priorNumbersMap[toMonthKey(year, month)],
+                  extremes: yearExtremes,
                 });
               }} className="cursor-pointer">
               <MonthSummary 
                 numbers={allNumbers} 
+                priorNumbers={priorNumbersMap[toMonthKey(year, month)]}
                 monthName={monthNames[month - 1]} 
                 isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
                 yearExtremes={yearExtremes}
@@ -295,6 +301,8 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   isOpen: true,
                   title: `${year} Year Summary`,
                   numbers: allYearNumbers,
+                  extremes: undefined,
+                  priorNumbers: undefined,
                 });
               }} className="cursor-pointer">
                 <YearSummary 
