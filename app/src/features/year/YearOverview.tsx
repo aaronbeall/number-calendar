@@ -1,13 +1,16 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { getValueForValence } from '@/lib/valence';
-import type { Valence } from '@/features/db/localdb';
+import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
+import { dateToDayKey } from '@/lib/friendly-date';
+import { getValenceValueForNumber } from '@/lib/tracking';
 
 export interface YearOverviewProps {
   year: number;
-  data: Record<string, number[]>; // dateKey -> numbers
+  data: Record<DayKey, number[]>;
   currentMonth: number;
   onMonthClick: (month: number) => void;
   valence: Valence;
+  tracking: Tracking;
 }
 
 const monthNames = [
@@ -20,22 +23,56 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
   data, 
   currentMonth, 
   onMonthClick,
-  valence
+  valence,
+  tracking
 }) => {
   const today = new Date();
 
-  const getDayColor = (date: Date): string => {
-    const dateKey = date.toISOString().split('T')[0];
-    const numbers = data[dateKey] || [];
-    const total = numbers.reduce((a, b) => a + b, 0);
-    const isFuture = date > today;
+  // Memoize all dot data for the year: { [month]: [{ day, color, valenceValue, isFuture, hasData, value }] }
+  const dotDataByMonth = useMemo(() => {
+    const result: Record<number, Array<{
+      day: number;
+      valenceValue: number;
+      isFuture: boolean;
+      hasData: boolean;
+      value: number;
+    }>> = {};
+    let priorDayValue: number | undefined = undefined;
+    for (let month = 1; month <= 12; month++) {
+      const daysInMonth = new Date(year, month, 0).getDate();
+      result[month] = [];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dateKey = dateToDayKey(date);
+        const numbers = data[dateKey] || [];
+        let value = 0;
+        if (numbers.length > 0) {
+          if (tracking === 'series') {
+            value = numbers.reduce((a, b) => a + b, 0);
+          } else if (tracking === 'trend') {
+            value = numbers[numbers.length - 1];
+          }
+        }
+        const isFuture = date > today;
+        const hasData = numbers.length > 0;
+        const valenceValue = hasData
+          ? getValenceValueForNumber(value, priorDayValue ?? numbers[0], tracking)
+          : 0;
+        result[month].push({ day, valenceValue, isFuture, hasData, value });
+        if (hasData) priorDayValue = value;
+      }
+    }
+    return result;
+  }, [year, data, tracking]);
+
+  // Helper to get color for a dot
+  const getDotColor = (valenceValue: number, isFuture: boolean, hasData: boolean) => {
     if (isFuture) {
-      return 'bg-slate-200 dark:bg-slate-700/40 opacity-40'; // Future days - faded
-    } else if (numbers.length === 0) {
-      return 'bg-slate-400 dark:bg-slate-700/40 opacity-40'; // No data - gray
+      return 'bg-slate-200 dark:bg-slate-700/40 opacity-40';
+    } else if (!hasData) {
+      return 'bg-slate-400 dark:bg-slate-700/40 opacity-40';
     } else {
-      // Valence-aware color, more opaque for days with data
-      return getValueForValence(total, valence, {
+      return getValueForValence(valenceValue, valence, {
         good: 'bg-green-500 dark:bg-green-800/70 opacity-90',
         bad: 'bg-red-500 dark:bg-red-800/70 opacity-90',
         neutral: 'bg-blue-500 dark:bg-blue-800/70 opacity-90',
@@ -47,15 +84,16 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
     const isCurrentMonth = month === currentMonth;
     const daysInMonth = new Date(year, month, 0).getDate();
     const days: React.ReactElement[] = [];
+    const dotData = dotDataByMonth[month];
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = new Date(year, month - 1, day);
-      const color = getDayColor(date);
+    for (let i = 0; i < daysInMonth; i++) {
+      const { day, valenceValue, isFuture, hasData, value } = dotData[i];
+      const color = getDotColor(valenceValue, isFuture, hasData);
       days.push(
         <div
           key={day}
           className={`w-1 h-1 rounded-full ${color} transition-all duration-200`}
-          title={`${monthNames[month - 1]} ${day}, ${year}`}
+          title={`${monthNames[month - 1]} ${day}, ${year}${hasData ? `: ${value}` : ''}`}
         />
       );
     }
@@ -106,7 +144,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
   };
 
   return (
-  <div className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-6 shadow-sm dark:shadow-md">
+    <div className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-6 shadow-sm dark:shadow-md">
       <div className="grid grid-cols-12 gap-2 justify-items-center">
         {Array.from({ length: 12 }, (_, i) => renderMonth(i + 1))}
       </div>

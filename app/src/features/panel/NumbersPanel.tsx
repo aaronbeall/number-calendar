@@ -294,6 +294,25 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     )}
                   </div>
                 )}
+                {/* If no deltas and trend mode, show stats.change and stats.changePercent */}
+                {!deltas && tracking === 'trend' && stats && (
+                  <div className="flex items-center gap-1 mt-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                      <NumberText
+                        value={stats.change}
+                        valenceValue={stats.change}
+                        valence={valence}
+                        className="text-xs font-mono font-semibold"
+                        formatOptions={{ signDisplay: 'always' }}
+                      />
+                    </span>
+                    {typeof stats.changePercent === 'number' && !isNaN(stats.changePercent) && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
+                        {new Intl.NumberFormat(undefined, { signDisplay: 'always', maximumFractionDigits: 1 }).format(stats.changePercent)}%
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[

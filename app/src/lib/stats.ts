@@ -12,6 +12,7 @@ export interface NumberStats {
   last: number; // last value
   range: number; // max - min
   change: number; // last - first
+  changePercent: number; // (last - first) / first * 100
 }
 
 /**
@@ -32,7 +33,8 @@ export function computeNumberStats(numbers: number[]): NumberStats | null {
   const last = numbers[Math.max(0, numbers.length - 1)];
   const range = max - min;
   const change = last - first;
-  return { count, total, mean, median, min, max, first, last, range, change };
+  const changePercent = first !== 0 ? (change / Math.abs(first)) * 100 : 0;
+  return { count, total, mean, median, min, max, first, last, range, change, changePercent };
 }
 
 export interface DayStatsData extends NumberStats {

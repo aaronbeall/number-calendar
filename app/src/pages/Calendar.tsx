@@ -190,6 +190,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               currentMonth={month}
               onMonthClick={(selectedMonth) => setMonth(selectedMonth)}
               valence={dataset.valence}
+              tracking={dataset.tracking}
             />
 
             {/* Calendar Grid */}
