@@ -17,6 +17,7 @@ import React, { useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { AddNumberEditor } from './AddNumberEditor';
 import { EditableNumberBadge } from './EditableNumberBadge';
+import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -117,11 +118,9 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     setSortMode((m) => (m === 'original' ? 'asc' : m === 'asc' ? 'desc' : 'original'));
   };
 
-  // Cumulative numbers for line chart
-  const cumulativeNumbers = React.useMemo(() => {
-    let sum = 0;
-    return displayNumbers.map(n => (sum += n));
-  }, [displayNumbers]);
+  // Chart data for micro line chart
+  const chartNumbers = React.useMemo(() => getChartNumbers(displayNumbers, priorNumbers, tracking), [displayNumbers, priorNumbers, tracking]);
+  const chartData = React.useMemo(() => getChartData(chartNumbers, tracking), [chartNumbers, tracking]);
 
   const [adding, setAdding] = useState(false);
 
@@ -335,66 +334,63 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           )}
 
           {/* Micro cumulative line chart below numbers, in its own box */}
-          {stats && stats.count > 1 && (
+          {chartData.length > 1 && (
             <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 mt-2 flex items-center justify-center">
-              {(() => {
-                const chartColor = getValueForValence(stats.total, valence, {
-                  good: '#22c55e',
-                  bad: '#ef4444',
-                  neutral: '#3b82f6', // Tailwind blue-500
-                });
-                const tooltipBg = getValueForValence(stats.total, valence, {
-                  good: 'rgba(16,185,129,0.08)',
-                  bad: 'rgba(239,68,68,0.08)',
-                  neutral: 'rgba(59,130,246,0.08)',
-                });
-                const entryColorFn = (v: number) => getValueForValence(v, valence, {
-                  good: '#22c55e',
-                  bad: '#ef4444',
-                  neutral: '#64748b', // Tailwind slate-500
-                });
-                return (
-                  <ChartContainer config={{ numbers: { color: chartColor } }} className="w-full h-10">
-                    <LineChart width={120} height={32} data={cumulativeNumbers.map((y, i) => ({ x: i, y }))} margin={{ top: 8, right: 0, left: 0, bottom: 8 }}>
-                      <Line
-                        type="monotone"
-                        dataKey="y"
-                        stroke={chartColor}
-                        strokeWidth={2}
-                        dot={{ r: 2, stroke: 'none', fill: chartColor }}
-                        activeDot={{ r: 3, stroke: 'none', fill: chartColor }}
-                        isAnimationActive={false}
-                      />
-                      <Tooltip
-                        cursor={{ fill: tooltipBg }}
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const cumulative = payload[0].value as number;
-                            const entryIndex = payload[0].payload.x as number;
-                            const entryValue = entryIndex === 0 ? cumulative : cumulative - cumulativeNumbers[entryIndex - 1];
-                            const entryColor = entryColorFn(entryValue);
-                            const totalColor = entryColorFn(cumulative);
-                            return (
-                              <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
-                                <div style={{ color: entryColor, fontWeight: 600, fontSize: 16 }}>
-                                  {entryValue > 0 ? `+${entryValue}` : entryValue < 0 ? `-${Math.abs(entryValue)}` : entryValue}
-                                </div>
-                                <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                  <span>Total</span>
-                                  <span style={{ color: totalColor, fontWeight: 600, fontSize: 16 }}>
-                                    {cumulative}
-                                  </span>
-                                </div>
+              <ChartContainer config={{ numbers: { color: getValueForValence(stats?.total ?? 0, valence, {
+                good: '#22c55e',
+                bad: '#ef4444',
+                neutral: '#3b82f6',
+              }) } }} className="w-full h-10">
+                <LineChart width={120} height={32} data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 8 }}>
+                  <Line
+                    type="monotone"
+                    dataKey="y"
+                    stroke={getValueForValence(stats?.total ?? 0, valence, {
+                      good: '#22c55e',
+                      bad: '#ef4444',
+                      neutral: '#3b82f6',
+                    })}
+                    strokeWidth={2}
+                    dot={{ r: 2, stroke: 'none', fill: getValueForValence(stats?.total ?? 0, valence, {
+                      good: '#22c55e',
+                      bad: '#ef4444',
+                      neutral: '#3b82f6',
+                    }) }}
+                    activeDot={{ r: 3, stroke: 'none', fill: getValueForValence(stats?.total ?? 0, valence, {
+                      good: '#22c55e',
+                      bad: '#ef4444',
+                      neutral: '#3b82f6',
+                    }) }}
+                    isAnimationActive={false}
+                  />
+                  <Tooltip
+                    cursor={{ fill: getValueForValence(stats?.total ?? 0, valence, {
+                      good: 'rgba(16,185,129,0.08)',
+                      bad: 'rgba(239,68,68,0.08)',
+                      neutral: 'rgba(59,130,246,0.08)',
+                    }) }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const { value, valenceValue, format, secondaryValue, secondaryFormat, secondaryLabel } = payload[0].payload as NumbersChartDataPoint;
+                        return (
+                          <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>
+                              <NumberText value={value} valenceValue={valenceValue} valence={valence} formatOptions={format ?? undefined} />
+                            </div>
+                            {secondaryValue !== undefined && secondaryValue !== null ? (
+                              <div style={{ fontSize: 12, opacity: 0.7 }}>
+                                {secondaryLabel && <span className="mr-1">{secondaryLabel}</span>}
+                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} formatOptions={secondaryFormat ?? undefined} />
                               </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                    </LineChart>
-                  </ChartContainer>
-                );
-              })()}
+                            ) : null}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                </LineChart>
+              </ChartContainer>
             </div>
           )}
         </div>

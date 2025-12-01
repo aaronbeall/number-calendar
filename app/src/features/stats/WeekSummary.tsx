@@ -2,7 +2,7 @@ import { ChartContainer } from '@/components/ui/chart';
 import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
-import { getChartData, getChartNumbers } from '@/lib/charts';
+import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import { getValueForValence } from '@/lib/valence';
 import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
@@ -125,15 +125,16 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
                     }) }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
-                        const { primaryValue, primaryValenceValue, delta } = payload[0].payload;
+                        const { value, valenceValue, format, secondaryValue, secondaryFormat, secondaryLabel } = payload[0].payload as NumbersChartDataPoint;
                         return (
                           <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                             <div style={{ fontWeight: 600, fontSize: 14 }}>
-                              <NumberText value={primaryValue} valenceValue={primaryValenceValue} valence={valence} />
+                              <NumberText value={value} valenceValue={valenceValue} valence={valence} formatOptions={format} />
                             </div>
-                            {delta !== undefined && delta !== null && delta !== 0 ? (
+                            {secondaryValue !== undefined && secondaryValue !== null ? (
                               <div style={{ fontSize: 12, opacity: 0.7 }}>
-                                <NumberText value={delta} valenceValue={delta} valence={valence} formatOptions={{ signDisplay: 'always' }} />
+                                {secondaryLabel && <span className=" text-slate-500 dark:text-slate-400 mr-1">{secondaryLabel}</span>}
+                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} formatOptions={secondaryFormat} />
                               </div>
                             ) : null}
                           </div>
