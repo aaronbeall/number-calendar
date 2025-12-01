@@ -2,12 +2,13 @@ import { toDayKey, toMonthKey, toWeekKey, toYearKey } from '@/lib/friendly-date'
 import type { NumberStats } from '@/lib/stats';
 import { computeNumberStats } from '@/lib/stats';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getISOWeek, getISOWeekYear, parseISO } from 'date-fns';
+import { getWeek, parseISO } from 'date-fns';
 import {
   findMostRecentPopulatedMonthBefore, loadAllDays, loadDay,
   loadMonth,
   loadYear, saveDay,
-  type DayKey, type MonthKey, type WeekKey, type YearKey, type DayEntry
+  type DayEntry,
+  type DayKey, type MonthKey, type WeekKey, type YearKey
 } from './localdb';
 
 // Hook to load a day's numbers for a dataset
@@ -189,8 +190,8 @@ export function useCalendarData(datasetId: string): CalendarData | null {
   const weeks: Record<WeekKey, CalendarWeekData> = {};
   for (const [dayKey, dayData] of entries) {
     const { date } = dayData;
-    const week = getISOWeek(date);
-    const year = getISOWeekYear(date);
+    const week = getWeek(date);
+    const year = date.getFullYear();
     const weekKey = toWeekKey(year, week);
     if (!weeks[weekKey]) {
       weeks[weekKey] = {
@@ -244,8 +245,8 @@ export function useCalendarData(datasetId: string): CalendarData | null {
     for (const key in months[monthKey].days) {
       const dayKey = key as DayKey;
       const { date } = months[monthKey].days[dayKey];
-      const week = getISOWeek(date);
-      const year = getISOWeekYear(date);
+      const week = getWeek(date);
+      const year = date.getFullYear();
       const weekKey = toWeekKey(year, week);
       months[monthKey].weeks[weekKey] = weeks[weekKey];
     }
@@ -287,8 +288,8 @@ export function useCalendarData(datasetId: string): CalendarData | null {
       const monthKey = toMonthKey(years[yearKey].year, month);
       years[yearKey].months[monthKey] = months[monthKey];
       // Assign weeks in this year
-      const week = getISOWeek(date);
-      const weekYear = getISOWeekYear(date);
+      const week = getWeek(date);
+      const weekYear = date.getFullYear();
       const weekKey = toWeekKey(weekYear, week);
       years[yearKey].weeks[weekKey] = weeks[weekKey];
     }

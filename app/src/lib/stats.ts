@@ -2,14 +2,16 @@ import type { DayKey } from "@/features/db/localdb";
 import { toDayKey } from "./friendly-date";
 
 export interface NumberStats {
-  count: number;
-  total: number;
+  count: number; // number of entries
+  total: number; // sum of all numbers
   mean: number; // average
-  median: number;
-  min: number;
-  max: number;
-  first: number;
-  last: number;
+  median: number; // middle value
+  min: number; // lowest value
+  max: number; // highest value
+  first: number; // first value
+  last: number; // last value
+  range: number; // max - min
+  change: number; // last - first
 }
 
 /**
@@ -28,7 +30,9 @@ export function computeNumberStats(numbers: number[]): NumberStats | null {
   const max = sorted[sorted.length - 1];
   const first = numbers[0];
   const last = numbers[Math.max(0, numbers.length - 1)];
-  return { count, total, mean, median, min, max, first, last };
+  const range = max - min;
+  const change = last - first;
+  return { count, total, mean, median, min, max, first, last, range, change };
 }
 
 export interface DayStatsData extends NumberStats {
@@ -65,8 +69,7 @@ export function calculateDailyStats(monthData: Record<DayKey, number[]>): DaySta
     .map(([dateStr, nums]): DayStatsData | null => {
       const stats = computeNumberStats(nums);
       if (!stats) return null;
-      const { total, count, mean, median, min, max, first, last } = stats;
-      return { dateStr, total, count, mean, median, min, max, first, last };
+      return { dateStr, ...stats };
     })
     .filter((d): d is DayStatsData => !!d);
 }
@@ -116,8 +119,7 @@ export function calculateMonthlyStats(yearData: Record<DayKey, number[]>, year: 
     
     const stats = computeNumberStats(monthNumbers);
     if (stats) {
-      const { total, count, mean, median, min, max, first, last } = stats;
-      monthStats.push({ monthNumber, total, count, mean, median, min, max, first, last });
+      monthStats.push({ monthNumber, ...stats });
     }
   }
   

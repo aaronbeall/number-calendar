@@ -6,14 +6,20 @@ import { capitalize } from "./utils";
  * Returns the primary metric key based on tracking type.
  */
 export function getPrimaryMetric(tracking: Tracking) {
-  return (tracking === 'series' ? 'total' : 'last') satisfies keyof NumberStats;
+  return ({
+    series: 'total' as const,
+    trend: 'last' as const,
+  })[tracking] satisfies keyof NumberStats;
 }
 
 /**
  * Returns the primary metric label based on tracking type.
  */
 export function getPrimaryMetricLabel(tracking: Tracking): string {
-  return tracking === 'series' ? 'Total' : 'Close';
+  return {
+    series: 'Total',
+    trend: 'Close',
+  }[tracking];
 }
 
 /**
@@ -45,16 +51,18 @@ export function getPrimaryMetricLowFromExtremes(extremes: StatsExtremes, trackin
  * Returns the source of valence (good or bad) based on tracking type.
  */
 export function getValenceSource(tracking: Tracking) {
-  return tracking === 'series' ? 'stats' : 'deltas';
+  return {
+    series: 'stats' as const,
+    trend: 'deltas' as const,
+  }[tracking];
 }
 
 /**
  * Returns the metric to use for valence from the given data based on tracking type.
  */
-export function getValenceMetricFromData(data: { stats: NumberStats; deltas?: NumberStats; }, tracking: Tracking): number {
+export function getValenceMetricFromData(data: { stats: NumberStats; deltas?: NumberStats; }, tracking: Tracking): number | undefined {
   const metric = getPrimaryMetric(tracking);
   const source = getValenceSource(tracking);
   const sourceData = data[source];
-  return sourceData ? sourceData[metric] : 0;
+  return sourceData?.[metric];
 }
-

@@ -1,12 +1,12 @@
 
 
-import { DayCell } from './DayCell';
-import { WeekSummary } from '../stats/WeekSummary';
 import type { DayKey, MonthKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
+import { dateToWeekKey, formatDateAsKey } from '@/lib/friendly-date';
 import type { StatsExtremes } from '@/lib/stats';
-import { formatDateAsKey } from '@/lib/friendly-date';
-import { Fragment } from 'react/jsx-runtime';
 import { useMemo } from 'react';
+import { Fragment } from 'react/jsx-runtime';
+import { WeekSummary } from '../stats/WeekSummary';
+import { DayCell } from './DayCell';
 
 interface DailyGridProps {
   year: number;
@@ -85,6 +85,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
       weekNumbers: number[];
       weekNumber: number;
       isCurrentWeek: boolean;
+      priorWeekNumbers?: number[];
     }>;
     for (let i = 0; i < gridDays.length; i += weekdays.length) {
       const week = gridDays.slice(i, i + weekdays.length);
@@ -110,10 +111,12 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
         const key = formatDateAsKey(d, 'day');
         return monthData[key] || [];
       });
-      weeks.push({ days: week, weekNumbers, weekNumber, isCurrentWeek });
+      const priorWeekKey = datesInWeek.length > 0 ? dateToWeekKey(datesInWeek[0]) : undefined;
+      const priorWeekNumbers = priorWeekKey && priorNumbersMap[priorWeekKey];
+      weeks.push({ days: week, weekNumbers, weekNumber, isCurrentWeek, priorWeekNumbers });
     }
     return weeks;
-  }, [year, month, monthData, gridDays, firstDay, weekdays]);
+  }, [year, month, monthData, priorNumbersMap, gridDays, firstDay, weekdays]);
 
   return (
     <>
@@ -158,6 +161,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
                   numbers={week.weekNumbers}
                   weekNumber={week.weekNumber}
                   isCurrentWeek={week.isCurrentWeek}
+                  priorNumbers={week.priorWeekNumbers}
                   valence={valence}
                   tracking={tracking}
                 />

@@ -78,7 +78,6 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     percents,
     primaryMetric,
     primaryMetricLabel,
-    primaryMetricDelta,
     primaryValenceMetric,
     isHighestPrimary,
     isLowestPrimary,

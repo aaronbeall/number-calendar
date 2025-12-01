@@ -1,6 +1,6 @@
 
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
-import { endOfISOWeek, format, isValid, parse, parseISO, startOfISOWeek, subDays, subMonths, subWeeks, subYears } from 'date-fns';
+import { endOfISOWeek, format, getWeek, isValid, parse, parseISO, startOfISOWeek } from 'date-fns';
 
 // Type guards for date keys
 export function isDayKey(key: DateKey): key is DayKey {
@@ -29,6 +29,19 @@ export function toMonthKey(year: number, month: number): MonthKey {
 }
 export function toYearKey(year: number): YearKey {
   return `${year}`; // YYYY
+}
+
+export function dateToDayKey(date: Date): DayKey {
+  return toDayKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
+}
+export function dateToWeekKey(date: Date): WeekKey {
+  return toWeekKey(date.getFullYear(), getWeek(date));
+}
+export function dateToMonthKey(date: Date): MonthKey {
+  return toMonthKey(date.getFullYear(), date.getMonth() + 1);
+}
+export function dateToYearKey(date: Date): YearKey {
+  return toYearKey(date.getFullYear()); 
 }
 
 /**
@@ -114,9 +127,9 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
 /**
  * Converts an ISO week string (YYYY-Www) to the corresponding date string (YYYY-MM-DD) of the Monday of that week.
  */
-function weekToISODate(week: string): string {
+function weekToISODate(week: WeekKey): string {
   // Parse 'YYYY-Www' as ISO week and return the Monday of that week
-  const date = parse(week, "RRRR-'W'II", new Date());
+  const date = parse(week, "yyyy-'W'ww", new Date());
   const monday = startOfISOWeek(date);
   return format(monday, 'yyyy-MM-dd');
 }
@@ -158,7 +171,7 @@ export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'ye
     case 'day':
       return format(date, 'yyyy-MM-dd') as DayKey;
     case 'week':
-      return format(date, "RRRR-'W'II") as WeekKey;
+      return format(date, "yyyy-'W'ww") as WeekKey;
     case 'month':
       return format(date, 'yyyy-MM') as MonthKey;
     case 'year':
@@ -166,32 +179,4 @@ export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'ye
     default:
       throw new Error('Invalid key type');
   }
-}
-
-/**
- * Returns the prior DateKey for a given DateKey (day, week, month, year).
- * For day: previous day (YYYY-MM-DD)
- * For week: previous ISO week (YYYY-Www)
- * For month: previous month (YYYY-MM)
- * For year: previous year (YYYY)
- */
-export function getPriorDateKey<K extends DateKey>(key: K): K {
-  if (isDayKey(key)) {
-    const prev = subDays(parseISO(key), 1);
-    return format(prev, 'yyyy-MM-dd') as K;
-  }
-  if (isWeekKey(key)) {
-    const prev = subWeeks(parseISO(weekToISODate(key)), 1);
-    // Convert back to ISO week string
-    return format(prev, "RRRR-'W'II") as K;
-  }
-  if (isMonthKey(key)) {
-    const prev = subMonths(parseISO(key + '-01'), 1);
-    return format(prev, 'yyyy-MM') as K;
-  }
-  if (isYearKey(key)) {
-    const prev = subYears(parseISO(key + '-01-01'), 1);
-    return format(prev, 'yyyy') as K;
-  }
-  throw new Error('Invalid DateKey: ' + key);
 }

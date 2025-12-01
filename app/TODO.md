@@ -91,3 +91,4 @@ I'm liking this one.
 - [x] Negative year summary has green
 - [ ] Hide weekends is causing June days to be wrong
 - [ ] Deleting a prior day numbers does not update deltas (changing normally it does)
+- [ ] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun

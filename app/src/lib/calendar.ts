@@ -1,8 +1,8 @@
 import type { DayKey, MonthKey, Tracking, WeekKey } from "@/features/db/localdb";
-import { toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
+import { getWeek, parseISO } from "date-fns";
+import { dateToWeekKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import { computeNumberStats, getStatsDelta, getStatsPercentChange, type StatsExtremes } from "./stats";
 import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceMetricFromData, getValenceSource } from "./tracking";
-import { getISOWeek, getISOWeekYear, parseISO } from "date-fns";
 
 
 export function getMonthDays(year: number, month: number) {
@@ -23,11 +23,11 @@ export function getCalendarData(numbers: number[], priorNumbers: number[] | unde
   const deltas = (stats && priorStats) ? getStatsDelta(stats, priorStats) : undefined;
   const percents = (stats && priorStats) ? getStatsPercentChange(stats, priorStats) : undefined;
   const valenceStats = { stats, deltas }[getValenceSource(tracking)];
-  const primaryMetric = stats ? getPrimaryMetricFromStats(stats, tracking) : 0;
+  const primaryMetric = stats ? getPrimaryMetricFromStats(stats, tracking) : undefined;
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
   const primaryMetricDelta = deltas && deltas[getPrimaryMetric(tracking)];
   const primaryMetricPercent = percents && percents[getPrimaryMetric(tracking)];
-  const primaryValenceMetric = stats ? getValenceMetricFromData({ stats, deltas }, tracking) : 0;
+  const primaryValenceMetric = (stats && getValenceMetricFromData({ stats, deltas }, tracking)) ?? stats?.change; // Use change (last - first) as fallback
   const hasData = numbers.length > 0;
   return {
     stats,
@@ -52,7 +52,6 @@ export function getCalendarData(numbers: number[], priorNumbers: number[] | unde
     isLowestMax: hasData && extremes && stats?.max === extremes.lowestMax,
   }
 }
-// Given an ordered array of date keys and a data map, returns a map of dateKey -> prior populated numbers (previous non-empty entry)
 
 export function getPriorNumbersMap(
   days: DayKey[],
@@ -86,8 +85,8 @@ export function getPriorNumbersMap(
   const weekMap = new Map<WeekKey, { days: DayKey[]; numbers: number[] }>();
   for (const dayKey of days) {
     const date = parseISO(dayKey);
-    const week = getISOWeek(date);
-    const year = getISOWeekYear(date);
+    const week = getWeek(date);
+    const year = date.getFullYear();
     const weekKey = toWeekKey(year, week);
     if (!weekMap.has(weekKey)) weekMap.set(weekKey, { days: [], numbers: [] });
     weekMap.get(weekKey)!.days.push(dayKey);
@@ -102,9 +101,7 @@ export function getPriorNumbersMap(
     const priorKeys = Object.keys(priorMonthData).sort() as DayKey[];
     for (const dayKey of priorKeys) {
       const date = parseISO(dayKey);
-      const week = getISOWeek(date);
-      const year = getISOWeekYear(date);
-      const weekKey = toWeekKey(year, week);
+      const weekKey = dateToWeekKey(date);
       if (!priorWeekMap.has(weekKey)) priorWeekMap.set(weekKey, []);
       const nums = priorMonthData[dayKey];
       if (nums && nums.length > 0) {

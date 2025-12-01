@@ -25,7 +25,6 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
 
   const isToday = date.toDateString() === new Date().toDateString();
 
-
   const isPast = date < new Date(new Date().toDateString());
   const isFuture = date > new Date(new Date().toDateString());
 

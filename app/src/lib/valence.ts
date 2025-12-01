@@ -55,8 +55,8 @@ export function isNeutral(value: boolean | number, valence: Valence): boolean {
  * ) // returns { text: 'green', background: 'lightgreen' }
  * ```
  */
-export function getValueForValence<T>(value: boolean | number, valence: Valence, { good, bad, neutral }: { good: T; bad: T; neutral: T }): T {
-  if (isGood(value, valence)) return good;
-  if (isBad(value, valence)) return bad;
+export function getValueForValence<T>(value: number | boolean | null | undefined, valence: Valence, { good, bad, neutral }: { good: T; bad: T; neutral: T; positive?: T; negative?: T }): T {
+  if (isGood(value ?? 0, valence)) return good;
+  if (isBad(value ?? 0, valence)) return bad;
   return neutral;
 }
