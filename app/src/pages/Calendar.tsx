@@ -47,7 +47,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const monthExtremes = useMemo(() => {
     const dailyStats = calculateDailyStats(monthData);
     return calculateMonthExtremes(dailyStats);
-  }, [yearData, year]);
+  }, [monthData]);
 
   // Calculate extremes across all months in the year for MonthSummary highlighting
   const yearExtremes = useMemo(() => {

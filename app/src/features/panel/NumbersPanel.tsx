@@ -58,15 +58,15 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
 
   // Local state for the expression input, initialized from numbers
-  const [expression, setExpression] = React.useState<string>(buildExpressionFromNumbers(numbers));
+  const [expression, setExpression] = React.useState<string>(buildExpressionFromNumbers(numbers, tracking));
 
   // Derive parsedNumbers from expression
-  const parsedNumbers = React.useMemo(() => parseExpression(expression), [expression]);
+  const parsedNumbers = React.useMemo(() => parseExpression(expression, tracking), [expression, tracking]);
 
   // Update expression when numbers change
   React.useEffect(() => {
-    setExpression(buildExpressionFromNumbers(numbers));
-  }, [numbers]);
+    setExpression(buildExpressionFromNumbers(numbers, tracking));
+  }, [numbers, tracking]);
 
   // Use parsedNumbers if available, otherwise fallback to numbers
   const displayNumbers = parsedNumbers !== null ? parsedNumbers : numbers;
@@ -98,7 +98,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   }, [items, sortMode]);
 
   const handleExpressionSave = (value: string) => {
-    const inputNumbers = parseExpression(value);
+    const inputNumbers = parseExpression(value, tracking);
     if (inputNumbers !== null) {
       // Only save if inputNumbers differs from numbers
       const isDifferent = inputNumbers.length !== numbers.length || inputNumbers.some((n, i) => n !== numbers[i]);
@@ -106,11 +106,11 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
         onSave?.(inputNumbers);
       } else {
         // Revert expression to current numbers
-        setExpression(buildExpressionFromNumbers(numbers));
+        setExpression(buildExpressionFromNumbers(numbers, tracking));
       }
     } else {
       // Invalid expression - revert to current numbers
-      setExpression(buildExpressionFromNumbers(numbers));
+      setExpression(buildExpressionFromNumbers(numbers, tracking));
     }
   };
 
@@ -130,7 +130,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   // Handler for add number
   const handleAddNumber = (finalNumber: number) => {
     onSave?.([...numbers, finalNumber]);
-    setExpression(buildExpressionFromNumbers([...numbers, finalNumber]));
+    setExpression(buildExpressionFromNumbers([...numbers, finalNumber], tracking));
     setAdding(false);
   };
 
@@ -164,7 +164,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 setExpression(e.target.value);
               }}
               onBlur={e => handleExpressionSave(e.target.value)}
-              placeholder="Example: 1+2-5"
+              placeholder={tracking === 'series' ? 'Example: 1+2-5' : 'Example: 35 21 -76'}
               className="text-sm border-blue-300 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
               autoFocus
               onKeyDown={e => {
@@ -172,7 +172,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   e.currentTarget.blur(); // Trigger onBlur which will save
                 }
                 if (e.key === 'Escape') {
-                  const originalExpr = buildExpressionFromNumbers(numbers);
+                  const originalExpr = buildExpressionFromNumbers(numbers, tracking);
                   setExpression(originalExpr);
                   (e.target as HTMLInputElement).value = originalExpr;
                   e.currentTarget.blur();
@@ -199,7 +199,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                         nextNumbers = numbers.map((val, idx) => (idx === originalIndex ? next : val));
                       }
                       onSave?.(nextNumbers);
-                      setExpression(buildExpressionFromNumbers(nextNumbers));
+                      setExpression(buildExpressionFromNumbers(nextNumbers, tracking));
                     } : undefined}
                   />
                 ))
