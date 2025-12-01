@@ -8,6 +8,7 @@ import { Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { CalendarDays } from 'lucide-react';
+import { getRelativeSize } from '@/lib/charts';
 
 interface MonthCellProps {
   month: number;
@@ -27,18 +28,6 @@ export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrent
   const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
   const primaryMetric = stats ? stats[getPrimaryMetric(tracking)] : 0;
   const primaryLabel = getPrimaryMetricLabel(tracking);
-  
-  // Calculate dot sizes based on year's extremes
-  const getRelativeSize = (value: number): number => {
-    if (!yearExtremes || (yearExtremes.highestMax === undefined && yearExtremes.lowestMin === undefined)) return 1;
-    const absValue = Math.abs(value);
-    const absMin = Math.abs(yearExtremes.lowestMin ?? 0);
-    const absMax = Math.abs(yearExtremes.highestMax ?? 0);
-    const maxMagnitude = Math.max(absMin, absMax);
-    if (maxMagnitude === 0) return 1;
-    // Scale from 0.6 to 2.4 based on relative magnitude
-    return .6 + (absValue / maxMagnitude) * 1.8;
-  };
   
   // Check if this month has extreme values
   const isHighestPrimary = yearExtremes && stats && primaryMetric === getPrimaryMetricHighFromExtremes(yearExtremes, tracking);
@@ -162,7 +151,7 @@ export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrent
                   const numbersForDay = dayObj.numbers;
                   const totalDay = numbersForDay.reduce((a, b) => a + b, 0);
                   const isFuture = date > today;
-                  const scale = getRelativeSize(totalDay);
+                  const scale = getRelativeSize(totalDay, yearExtremes, 0.6, 1.6);
                   const baseClass = 'w-1.5 h-1.5 rounded-full transition-all duration-200';
                   let colorClass;
                   if (isFuture) {

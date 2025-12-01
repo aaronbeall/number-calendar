@@ -58,6 +58,19 @@ export function getValenceSource(tracking: Tracking) {
 }
 
 /**
+ * Returns the valence-adjusted value for a number based on tracking type.
+ */
+export function getValenceValueForNumber(number: number, priorNumber: number | undefined, tracking: Tracking): number {
+  if (tracking === 'trend') {
+    if (priorNumber === undefined) {
+      return 0;
+    }
+    return number - priorNumber;
+  }
+  return number;
+}
+
+/**
  * Returns the metric to use for valence from the given data based on tracking type.
  */
 export function getValenceMetricFromData(data: { stats: NumberStats; deltas?: NumberStats; }, tracking: Tracking): number | undefined {

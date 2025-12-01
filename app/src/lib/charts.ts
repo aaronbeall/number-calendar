@@ -1,4 +1,5 @@
 import type { Tracking } from "@/features/db/localdb";
+import type { StatsExtremes } from "./stats";
 
 export interface NumbersChartDataPoint {
   x: number;
@@ -62,3 +63,15 @@ export function getChartData(numbers: number[], tracking: Tracking): NumbersChar
         secondaryLabel: '',
       }));
 }
+
+  export const getRelativeSize = (value: number, extremes?: StatsExtremes, minScale: number = 0.4, maxScale: number = 1): number => {
+    if (!extremes) return 1;
+    const { lowestMin: min, highestMax: max } = extremes;
+    if (min === undefined || max === undefined) return 1;
+    const absValue = Math.abs(value);
+    const absMin = Math.abs(min);
+    const absMax = Math.abs(max);
+    const maxMagnitude = Math.max(absMin, absMax);
+    if (maxMagnitude === 0) return 1;
+    return minScale + (absValue / maxMagnitude) * (maxScale - minScale);
+  };

@@ -9,7 +9,7 @@ import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import type { StatsExtremes } from '@/lib/stats';
-import { getPrimaryMetric } from "@/lib/tracking";
+import { getPrimaryMetric, getValenceValueForNumber } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
@@ -188,6 +188,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <EditableNumberBadge
                     key={`${originalIndex}-${n}`}
                     value={n}
+                    valenceValue={getValenceValueForNumber(n, displayNumbers[originalIndex - 1] ?? priorNumbers?.[priorNumbers?.length - 1], tracking)}
                     editable={!!editableNumbers}
                     valence={valence}
                     onCommit={editableNumbers ? (next) => {
@@ -336,7 +337,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           {/* Micro cumulative line chart below numbers, in its own box */}
           {chartData.length > 1 && (
             <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 mt-2 flex items-center justify-center">
-              <ChartContainer config={{ numbers: { color: getValueForValence(stats?.total ?? 0, valence, {
+              <ChartContainer config={{ numbers: { color: getValueForValence(primaryMetric, valence, {
                 good: '#22c55e',
                 bad: '#ef4444',
                 neutral: '#3b82f6',
@@ -345,18 +346,18 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                   <Line
                     type="monotone"
                     dataKey="y"
-                    stroke={getValueForValence(stats?.total ?? 0, valence, {
+                    stroke={getValueForValence(primaryValenceMetric, valence, {
                       good: '#22c55e',
                       bad: '#ef4444',
                       neutral: '#3b82f6',
                     })}
                     strokeWidth={2}
-                    dot={{ r: 2, stroke: 'none', fill: getValueForValence(stats?.total ?? 0, valence, {
+                    dot={{ r: 2, stroke: 'none', fill: getValueForValence(primaryValenceMetric, valence, {
                       good: '#22c55e',
                       bad: '#ef4444',
                       neutral: '#3b82f6',
                     }) }}
-                    activeDot={{ r: 3, stroke: 'none', fill: getValueForValence(stats?.total ?? 0, valence, {
+                    activeDot={{ r: 3, stroke: 'none', fill: getValueForValence(primaryValenceMetric, valence, {
                       good: '#22c55e',
                       bad: '#ef4444',
                       neutral: '#3b82f6',
@@ -364,7 +365,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     isAnimationActive={false}
                   />
                   <Tooltip
-                    cursor={{ fill: getValueForValence(stats?.total ?? 0, valence, {
+                    cursor={{ fill: getValueForValence(primaryValenceMetric, valence, {
                       good: 'rgba(16,185,129,0.08)',
                       bad: 'rgba(239,68,68,0.08)',
                       neutral: 'rgba(59,130,246,0.08)',

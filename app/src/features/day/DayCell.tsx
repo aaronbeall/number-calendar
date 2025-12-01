@@ -7,20 +7,20 @@ import { getValueForValence } from '@/lib/valence';
 import { Skull, TrendingDown, TrendingUp, TrendingUpDown, Trophy } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
+import { getRelativeSize } from '@/lib/charts';
+import { getValenceValueForNumber } from '@/lib/tracking';
 
 export interface DayCellProps {
   date: Date;
   numbers: number[];
   onSave: (numbers: number[]) => void;
-  monthMin?: number;
-  monthMax?: number;
   monthExtremes?: StatsExtremes;
   valence: Valence;
   priorNumbers?: number[];
   tracking: Tracking;
 }
 
-export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMin, monthMax, monthExtremes, valence, priorNumbers, tracking }) => {
+export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthExtremes, valence, priorNumbers, tracking }) => {
   const [editMode, setEditMode] = useState(false);
 
   const isToday = date.toDateString() === new Date().toDateString();
@@ -75,18 +75,6 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
   function handleClose(): void {
     setEditMode(false);
   }
-
-  // Calculate dot sizes based on month's min/max
-  const getRelativeSize = (value: number): number => {
-    if (monthMin === undefined || monthMax === undefined) return 1;
-    const absValue = Math.abs(value);
-    const absMin = Math.abs(monthMin);
-    const absMax = Math.abs(monthMax);
-    const maxMagnitude = Math.max(absMin, absMax);
-    if (maxMagnitude === 0) return 1;
-    // Scale from 0.4 to 1.0 based on relative magnitude
-    return 0.4 + (absValue / maxMagnitude) * 0.6;
-  };
 
   return (
     <div className="relative h-full">
@@ -193,9 +181,10 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthMi
             {/* Micro dots visualization - Shows composition */}
             <div className="flex flex-wrap gap-1 justify-center items-center min-h-[16px] px-1">
               {numbers.map((num, idx) => {
-                const scale = getRelativeSize(num);
+                const scale = getRelativeSize(num, monthExtremes, 0.4, 1);
                 const size = scale * 8; // Base size 8px, scaled down to ~3.2px min
-                const colorClass = getValueForValence(num, valence, {
+                const prioNum = numbers[idx - 1] ?? priorNumbers?.[priorNumbers?.length - 1];
+                const colorClass = getValueForValence(getValenceValueForNumber(num, prioNum, tracking), valence, {
                   good: 'bg-green-500 dark:bg-green-600',
                   bad: 'bg-red-500 dark:bg-red-600',
                   neutral: 'bg-slate-400 dark:bg-slate-500',
