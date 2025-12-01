@@ -12,12 +12,12 @@ type YearChartGroup = 'daily' | 'monthly';
 
 interface YearChartProps {
   year: number;
-  yearData: Record<string, number[]>;
+  yearData: Record<DayKey, number[]>;
   valence: Valence;
 }
 
 // Helper to group data by month
-function groupByMonth(yearData: Record<string, number[]>): { month: number; numbers: number[] }[] {
+function groupByMonth(yearData: Record<DayKey, number[]>): { month: number; numbers: number[] }[] {
   const months: { month: number; numbers: number[] }[] = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, numbers: [] }));
   Object.entries(yearData).forEach(([date, nums]) => {
     const [, month] = date.split('-').map(Number);

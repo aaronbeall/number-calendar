@@ -13,7 +13,7 @@ import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorNumbersMap } from "@/lib/calendar";
 import { toMonthKey } from '@/lib/friendly-date';
 import { calculateDailyStats, calculateMonthExtremes, calculateMonthlyStats, calculateYearExtremes, type StatsExtremes } from '@/lib/stats';
-import { BarChart as BarChartIcon, CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3, LineChart as LineChartIcon } from 'lucide-react';
+import { CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export function Calendar({ dataset }: { dataset: Dataset; }) {

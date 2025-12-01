@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
-import type { Valence } from '@/features/db/localdb';
+import type { DayKey, Valence } from '@/features/db/localdb';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
 
@@ -10,7 +10,7 @@ type MonthChartMode = 'serial' | 'cumulative';
 type MonthChartGroup = 'daily' | 'all';
 
 export interface MonthChartProps {
-  days: { date: string; numbers: number[] }[];
+  days: { date: DayKey; numbers: number[] }[];
   valence: Valence;
 }
 
