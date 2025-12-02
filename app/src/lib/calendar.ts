@@ -64,7 +64,7 @@ export function getCalendarData(numbers: number[], priorNumbers: number[] | unde
   }
 }
 
-export function getPriorNumbersMap(
+export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
   priorMonthData: Record<DayKey, number[]> | undefined
@@ -147,6 +147,55 @@ export function getPriorNumbersMap(
   const firstDay = parseISO(days[0]);
   const monthKey = toMonthKey(firstDay.getFullYear(), firstDay.getMonth() + 1);
   result[monthKey] = priorMonthNumbers;
+
+  return result;
+}
+
+export function getPriorYearMonthNumbersMap(year: number, yearData: Record<DayKey, number[]>, priorYearMonthData?: Record<DayKey, number[]>): Record<DayKey | MonthKey, number[]> {
+  const result = {} as Record<DayKey | MonthKey, number[]>;
+  let lastPopulated: number[] = [];
+
+  // Seed lastPopulated with last non-empty entry from priorYearMonthData, if available
+  if (priorYearMonthData) {
+    const priorKeys = Object.keys(priorYearMonthData).sort() as DayKey[];
+    for (let i = priorKeys.length - 1; i >= 0; i--) {
+      const nums = priorYearMonthData[priorKeys[i]];
+      if (nums && nums.length > 0) {
+        lastPopulated = nums;
+        break;
+      }
+    }
+  }
+
+  // Get all numbers from priorYearMonthData for the first month
+  const priorYearNumbers = priorYearMonthData ? Object.values(priorYearMonthData).flat() : [];
+  let lastPopulatedMonth: number[] = priorYearNumbers;
+
+  // Iterate through each month in the year
+  for (let m = 1; m <= 12; m++) {
+    const monthKey = toMonthKey(year, m);
+    const monthDays = getMonthDays(year, m);
+
+    // Populate month key with prior month's aggregated numbers
+    result[monthKey] = lastPopulatedMonth;
+
+    // Collect all numbers from current month for next month's prior
+    const currentMonthNumbers: number[] = [];
+
+    // Populate result for each day in the month
+    for (const day of monthDays) {
+      result[day] = lastPopulated;
+      if (yearData[day] && yearData[day].length > 0) {
+        lastPopulated = yearData[day];
+        currentMonthNumbers.push(...yearData[day]);
+      }
+    }
+
+    // Update lastPopulatedMonth for the next iteration
+    if (currentMonthNumbers.length > 0) {
+      lastPopulatedMonth = currentMonthNumbers;
+    }
+  }
 
   return result;
 }

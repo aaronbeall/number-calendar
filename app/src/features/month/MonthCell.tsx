@@ -1,8 +1,7 @@
 import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import type { StatsExtremes } from '@/lib/stats';
-import { computeNumberStats } from '@/lib/stats';
-import { getPrimaryMetric, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes } from "@/lib/tracking";
+import { getCalendarData } from '@/lib/calendar';
 import { getValueForValence } from '@/lib/valence';
 import { Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -14,6 +13,7 @@ interface MonthCellProps {
   month: number;
   monthName: string;
   numbers: number[];
+  priorNumbers?: number[];
   monthDays?: { date: Date; numbers: number[] }[];
   isCurrentMonth: boolean;
   isFutureMonth?: boolean;
@@ -23,31 +23,34 @@ interface MonthCellProps {
   tracking: Tracking;
 }
 
-export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking }: MonthCellProps) {
+export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking }: MonthCellProps) {
   const [panelOpen, setPanelOpen] = useState(false);
-  const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
-  const primaryMetric = stats ? stats[getPrimaryMetric(tracking)] : 0;
-  const primaryLabel = getPrimaryMetricLabel(tracking);
   
-  // Check if this month has extreme values
-  const isHighestPrimary = yearExtremes && stats && primaryMetric === getPrimaryMetricHighFromExtremes(yearExtremes, tracking);
-  const isLowestPrimary = yearExtremes && stats && primaryMetric === getPrimaryMetricLowFromExtremes(yearExtremes, tracking);
-  const isHighestCount = yearExtremes && stats && stats.count === yearExtremes.highestCount;
-  const isHighestMean = yearExtremes && stats && stats.mean === yearExtremes.highestMean;
-  const isLowestMean = yearExtremes && stats && stats.mean === yearExtremes.lowestMean;
-  const isHighestMedian = yearExtremes && stats && stats.median === yearExtremes.highestMedian;
-  const isLowestMedian = yearExtremes && stats && stats.median === yearExtremes.lowestMedian;
-  const isHighestMin = yearExtremes && stats && stats.min === yearExtremes.highestMin;
-  const isLowestMin = yearExtremes && stats && stats.min === yearExtremes.lowestMin;
-  const isHighestMax = yearExtremes && stats && stats.max === yearExtremes.highestMax;
-  const isLowestMax = yearExtremes && stats && stats.max === yearExtremes.lowestMax;
+  // Use getCalendarData for all stats, deltas, extremes, valence, etc.
+  const {
+    stats,
+    valenceStats,
+    primaryMetric,
+    primaryValenceMetric,
+    isHighestPrimary,
+    isLowestPrimary,
+    isHighestCount,
+    isHighestMean,
+    isLowestMean,
+    isHighestMedian,
+    isLowestMedian,
+    isHighestMin,
+    isLowestMin,
+    isHighestMax,
+    isLowestMax,
+  } = useMemo(() => getCalendarData(numbers, priorNumbers, yearExtremes, tracking), [numbers, priorNumbers, yearExtremes, tracking]);
   
   // Unified tile style for monthly grid, with color effect (valence-aware)
   const getColorClasses = () => {
     if (!stats) {
       return 'bg-slate-50 dark:bg-slate-800 shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200';
     }
-    return getValueForValence(primaryMetric, valence, {
+    return getValueForValence(primaryValenceMetric ?? 0, valence, {
       good: 'bg-green-50 dark:bg-[#1a3a2a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
       bad: 'bg-red-50 dark:bg-[#3a1a1a] shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
       neutral: 'bg-slate-50 dark:bg-slate-800 shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg rounded-lg transition-all duration-200',
@@ -89,6 +92,7 @@ export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrent
         isOpen={panelOpen}
         title={`${monthName}`}
         numbers={numbers}
+        priorNumbers={priorNumbers}
         extremes={yearExtremes}
         editableNumbers={false}
         showExpressionInput={false}
@@ -108,8 +112,7 @@ export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrent
         <div className="space-y-3">
           {/* Primary metric - Most important metric, centered and prominent */}
           <div className="text-center">
-            <NumberText value={primaryMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} className="text-3xl font-bold" valence={valence} />
-            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">{primaryLabel}</div>
+            <NumberText value={primaryMetric ?? 0} valenceValue={primaryValenceMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} className="text-3xl font-bold" valence={valence} />
             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {isHighestCount ? (
                 <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">
@@ -200,25 +203,25 @@ export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrent
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Mean
               </div>
-              <NumberText value={stats.mean as number} isHighest={!!isHighestMean} isLowest={!!isLowestMean} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} valence={valence} />
+              <NumberText value={stats.mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} isHighest={!!isHighestMean} isLowest={!!isLowestMean} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} valence={valence} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Median
               </div>
-              <NumberText value={stats.median as number} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} valence={valence} />
+              <NumberText value={stats.median} valenceValue={valenceStats?.median ?? primaryValenceMetric} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} className="font-semibold text-sm" formatOptions={{ minimumFractionDigits: 1, maximumFractionDigits: 1 }} valence={valence} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Min
               </div>
-              <NumberText value={stats.min} isHighest={!!isHighestMin} isLowest={!!isLowestMin} className="font-semibold text-sm" valence={valence} />
+              <NumberText value={stats.min} valenceValue={valenceStats?.min ?? primaryValenceMetric} isHighest={!!isHighestMin} isLowest={!!isLowestMin} className="font-semibold text-sm" valence={valence} />
             </div>
             <div className="text-center">
               <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Max
               </div>
-              <NumberText value={stats.max} isHighest={!!isHighestMax} isLowest={!!isLowestMax} className="font-semibold text-sm" valence={valence} />
+              <NumberText value={stats.max} valenceValue={valenceStats?.max ?? primaryValenceMetric} isHighest={!!isHighestMax} isLowest={!!isLowestMax} className="font-semibold text-sm" valence={valence} />
             </div>
           </div>
         </div>

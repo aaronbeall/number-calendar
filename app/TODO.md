@@ -28,6 +28,7 @@ I'm liking this one.
 - [x] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
 - [x] Highlight extremes on calendar
+- [ ] Show extremes in numbers panel (month, year)
 - [ ] Show deltas/percent change
   - [ ] Highlight delta extremes
 - [ ] Calendar options

@@ -4,16 +4,16 @@ import { MonthChart } from '@/features/chart/MonthChart';
 import { TrendChart } from '@/features/chart/TrendChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
-import type { Dataset } from '@/features/db/localdb';
+import type { Dataset, DayKey } from '@/features/db/localdb';
 import { useMonth, useMostRecentPopulatedMonthBefore, useSaveDay, useYear } from '@/features/db/useCalendarData';
 import { MonthlyGrid } from '@/features/month/MonthlyGrid';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
-import { getMonthDays, getPriorNumbersMap } from "@/lib/calendar";
-import { toMonthKey } from '@/lib/friendly-date';
-import { calculateDailyStats, calculateDailyExtremes, calculateMonthlyStats, calculateMonthlyExtremes, type StatsExtremes } from '@/lib/stats';
+import { getMonthDays, getPriorMonthNumbersMap, getPriorYearMonthNumbersMap } from "@/lib/calendar";
+import { toDayKey, toMonthKey } from '@/lib/friendly-date';
+import { calculateDailyExtremes, calculateDailyStats, calculateMonthlyExtremes, calculateMonthlyStats, type StatsExtremes } from '@/lib/stats';
 import { CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -42,8 +42,8 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
     await saveDayMutation.mutateAsync({ datasetId: dataset.id, date: date as `${number}-${number}-${number}`, numbers });
   };
 
-  const days = getMonthDays(year, month);
-  const allNumbers = Object.values(monthData).flat();
+  const daysOfMonth = getMonthDays(year, month);
+  const monthNumbers = Object.values(monthData).flat();
   
   // Calculate extremes across all days for highlighting and dot scaling
   const monthExtremes = useMemo(() => {
@@ -60,13 +60,19 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
 
-  // Find the most recent populated entry before the first day of the current month
-  const firstDayStr = days[0];
-  const { data: priorMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, firstDayStr);
-  // Precompute prior populated numbers map for all days in the month, seeded with the most recent entry before the period
-  const priorNumbersMap = useMemo(() => {
-    return getPriorNumbersMap(days, monthData, priorMonthData);
-  }, [days, monthData, priorMonthData]);
+  // Get prior month numbers map for daily view
+  const firstDayOfMonthStr = view === 'daily' ? daysOfMonth[0] : '' as DayKey;
+  const { data: priorMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, firstDayOfMonthStr);
+  const priorMonthNumbersMap = useMemo(() => {
+    return view === 'daily' ? getPriorMonthNumbersMap(daysOfMonth, monthData, priorMonthData) : {};
+  }, [daysOfMonth, monthData, priorMonthData, view]);
+
+  // Get prior year month numbers map for monthly view
+  const firstDayOfYearStr = view === 'monthly' ? toDayKey(year, 1, 1) : '' as DayKey;
+  const { data: priorYearMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, firstDayOfYearStr);
+  const priorYearMonthNumbersMap = useMemo(() => {
+    return view === 'monthly' ? getPriorYearMonthNumbersMap(year, yearData, priorYearMonthData) : {};
+  }, [year, yearData, priorYearMonthData, view]);
 
   return (
   <div className="min-h-screen">
@@ -198,7 +204,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               month={month}
               showWeekends={showWeekends}
               monthData={monthData}
-              priorNumbersMap={priorNumbersMap}
+              priorNumbersMap={priorMonthNumbersMap}
               valence={dataset.valence}
               tracking={dataset.tracking}
               monthExtremes={monthExtremes}
@@ -211,14 +217,14 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                 setPanelProps({
                   isOpen: true,
                   title: `${monthNames[month - 1]}`,
-                  numbers: allNumbers,
-                  priorNumbers: priorNumbersMap[toMonthKey(year, month)],
+                  numbers: monthNumbers,
+                  priorNumbers: priorMonthNumbersMap[toMonthKey(year, month)],
                   extremes: yearExtremes,
                 });
               }} className="cursor-pointer">
               <MonthSummary 
-                numbers={allNumbers} 
-                priorNumbers={priorNumbersMap[toMonthKey(year, month)]}
+                numbers={monthNumbers} 
+                priorNumbers={priorMonthNumbersMap[toMonthKey(year, month)]}
                 monthName={monthNames[month - 1]} 
                 isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
                 yearExtremes={yearExtremes}
@@ -236,11 +242,11 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   month={month}
                   data={monthData}
                   valence={dataset.valence}
-                  priorDay={priorNumbersMap[days[0]]}
+                  priorDay={priorMonthNumbersMap[daysOfMonth[0]]}
                 />
               ) : (
                 <MonthChart
-                  days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
+                  days={daysOfMonth.map(date => ({ date, numbers: monthData[date] || [] }))}
                   valence={dataset.valence}
                 />
               )}
@@ -260,6 +266,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               }}
               valence={dataset.valence}
               tracking={dataset.tracking}
+              priorNumbersMap={priorYearMonthNumbersMap}
             />
 
             {/* Year Summary */}
@@ -291,6 +298,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   year={year}
                   data={yearData}
                   valence={dataset.valence}
+                  // Todo: prior day for year view?
                 />
               ) : (
                 <YearChart

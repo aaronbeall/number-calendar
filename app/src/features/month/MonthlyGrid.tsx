@@ -1,5 +1,5 @@
-import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
-import { toDayKey } from '@/lib/friendly-date';
+import type { DayKey, MonthKey, Tracking, Valence } from '@/features/db/localdb';
+import { toDayKey, toMonthKey } from '@/lib/friendly-date';
 import { type StatsExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
 import { MonthCell } from './MonthCell';
@@ -11,9 +11,10 @@ interface MonthlyGridProps {
   onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;
+  priorNumbersMap: Record<DayKey | MonthKey, number[]>;
 }
 
-export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence, tracking }: MonthlyGridProps) {
+export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence, tracking, priorNumbersMap }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -22,7 +23,11 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
 
   // Memoized map of month data
   const monthDataMap = useMemo(() => {
-    const map = new Map<number, { all: number[]; days: { date: Date; numbers: number[] }[] }>();
+    const map = new Map<number, { 
+      all: number[]; 
+      days: { date: Date; numbers: number[]
+      // priorDays: Record<DayKey, number[]>
+      }[] }>();
     
     for (let monthNumber = 1; monthNumber <= 12; monthNumber++) {
       const all: number[] = [];
@@ -61,6 +66,7 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
             month={monthNumber}
             monthName={monthName}
             numbers={monthNumbers}
+            priorNumbers={priorNumbersMap[toMonthKey(year, monthNumber)]}
             monthDays={monthDays}
             isCurrentMonth={isCurrentMonth}
             isFutureMonth={isFutureMonth}
