@@ -61,14 +61,14 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
   let ghostClasses = '';
   if (isFuture) {
     bgColor = 'bg-slate-100 dark:bg-slate-800/60'; // Faded neutral, ghosted
-    ghostClasses = 'opacity-50 saturate-0 cursor-default hover:shadow-none';
+    ghostClasses = 'opacity-50 cursor-default hover:shadow-none';
   } else if (!hasData) {
     bgColor = isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900';
   } else {
     bgColor = getValueForValence(primaryValenceMetric, valence, {
       good: 'bg-green-50 dark:bg-[#1a3a2a]',
       bad: 'bg-red-50 dark:bg-[#3a1a1a]',
-      neutral: isPast ? 'bg-slate-100 dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900',
+      neutral: 'bg-slate-100 dark:bg-slate-800',
     });
   }
 

@@ -62,7 +62,9 @@ export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays =
   // Per-stat value color handled by NumberText component
   // Total uses same coloring as other stats via getValueColorClass
 
-  const ghostClasses = isFutureMonth ? 'bg-slate-100 dark:bg-slate-800/60 opacity-50 saturate-0 cursor-default hover:shadow-none' : '';
+  const ghostClasses = isFutureMonth 
+    ? 'bg-slate-100 dark:bg-slate-800/60 opacity-50 saturate-0 cursor-default hover:shadow-none' 
+    : '';
 
   // Highlight if panel is open
   const isSelected = panelOpen;
