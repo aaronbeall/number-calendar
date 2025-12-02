@@ -62,6 +62,8 @@ I'm liking this one.
 - [ ] Preserve dates for numbers in numbers panel (tooltip, display by date)
 - [ ] Cell tooltips (consise number panel info)
 - [ ] Growth projections
+- [ ] Search
+- [ ] Filter by expression
 
 ## Product
 - [x] Dark mode

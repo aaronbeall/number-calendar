@@ -1,6 +1,8 @@
 import type { DayKey, MonthKey, Tracking, Valence } from '@/features/db/localdb';
-import { toDayKey, toMonthKey } from '@/lib/friendly-date';
+import { getMonthDays } from '@/lib/calendar';
+import { toMonthKey } from '@/lib/friendly-date';
 import { type StatsExtremes } from '@/lib/stats';
+import { parseISO } from 'date-fns';
 import { useMemo } from 'react';
 import { MonthCell } from './MonthCell';
 
@@ -23,30 +25,33 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
 
   // Memoized map of month data
   const monthDataMap = useMemo(() => {
-    const map = new Map<number, { 
-      all: number[]; 
-      days: { date: Date; numbers: number[]
-      // priorDays: Record<DayKey, number[]>
-      }[] }>();
-    
+    const map = new Map<number, {
+      all: number[];
+      days: {
+        date: Date; 
+        numbers: number[]; 
+        priorNumbers: number[]
+      }[]
+    }>();
+
     for (let monthNumber = 1; monthNumber <= 12; monthNumber++) {
       const all: number[] = [];
-      const days: { date: Date; numbers: number[] }[] = [];
-      const lastDay = new Date(year, monthNumber, 0).getDate();
-      
-      for (let day = 1; day <= lastDay; day++) {
-        const date = new Date(year, monthNumber - 1, day);
-        const dateStr = toDayKey(year, monthNumber, day);
+      const days: { date: Date; numbers: number[]; priorNumbers: number[] }[] = [];
+      const monthDayKeys = getMonthDays(year, monthNumber);
+
+      for (const dateStr of monthDayKeys) {
+        const date = parseISO(dateStr);
         const dayNumbers = yearData[dateStr] || [];
+        const dayPriorNumbers = priorNumbersMap[dateStr] || [];
         all.push(...dayNumbers);
-        days.push({ date, numbers: dayNumbers });
+        days.push({ date, numbers: dayNumbers, priorNumbers: dayPriorNumbers });
       }
-      
+
       map.set(monthNumber, { all, days });
     }
-    
+
     return map;
-  }, [yearData, year]);
+  }, [yearData, year, priorNumbersMap]);
 
   const currentDate = new Date();
   const isCurrentYear = year === currentDate.getFullYear();

@@ -60,14 +60,14 @@ export function getValenceSource(tracking: Tracking) {
 /**
  * Returns the valence-adjusted value for a number based on tracking type.
  */
-export function getValenceValueForNumber(number: number, priorNumber: number | undefined, tracking: Tracking): number {
-  if (tracking === 'trend') {
-    if (priorNumber === undefined) {
+export function getValenceValueForNumber(primaryMetric: number, priorPrimaryMetric: number | undefined, tracking: Tracking): number {
+  if (getValenceSource(tracking) === 'deltas') {
+    if (priorPrimaryMetric === undefined) {
       return 0;
     }
-    return number - priorNumber;
+    return primaryMetric - priorPrimaryMetric;
   }
-  return number;
+  return primaryMetric;
 }
 
 /**

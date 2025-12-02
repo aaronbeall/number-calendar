@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { getValueForValence } from '@/lib/valence';
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { dateToDayKey } from '@/lib/friendly-date';
-import { getValenceValueForNumber } from '@/lib/tracking';
+import { getPrimaryMetric, getValenceValueForNumber } from '@/lib/tracking';
+import { computeNumberStats } from '@/lib/stats';
 
 export interface YearOverviewProps {
   year: number;
@@ -45,14 +46,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
         const date = new Date(year, month - 1, day);
         const dateKey = dateToDayKey(date);
         const numbers = data[dateKey] || [];
-        let value = 0;
-        if (numbers.length > 0) {
-          if (tracking === 'series') {
-            value = numbers.reduce((a, b) => a + b, 0);
-          } else if (tracking === 'trend') {
-            value = numbers[numbers.length - 1];
-          }
-        }
+        const value = computeNumberStats(numbers)?.[getPrimaryMetric(tracking)] ?? 0;
         const isFuture = date > today;
         const hasData = numbers.length > 0;
         const valenceValue = hasData

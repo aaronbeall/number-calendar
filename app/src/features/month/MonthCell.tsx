@@ -3,6 +3,8 @@ import type { Tracking, Valence } from '@/features/db/localdb';
 import type { StatsExtremes } from '@/lib/stats';
 import { getCalendarData } from '@/lib/calendar';
 import { getValueForValence } from '@/lib/valence';
+import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueForNumber } from '@/lib/tracking';
+import { computeNumberStats } from '@/lib/stats';
 import { Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
@@ -14,7 +16,7 @@ interface MonthCellProps {
   monthName: string;
   numbers: number[];
   priorNumbers?: number[];
-  monthDays?: { date: Date; numbers: number[] }[];
+  monthDays?: { date: Date; numbers: number[]; priorNumbers: number[] }[];
   isCurrentMonth: boolean;
   isFutureMonth?: boolean;
   yearExtremes?: StatsExtremes;
@@ -152,9 +154,25 @@ export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays =
                   const dayObj = monthDays[d - 1];
                   const date = dayObj.date;
                   const numbersForDay = dayObj.numbers;
-                  const totalDay = numbersForDay.reduce((a, b) => a + b, 0);
+                  const priorNumbersForDay = dayObj.priorNumbers;
                   const isFuture = date > today;
-                  const scale = getRelativeSize(totalDay, { min: yearExtremes?.lowestTotal, max: yearExtremes?.highestTotal }, 0.6, 2);
+                  
+                  // Calculate stats and primary metrics for the day
+                  const dayStats = computeNumberStats(numbersForDay);
+                  const priorStats = computeNumberStats(priorNumbersForDay);
+                  const primaryMetric = dayStats ? getPrimaryMetricFromStats(dayStats, tracking) : undefined;
+                  const priorPrimaryMetric = priorStats ? getPrimaryMetricFromStats(priorStats, tracking) : undefined;
+                  const valenceValue = getValenceValueForNumber(primaryMetric ?? 0, priorPrimaryMetric, tracking);
+                  
+                  const scale = getRelativeSize(
+                    primaryMetric ?? 0,
+                    { 
+                      min: yearExtremes ? getPrimaryMetricLowFromExtremes(yearExtremes, tracking) : undefined,
+                      max: yearExtremes ? getPrimaryMetricHighFromExtremes(yearExtremes, tracking) : undefined
+                    },
+                    0.6,
+                    1.4
+                  );
                   const baseClass = 'w-1.5 h-1.5 rounded-full transition-all duration-200';
                   let colorClass;
                   if (isFuture) {
@@ -162,7 +180,7 @@ export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays =
                   } else if (numbersForDay.length === 0) {
                     colorClass = 'bg-slate-300 dark:bg-slate-600/40';
                   } else {
-                    colorClass = getValueForValence(totalDay, valence, {
+                    colorClass = getValueForValence(valenceValue ?? 0, valence, {
                       good: 'bg-green-500 dark:bg-green-600 ring-1 ring-green-400/20',
                       bad: 'bg-red-500 dark:bg-red-600 ring-1 ring-red-400/20',
                       neutral: 'bg-slate-400 dark:bg-slate-500',
@@ -175,7 +193,7 @@ export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays =
                       style={{
                         transform: `scale(${scale})`,
                       }}
-                      title={`${monthName} ${d}: ${totalDay}`}
+                      title={`${monthName} ${d}: ${primaryMetric ?? 'No data'}`}
                     />
                   );
                 }
