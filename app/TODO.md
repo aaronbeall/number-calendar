@@ -32,9 +32,10 @@ I'm liking this one.
 - [x] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
 - [x] Highlight extremes on calendar
-- [ ] Show extremes in numbers panel (month, year)
-- [x] Show deltas/percent change
+  - [ ] Show daily extremes in numbers panel for month, week, year
   - [ ] Delta extremes
+- [x] Show deltas/percent change
+- [ ] Show primary metric averages in panel for month (daily, weekly), week (daily), year (monthly, weekly, daily)
 - [ ] Calendar options
   - [ ] Heatmap
   - [ ] Show/hide week summaries
@@ -69,6 +70,10 @@ I'm liking this one.
 - [ ] Growth projections
 - [ ] Search
 - [ ] Filter by expression
+- [ ] Custom queries (expose generic `stats.ts` API)
+- [ ] Add tags (on day/month/week/year)
+- [ ] Tooltips on extremes, ex "January Best" or "
+- [ ] Highlight min/max in numbers badge
 
 ## Product
 - [x] Dark mode
@@ -102,3 +107,4 @@ I'm liking this one.
 - [ ] Deleting a prior day numbers does not update deltas (changing normally it does)
 - [ ] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun
 - [ ] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
+- [ ] Normalize UUIDs
