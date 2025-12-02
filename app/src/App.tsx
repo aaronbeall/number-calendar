@@ -243,7 +243,7 @@ function AppHeader({
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline">
                   Numbers Go Up
                 </h1>
-                <p className="text-xs text-slate-500 font-medium">Daily progress tracking for numberphiles</p>
+                <p className="text-xs text-slate-500 font-medium">A calendar for numberphiles</p>
               </div>
             </Link>
           </div>
