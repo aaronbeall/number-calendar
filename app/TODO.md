@@ -101,3 +101,4 @@ I'm liking this one.
 - [ ] Hide weekends is causing June days to be wrong
 - [ ] Deleting a prior day numbers does not update deltas (changing normally it does)
 - [ ] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun
+- [ ] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
