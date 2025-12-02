@@ -3,14 +3,17 @@
 I'm liking this one.
 
 ## Features
-- [ ] Numeric formatting
+- [x] Numeric formatting
 - [x] Manage multiple datasets
   - [ ] Copy dataset
 - [ ] Achievements
 - [ ] Milestones
 - [ ] Streaks
 - [ ] Goals/targets
-- [ ] Records
+- [x] Records
+  - [ ] Records timeline
+  - [ ] Records calendar
+  - [ ] Show records on calendar
 - [ ] Onboarding
 - [ ] App preferences
 - [ ] Data import/export
@@ -18,9 +21,10 @@ I'm liking this one.
   - [x] Which is better: higher, lower, etc
   - [ ] Allowed range
   - [ ] Formatting (currency, precision, time)
-  - [ ] Tracking: trend (weight, etc), log (P&L, etc)
+  - [x] Tracking: trend (weight, etc), log (P&L, etc)
   - [ ] Presets (weight, profit & loss, etc)
   - [ ] Computed data (formula)
+  - [ ] Primary metric
 - [ ] Notes (Day, Week, Month) with rich text/markdown support
   - [ ] Paste images (Day, Week, Month)
 - [x] Week summary microchart
@@ -29,13 +33,14 @@ I'm liking this one.
 - [x] Microcharts in numbers panel
 - [x] Highlight extremes on calendar
 - [ ] Show extremes in numbers panel (month, year)
-- [ ] Show deltas/percent change
-  - [ ] Highlight delta extremes
+- [x] Show deltas/percent change
+  - [ ] Delta extremes
 - [ ] Calendar options
   - [ ] Heatmap
+  - [ ] Show/hide week summaries
   - [ ] Week summary across months
-  - [ ] Number abbreviations
-- [ ] Customize displayed stats
+  - [ ] Abbreviate numbers
+  - [ ] Customize displayed stats
 - [ ] Full math support, ex `1+(100/23)`
   - [ ] Sub-expression parsing in numbers input, ex `1+2-(4+6)` = `[1, 2, -10]`
   - [x] Support math expressions in individual number editor
@@ -76,10 +81,11 @@ I'm liking this one.
 - [ ] Feedback
 - [ ] Ads
 - [ ] Share
-- [ ] Copywrite/authorship
+- [ ] Copyright/authorship
 - [ ] About
 - [ ] Routing (deep linking)
 - [ ] Premium features
+  - [ ] No ads
   - [ ] Number of datasets
   - [ ] AI assistance
   - [ ] Syncing (via Dropbox)
