@@ -129,7 +129,7 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
  */
 function weekToISODate(week: WeekKey): string {
   // Parse 'YYYY-Www' as ISO week and return the Monday of that week
-  const date = parse(week, "yyyy-'W'ww", new Date());
+  const date = parse(week, "YYYY-'W'ww", new Date(), { useAdditionalWeekYearTokens: true });
   const monday = startOfISOWeek(date);
   return format(monday, 'yyyy-MM-dd');
 }
