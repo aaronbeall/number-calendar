@@ -2,9 +2,7 @@
 import { parseISO } from 'date-fns';
 import type { DateKey, DayEntry, DayKey, MonthKey, Valence, WeekKey } from '../features/db/localdb';
 import { dateToWeekKey } from './friendly-date';
-
-const entriesOf = <T extends object>(obj: T) =>
-  Object.entries(obj) as [keyof T, NonNullable<T[keyof T]>][];
+import { entriesOf } from './utils';
 
 // Helper: group entries by week and month
 function groupByWeek(entries: DayEntry[]) {

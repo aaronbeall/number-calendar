@@ -9,7 +9,7 @@ import { MonthCell } from './MonthCell';
 interface MonthlyGridProps {
   year: number;
   yearData: Record<DayKey, number[]>;
-  yearExtremes: StatsExtremes;
+  yearExtremes?: StatsExtremes;
   onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;

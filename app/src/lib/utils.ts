@@ -29,3 +29,15 @@ export function getRelativeTime(timestamp: number): string {
 export const capitalize = <S extends string>(str: S): Capitalize<S> => {
   return (str.charAt(0).toUpperCase() + str.slice(1)) as Capitalize<S>;
 }
+
+/**
+ * Object.entries with key typing
+ */
+export const entriesOf = <T extends object>(obj: T) =>
+  Object.entries(obj) as [keyof T, NonNullable<T[keyof T]>][];
+
+/**
+ * Object.keys with key typing
+ */
+export const keysOf = <T extends object>(obj: T) =>
+  Object.keys(obj) as (keyof T)[];

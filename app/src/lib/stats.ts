@@ -1,5 +1,6 @@
 import type { DayKey } from "@/features/db/localdb";
 import { toDayKey } from "./friendly-date";
+import { capitalize, entriesOf } from "./utils";
 
 export interface NumberStats {
   count: number; // number of entries
@@ -38,36 +39,25 @@ export function computeNumberStats(numbers: number[]): NumberStats | null {
 }
 
 export interface DayStatsData extends NumberStats {
-  dateStr: string;
+  dateStr: DayKey;
 }
 
 export interface MonthStatsData extends NumberStats {
+  year: number;
   monthNumber: number;
 }
 
-export interface StatsExtremes {
-  highestTotal?: number;
-  lowestTotal?: number;
-  highestCount?: number;
-  highestMean?: number;
-  lowestMean?: number;
-  highestMedian?: number;
-  lowestMedian?: number;
-  highestMax?: number;
-  lowestMax?: number;
-  highestMin?: number;
-  lowestMin?: number;
-  highestFirst?: number;
-  lowestFirst?: number;
-  highestLast?: number;
-  lowestLast?: number;
+export type StatsExtremes = {
+  [P in keyof NumberStats as `highest${Capitalize<P>}`]: number;
+} & {
+  [P in keyof NumberStats as `lowest${Capitalize<P>}`]: number;
 }
 
 /**
  * Calculate statistics for each day in the month
  */
 export function calculateDailyStats(monthData: Record<DayKey, number[]>): DayStatsData[] {
-  return Object.entries(monthData)
+  return entriesOf(monthData)
     .map(([dateStr, nums]): DayStatsData | null => {
       const stats = computeNumberStats(nums);
       if (!stats) return null;
@@ -79,26 +69,9 @@ export function calculateDailyStats(monthData: Record<DayKey, number[]>): DaySta
 /**
  * Calculate extreme values across all days in the month
  */
-export function calculateDailyExtremes(dayStats: DayStatsData[]): StatsExtremes {
-  if (dayStats.length <= 1) return {};
-
-  return {
-    highestTotal: Math.max(...dayStats.map(d => d.total)),
-    lowestTotal: Math.min(...dayStats.map(d => d.total)),
-    highestCount: Math.max(...dayStats.map(d => d.count)),
-    highestMean: Math.max(...dayStats.map(d => d.mean)),
-    lowestMean: Math.min(...dayStats.map(d => d.mean)),
-    highestMedian: Math.max(...dayStats.map(d => d.median)),
-    lowestMedian: Math.min(...dayStats.map(d => d.median)),
-    highestMax: Math.max(...dayStats.map(d => d.max)),
-    lowestMax: Math.min(...dayStats.map(d => d.max)),
-    highestMin: Math.max(...dayStats.map(d => d.min)),
-    lowestMin: Math.min(...dayStats.map(d => d.min)),
-    highestFirst: Math.max(...dayStats.map(d => d.first)),
-    lowestFirst: Math.min(...dayStats.map(d => d.first)),
-    highestLast: Math.max(...dayStats.map(d => d.last)),
-    lowestLast: Math.min(...dayStats.map(d => d.last)),
-  };
+export function calculateDailyExtremes(data: Record<DayKey, number[]>): StatsExtremes | undefined {
+  const dayStats = calculateDailyStats(data);
+  return calculateExtremes(dayStats);
 }
 
 /**
@@ -121,7 +94,7 @@ export function calculateMonthlyStats(yearData: Record<DayKey, number[]>, year: 
     
     const stats = computeNumberStats(monthNumbers);
     if (stats) {
-      monthStats.push({ monthNumber, ...stats });
+      monthStats.push({ year, monthNumber, ...stats });
     }
   }
   
@@ -131,26 +104,52 @@ export function calculateMonthlyStats(yearData: Record<DayKey, number[]>, year: 
 /**
  * Calculate extreme values across all months in the year
  */
-export function calculateMonthlyExtremes(monthStats: MonthStatsData[]): StatsExtremes {
-  if (monthStats.length <= 1) return {};
+export function calculateMonthlyExtremes(data: Record<DayKey, number[]>, year: number): StatsExtremes | undefined {
+  const monthStats = calculateMonthlyStats(data, year);
+  return calculateExtremes(monthStats);
+}
+
+/**
+ * Calculate extreme values across a set of NumberStats
+ */
+export function calculateExtremes(stats: NumberStats[]): StatsExtremes | undefined {
+  if (stats.length <= 1) return undefined;
 
   return {
-    highestTotal: Math.max(...monthStats.map(m => m.total)),
-    lowestTotal: Math.min(...monthStats.map(m => m.total)),
-    highestCount: Math.max(...monthStats.map(m => m.count)),
-    highestMean: Math.max(...monthStats.map(m => m.mean)),
-    lowestMean: Math.min(...monthStats.map(m => m.mean)),
-    highestMedian: Math.max(...monthStats.map(m => m.median)),
-    lowestMedian: Math.min(...monthStats.map(m => m.median)),
-    highestMax: Math.max(...monthStats.map(m => m.max)),
-    lowestMax: Math.min(...monthStats.map(m => m.max)),
-    highestMin: Math.max(...monthStats.map(m => m.min)),
-    lowestMin: Math.min(...monthStats.map(m => m.min)),
-    highestFirst: Math.max(...monthStats.map(m => m.first)),
-    lowestFirst: Math.min(...monthStats.map(m => m.first)),
-    highestLast: Math.max(...monthStats.map(m => m.last)),
-    lowestLast: Math.min(...monthStats.map(m => m.last)),
-  };
+    highestTotal: Math.max(...stats.map(s => s.total)),
+    lowestTotal: Math.min(...stats.map(s => s.total)),
+    highestCount: Math.max(...stats.map(s => s.count)),
+    lowestCount: Math.min(...stats.map(s => s.count)),
+    highestMean: Math.max(...stats.map(s => s.mean)),
+    lowestMean: Math.min(...stats.map(s => s.mean)),
+    highestMedian: Math.max(...stats.map(s => s.median)),
+    lowestMedian: Math.min(...stats.map(s => s.median)),
+    highestMax: Math.max(...stats.map(s => s.max)),
+    lowestMax: Math.min(...stats.map(s => s.max)),
+    highestMin: Math.max(...stats.map(s => s.min)),
+    lowestMin: Math.min(...stats.map(s => s.min)),
+    highestFirst: Math.max(...stats.map(s => s.first)),
+    lowestFirst: Math.min(...stats.map(s => s.first)),
+    highestLast: Math.max(...stats.map(s => s.last)),
+    lowestLast: Math.min(...stats.map(s => s.last)),
+    highestChange: Math.max(...stats.map(s => s.change)),
+    lowestChange: Math.min(...stats.map(s => s.change)),
+    highestChangePercent: Math.max(...stats.map(s => s.changePercent)),
+    lowestChangePercent: Math.min(...stats.map(s => s.changePercent)),
+    highestRange: Math.max(...stats.map(s => s.range)),
+    lowestRange: Math.min(...stats.map(s => s.range)),
+  }
+}
+
+
+export function getHighForMetric(metric: keyof NumberStats, extremes: StatsExtremes): number | undefined {
+  const key = `highest${capitalize(metric)}` as const;
+  return extremes[key];
+}
+
+export function getLowForMetric(metric: keyof NumberStats, extremes: StatsExtremes): number | undefined {
+  const key = `lowest${capitalize(metric)}` as const;
+  return extremes[key];
 }
 
 // Returns the delta (current - prior) for each metric in NumberStats
