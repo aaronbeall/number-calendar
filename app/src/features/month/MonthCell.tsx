@@ -151,7 +151,7 @@ export function MonthCell({ month, monthName, numbers, monthDays = [], isCurrent
                   const numbersForDay = dayObj.numbers;
                   const totalDay = numbersForDay.reduce((a, b) => a + b, 0);
                   const isFuture = date > today;
-                  const scale = getRelativeSize(totalDay, yearExtremes, 0.6, 1.6);
+                  const scale = getRelativeSize(totalDay, { min: yearExtremes?.lowestTotal, max: yearExtremes?.highestTotal }, 0.6, 2);
                   const baseClass = 'w-1.5 h-1.5 rounded-full transition-all duration-200';
                   let colorClass;
                   if (isFuture) {

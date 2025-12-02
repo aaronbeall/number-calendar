@@ -1,6 +1,6 @@
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { toDayKey } from '@/lib/friendly-date';
-import type { StatsExtremes } from '@/lib/stats';
+import { type StatsExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
 import { MonthCell } from './MonthCell';
 
@@ -18,7 +18,6 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
   ];
-
 
 
   // Memoized map of month data

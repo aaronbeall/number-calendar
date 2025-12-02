@@ -181,7 +181,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
             {/* Micro dots visualization - Shows composition */}
             <div className="flex flex-wrap gap-1 justify-center items-center min-h-[16px] px-1">
               {numbers.map((num, idx) => {
-                const scale = getRelativeSize(num, monthExtremes, 0.4, 1);
+                const scale = getRelativeSize(num, { min: monthExtremes?.lowestMin, max: monthExtremes?.highestMax }, 0.4, 1);
                 const size = scale * 8; // Base size 8px, scaled down to ~3.2px min
                 const prioNum = numbers[idx - 1] ?? priorNumbers?.[priorNumbers?.length - 1];
                 const colorClass = getValueForValence(getValenceValueForNumber(num, prioNum, tracking), valence, {

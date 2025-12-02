@@ -13,7 +13,7 @@ import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorNumbersMap } from "@/lib/calendar";
 import { toMonthKey } from '@/lib/friendly-date';
-import { calculateDailyStats, calculateMonthExtremes, calculateMonthlyStats, calculateYearExtremes, type StatsExtremes } from '@/lib/stats';
+import { calculateDailyStats, calculateDailyExtremes, calculateMonthlyStats, calculateMonthlyExtremes, type StatsExtremes } from '@/lib/stats';
 import { CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
@@ -48,13 +48,13 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   // Calculate extremes across all days for highlighting and dot scaling
   const monthExtremes = useMemo(() => {
     const dailyStats = calculateDailyStats(monthData);
-    return calculateMonthExtremes(dailyStats);
+    return calculateDailyExtremes(dailyStats);
   }, [monthData]);
 
   // Calculate extremes across all months in the year for MonthSummary highlighting
   const yearExtremes = useMemo(() => {
     const monthlyStats = calculateMonthlyStats(yearData, year);
-    return calculateYearExtremes(monthlyStats);
+    return calculateMonthlyExtremes(monthlyStats);
   }, [yearData, year]);
 
   const monthNames = ["January", "February", "March", "April", "May", "June",

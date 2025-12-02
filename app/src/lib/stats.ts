@@ -79,7 +79,7 @@ export function calculateDailyStats(monthData: Record<DayKey, number[]>): DaySta
 /**
  * Calculate extreme values across all days in the month
  */
-export function calculateMonthExtremes(dayStats: DayStatsData[]): StatsExtremes {
+export function calculateDailyExtremes(dayStats: DayStatsData[]): StatsExtremes {
   if (dayStats.length <= 1) return {};
 
   return {
@@ -131,7 +131,7 @@ export function calculateMonthlyStats(yearData: Record<DayKey, number[]>, year: 
 /**
  * Calculate extreme values across all months in the year
  */
-export function calculateYearExtremes(monthStats: MonthStatsData[]): StatsExtremes {
+export function calculateMonthlyExtremes(monthStats: MonthStatsData[]): StatsExtremes {
   if (monthStats.length <= 1) return {};
 
   return {
