@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { MonthChart } from '@/features/chart/MonthChart';
-import { MonthTrendChart } from '@/features/chart/MonthTrendChart';
+import { TrendChart } from '@/features/chart/TrendChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
 import type { Dataset } from '@/features/db/localdb';
@@ -231,7 +231,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
             {/* Chart Section */}
             <div className="space-y-4">
               {dataset.tracking === 'trend' ? (
-                <MonthTrendChart
+                <TrendChart
                   year={year}
                   month={month}
                   data={monthData}
@@ -286,11 +286,19 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
 
             {/* Year Chart Section */}
             <div className="space-y-4 mb-6">
-              <YearChart
-                year={year}
-                yearData={yearData}
-                valence={dataset.valence}
-              />
+              {dataset.tracking === 'trend' ? (
+                <TrendChart
+                  year={year}
+                  data={yearData}
+                  valence={dataset.valence}
+                />
+              ) : (
+                <YearChart
+                  year={year}
+                  yearData={yearData}
+                  valence={dataset.valence}
+                />
+              )}
             </div>
           </>
         )}
