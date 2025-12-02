@@ -14,6 +14,17 @@ export function getMonthDays(year: number, month: number) {
   return days;
 }
 
+export function getYearDays(year: number): DayKey[] {
+  const days: DayKey[] = [];
+  for (let m = 1; m <= 12; m++) {
+    const lastDay = new Date(year, m, 0).getDate();
+    for (let d = 1; d <= lastDay; d++) {
+      days.push(toDayKey(year, m, d));
+    }
+  }
+  return days;
+}
+
 /**
  * Aggregates calendar data for a given set of numbers, prior numbers, extremes, and tracking type.
  */

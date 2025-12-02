@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { MonthChart } from '@/features/chart/MonthChart';
+import { MonthTrendChart } from '@/features/chart/MonthTrendChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
 import type { Dataset } from '@/features/db/localdb';
@@ -229,10 +230,20 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
 
             {/* Chart Section */}
             <div className="space-y-4">
-              <MonthChart
-                days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
-                valence={dataset.valence}
-              />
+              {dataset.tracking === 'trend' ? (
+                <MonthTrendChart
+                  year={year}
+                  month={month}
+                  data={monthData}
+                  valence={dataset.valence}
+                  priorDay={priorNumbersMap[days[0]]}
+                />
+              ) : (
+                <MonthChart
+                  days={days.map(date => ({ date, numbers: monthData[date] || [] }))}
+                  valence={dataset.valence}
+                />
+              )}
             </div>
           </>
         ) : (
