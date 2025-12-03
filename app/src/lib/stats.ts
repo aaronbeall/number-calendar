@@ -1,5 +1,5 @@
-import type { DayKey } from "@/features/db/localdb";
-import { toDayKey } from "./friendly-date";
+import type { DayKey, MonthKey } from "@/features/db/localdb";
+import { toMonthKey } from "./friendly-date";
 import { capitalize, entriesOf } from "./utils";
 
 export interface NumberStats {
@@ -38,6 +38,15 @@ export function computeNumberStats(numbers: number[]): NumberStats | null {
   return { count, total, mean, median, min, max, first, last, range, change, changePercent };
 }
 
+/**
+ * Compute statistics for a group of NumberStats based on a specific metric (e.g., 'total', 'last')
+ */
+export function computeMetricStats(stats: NumberStats[], metric: keyof NumberStats): NumberStats | null {
+  if (!stats || stats.length === 0) return null;
+  const metricValues = stats.map(s => s[metric]).filter(v => typeof v === 'number') as number[];
+  return computeNumberStats(metricValues);
+}
+
 export interface DayStatsData extends NumberStats {
   dateStr: DayKey;
 }
@@ -54,10 +63,10 @@ export type StatsExtremes = {
 }
 
 /**
- * Calculate statistics for each day in the month
+ * Calculate statistics for each day (ex. in the month)
  */
-export function calculateDailyStats(monthData: Record<DayKey, number[]>): DayStatsData[] {
-  return entriesOf(monthData)
+export function computeDailyStats(data: Record<DayKey, number[]>): DayStatsData[] {
+  return entriesOf(data)
     .map(([dateStr, nums]): DayStatsData | null => {
       const stats = computeNumberStats(nums);
       if (!stats) return null;
@@ -67,45 +76,60 @@ export function calculateDailyStats(monthData: Record<DayKey, number[]>): DaySta
 }
 
 /**
- * Calculate extreme values across all days in the month
+ * Calculate extreme values across all days (ex. in the month)
  */
 export function calculateDailyExtremes(data: Record<DayKey, number[]>): StatsExtremes | undefined {
-  const dayStats = calculateDailyStats(data);
+  const dayStats = computeDailyStats(data);
   return calculateExtremes(dayStats);
 }
 
 /**
- * Calculate statistics for each month in the year
+ * Calculate statistics for each month by grouping days from the data
  */
-export function calculateMonthlyStats(yearData: Record<DayKey, number[]>, year: number): MonthStatsData[] {
-  const monthStats: MonthStatsData[] = [];
+export function computeMonthlyStats(data: Record<DayKey, number[]>): MonthStatsData[] {
+  // Group numbers by year-month
+  const monthGroups = new Map<MonthKey, { year: number; monthNumber: number; numbers: number[] }>();
   
-  for (let monthNumber = 1; monthNumber <= 12; monthNumber++) {
-    const monthNumbers: number[] = [];
-    const lastDay = new Date(year, monthNumber, 0).getDate();
+  for (const [dateStr, dayNumbers] of entriesOf(data)) {
+    if (dayNumbers.length === 0) continue;
     
-    for (let day = 1; day <= lastDay; day++) {
-      const dateStr = toDayKey(year, monthNumber, day);
-      const dayNumbers = yearData[dateStr] || [];
-      monthNumbers.push(...dayNumbers);
+    // Extract year and month from DayKey (YYYY-MM-DD)
+    const [yearStr, monthStr] = dateStr.split('-');
+    const year = parseInt(yearStr, 10);
+    const monthNumber = parseInt(monthStr, 10);
+    const monthKey = toMonthKey(year, monthNumber);
+    
+    if (!monthGroups.has(monthKey)) {
+      monthGroups.set(monthKey, { year, monthNumber, numbers: [] });
     }
     
-    if (monthNumbers.length === 0) continue;
-    
-    const stats = computeNumberStats(monthNumbers);
+    monthGroups.get(monthKey)!.numbers.push(...dayNumbers);
+  }
+  
+  // Compute stats for each month and sort by year-month
+  const monthStats: MonthStatsData[] = [];
+  
+  for (const { year, monthNumber, numbers } of monthGroups.values()) {
+    const stats = computeNumberStats(numbers);
     if (stats) {
       monthStats.push({ year, monthNumber, ...stats });
     }
   }
   
+  // Sort by year and month
+  monthStats.sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    return a.monthNumber - b.monthNumber;
+  });
+  
   return monthStats;
 }
 
 /**
- * Calculate extreme values across all months in the year
+ * Calculate extreme values across all months in the data
  */
-export function calculateMonthlyExtremes(data: Record<DayKey, number[]>, year: number): StatsExtremes | undefined {
-  const monthStats = calculateMonthlyStats(data, year);
+export function calculateMonthlyExtremes(data: Record<DayKey, number[]>): StatsExtremes | undefined {
+  const monthStats = computeMonthlyStats(data);
   return calculateExtremes(monthStats);
 }
 

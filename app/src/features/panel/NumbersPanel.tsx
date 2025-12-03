@@ -5,19 +5,20 @@ import { Input } from '@/components/ui/input';
 import { NumberText } from '@/components/ui/number-text';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { Tracking, Valence } from '@/features/db/localdb';
+import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
+import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
-import type { StatsExtremes } from '@/lib/stats';
-import { getPrimaryMetric, getValenceValueForNumber } from "@/lib/tracking";
+import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, type StatsExtremes } from '@/lib/stats';
+import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpDown, ArrowUpToLine } from "lucide-react";
 import React, { useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { AddNumberEditor } from './AddNumberEditor';
 import { EditableNumberBadge } from './EditableNumberBadge';
-import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
+import { capitalize } from '@/lib/utils';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -35,6 +36,8 @@ export interface NumbersPanelProps {
   extremes?: StatsExtremes;
   valence: Valence;
   tracking: Tracking;
+
+  daysData?: Record<DayKey, number[]>;
 }
 
 
@@ -53,6 +56,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   extremes,
   valence,
   tracking,
+  daysData
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
 
@@ -82,6 +86,14 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     primaryValenceMetric,
     isHighestPrimary,
     isLowestPrimary,
+    isHighestMean,
+    isLowestMean,
+    isHighestMedian,
+    isLowestMedian,
+    isHighestMin,
+    isLowestMin,
+    isHighestMax,
+    isLowestMax
   } = useMemo(() => getCalendarData(displayNumbers, priorNumbers, extremes, tracking), [displayNumbers, priorNumbers, extremes, tracking]);;
 
   // Prepare items with original indices for stable mapping when sorting
@@ -136,7 +148,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
-      <SheetContent className="w-full max-w-md" disableEscapeClose>
+      <SheetContent className="w-full max-w-md flex flex-col" disableEscapeClose>
         <SheetHeader>
           <div className="flex items-center justify-between gap-3 pr-8">
             <div>
@@ -156,7 +168,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           </div>
         </SheetHeader>
 
-        <div className="flex flex-col gap-4 mt-6">
+        <div className="flex flex-col gap-4 mt-6 overflow-auto">
           {showExpressionInput && (
             <Input
               value={expression}
@@ -316,10 +328,10 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Mean', value: stats.mean, valenceValue: valenceStats?.mean, isHighest: extremes && stats.mean === extremes.highestMean, isLowest: extremes && stats.mean === extremes.lowestMean, delta: deltas?.mean, percent: percents?.mean },
-                  { label: 'Median', value: stats.median, valenceValue: valenceStats?.median, isHighest: extremes && stats.median === extremes.highestMedian, isLowest: extremes && stats.median === extremes.lowestMedian, delta: deltas?.median, percent: percents?.median },
-                  { label: 'Min', value: stats.min, valenceValue: valenceStats?.min, isHighest: extremes && stats.min === extremes.highestMin, isLowest: extremes && stats.min === extremes.lowestMin, delta: deltas?.min, percent: percents?.min },
-                  { label: 'Max', value: stats.max, valenceValue: valenceStats?.max, isHighest: extremes && stats.max === extremes.highestMax, isLowest: extremes && stats.max === extremes.lowestMax, delta: deltas?.max, percent: percents?.max },
+                  { label: 'Mean', value: stats.mean, valenceValue: valenceStats?.mean, isHighest: isHighestMean, isLowest: isLowestMean, delta: deltas?.mean, percent: percents?.mean },
+                  { label: 'Median', value: stats.median, valenceValue: valenceStats?.median, isHighest: isHighestMedian, isLowest: isLowestMedian, delta: deltas?.median, percent: percents?.median },
+                  { label: 'Min', value: stats.min, valenceValue: valenceStats?.min, isHighest: isHighestMin, isLowest: isLowestMin, delta: deltas?.min, percent: percents?.min },
+                  { label: 'Max', value: stats.max, valenceValue: valenceStats?.max, isHighest: isHighestMax, isLowest: isLowestMax, delta: deltas?.max, percent: percents?.max },
                 ].map(({ label, value, valenceValue, isHighest, isLowest, delta, percent }) => (
                   <div key={label} className="flex flex-col items-center">
                     <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</div>
@@ -415,8 +427,129 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               </ChartContainer>
             </div>
           )}
+
+          {/* Daily stats if monthData provided */}
+          {daysData && (
+            <>
+              <GroupedStats
+                grouping='monthly'
+                daysData={daysData}
+                valence={valence}
+                tracking={tracking}
+              />
+              <GroupedStats
+                grouping='daily'
+                daysData={daysData}
+                valence={valence}
+                tracking={tracking}
+              />
+            </>
+          )}
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+
+interface DailyStatsProps {
+  grouping: "daily" | "monthly";
+  daysData: Record<DayKey, number[]>;
+  valence: Valence;
+  tracking: Tracking;
+}
+
+const GroupedStats: React.FC<DailyStatsProps> = ({ grouping, daysData, valence, tracking }) => {
+  const stats = useMemo(() => {
+    return {
+      daily: computeDailyStats,
+      monthly: computeMonthlyStats
+    }[grouping](daysData);
+  }, [daysData, grouping]);
+
+  const extremes = useMemo(() => {
+    return calculateExtremes(stats);
+  }, [stats]);
+
+  const primaryMetric = getPrimaryMetric(tracking);
+  const primaryMetricLabel = getPrimaryMetricLabel(tracking);
+  const primaryMetricStats = useMemo(() => {
+    return computeMetricStats(stats, primaryMetric);
+  }, [stats, primaryMetric]);
+
+  if (!primaryMetricStats || stats.length <= 1) {
+    return null;
+  }
+
+  const displayStats = [
+    {
+      label: `Mean`,
+      value: primaryMetricStats.mean,
+      high: extremes?.highestMean,
+      low: extremes?.lowestMean,
+    },
+    {
+      label: `Median`,
+      value: primaryMetricStats.median,
+      high: extremes?.highestMedian,
+      low: extremes?.lowestMedian,
+    },
+    {
+      label: `Min`,
+      value: primaryMetricStats.min,
+      high: extremes?.highestMin,
+      low: extremes?.lowestMin,
+    },
+    {
+      label: `Max`,
+      value: primaryMetricStats.max,
+      high: extremes?.highestMax,
+      low: extremes?.lowestMax,
+    },
+  ];
+
+  return (
+    <div className="mt-6">
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2 text-center">{capitalize(grouping)} Statistics</h3>
+      <div className="grid grid-cols-2 gap-4">
+        {displayStats.map(({ label, value, high, low }) => (
+          <div key={label} className="flex flex-col items-center">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">{label}</div>
+            <span title={`${label} ${grouping} ${primaryMetricLabel}`}>
+              <NumberText
+                value={value}
+                valenceValue={getValenceValueForNumber(value, undefined, tracking)}
+                valence={valence}
+                className="text-base font-mono font-bold"
+              />
+            </span>
+            {(high !== undefined || low !== undefined) && (
+              <div className="flex items-center gap-1 mt-0.5 rounded-full grayt-bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                {high !== undefined && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-mono font-semibold" title={`Highest ${grouping} ${label}`}>
+                    <ArrowUpToLine className="inline-block w-3 h-3 text-slate-500 dark:text-slate-400" /><NumberText
+                      value={high}
+                      valenceValue={getValenceValueForNumber(high, undefined, tracking)}
+                      valence={valence}
+                      className="ml-1 text-xs font-mono font-semibold"
+                    />
+                  </span>
+                )}
+                {low !== undefined && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[11px] font-mono font-semibold" title={`Lowest ${grouping} ${label}`}>
+                    <ArrowDownToLine className="inline-block w-3 h-3 text-slate-500 dark:text-slate-400" /> <NumberText
+                      value={low}
+                      valenceValue={getValenceValueForNumber(low, undefined, tracking)}
+                      valence={valence}
+                      className="ml-1 text-xs font-mono font-semibold"
+                    />
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

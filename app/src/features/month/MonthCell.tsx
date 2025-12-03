@@ -1,15 +1,15 @@
 import { NumberText } from '@/components/ui/number-text';
-import type { Tracking, Valence } from '@/features/db/localdb';
-import type { StatsExtremes } from '@/lib/stats';
-import { getCalendarData } from '@/lib/calendar';
-import { getValueForValence } from '@/lib/valence';
-import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueForNumber } from '@/lib/tracking';
-import { computeNumberStats } from '@/lib/stats';
-import { Trophy } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
-import { CalendarDays } from 'lucide-react';
+import { getCalendarData } from '@/lib/calendar';
 import { getRelativeSize } from '@/lib/charts';
+import { dateToDayKey } from '@/lib/friendly-date';
+import type { StatsExtremes } from '@/lib/stats';
+import { computeNumberStats } from '@/lib/stats';
+import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueForNumber } from '@/lib/tracking';
+import { getValueForValence } from '@/lib/valence';
+import { CalendarDays, Trophy } from 'lucide-react';
+import { useMemo, useState } from 'react';
 
 interface MonthCellProps {
   month: number;
@@ -69,6 +69,14 @@ export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays =
   // Highlight if panel is open
   const isSelected = panelOpen;
 
+  // Prepare monthData for NumbersPanel
+  const monthData = useMemo(() => {
+    return monthDays.reduce((acc, day) => { 
+      acc[dateToDayKey(day.date)] = day.numbers;
+      return acc; 
+    }, {} as Record<DayKey, number[]>);
+  }, [monthDays]);
+
   return (
     <div
       onClick={isFutureMonth ? undefined : () => setPanelOpen(true)}
@@ -97,6 +105,7 @@ export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays =
         title={`${monthName}`}
         numbers={numbers}
         priorNumbers={priorNumbers}
+        daysData={monthData}
         extremes={yearExtremes}
         editableNumbers={false}
         showExpressionInput={false}

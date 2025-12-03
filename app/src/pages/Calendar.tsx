@@ -31,6 +31,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
     numbers: [] as number[],
     priorNumbers: undefined as number[] | undefined,
     extremes: undefined as StatsExtremes | undefined,
+    daysData: undefined as Record<DayKey, number[]> | undefined,
   });
 
   // Use selectedDataset for all data hooks
@@ -52,8 +53,8 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
 
   // Calculate extremes across all months in the year for MonthSummary highlighting
   const yearExtremes = useMemo(() => {
-    return calculateMonthlyExtremes(yearData, year);
-  }, [yearData, year]);
+    return calculateMonthlyExtremes(yearData);
+  }, [yearData]);
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
@@ -218,6 +219,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   numbers: monthNumbers,
                   priorNumbers: priorMonthNumbersMap[toMonthKey(year, month)],
                   extremes: yearExtremes,
+                  daysData: monthData,
                 });
               }} className="cursor-pointer">
               <MonthSummary 
@@ -277,6 +279,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   numbers: allYearNumbers,
                   extremes: undefined,
                   priorNumbers: undefined,
+                  daysData: yearData
                 });
               }} className="cursor-pointer">
                 <YearSummary 
