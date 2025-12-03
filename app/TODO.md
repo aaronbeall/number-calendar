@@ -32,10 +32,13 @@ I'm liking this one.
 - [x] Month cell microdots/microchart
 - [x] Microcharts in numbers panel
 - [x] Highlight extremes on calendar
-  - [ ] Show daily extremes in numbers panel for month, week, year
+  - [x] Show daily extremes in numbers panel for month, week, year
   - [ ] Delta extremes
 - [x] Show deltas/percent change
-- [ ] Show primary metric averages in panel for month (daily, weekly), week (daily), year (monthly, weekly, daily)
+- [x] Show primary metric averages in panel
+  - [x] Daily
+  - [x] Monthly
+  - [ ] Weekly
 - [ ] Calendar options
   - [ ] Heatmap
   - [ ] Show/hide week summaries
@@ -73,7 +76,7 @@ I'm liking this one.
 - [ ] Custom queries (expose generic `stats.ts` API)
 - [ ] Add tags (on day/month/week/year)
 - [ ] Tooltips on extremes, ex "January Best" or "
-- [ ] Highlight min/max in numbers badge
+- [ ] Highlight min/max in editable numbers badge
 
 ## Product
 - [x] Dark mode
