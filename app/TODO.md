@@ -108,3 +108,4 @@ I'm liking this one.
 - [ ] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun
 - [ ] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
 - [ ] Normalize UUIDs
+- [ ] Week/Month/Year summaries need hover and selected state
