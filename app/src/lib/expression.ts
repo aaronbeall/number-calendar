@@ -117,12 +117,22 @@ export function parseExpression(expr: string, tracking: Tracking): number[] | nu
   }[tracking](expr);
 }
 
+/**
+ * Formats an array of numbers for series mode: e.g. "35+21-76+2000"
+ */
 export function buildSeriesExpressionFromNumbers(nums: number[]): string {
   if (!nums.length) return '';
   return nums.reduce((acc, n, i) => (i === 0 ? `${n}` : `${acc}${n >= 0 ? '+' : ''}${n}`), '');
 }
 
-// Parses a math expression or comma/space separated numbers into an array of numbers
+/**
+ * Parses a series-mode expression into an array of numbers.
+ * - Accepts numbers separated by '+' or '-' signs (no spaces)
+ * - Each number can be positive or negative
+ * - Supports '=' to specify target totals, calculating deltas accordingly
+ *   e.g. "35+21-76=50" becomes [35, 21, -76, 70] because 35+21-76+70=50
+ * - Normalizes away currency, commas, and whitespace
+ */
 export function parseSeriesExpression(expr: string): number[] | null {
   if (!expr.trim()) return [];
   try {
