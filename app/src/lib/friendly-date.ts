@@ -45,6 +45,19 @@ export function dateToYearKey(date: Date): YearKey {
 }
 
 /**
+ * Converts a DateKey to another DateKey type.
+ */
+export function convertDateKey(dateKey: DateKey, targetType: 'day'): DayKey;
+export function convertDateKey(dateKey: DateKey, targetType: 'week'): WeekKey;
+export function convertDateKey(dateKey: DateKey, targetType: 'month'): MonthKey;
+export function convertDateKey(dateKey: DateKey, targetType: 'year'): YearKey;
+export function convertDateKey(dateKey: DateKey, targetType: 'day' | 'week' | 'month' | 'year'): DateKey;
+export function convertDateKey(dateKey: DateKey, targetType: 'day' | 'week' | 'month' | 'year'): DateKey {
+  const date = parseDateKey(dateKey);
+  return formatDateAsKey(date, targetType);
+}
+
+/**
  * Formats a date, week, month, or range in a friendly way.
  * - For ISO week (YYYY-Www): returns the date range (e.g. Nov 24–30, 2025)
  * - For week ranges (YYYY-Www → YYYY-Www): returns the start day of the first week to the end day of the last week
@@ -52,6 +65,8 @@ export function dateToYearKey(date: Date): YearKey {
  * - For day: returns 'MMM d, yyyy'
  * - For other: returns as-is
  */
+export function formatFriendlyDate(date: DateKey): string;
+export function formatFriendlyDate(start: DateKey, end: DateKey): string;
 export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
   if (!start) return '';
   // If end is provided and different from start, treat as a range
@@ -59,16 +74,16 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
     // Week range: both are weeks
     if (isWeekKey(start) && isWeekKey(end)) {
       // Convert week keys to their start and end day keys, then use day range formatting
-      const startDate = startOfISOWeek(parseISO(weekToISODate(start)));
-      const endDate = endOfISOWeek(parseISO(weekToISODate(end)));
-      const startDayKey = format(startDate, 'yyyy-MM-dd') as DayKey;
-      const endDayKey = format(endDate, 'yyyy-MM-dd') as DayKey;
+      const startDate = startOfISOWeek(parseDateKey(start));
+      const endDate = endOfISOWeek(parseDateKey(end));
+      const startDayKey = formatDateAsKey(startDate, 'day');
+      const endDayKey = formatDateAsKey(endDate, 'day');
       return formatFriendlyDate(startDayKey, endDayKey);
     }
     // Day range
     if (isDayKey(start) && isDayKey(end)) {
-      const startDate = parseISO(start);
-      const endDate = parseISO(end);
+      const startDate = parseDateKey(start);
+      const endDate = parseDateKey(end);
       if (isValid(startDate) && isValid(endDate)) {
         // Same year
         if (startDate.getFullYear() === endDate.getFullYear()) {
@@ -88,39 +103,45 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
     }
     // Month range
     if (isMonthKey(start) && isMonthKey(end)) {
-      const startDate = parseISO(start + '-01');
-      const endDate = parseISO(end + '-01');
+      const startDate = parseDateKey(start);
+      const endDate = parseDateKey(end);
       if (isValid(startDate) && isValid(endDate)) {
         if (startDate.getFullYear() === endDate.getFullYear()) {
-          // November–December 2025
-          return `${format(startDate, 'MMMM')}–${format(endDate, 'MMMM yyyy')}`;
+          // November – December 2025
+          return `${format(startDate, 'MMMM')} – ${format(endDate, 'MMMM yyyy')}`;
         } else {
           // November 2024 – December 2025
           return `${format(startDate, 'MMMM yyyy')} – ${format(endDate, 'MMMM yyyy')}`;
         }
       }
     }
-    // Fallback: just show both
+    // Fallback (start and end types are not the same?): just show both
     return `${formatFriendlyDate(start)} – ${formatFriendlyDate(end)}`;
   }
   // Single week: 'YYYY-Www'
   if (isWeekKey(start)) {
-    const weekStart = startOfISOWeek(parseISO(weekToISODate(start)));
-    const weekEnd = endOfISOWeek(parseISO(weekToISODate(start)));
-    const startDayKey = format(weekStart, 'yyyy-MM-dd') as DayKey;
-    const endDayKey = format(weekEnd, 'yyyy-MM-dd') as DayKey;
+    const weekStart = startOfISOWeek(parseDateKey(start));
+    const weekEnd = endOfISOWeek(parseDateKey(start));
+    const startDayKey = formatDateAsKey(weekStart, 'day');
+    const endDayKey = formatDateAsKey(weekEnd, 'day');
     return formatFriendlyDate(startDayKey, endDayKey);
   }
   // Month: 'YYYY-MM'
   if (isMonthKey(start)) {
-    const parsed = parseISO(start + '-01');
+    const parsed = parseDateKey(start);
     if (isValid(parsed)) return format(parsed, 'MMMM yyyy');
   }
   // Day: 'YYYY-MM-DD'
   if (isDayKey(start)) {
-    const parsed = parseISO(start);
+    const parsed = parseDateKey(start);
     if (isValid(parsed)) return format(parsed, 'MMMM d, yyyy');
   }
+  // Year: 'YYYY'
+  if (isYearKey(start)) {
+    const parsed = parseDateKey(start);
+    if (isValid(parsed)) return format(parsed, 'yyyy');
+  }
+  // Fallback: return as-is
   return start;
 }
 
@@ -150,12 +171,12 @@ export function parseDateKey(key: DateKey): Date {
     return parseISO(weekToISODate(key));
   }
   if (isMonthKey(key)) {
-    return parseISO(key + '-01');
+    return parseISO(`${key}-01`);
   }
   if (isYearKey(key)) {
-    return parseISO(key + '-01-01');
+    return parseISO(`${key}-01-01`);
   }
-  throw new Error('Invalid DateKey: ' + key);
+  throw new Error(`Invalid DateKey: ${key}`);
 }
 
 /**
@@ -166,12 +187,13 @@ export function formatDateAsKey(date: Date, type: 'day'): DayKey;
 export function formatDateAsKey(date: Date, type: 'week'): WeekKey;
 export function formatDateAsKey(date: Date, type: 'month'): MonthKey;
 export function formatDateAsKey(date: Date, type: 'year'): YearKey;
+export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'year'): DateKey
 export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'year'): DateKey {
   switch (type) {
     case 'day':
       return format(date, 'yyyy-MM-dd') as DayKey;
     case 'week':
-      return format(date, "yyyy-'W'ww") as WeekKey;
+      return format(date, "YYYY-'W'ww", { useAdditionalWeekYearTokens: true }) as WeekKey;
     case 'month':
       return format(date, 'yyyy-MM') as MonthKey;
     case 'year':
@@ -179,4 +201,15 @@ export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'ye
     default:
       throw new Error('Invalid key type');
   }
+}
+
+/**
+ * Returns the type of a DateKey ('day', 'week', 'month', 'year').
+ */
+export function getDateKeyType(key: DateKey): 'day' | 'week' | 'month' | 'year' {
+  if (isDayKey(key)) return 'day';
+  if (isWeekKey(key)) return 'week';
+  if (isMonthKey(key)) return 'month';
+  if (isYearKey(key)) return 'year';
+  throw new Error(`Invalid DateKey: ${key}`);
 }
