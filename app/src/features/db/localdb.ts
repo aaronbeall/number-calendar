@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid';
 import type { DatasetIconName } from '@/lib/dataset-icons';
 import { toMonthKey, toYearKey } from '@/lib/friendly-date';
 import { openDB } from 'idb';
@@ -100,7 +101,7 @@ function getDb() {
         }
         
         const defaultDataset: Dataset = {
-          id: 'migrated-default',
+          id: nanoid(),
           name: 'My Numbers',
           description: 'Migrated from previous version',
           icon: 'database',

@@ -96,10 +96,10 @@ export function useSaveDay() {
 }
 
 // Hook to find the most recent populated month before a given date
-export function useMostRecentPopulatedMonthBefore(datasetId: string, beforeDate: DayKey | null) {
+export function useMostRecentPopulatedMonthBefore(datasetId: string, beforeDate: DayKey) {
   return useQuery({
     queryKey: ['mostRecentPopulatedMonthBefore', datasetId, beforeDate],
-    queryFn: () => findMostRecentPopulatedMonthBefore(datasetId, beforeDate as DayKey),
+    queryFn: () => findMostRecentPopulatedMonthBefore(datasetId, beforeDate),
     enabled: !!beforeDate,
   });
 }

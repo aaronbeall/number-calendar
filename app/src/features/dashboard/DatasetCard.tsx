@@ -1,25 +1,42 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { NumberText } from '@/components/ui/number-text';
 import type { Dataset } from '@/features/db/localdb';
-import { useMonth } from '@/features/db/useCalendarData';
+import { useMonth, useMostRecentPopulatedMonthBefore } from '@/features/db/useCalendarData';
+import { getMonthDays, getPriorMonthNumbersMap } from '@/lib/calendar';
 import { getSeededColorTheme } from '@/lib/colors';
 import { getDatasetIcon } from '@/lib/dataset-icons';
-import { toDayKey } from '@/lib/friendly-date';
+import { toDayKey, toMonthKey } from '@/lib/friendly-date';
+import { getPrimaryMetric, getValenceValueForNumber } from '@/lib/tracking';
 import { getRelativeTime } from '@/lib/utils';
-import { BarChart as BarChartIcon, Copy, Download, MoreVertical, Settings, TrendingUp, Upload } from 'lucide-react';
+import { getValueForValence } from '@/lib/valence';
+import { ArrowRight, BarChart as BarChartIcon, Copy, Download, MoreVertical, Settings, TrendingUp, Upload } from 'lucide-react';
 import { useMemo } from 'react';
 import { Line, LineChart, ResponsiveContainer } from 'recharts';
 
 export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; year: number; month: number; onSelect: (id: string) => void }) {
   const { data: monthData = {} } = useMonth(dataset.id, year, month);
+  const { data: priorMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, toDayKey(year, month, 1));
   const updated = getRelativeTime(dataset.updatedAt);
   const IconComponent = getDatasetIcon(dataset.icon);
   const { bg: iconBg, text: iconText } = getSeededColorTheme(dataset.id);
 
+  const days = getMonthDays(year, month);
+
+  const priorMonthDataMap = useMemo(() => 
+    getPriorMonthNumbersMap(days, monthData, priorMonthData, { days: true, month: true }),
+    [days, monthData, priorMonthData]
+  );
+
   // Memoized chart data and stats
   const stats = useMemo(() => {
     const daysInMonth = new Date(year, month, 0).getDate();
-    const data: { day: number; dailyTotal: number; cumulativeTotal: number }[] = [];
-    let running = 0;
+    const data: { day: number; current: number; dailyTotal: number; cumulativeTotal: number }[] = [];
+    const priorClose = priorMonthDataMap[days[0]]?.slice(-1)[0] ?? 0;
+    const priorTotal = priorMonthDataMap[toMonthKey(year, month)]?.reduce((sum, num) => sum + num, 0) ?? 0;
+    const priorTotalAverage = priorTotal / (priorMonthData ? Object.keys(priorMonthData).length : 1);
+    let total = 0;
+    let current = priorClose;
+    let currentAverage = current
     let totalEntries = 0;
     let activeDays = 0;
     let maxDaily = 0;
@@ -35,24 +52,82 @@ export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Datas
         totalEntries += numbers.length;
         if (dailyTotal > maxDaily) maxDaily = dailyTotal;
         if (dailyTotal < minDaily) minDaily = dailyTotal;
+        current = numbers[numbers.length - 1];
+        currentAverage = (current + currentAverage) / 2;
       }
       
-      running += dailyTotal;
-      data.push({ day, dailyTotal, cumulativeTotal: running });
+      total += dailyTotal;
+      data.push({ day, current, dailyTotal, cumulativeTotal: total });
     }
 
+    const totalDelta = total - priorTotal;
+    const currentDelta = current - priorClose;
+    const averageTotal = activeDays > 0 ? total / activeDays : 0;
+    const averageTotalDelta = averageTotal - priorTotalAverage;
+    const currentAverageDelta = currentAverage - priorClose;
+
     return {
-      chartData: data,
-      total: running,
+      data,
+      total,
+      current,
       activeDays,
       totalEntries,
-      average: activeDays > 0 ? running / activeDays : 0,
+      totalDelta,
+      totalPercentChange: priorTotal !== 0 ? (totalDelta / Math.abs(priorTotal)) : 0,
+      currentDelta,
+      currentPercentChange: priorClose !== 0 ? (currentDelta / Math.abs(priorClose)) : 0,
+      averageTotal,
+      averageTotalDelta,
+      averageTotalPercentChange: priorTotalAverage !== 0 ? (averageTotalDelta / Math.abs(priorTotalAverage)) : 0,
+      currentAverage,
+      currentAverageDelta,
+      currentAveragePercentChange: priorClose !== 0 ? (currentAverageDelta / Math.abs(priorClose)) : 0,
       maxDaily: activeDays > 0 ? maxDaily : 0,
       minDaily: activeDays > 0 && minDaily !== Number.POSITIVE_INFINITY ? minDaily : 0,
     };
   }, [monthData, year, month]);
 
-  const lineColor = stats.total >= 0 ? 'rgb(34 197 94)' : 'rgb(239 68 68)';
+  const {
+    primaryMetric,
+    primaryMetricDelta,
+    primaryMetricPercentChange,
+    primaryMetricLabel,
+    primaryValenceValue,
+    average,
+    averageDelta,
+    averagePercentChange,
+    averageValenceValue,
+  } = {
+    total: {
+      primaryMetric: stats.total,
+      primaryMetricDelta: stats.totalDelta,
+      primaryMetricPercentChange: stats.totalPercentChange,
+      primaryMetricLabel: 'Total',
+      primaryValenceValue: getValenceValueForNumber(stats.total, stats.total - stats.totalDelta, dataset.tracking),
+      average: stats.averageTotal,
+      averageDelta: stats.averageTotalDelta,
+      averagePercentChange: stats.averageTotalPercentChange,
+      averageValenceValue: getValenceValueForNumber(stats.averageTotal, stats.averageTotal - stats.averageTotalDelta, dataset.tracking),
+    },
+    last: {
+      primaryMetric: stats.current,
+      primaryMetricDelta: stats.currentDelta,
+      primaryMetricPercentChange: stats.currentPercentChange,
+      primaryMetricLabel: 'Current',
+      primaryValenceValue: getValenceValueForNumber(stats.current, stats.current - stats.currentDelta, dataset.tracking),
+      average: stats.currentAverage,
+      averageDelta: stats.currentAverageDelta,
+      averagePercentChange: stats.currentAveragePercentChange,
+      averageValenceValue: getValenceValueForNumber(stats.currentAverage, stats.currentAverage - stats.currentAverageDelta, dataset.tracking),
+    },
+  }[getPrimaryMetric(dataset.tracking)];
+
+  const lineColor = getValueForValence(primaryValenceValue, dataset.valence, {
+    good: '#10B981', // Emerald
+    bad: '#EF4444',  // Red
+    neutral: primaryValenceValue != 0 ? '#3B82F6' : '#6B7280', // Blue or Gray
+  });
+  const dataKey = (dataset.tracking === 'series' ? 'cumulativeTotal' : 'current') satisfies keyof typeof stats['data'][number];
   const tracking = dataset.tracking;
   const TagIcon = tracking === 'trend' ? TrendingUp : BarChartIcon;
   const badgeColor = tracking === 'trend' 
@@ -103,7 +178,7 @@ export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Datas
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                       <Copy className="w-4 h-4 mr-2" />
-                      Copy As...
+                      Duplicate
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
                       <Upload className="w-4 h-4 mr-2" />
@@ -126,20 +201,78 @@ export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Datas
         {/* Stats Grid */}
         <div className="grid grid-cols-3 gap-3 mb-4">
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3 border border-slate-200 dark:border-slate-600">
-            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Total</div>
-            <div className={`text-2xl font-bold ${stats.total >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-              {stats.total.toLocaleString()}
+            <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{primaryMetricLabel}</div>
+            <div className="mb-2">
+              <NumberText
+                value={primaryMetric}
+                valenceValue={primaryValenceValue}
+                valence={dataset.valence}
+                className="text-2xl font-bold"
+                formatOptions={{ notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 }}
+              />
+            </div>
+            <div className="text-xs space-y-0.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-500">Δ:</span>
+                <NumberText
+                  value={primaryMetricDelta}
+                  valenceValue={primaryMetricDelta}
+                  valence={dataset.valence}
+                  className="text-xs"
+                  formatOptions={{ notation: 'compact', compactDisplay: 'short', signDisplay: 'always', maximumFractionDigits: 1 }}
+                />
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-500">%:</span>
+                <NumberText
+                  value={primaryMetricPercentChange}
+                  valenceValue={primaryMetricPercentChange}
+                  valence={dataset.valence}
+                  className="text-xs"
+                  placeholder="0%"
+                  formatOptions={{ style: 'percent', notation: 'compact', compactDisplay: 'short', signDisplay: 'always', minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                />
+              </div>
             </div>
           </div>
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3 border border-slate-200 dark:border-slate-600">
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Avg/Day</div>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {stats.average.toFixed(1)}
+            <div className="mb-2">
+              <NumberText
+                value={average}
+                valenceValue={averageValenceValue}
+                valence={dataset.valence}
+                className="text-2xl font-bold"
+                formatOptions={{ notation: 'compact', compactDisplay: 'short', maximumSignificantDigits: 1 }}
+              />
+            </div>
+            <div className="text-xs space-y-0.5">
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-500">Δ:</span>
+                <NumberText
+                  value={averageDelta}
+                  valenceValue={averageDelta}
+                  valence={dataset.valence}
+                  className="text-xs"
+                  formatOptions={{ notation: 'compact', compactDisplay: 'short', signDisplay: 'always', maximumFractionDigits: 1 }}
+                />
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 dark:text-slate-500">%:</span>
+                <NumberText
+                  value={averagePercentChange}
+                  valenceValue={averagePercentChange}
+                  valence={dataset.valence}
+                  className="text-xs"
+                  placeholder="0%"
+                  formatOptions={{ style: 'percent', notation: 'compact', compactDisplay: 'short', signDisplay: 'always', minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                />
+              </div>
             </div>
           </div>
           <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-3 border border-slate-200 dark:border-slate-600">
             <div className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Active</div>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+            <div className={`text-2xl font-bold ${stats.activeDays === 0 ? 'text-slate-400 dark:text-slate-500' : 'text-purple-600 dark:text-purple-400'}`}>
               {stats.activeDays}d
             </div>
           </div>
@@ -153,10 +286,10 @@ export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Datas
             </div>
             <div className="h-16">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                <LineChart data={stats.data} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
                   <Line
                     type="monotone"
-                    dataKey="cumulativeTotal"
+                    dataKey={dataKey}
                     stroke={lineColor}
                     strokeWidth={2.5}
                     dot={false}
@@ -171,7 +304,7 @@ export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Datas
         <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
           <span>Updated {updated}</span>
           <span className="font-medium text-blue-600 dark:text-indigo-400 group-hover:underline">
-            View Details →
+            View Details <ArrowRight className="w-3 h-3 inline-block ml-0.5 group-hover:translate-x-0.5 transition-transform" />
           </span>
         </div>
       </div>
