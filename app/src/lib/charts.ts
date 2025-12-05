@@ -54,23 +54,23 @@ export function getChartData(numbers: number[], tracking: Tracking): NumbersChar
     });
   }
   // Default fallback
-      return numbers.map((n, i) => ({
-        x: i,
-        y: n,
-        value: n,
-        valenceValue: n,
-        secondaryLabel: '',
-      }));
+  return numbers.map((n, i) => ({
+    x: i,
+    y: n,
+    value: n,
+    valenceValue: n,
+    secondaryLabel: '',
+  }));
 }
 
-  export const getRelativeSize = (value: number, range?: { min?: number; max?: number }, minScale: number = 0.4, maxScale: number = 1): number => {
-    if (!range) return 1;
-    const { min, max } = range;
-    if (min === undefined || max === undefined) return 1;
-    const absValue = Math.abs(value);
-    const absMin = Math.abs(min);
-    const absMax = Math.abs(max);
-    const maxMagnitude = Math.max(absMin, absMax);
-    if (maxMagnitude === 0) return 1;
-    return minScale + (absValue / maxMagnitude) * (maxScale - minScale);
-  };
+export const getRelativeSize = (value: number, range?: { min?: number; max?: number }, minScale: number = 0.4, maxScale: number = 1): number => {
+  if (!range) return 1;
+  const { min, max } = range;
+  if (min === undefined || max === undefined) return 1;
+  const absValue = Math.abs(value);
+  const absMin = Math.abs(min);
+  const absMax = Math.abs(max);
+  const maxMagnitude = Math.max(absMin, absMax);
+  if (maxMagnitude === 0) return 1;
+  return minScale + (absValue / maxMagnitude) * (maxScale - minScale);
+};
