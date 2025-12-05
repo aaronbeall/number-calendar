@@ -6,9 +6,9 @@ import { getSeededColorTheme } from '@/lib/colors';
 import { getDatasetIcon } from '@/lib/dataset-icons';
 import { toDayKey } from '@/lib/friendly-date';
 import { getRelativeTime } from '@/lib/utils';
-import { BarChart as BarChartIcon, Copy, Download, Info, MoreVertical, Plus, Search, Settings, Sparkles, Target, TrendingUp, Upload } from 'lucide-react';
+import { ArrowRight, BarChart as BarChartIcon, Copy, Download, Info, MoreVertical, Plus, Search, Settings, Sparkles, Target, TrendingUp, Upload } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Line, LineChart, ResponsiveContainer } from 'recharts';
 
 function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; year: number; month: number; onSelect: (id: string) => void }) {
@@ -181,7 +181,9 @@ function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; yea
   );
 }
 
-function IntroLanding({ onOpenCreate }: { onOpenCreate: () => void }) {
+function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingData: boolean; onOpenCreate: () => void }) {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:via-purple-900/20 dark:to-blue-900/20 relative overflow-hidden">
       {/* Animated background elements */}
@@ -214,8 +216,21 @@ function IntroLanding({ onOpenCreate }: { onOpenCreate: () => void }) {
         >
           <span className="absolute inset-0 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
           <Plus className="w-6 h-6 relative z-10 group-hover:rotate-90 transition-transform" />
-          <span className="relative z-10">Create Your First Number Calendar</span>
+          <span className="relative z-10">
+            { hasExistingData ? 'Create New Number Calendar' : 'Create Your First Number Calendar' }
+          </span>
         </button>
+        { hasExistingData && (
+          <button
+            onClick={() => {
+              searchParams.delete('intro');
+              setSearchParams(searchParams);
+            }}
+            className="text-sm text-slate-600 dark:text-slate-400 underline hover:text-slate-800 dark:hover:text-slate-200 transition-colors mb-12 -mt-8 group cursor-pointer"
+          >
+            Continue to Existing Data <ArrowRight className="w-4 h-4 inline-block ml-1 group-hover:translate-x-1 transition-transform" />
+          </button>
+        ) }
 
         {/* Hero Screenshot */}
         <div className="w-full max-w-6xl mx-auto relative group">
@@ -320,13 +335,13 @@ function DatasetsLanding({
 
             {/* Search and Actions */}
             <div className="flex items-center gap-4">
-              <a
-                href="?intro"
+              <Link
+                to="?intro"
                 className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
                 aria-label="View intro"
               >
                 <Info className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-              </a>
+              </Link>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
@@ -396,7 +411,7 @@ export function Landing({ datasets, onSelectDataset, onOpenCreate }: { datasets:
   const currentMonth = now.getMonth() + 1;
   
   if (datasets.length === 0 || searchParams[0].has('intro')) {
-    return <IntroLanding onOpenCreate={onOpenCreate} />;
+    return <IntroLanding hasExistingData={datasets.length > 0} onOpenCreate={onOpenCreate} />;
   }
 
   return (
