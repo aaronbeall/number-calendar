@@ -16,18 +16,13 @@
     </clipPath>
   </defs>
   <g opacity="0.18" clip-path="url(#circleClip)">
-    <!-- Vertical fisheye grid lines (bulge outward) -->
-    <path d="M12,2 Q0,32 12,62" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M22,2 Q8,32 22,62" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M32,2 Q32,64 32,62" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M42,2 Q56,32 42,62" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M52,2 Q64,32 52,62" stroke="#fff" stroke-width="1" fill="none"/>
-    <!-- Horizontal fisheye grid lines (bulge outward) -->
-    <path d="M2,14 Q32,0 62,14" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M2,24 Q32,8 62,24" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M2,34 Q32,16 62,34" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M2,44 Q32,48 62,44" stroke="#fff" stroke-width="1" fill="none"/>
-    <path d="M2,54 Q32,56 62,54" stroke="#fff" stroke-width="1" fill="none"/>
+    <!-- Hash symbol (#) -->
+    <!-- Vertical lines of hash -->
+    <line x1="18" y1="8" x2="18" y2="56" stroke="#fff" stroke-width="2.5"/>
+    <line x1="46" y1="8" x2="46" y2="56" stroke="#fff" stroke-width="2.5"/>
+    <!-- Horizontal lines of hash -->
+    <line x1="8" y1="22" x2="56" y2="22" stroke="#fff" stroke-width="2.5"/>
+    <line x1="8" y1="42" x2="56" y2="42" stroke="#fff" stroke-width="2.5"/>
   </g>
   <!-- Top-focused glow gradient -->
   <linearGradient id="arrowTopGlow" x1="32" y1="8" x2="32" y2="48" gradientUnits="userSpaceOnUse">
@@ -45,7 +40,7 @@
     </feMerge>
   </filter>
   <!-- Glow shape above arrow (larger reflection) -->
-  <ellipse cx="32" cy="18" rx="20" ry="11" fill="url(#arrowTopGlow)" style="mix-blend-mode:overlay;" filter="url(#arrowGlowFilter)"/>
+  <ellipse cx="32" cy="18" rx="20" ry="11" fill="url(#arrowTopGlow)" style="mix-blend-mode:overlay;" filter="url(#arrowGlowFilter)" clip-path="url(#circleClip)"/>
   <!-- Large upward arrow with top glow effect -->
   <path d="M 32 16 L 20 28 L 26 28 L 26 48 L 38 48 L 38 28 L 44 28 Z" fill="#fff" stroke="#fff" stroke-width="1.5"/>
 </svg>

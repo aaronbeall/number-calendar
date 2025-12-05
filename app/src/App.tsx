@@ -1,5 +1,5 @@
 import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award, Download, Upload } from 'lucide-react';
-import LogoIcon from '../public/icon.svg?react';
+import LogoIcon from '@/assets/icon.svg?react';
 import { useState } from 'react';
 import {
   BrowserRouter as Router,
