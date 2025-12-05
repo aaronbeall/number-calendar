@@ -3,7 +3,28 @@ import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
 import { ArrowRight, BarChart as BarChartIcon, Info, Plus, Search, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+
+export function Landing({ datasets, onSelectDataset, onOpenCreate }: { datasets: Dataset[]; onSelectDataset: (datasetId: string) => void; onOpenCreate: () => void }) {
+  const searchParams = useSearchParams();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  
+  if (datasets.length === 0 || searchParams[0].has('intro')) {
+    return <IntroLanding hasExistingData={datasets.length > 0} onOpenCreate={onOpenCreate} />;
+  }
+
+  return (
+    <DatasetsLanding 
+      datasets={datasets}
+      year={currentYear}
+      month={currentMonth}
+      onSelectDataset={onSelectDataset}
+      onOpenCreate={onOpenCreate}
+    />
+  );
+}
 
 function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingData: boolean; onOpenCreate: () => void }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -224,26 +245,5 @@ function DatasetsLanding({
         </div>
       </div>
     </div>
-  );
-}
-
-export function Landing({ datasets, onSelectDataset, onOpenCreate }: { datasets: Dataset[]; onSelectDataset: (datasetId: string) => void; onOpenCreate: () => void }) {
-  const searchParams = useSearchParams();
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  
-  if (datasets.length === 0 || searchParams[0].has('intro')) {
-    return <IntroLanding hasExistingData={datasets.length > 0} onOpenCreate={onOpenCreate} />;
-  }
-
-  return (
-    <DatasetsLanding 
-      datasets={datasets}
-      year={currentYear}
-      month={currentMonth}
-      onSelectDataset={onSelectDataset}
-      onOpenCreate={onOpenCreate}
-    />
   );
 }
