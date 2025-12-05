@@ -14,7 +14,9 @@ I'm liking this one.
   - [ ] Records timeline
   - [ ] Records calendar
   - [ ] Show records on calendar
+- [ ] Notifications on new Records/Achievements/Streaks
 - [ ] Onboarding
+  - [ ] Example datasets
 - [ ] App preferences
 - [ ] Data import/export
 - [ ] Data settings
