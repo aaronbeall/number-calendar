@@ -12,7 +12,7 @@ import {
 } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { getDatasetIcon } from './lib/dataset-icons';
-import { useDatasets } from './features/db/useDatasetData';
+import { useDataset, useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import ImportDialog from './features/dataset/ImportDialog';
 import ExportDialog from './features/dataset/ExportDialog';
@@ -24,6 +24,8 @@ import type { Dataset } from './features/db/localdb';
 import { Landing } from './pages/Landing';
 import { Calendar } from './pages/Calendar';
 import Records from './pages/Records';
+import { Spinner } from './components/ui/spinner';
+import { Skeleton } from './components/ui/skeleton';
 
 
 function App() {
@@ -58,7 +60,8 @@ function AppLayout() {
   if (datasetsLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
-        <div className="text-center text-slate-400 text-lg mt-32">Loading datasets...</div>
+        <Spinner className="mb-4" />
+        <div className="text-center text-slate-400 text-lg animate-pulse">Loading...</div>
         <AppFooter />
       </div>
     );
@@ -128,13 +131,32 @@ function DatasetLayout({
   setShowExportDialog: (show: boolean) => void;
 }) {
   const { datasetId } = useParams();
+  const { data: dataset, isLoading } = useDataset(datasetId ?? '');
   const navigate = useNavigate();
-  const currentDataset = datasets.find(d => d.id === datasetId);
-  if (!currentDataset) return <Navigate to="/" replace />;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+        <Skeleton className="h-16 w-full" />
+        <div className="flex-1 w-full p-8">
+          <div className="max-w-4xl mx-auto">
+            <Skeleton className="h-10 w-full mb-8" />
+            <div className="grid grid-cols-5 gap-4">
+              {[...Array(20)].map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-xl" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  } else if (!dataset) {
+    return <Navigate to="/" replace />;
+  }
+  
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
       <AppHeader
-        currentDataset={currentDataset}
+        currentDataset={dataset}
         datasets={datasets}
         onOpenCreate={onOpenCreate}
         onOpenEdit={onOpenEdit}
@@ -143,10 +165,10 @@ function DatasetLayout({
       />
       <div className="flex-1 w-full">
         <Routes>
-          <Route index element={<Calendar dataset={currentDataset} />} />
+          <Route index element={<Calendar dataset={dataset} />} />
           <Route path="achievements" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Achievements</h2></div>} />
           <Route path="milestones" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Milestones</h2></div>} />
-          <Route path="records" element={<Records datasetId={currentDataset.id} />} />
+          <Route path="records" element={<Records datasetId={dataset.id} />} />
           <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
         </Routes>
       </div>
@@ -159,12 +181,12 @@ function DatasetLayout({
       <ImportDialog
         open={showImportDialog}
         onOpenChange={setShowImportDialog}
-        datasetId={currentDataset.id}
+        datasetId={dataset.id}
       />
       <ExportDialog
         open={showExportDialog}
         onOpenChange={setShowExportDialog}
-        datasetId={currentDataset.id}
+        datasetId={dataset.id}
       />
       <AppFooter />
     </div>
