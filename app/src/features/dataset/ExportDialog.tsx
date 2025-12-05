@@ -4,22 +4,22 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useCalendarContext } from '@/context/CalendarContext';
 import { generateExportData, generateFileContent, type ExportFormat, type ExportRangeType, type ExportType } from '@/lib/exporting';
 import { getPrimaryMetricLabel } from '@/lib/tracking';
 import { AlertCircle, Calendar, CalendarCheck, CalendarDays, CalendarRange, Check, Copy, Download, FileType, ListOrdered } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAllDays } from '../db/useCalendarData';
 import { useDataset } from '../db/useDatasetData';
+import { dateToDayKey, dateToMonthKey, toMonthKey } from '@/lib/friendly-date';
 
 export interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   datasetId: string;
+  defaultDateRange?: { startDate: string; endDate: string };
 }
 
-export function ExportDialog({ open, onOpenChange, datasetId }: ExportDialogProps) {
-  const { getDefaultExportDateRange } = useCalendarContext();
+export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }: ExportDialogProps) {
   const [exportType, setExportType] = useState<ExportType>('daily');
   const [rangeType, setRangeType] = useState<ExportRangeType>('all');
   const [startDate, setStartDate] = useState('');
@@ -36,12 +36,25 @@ export function ExportDialog({ open, onOpenChange, datasetId }: ExportDialogProp
   const dateType = exportType === 'monthly' ? 'month' : 'date';
   const dateFormat = exportType === 'monthly' ? 'YYYY-MM' : 'YYYY-MM-DD';
 
-  // Set default date range based on calendar view and export type
+  // Set default date range based on prop or current date
   useEffect(() => {
-    const defaults = getDefaultExportDateRange(exportType);
-    setStartDate(defaults.startDate);
-    setEndDate(defaults.endDate);
-  }, [exportType, getDefaultExportDateRange]);
+    if (defaultDateRange) {
+      setStartDate(defaultDateRange.startDate);
+      setEndDate(defaultDateRange.endDate);
+    } else {
+      // Fallback to current month if no default provided
+      const now = new Date();
+      if (exportType === 'monthly') {
+        setStartDate(dateToMonthKey(now));
+        setEndDate(dateToMonthKey(now));
+      } else {
+        const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        setStartDate(dateToDayKey(firstDay));
+        setEndDate(dateToDayKey(lastDay));
+      }
+    }
+  }, [exportType, defaultDateRange]);
 
   // Generate export data based on options
   const exportData = useMemo(() => {

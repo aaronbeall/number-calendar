@@ -13,7 +13,23 @@ import { ArrowRight, BarChart as BarChartIcon, Copy, Download, MoreVertical, Set
 import { useMemo } from 'react';
 import { Line, LineChart, ResponsiveContainer } from 'recharts';
 
-export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Dataset; year: number; month: number; onSelect: (id: string) => void }) {
+export function DatasetCard({ 
+  dataset, 
+  year, 
+  month, 
+  onSelect,
+  onOpenEdit,
+  onOpenImport,
+  onOpenExport,
+}: { 
+  dataset: Dataset; 
+  year: number; 
+  month: number; 
+  onSelect: (datasetId: string) => void;
+  onOpenEdit: (dataset: Dataset) => void;
+  onOpenImport: (datasetId: string) => void;
+  onOpenExport: (datasetId: string) => void;
+}) {
   const { data: monthData = {} } = useMonth(dataset.id, year, month);
   const { data: priorMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, toDayKey(year, month, 1));
   const updated = getRelativeTime(dataset.updatedAt);
@@ -171,7 +187,10 @@ export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Datas
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenEdit(dataset);
+                    }}>
                       <Settings className="w-4 h-4 mr-2" />
                       Settings
                     </DropdownMenuItem>
@@ -180,11 +199,17 @@ export function DatasetCard({ dataset, year, month, onSelect }: { dataset: Datas
                       <Copy className="w-4 h-4 mr-2" />
                       Duplicate
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenImport(dataset.id);
+                    }}>
                       <Upload className="w-4 h-4 mr-2" />
                       Import
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenExport(dataset.id);
+                    }}>
                       <Download className="w-4 h-4 mr-2" />
                       Export
                     </DropdownMenuItem>

@@ -5,7 +5,21 @@ import { ArrowRight, BarChart as BarChartIcon, Info, Plus, Search, Sparkles, Tar
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
-export function Landing({ datasets, onSelectDataset, onOpenCreate }: { datasets: Dataset[]; onSelectDataset: (datasetId: string) => void; onOpenCreate: () => void }) {
+export function Landing({ 
+  datasets, 
+  onSelectDataset, 
+  onOpenCreate,
+  onOpenEdit,
+  onOpenImport,
+  onOpenExport,
+}: { 
+  datasets: Dataset[]; 
+  onSelectDataset: (datasetId: string) => void; 
+  onOpenCreate: () => void;
+  onOpenEdit: (dataset: Dataset) => void;
+  onOpenImport: (datasetId: string) => void;
+  onOpenExport: (datasetId: string) => void;
+}) {
   const searchParams = useSearchParams();
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -22,6 +36,9 @@ export function Landing({ datasets, onSelectDataset, onOpenCreate }: { datasets:
       month={currentMonth}
       onSelectDataset={onSelectDataset}
       onOpenCreate={onOpenCreate}
+      onOpenEdit={onOpenEdit}
+      onOpenImport={onOpenImport}
+      onOpenExport={onOpenExport}
     />
   );
 }
@@ -138,13 +155,19 @@ function DatasetsLanding({
   year, 
   month, 
   onSelectDataset, 
-  onOpenCreate 
+  onOpenCreate,
+  onOpenEdit,
+  onOpenImport,
+  onOpenExport,
 }: { 
   datasets: Dataset[]; 
   year: number; 
   month: number; 
   onSelectDataset: (id: string) => void; 
   onOpenCreate: () => void;
+  onOpenEdit: (dataset: Dataset) => void;
+  onOpenImport: (datasetId: string) => void;
+  onOpenExport: (datasetId: string) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -225,7 +248,10 @@ function DatasetsLanding({
               dataset={ds} 
               year={year} 
               month={month} 
-              onSelect={onSelectDataset} 
+              onSelect={onSelectDataset}
+              onOpenEdit={onOpenEdit}
+              onOpenImport={onOpenImport}
+              onOpenExport={onOpenExport}
             />
           ))}
           

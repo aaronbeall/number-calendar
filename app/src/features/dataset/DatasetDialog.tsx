@@ -17,13 +17,13 @@ import { LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from 'recha
 interface DatasetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSaved: (id: string) => void;
+  onCreated: (datasetId: string) => void;
   dataset?: Dataset; // If provided, edit mode
 }
 
 const ICON_OPTIONS = DATASET_ICON_OPTIONS;
 
-export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetDialogProps) {
+export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: DatasetDialogProps) {
   const createDatasetMutation = useCreateDataset();
   const updateDatasetMutation = useUpdateDataset();
   const deleteDatasetMutation = useDeleteDataset();
@@ -100,7 +100,6 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
       };
       updateDatasetMutation.mutate(updated, {
         onSuccess: () => {
-          onSaved(updated.id);
           onOpenChange(false);
         }
       });
@@ -121,7 +120,7 @@ export function DatasetDialog({ open, onOpenChange, onSaved, dataset }: DatasetD
       createDatasetMutation.mutate(newDataset, {
         onSuccess: () => {
           reset();
-          onSaved(id);
+          onCreated(id);
           onOpenChange(false);
         }
       });

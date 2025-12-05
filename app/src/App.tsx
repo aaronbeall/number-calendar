@@ -16,7 +16,7 @@ import { useDataset, useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import ImportDialog from './features/dataset/ImportDialog';
 import ExportDialog from './features/dataset/ExportDialog';
-import { CalendarProvider } from './context/CalendarContext';
+import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useTheme } from './components/ThemeProvider';
@@ -41,20 +41,35 @@ function App() {
 
 function AppLayout() {
   const { data: datasets = [], isLoading: datasetsLoading } = useDatasets();
-  const [showCreateDataset, setShowCreateDataset] = useState(false);
+  const [showDatasetDialog, setShowDatasetDialog] = useState(false);
   const [editingDataset, setEditingDataset] = useState<Dataset | undefined>(undefined);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [activeDatasetId, setActiveDatasetId] = useState<string | null>(null);
+  const [exportDateRange, setExportDateRange] = useState<{ startDate: string; endDate: string } | undefined>(undefined);
   const navigate = useNavigate();
 
   // Helper for dialog
+  const handleOpenCreate = () => {
+    setEditingDataset(undefined);
+    setShowDatasetDialog(true);
+  }
   const handleOpenEdit = (dataset: Dataset) => {
     setEditingDataset(dataset);
-    setShowCreateDataset(true);
+    setShowDatasetDialog(true);
   };
   const handleCloseDialog = () => {
-    setShowCreateDataset(false);
+    setShowDatasetDialog(false);
     setEditingDataset(undefined);
+  };
+  const handleOpenImport = (datasetId: string) => {
+    setActiveDatasetId(datasetId);
+    setShowImportDialog(true);
+  };
+  const handleOpenExport = (datasetId: string, dateRange?: { startDate: string; endDate: string }) => {
+    setActiveDatasetId(datasetId);
+    setExportDateRange(dateRange);
+    setShowExportDialog(true);
   };
 
   if (datasetsLoading) {
@@ -67,43 +82,60 @@ function AppLayout() {
     );
   }
   return (
-    <Routes>
-      <Route index element={
-        <>
+    <>
+      <Routes>
+        <Route index element={
           <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
             <Landing
               datasets={datasets}
               onSelectDataset={id => navigate(`/dataset/${id}`)}
-              onOpenCreate={() => setShowCreateDataset(true)}
-            />
-            <DatasetDialog
-              open={showCreateDataset}
-              onOpenChange={handleCloseDialog}
-              onSaved={id => navigate(`/dataset/${id}`)}
-              dataset={editingDataset}
+              onOpenCreate={handleOpenCreate}
+              onOpenEdit={handleOpenEdit}
+              onOpenImport={handleOpenImport}
+              onOpenExport={(datasetId) => handleOpenExport(datasetId)}
             />
             <AppFooter />
           </div>
-        </>
-      } />
-      <Route path="dataset/:datasetId/*" element={
-        <CalendarProvider>
-          <DatasetLayout
-            datasets={datasets}
-            onOpenCreate={() => setShowCreateDataset(true)}
-            onOpenEdit={handleOpenEdit}
-            showCreateDataset={showCreateDataset}
-            editingDataset={editingDataset}
-            handleCloseDialog={handleCloseDialog}
-            showImportDialog={showImportDialog}
-            setShowImportDialog={setShowImportDialog}
-            showExportDialog={showExportDialog}
-            setShowExportDialog={setShowExportDialog}
+        } />
+        <Route path="dataset/:datasetId/*" element={
+          <CalendarProvider>
+            <DatasetLayout
+              datasets={datasets}
+              onOpenCreate={handleOpenCreate}
+              onOpenEdit={handleOpenEdit}
+              onOpenImport={handleOpenImport}
+              onOpenExport={handleOpenExport}
+            />
+          </CalendarProvider>
+        } />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      
+      {/* Global Dialogs */}
+      { showDatasetDialog && (
+        <DatasetDialog
+          open={showDatasetDialog}
+          onOpenChange={handleCloseDialog}
+          onCreated={id => navigate(`/dataset/${id}`)}
+          dataset={editingDataset}
+        />
+      )}
+      { activeDatasetId && showImportDialog && (
+        <ImportDialog
+            open={showImportDialog}
+            onOpenChange={setShowImportDialog}
+            datasetId={activeDatasetId}
           />
-        </CalendarProvider>
-      } />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        )}
+      { activeDatasetId && showExportDialog && (
+        <ExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          datasetId={activeDatasetId}
+          defaultDateRange={exportDateRange}
+        />
+      )}
+    </>
   );
 }
 
@@ -111,28 +143,17 @@ function DatasetLayout({
   datasets,
   onOpenCreate,
   onOpenEdit,
-  showCreateDataset,
-  editingDataset,
-  handleCloseDialog,
-  showImportDialog,
-  setShowImportDialog,
-  showExportDialog,
-  setShowExportDialog,
+  onOpenImport,
+  onOpenExport,
 }: {
   datasets: Dataset[];
   onOpenCreate: () => void;
   onOpenEdit: (dataset: Dataset) => void;
-  showCreateDataset: boolean;
-  editingDataset: Dataset | undefined;
-  handleCloseDialog: () => void;
-  showImportDialog: boolean;
-  setShowImportDialog: (show: boolean) => void;
-  showExportDialog: boolean;
-  setShowExportDialog: (show: boolean) => void;
+  onOpenImport: (datasetId: string) => void;
+  onOpenExport: (datasetId: string, dateRange?: { startDate: string; endDate: string }) => void;
 }) {
   const { datasetId } = useParams();
   const { data: dataset, isLoading } = useDataset(datasetId ?? '');
-  const navigate = useNavigate();
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
@@ -160,8 +181,8 @@ function DatasetLayout({
         datasets={datasets}
         onOpenCreate={onOpenCreate}
         onOpenEdit={onOpenEdit}
-        onOpenImport={() => setShowImportDialog(true)}
-        onOpenExport={() => setShowExportDialog(true)}
+        onOpenImport={() => onOpenImport(dataset.id)}
+        onOpenExport={(dateRange) => onOpenExport(dataset.id, dateRange)}
       />
       <div className="flex-1 w-full">
         <Routes>
@@ -172,22 +193,6 @@ function DatasetLayout({
           <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
         </Routes>
       </div>
-      <DatasetDialog
-        open={showCreateDataset}
-        onOpenChange={handleCloseDialog}
-        onSaved={id => navigate(`/dataset/${id}`)}
-        dataset={editingDataset}
-      />
-      <ImportDialog
-        open={showImportDialog}
-        onOpenChange={setShowImportDialog}
-        datasetId={dataset.id}
-      />
-      <ExportDialog
-        open={showExportDialog}
-        onOpenChange={setShowExportDialog}
-        datasetId={dataset.id}
-      />
       <AppFooter />
     </div>
   );
@@ -208,10 +213,12 @@ function AppHeader({
   onOpenCreate: () => void;
   onOpenEdit: (dataset: Dataset) => void;
   onOpenImport: () => void;
-  onOpenExport: () => void;
+  onOpenExport: (dateRange?: { startDate: string; endDate: string }) => void;
 }) {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { getDefaultExportDateRange } = useCalendarContext();
+  
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 py-4">
@@ -293,7 +300,7 @@ function AppHeader({
                   <Upload className="h-4 w-4" />
                   Import
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" onClick={onOpenExport}>
+                <DropdownMenuItem className="gap-2" onClick={() => onOpenExport(getDefaultExportDateRange())}>
                   <Download className="h-4 w-4" />
                   Export
                 </DropdownMenuItem>

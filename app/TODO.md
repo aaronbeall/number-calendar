@@ -114,3 +114,4 @@ I'm liking this one.
 - [ ] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
 - [ ] Normalize UUIDs
 - [ ] Week/Month/Year summaries need hover and selected state
+- [ ] Can't delete all data on a day anymore
