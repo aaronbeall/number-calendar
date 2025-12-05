@@ -15,10 +15,10 @@ export function getPrimaryMetric(tracking: Tracking) {
 /**
  * Returns the primary metric label based on tracking type.
  */
-export function getPrimaryMetricLabel(tracking: Tracking): string {
+export function getPrimaryMetricLabel(tracking: Tracking) {
   return {
-    series: 'Total',
-    trend: 'Close',
+    series: 'Total' as const,
+    trend: 'Close' as const,
   }[tracking];
 }
 

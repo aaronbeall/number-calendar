@@ -1,4 +1,4 @@
-import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award } from 'lucide-react';
+import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award, Download, Upload } from 'lucide-react';
 import LogoIcon from '../public/icon.svg?react';
 import { useState } from 'react';
 import {
@@ -14,7 +14,11 @@ import { Button } from '@/components/ui/button';
 import { getDatasetIcon } from './lib/dataset-icons';
 import { useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
+import ImportDialog from './features/dataset/ImportDialog';
+import ExportDialog from './features/dataset/ExportDialog';
+import { CalendarProvider } from './context/CalendarContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { useTheme } from './components/ThemeProvider';
 import type { Dataset } from './features/db/localdb';
 import { Landing } from './pages/Landing';
@@ -24,9 +28,11 @@ import Records from './pages/Records';
 
 function App() {
   return (
-    <Router basename='/number-calendar/'>
-      <AppLayout />
-    </Router>
+    <TooltipProvider delayDuration={300}>
+      <Router basename='/number-calendar/'>
+        <AppLayout />
+      </Router>
+    </TooltipProvider>
   );
 }
 
@@ -35,6 +41,8 @@ function AppLayout() {
   const { data: datasets = [], isLoading: datasetsLoading } = useDatasets();
   const [showCreateDataset, setShowCreateDataset] = useState(false);
   const [editingDataset, setEditingDataset] = useState<Dataset | undefined>(undefined);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const navigate = useNavigate();
 
   // Helper for dialog
@@ -76,14 +84,20 @@ function AppLayout() {
         </>
       } />
       <Route path="dataset/:datasetId/*" element={
-        <DatasetLayout
-          datasets={datasets}
-          onOpenCreate={() => setShowCreateDataset(true)}
-          onOpenEdit={handleOpenEdit}
-          showCreateDataset={showCreateDataset}
-          editingDataset={editingDataset}
-          handleCloseDialog={handleCloseDialog}
-        />
+        <CalendarProvider>
+          <DatasetLayout
+            datasets={datasets}
+            onOpenCreate={() => setShowCreateDataset(true)}
+            onOpenEdit={handleOpenEdit}
+            showCreateDataset={showCreateDataset}
+            editingDataset={editingDataset}
+            handleCloseDialog={handleCloseDialog}
+            showImportDialog={showImportDialog}
+            setShowImportDialog={setShowImportDialog}
+            showExportDialog={showExportDialog}
+            setShowExportDialog={setShowExportDialog}
+          />
+        </CalendarProvider>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -97,6 +111,10 @@ function DatasetLayout({
   showCreateDataset,
   editingDataset,
   handleCloseDialog,
+  showImportDialog,
+  setShowImportDialog,
+  showExportDialog,
+  setShowExportDialog,
 }: {
   datasets: Dataset[];
   onOpenCreate: () => void;
@@ -104,6 +122,10 @@ function DatasetLayout({
   showCreateDataset: boolean;
   editingDataset: Dataset | undefined;
   handleCloseDialog: () => void;
+  showImportDialog: boolean;
+  setShowImportDialog: (show: boolean) => void;
+  showExportDialog: boolean;
+  setShowExportDialog: (show: boolean) => void;
 }) {
   const { datasetId } = useParams();
   const navigate = useNavigate();
@@ -116,6 +138,8 @@ function DatasetLayout({
         datasets={datasets}
         onOpenCreate={onOpenCreate}
         onOpenEdit={onOpenEdit}
+        onOpenImport={() => setShowImportDialog(true)}
+        onOpenExport={() => setShowExportDialog(true)}
       />
       <div className="flex-1 w-full">
         <Routes>
@@ -132,6 +156,16 @@ function DatasetLayout({
         onSaved={id => navigate(`/dataset/${id}`)}
         dataset={editingDataset}
       />
+      <ImportDialog
+        open={showImportDialog}
+        onOpenChange={setShowImportDialog}
+        datasetId={currentDataset.id}
+      />
+      <ExportDialog
+        open={showExportDialog}
+        onOpenChange={setShowExportDialog}
+        datasetId={currentDataset.id}
+      />
       <AppFooter />
     </div>
   );
@@ -144,11 +178,15 @@ function AppHeader({
   datasets,
   onOpenCreate,
   onOpenEdit,
+  onOpenImport,
+  onOpenExport,
 }: {
   currentDataset: Dataset;
   datasets: Dataset[];
   onOpenCreate: () => void;
   onOpenEdit: (dataset: Dataset) => void;
+  onOpenImport: () => void;
+  onOpenExport: () => void;
 }) {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
@@ -229,11 +267,13 @@ function AppHeader({
                   <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-pink-700 dark:to-purple-700 bg-clip-text text-transparent font-semibold">AI Insights</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/settings` : '#'}>
-                    <Settings className="h-4 w-4" />
-                    Import/Export
-                  </Link>
+                <DropdownMenuItem className="gap-2" onClick={onOpenImport}>
+                  <Upload className="h-4 w-4" />
+                  Import
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" onClick={onOpenExport}>
+                  <Download className="h-4 w-4" />
+                  Export
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

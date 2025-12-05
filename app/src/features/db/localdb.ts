@@ -76,11 +76,11 @@ export interface LocalDB {
 const DB_NAME = 'number-calendar';
 const STORE_DEFS = [
   { name: 'datasets', keyPath: 'id', indexes: [] },
-  { name: 'entries', keyPath: 'date', indexes: ['datasetId', ['datasetId', 'date']] },
-  { name: 'notes', keyPath: 'date', indexes: ['datasetId', ['datasetId', 'date']] },
+  { name: 'entries', keyPath: ['datasetId', 'date'], indexes: ['datasetId', 'date'] },
+  { name: 'notes', keyPath: ['datasetId', 'date'], indexes: ['datasetId', 'date'] },
   { name: 'images', keyPath: 'id', indexes: ['datasetId', ['datasetId', 'date']] }
 ];
-const DB_VERSION = 7;
+const DB_VERSION = 8;
 
 function getDb() {
   return openDB(DB_NAME, DB_VERSION, {
@@ -191,6 +191,45 @@ function getDb() {
           console.log(`Migrated ${existing.length} datasets to unified valence field`);
         }
       }
+
+      // Migration for changing entries/notes keyPath to composite key (version < 8)
+      if (oldVersion < 8) {
+        // Migrate entries store
+        if (db.objectStoreNames.contains('entries')) {
+          const oldEntriesStore = transaction.objectStore('entries');
+          const allEntries = await oldEntriesStore.getAll();
+          
+          // Delete and recreate the store with new keyPath
+          db.deleteObjectStore('entries');
+          const newEntriesStore = db.createObjectStore('entries', { keyPath: ['datasetId', 'date'] });
+          newEntriesStore.createIndex('datasetId', 'datasetId');
+          newEntriesStore.createIndex('date', 'date');
+          
+          // Re-add all entries
+          for (const entry of allEntries) {
+            await newEntriesStore.put(entry);
+          }
+          console.log(`Migrated ${allEntries.length} entries to composite key`);
+        }
+
+        // Migrate notes store
+        if (db.objectStoreNames.contains('notes')) {
+          const oldNotesStore = transaction.objectStore('notes');
+          const allNotes = await oldNotesStore.getAll();
+          
+          // Delete and recreate the store with new keyPath
+          db.deleteObjectStore('notes');
+          const newNotesStore = db.createObjectStore('notes', { keyPath: ['datasetId', 'date'] });
+          newNotesStore.createIndex('datasetId', 'datasetId');
+          newNotesStore.createIndex('date', 'date');
+          
+          // Re-add all notes
+          for (const note of allNotes) {
+            await newNotesStore.put(note);
+          }
+          console.log(`Migrated ${allNotes.length} notes to composite key`);
+        }
+      }
     },
   });
 }
@@ -228,38 +267,33 @@ export async function saveDay(datasetId: string, date: DayKey, numbers: number[]
 
 export async function loadDay(datasetId: string, date: DayKey): Promise<number[]> {
   const db = await getDb();
-  // Use the composite index [datasetId, date]
-  const index = db.transaction('entries').store.index('datasetId_date');
-  const entry = await index.get([datasetId, date]);
+  // Use the composite key directly
+  const entry = await db.get('entries', [datasetId, date]);
   return entry?.numbers || [];
 }
 
 export async function loadMonth(datasetId: string, year: number, month: number): Promise<Record<DayKey, number[]>> {
   const db = await getDb();
-  const index = db.transaction('entries').store.index('datasetId_date');
   const monthStr = toMonthKey(year, month);
-  // Get all entries for this datasetId
+  // Get all entries for this datasetId and month using composite key range
   const range = IDBKeyRange.bound([datasetId, monthStr], [datasetId, monthStr + '\uffff']);
-  const all: DayEntry[] = await index.getAll(range);
+  const all: DayEntry[] = await db.getAll('entries', range);
   return Object.fromEntries(all.map(entry => [entry.date, entry.numbers]));
 }
 
 export async function loadYear(datasetId: string, year: number): Promise<Record<DayKey, number[]>> {
   const db = await getDb();
-  const index = db.transaction('entries').store.index('datasetId_date');
   const yearStr = toYearKey(year);
-  // Range: all dates starting with year (e.g., 2025-)
+  // Range: all dates starting with year (e.g., 2025-) using composite key
   const range = IDBKeyRange.bound([datasetId, yearStr], [datasetId, yearStr + '\uffff']);
-  const all: DayEntry[] = await index.getAll(range);
+  const all: DayEntry[] = await db.getAll('entries', range);
   return Object.fromEntries(all.map(entry => [entry.date, entry.numbers]));
 }
 
 export async function loadAllDays(datasetId: string): Promise<DayEntry[]> {
   const db = await getDb();
-  const index = db.transaction('entries').store.index('datasetId');
-  // Get all entries for this datasetId
-  const range = IDBKeyRange.only(datasetId);
-  const all: DayEntry[] = await index.getAll(range);
+  // Query using the datasetId index to get all entries for this dataset
+  const all: DayEntry[] = await db.getAllFromIndex('entries', 'datasetId', datasetId);
   return all;
 }
 
@@ -267,10 +301,11 @@ export async function loadAllDays(datasetId: string): Promise<DayEntry[]> {
 // Efficiently find the most recent populated entry before a given date for a dataset, then load the entire month for that entry
 export async function findMostRecentPopulatedMonthBefore(datasetId: string, beforeDate: DayKey): Promise<Record<DayKey, number[]> | undefined> {
   const db = await getDb();
-  const index = db.transaction('entries').store.index('datasetId_date');
+  const tx = db.transaction('entries', 'readonly');
+  const store = tx.objectStore('entries');
   // Open a cursor in reverse order, ending before the target date
   const range = IDBKeyRange.bound([datasetId, '0000-00-00'], [datasetId, beforeDate], false, true);
-  let cursor = await index.openCursor(range, 'prev');
+  let cursor = await store.openCursor(range, 'prev');
   while (cursor) {
     if (cursor.value.numbers && cursor.value.numbers.length > 0) {
       // Found the most recent populated day

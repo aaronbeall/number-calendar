@@ -117,6 +117,21 @@ export function parseExpression(expr: string, tracking: Tracking): number[] | nu
   }[tracking](expr);
 }
 
+export function detectExpressionTrackingFormat(expr: string): Tracking | null {
+  // Check the format for expresion format for matches of what parseSeriesExpression and parseTrendExpression expect
+  const seriesPattern = /^-?\d+([+-]\d+|=\d+)*$/;
+  const trendPattern = /^-?\d+(\s+-?\d+|\s+[+-]=\d+)*$/;
+
+  const cleaned = expr.trim();
+
+  if (seriesPattern.test(cleaned)) {
+    return 'series';
+  } else if (trendPattern.test(cleaned)) {
+    return 'trend';
+  }
+  return null;
+}
+
 /**
  * Formats an array of numbers for series mode: e.g. "35+21-76+2000"
  */
@@ -134,7 +149,7 @@ export function buildSeriesExpressionFromNumbers(nums: number[]): string {
  * - Normalizes away currency, commas, and whitespace
  */
 export function parseSeriesExpression(expr: string): number[] | null {
-  if (!expr.trim()) return [];
+  if (!expr.trim()) return null;
   try {
     // Normalize input (remove currency symbols, thousands separators, whitespace)
     const normalize = (s: string) => s
@@ -144,12 +159,11 @@ export function parseSeriesExpression(expr: string): number[] | null {
 
     // Split on '=' to support delta targets. The first segment provides base numbers.
     const segments = expr.split('=');
-    if (segments.length === 0) return [];
+    if (segments.length === 0) return null;
 
     // Parse first segment into signed numbers by splitting at + or - boundaries.
     const firstCleaned = normalize(segments[0]);
-    if (!firstCleaned) return [];
-
+    if (!firstCleaned) return null;
     const baseParts = firstCleaned.split(/(?=[+-])/);
     const numbers: number[] = baseParts.map(Number).filter(n => !isNaN(n));
     if (numbers.length === 0) return null; // nothing valid before '='
@@ -173,7 +187,7 @@ export function parseSeriesExpression(expr: string): number[] | null {
       runningSum = runningSum + delta; // should equal target
     }
 
-    return numbers;
+    return numbers.length > 0 ? numbers : null;
   } catch {
     return null;
   }

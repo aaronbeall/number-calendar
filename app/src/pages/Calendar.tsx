@@ -14,15 +14,14 @@ import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorMonthNumbersMap, getPriorYearMonthNumbersMap } from "@/lib/calendar";
 import { toDayKey, toMonthKey } from '@/lib/friendly-date';
 import { calculateDailyExtremes, calculateMonthlyExtremes, type StatsExtremes } from '@/lib/stats';
+import { useCalendarContext } from '@/context/CalendarContext';
 import { CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export function Calendar({ dataset }: { dataset: Dataset; }) {
+  const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
   const today = new Date();
   
-  const [view, setView] = useState<'daily' | 'monthly'>('daily');
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
   // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
   const [panelProps, setPanelProps] = useState({
@@ -74,12 +73,12 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   }, [year, yearData, priorYearMonthData, view]);
 
   return (
-  <div className="min-h-screen">
+    <div className="min-h-screen">
 
-      {/* Navigation Header */}
-      <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-      <div className="max-w-4xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-4">
+          {/* Navigation Header */}
+          <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+          <div className="max-w-4xl mx-auto px-4 py-3">
+              <div className="flex items-center gap-4">
             {/* View Toggle */}
             <ToggleGroup
               type="single"
@@ -105,10 +104,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
             <Button 
               variant="outline"
               size="sm"
-              onClick={() => { 
-                setYear(today.getFullYear()); 
-                setMonth(today.getMonth() + 1); 
-              }}
+              onClick={goToToday}
               className="gap-1 h-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
               <CalendarIcon className="h-3 w-3 text-slate-700 dark:text-blue-300" />
@@ -120,18 +116,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={() => {
-                  if (view === 'daily') {
-                    if (month === 1) {
-                      setYear(y => y - 1);
-                      setMonth(12);
-                    } else {
-                      setMonth(m => m - 1);
-                    }
-                  } else {
-                    setYear(y => y - 1);
-                  }
-                }}
+                onClick={goToPrevious}
                 className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
               >
                 <ChevronLeft className="h-4 w-4 text-slate-700 dark:text-blue-300" />
@@ -140,18 +125,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               <Button 
                 variant="outline" 
                 size="icon"
-                onClick={() => {
-                  if (view === 'daily') {
-                    if (month === 12) {
-                      setYear(y => y + 1);
-                      setMonth(1);
-                    } else {
-                      setMonth(m => m + 1);
-                    }
-                  } else {
-                    setYear(y => y + 1);
-                  }
-                }}
+                onClick={goToNext}
                 className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
               >
                 <ChevronRight className="h-4 w-4 text-slate-700 dark:text-blue-300" />
@@ -192,7 +166,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               year={year}
               data={yearData}
               currentMonth={month}
-              onMonthClick={(selectedMonth) => setMonth(selectedMonth)}
+              onMonthClick={setMonth}
               valence={dataset.valence}
               tracking={dataset.tracking}
             />
