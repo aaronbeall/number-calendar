@@ -302,7 +302,7 @@ function AppHeader({
             <Link to="/" className="flex items-center gap-2 group">
               <LogoIcon className="w-10 h-10 transition-transform group-hover:scale-105" aria-label="Numbers Go Up" />
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
                   Numbers Go Up
                 </h1>
                 <p className="text-xs text-slate-500 font-medium">A calendar for numberphiles</p>
