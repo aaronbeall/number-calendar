@@ -25,9 +25,9 @@ export interface ParsedData {
 // Helper to parse date strings
 export const parseDateString = (rawValue: string) => {
   const trimmed = rawValue.trim();
-  // Use Date.parse() to parse various date formats, 
-  // but don't parse any purely numeric strings which gives valid but unlikely dates
-  if (/^[+-]?\d+$/.test(trimmed)) {
+  // Use Date.parse() to parse various date formats,
+  // but don't parse any purely numeric strings (including decimals) which gives valid but unlikely dates
+  if (/^[+-]?(?:\d+\.\d+|\d+|\.\d+)$/.test(trimmed)) {
     return null;
   }
   const timestamp = Date.parse(trimmed);
