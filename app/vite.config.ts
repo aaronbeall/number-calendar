@@ -6,7 +6,7 @@ import svgr from 'vite-plugin-svgr'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/number-calendar/', // Set base for GitHub Pages
+  base: '/',
   plugins: [
     react(),
     tailwindcss(),
