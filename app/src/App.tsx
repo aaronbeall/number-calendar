@@ -29,9 +29,10 @@ import { Skeleton } from './components/ui/skeleton';
 
 
 function App() {
+  const basename = import.meta.env.VITE_BASE || '/';
   return (
     <TooltipProvider delayDuration={300}>
-      <Router basename='/'>
+      <Router basename={basename}>
         <AppLayout />
       </Router>
     </TooltipProvider>
