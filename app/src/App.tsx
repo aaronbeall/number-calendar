@@ -31,7 +31,7 @@ import { Skeleton } from './components/ui/skeleton';
 function App() {
   return (
     <TooltipProvider delayDuration={300}>
-      <Router basename='/number-calendar/'>
+      <Router basename='/'>
         <AppLayout />
       </Router>
     </TooltipProvider>
