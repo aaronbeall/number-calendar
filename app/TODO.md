@@ -68,6 +68,7 @@ I'm liking this one.
   - [x] Add by diff
   - [ ] Global quick add (with options)
   - [ ] Add from rollups (week, month, year)
+  - [ ] Multi-line add (re-use import code)
 - [ ] Prev/Next in the panel
 - [ ] Time tracking with data
 - [ ] View customization (weekly, order, etc)
