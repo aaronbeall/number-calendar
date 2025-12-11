@@ -22,7 +22,8 @@ I'm liking this one.
 - [ ] Data settings
   - [x] Which is better: higher, lower, etc
   - [ ] Allowed range
-  - [ ] Formatting (currency, precision, time)
+  - [ ] Formatting style (none, currency, percent, unit)
+    - [ ] Options (sign display, accounting, precision)
   - [x] Tracking: trend (weight, etc), log (P&L, etc)
   - [ ] Presets (weight, profit & loss, etc)
   - [ ] Computed data (formula)
@@ -79,6 +80,7 @@ I'm liking this one.
 - [ ] Add tags (on day/month/week/year)
 - [ ] Tooltips on extremes, ex "January Best" or "
 - [ ] Highlight min/max in editable numbers badge
+- [ ] Number dictionary by data type (ex "calories", lookup calories for food)
 
 ## Product
 - [x] Dark mode
