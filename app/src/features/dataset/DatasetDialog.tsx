@@ -12,7 +12,7 @@ import { Confirmation } from '@/components/ui/confirmation';
 import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { cn, isNameTaken } from '@/lib/utils';
-import { TrendingUp, BarChart3 } from 'lucide-react';
+import { TrendingUp, BarChart3, Database } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
 interface DatasetDialogProps {
@@ -162,72 +162,77 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">{/* Scrollable content area */}
-            <div className="space-y-2">
-              <Label htmlFor="dataset-name">Name</Label>
-              <Input id="dataset-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fitness Journey" required />
-              {name.trim().length > 0 && nameExists && (
-                <p className="text-xs text-red-600 dark:text-red-400">Dataset name already exists</p>
-              )}
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left column: Name & Description */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dataset-name">Name</Label>
+                  <Input id="dataset-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fitness Journey" required />
+                  {name.trim().length > 0 && nameExists && (
+                    <p className="text-xs text-red-600 dark:text-red-400">Dataset name already exists</p>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="dataset-description">Description</Label>
-              <Textarea id="dataset-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional short description" rows={3} />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dataset-description">Description</Label>
+                  <Textarea id="dataset-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional short description" rows={4} />
+                </div>
+              </div>
 
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <Label>Icon</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="text"
-                  placeholder="Search..."
-                  value={iconSearch}
-                  onChange={(e) => setIconSearch(e.target.value)}
-                  className="text-sm h-8 w-32"
-                />
-                {(() => {
-                  const selectedOption = DATASET_ICON_OPTIONS.find(o => o.name === icon);
-                  const SelectedIcon = selectedOption?.Icon || Database;
-                  return (
-                    <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
-                      <SelectedIcon className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                      <span className="text-xs font-medium text-blue-900 dark:text-blue-200">{selectedOption?.label || 'Database'}</span>
-                    </div>
-                  );
-                })()}
+              {/* Right column: Icon selector */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Label>Icon</Label>
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const selectedOption = DATASET_ICON_OPTIONS.find(o => o.name === icon);
+                      const SelectedIcon = selectedOption?.Icon || Database;
+                      return (
+                        <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
+                          <SelectedIcon className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                        </div>
+                      );
+                    })()}
+                    <Input
+                      type="text"
+                      placeholder="Search..."
+                      value={iconSearch}
+                      onChange={(e) => setIconSearch(e.target.value)}
+                      className="text-sm h-8 w-32"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-8 gap-1.5 max-h-[160px] overflow-y-auto p-1 border border-slate-200 dark:border-slate-700 rounded-md">
+                  {DATASET_ICON_OPTIONS.filter(({ name, label }) => {
+                    const search = iconSearch.toLowerCase();
+                    return !search || name.includes(search) || label.toLowerCase().includes(search);
+                  }).map(({ name, label, Icon }) => {
+                    const selected = icon === name;
+                    return (
+                      <Tooltip key={name} delayDuration={200}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => setIcon(name)}
+                            className={cn(
+                              'flex items-center justify-center rounded border p-1.5 transition',
+                              selected
+                                ? 'border-blue-500 bg-blue-50 text-blue-600 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-300'
+                                : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                            )}
+                            aria-pressed={selected}
+                            aria-label={label}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">{label}</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            <div className="grid grid-cols-8 sm:grid-cols-10 md:grid-cols-12 gap-1.5 max-h-[120px] overflow-y-auto p-1 border border-slate-200 dark:border-slate-700 rounded-md">
-              {DATASET_ICON_OPTIONS.filter(({ name, label }) => {
-                const search = iconSearch.toLowerCase();
-                return !search || name.includes(search) || label.toLowerCase().includes(search);
-              }).map(({ name, label, Icon }) => {
-                const selected = icon === name;
-                return (
-                  <Tooltip key={name} delayDuration={200}>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        onClick={() => setIcon(name)}
-                        className={cn(
-                          'flex items-center justify-center rounded border p-1.5 transition',
-                          selected
-                            ? 'border-blue-500 bg-blue-50 text-blue-600 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-300'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                        )}
-                        aria-pressed={selected}
-                        aria-label={label}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs">{label}</TooltipContent>
-                  </Tooltip>
-                );
-              })}
-            </div>
-          </div>
 
           <div className="space-y-3">
             <Label>Tracking Mode</Label>
