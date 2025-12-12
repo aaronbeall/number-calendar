@@ -1,4 +1,4 @@
-import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award, Download, Upload, Share2, RefreshCw, Info, Mail, Bell } from 'lucide-react';
+import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award, Download, Upload, Share2, RefreshCw, Info, Mail, Bell, Flag } from 'lucide-react';
 import LogoIcon from '@/assets/icon.svg?react';
 import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
 import PatreonIcon from '@/assets/patreon.svg?react';
@@ -210,6 +210,7 @@ function DatasetLayout({
         <Routes>
           <Route index element={<Calendar dataset={dataset} />} />
           <Route path="achievements" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Achievements</h2></div>} />
+          <Route path="targets" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Targets</h2></div>} />
           <Route path="milestones" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Milestones</h2></div>} />
           <Route path="records" element={<Records datasetId={dataset.id} />} />
           <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
@@ -301,8 +302,14 @@ function AppHeader({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/targets` : '#'}>
                     <Target className="h-4 w-4" />
+                    Targets
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
+                    <Flag className="h-4 w-4" />
                     Milestones
                   </Link>
                 </DropdownMenuItem>
