@@ -218,7 +218,6 @@ function AppHeader({
   onOpenImport: () => void;
   onOpenExport: (dateRange?: { startDate: string; endDate: string }) => void;
 }) {
-  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { getDefaultExportDateRange } = useCalendarContext();
   
@@ -320,29 +319,49 @@ function AppHeader({
             </Link>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              aria-label="Toggle light/dark mode"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            >
-              {theme === 'dark' ? (
-                <Moon className="h-4 w-4 text-blue-500" />
-              ) : (
-                <Sun className="h-4 w-4 text-yellow-400" />
-              )}
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <User className="h-4 w-4" />
-            </Button>
+            <ThemeToggle />
+            <SettingsMenu />
+            <UserMenu />
           </div>
         </div>
       </div>
     </header>
+  );
+}
+
+export function SettingsMenu() {
+  return (
+    <Button variant="ghost" size="icon" className="h-8 w-8">
+      <Settings className="h-4 w-4" />
+    </Button>
+  );
+}
+
+export function UserMenu() {
+  return (
+    <Button variant="ghost" size="icon" className="h-8 w-8">
+      <User className="h-4 w-4" />
+    </Button>
+  );
+}
+
+export function ThemeToggle() {
+  const { appliedTheme: theme, setTheme } = useTheme();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      aria-label="Toggle light/dark mode"
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+    >
+      {theme === 'dark' ? (
+        <Moon className="h-4 w-4 text-blue-500" />
+      ) : (
+        <Sun className="h-4 w-4 text-yellow-400" />
+      )}
+    </Button>
   );
 }
 
