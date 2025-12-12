@@ -1,4 +1,4 @@
-import { AppFooter } from '@/App';
+import { AppFooter, UserMenu, SettingsMenu, ThemeToggle } from '@/App';
 import LogoIcon from '@/assets/icon.svg?react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
@@ -241,6 +241,9 @@ function DatasetsLanding({
                 <Plus className="w-4 h-4" />
                 New Dataset
               </button>
+              <ThemeToggle />
+              <SettingsMenu />
+              <UserMenu />
             </div>
           </div>
         </div>
