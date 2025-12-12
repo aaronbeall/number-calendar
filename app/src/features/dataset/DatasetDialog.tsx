@@ -162,9 +162,9 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">{/* Scrollable content area */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left column: Name & Description */}
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Left column: Name & Description (spans 2 cols on desktop) */}
+              <div className="space-y-4 md:col-span-2">
                 <div className="space-y-2">
                   <Label htmlFor="dataset-name">Name</Label>
                   <Input id="dataset-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fitness Journey" required />
@@ -179,7 +179,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
                 </div>
               </div>
 
-              {/* Right column: Icon selector */}
+              {/* Right column: Icon selector (1 col, narrower) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <Label>Icon</Label>
@@ -202,7 +202,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-8 gap-1.5 max-h-[160px] overflow-y-auto p-1 border border-slate-200 dark:border-slate-700 rounded-md">
+                <div className="grid grid-cols-8 gap-1.5 md:grid-cols-4 max-h-[100px] md:max-h-[160px] overflow-y-auto p-1 border border-slate-200 dark:border-slate-700 rounded-md">
                   {DATASET_ICON_OPTIONS.filter(({ name, label }) => {
                     const search = iconSearch.toLowerCase();
                     return !search || name.includes(search) || label.toLowerCase().includes(search);
