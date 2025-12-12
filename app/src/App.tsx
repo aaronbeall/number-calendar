@@ -244,6 +244,7 @@ function AppHeader({
   const navigate = useNavigate();
   const { getDefaultExportDateRange } = useCalendarContext();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
+  const [showAIInsights, setShowAIInsights] = useState(false);
   
   // Check if currently on the calendar view (index route of dataset)
   const calendarMatch = useMatch(`/dataset/${currentDataset.id}`);
@@ -297,7 +298,7 @@ function AppHeader({
                     Records
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
+                <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800" onClick={() => setShowAIInsights(true)}>
                   <Sparkles className="h-4 w-4 text-purple-600 dark:text-pink-300" />
                   <span className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-pink-700 dark:to-purple-700 bg-clip-text text-transparent font-semibold">AI Insights</span>
                 </DropdownMenuItem>
@@ -379,6 +380,47 @@ function AppHeader({
           </div>
         </div>
       </div>
+
+      {/* AI Insights Dialog */}
+      <Dialog open={showAIInsights} onOpenChange={setShowAIInsights}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full p-2">
+                <Sparkles className="h-5 w-5 text-white" />
+              </div>
+              <DialogTitle>AI Insights</DialogTitle>
+            </div>
+            <DialogDescription>
+              Intelligent analysis and recommendations for your data—coming soon!
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="rounded-md border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-3">
+              <p className="text-sm text-amber-900 dark:text-amber-200">
+                We're working hard to bring you AI-powered insights that will help you understand your data better and reach your goals faster.
+              </p>
+            </div>
+
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              Have ideas or want to help shape this feature? We'd love to hear your feedback!
+            </p>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="ghost">Close</Button>
+            </DialogClose>
+            <a
+              href="mailto:support@metamodernmonkey.com?subject=AI%20Insights"
+              className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-colors font-medium text-sm"
+            >
+              Send Feedback
+            </a>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
