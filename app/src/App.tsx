@@ -14,6 +14,7 @@ import {
 } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { getDatasetIcon } from './lib/dataset-icons';
+import { getSeededColorTheme } from './lib/colors';
 import { useDataset, useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import ImportDialog from './features/dataset/ImportDialog';
@@ -241,13 +242,14 @@ function AppHeader({
 }) {
   const navigate = useNavigate();
   const { getDefaultExportDateRange } = useCalendarContext();
+  const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 py-3">
-        <div className="flex items-center justify-between gap-4">
+        <div className="relative flex items-center justify-between gap-4">
           {/* Left: Menu + Dataset */}
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
@@ -298,9 +300,9 @@ function AppHeader({
             {/* Dataset Badge Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 hover:from-blue-100 hover:to-indigo-100 dark:from-slate-800 dark:to-slate-700 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-600 min-w-0 transition-colors cursor-pointer">
-                  {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className="h-4 w-4 text-blue-600 dark:text-blue-300 flex-shrink-0" />; })()}
-                  <span className="font-semibold text-blue-900 dark:text-blue-100 truncate text-sm">{currentDataset?.name || 'Dataset'}</span>
+                <button className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-transparent bg-opacity-60 dark:bg-opacity-50 hover:bg-opacity-80 dark:hover:bg-opacity-70 min-w-0 transition-all cursor-pointer ${datasetBg}`}>
+                  {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className={`h-4 w-4 opacity-60 flex-shrink-0 ${datasetText}`} />; })()}
+                  <span className={`font-semibold truncate text-sm ${datasetText}`}>{currentDataset?.name || 'Dataset'}</span>
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -312,9 +314,12 @@ function AppHeader({
                 )}
                 {datasets.filter(ds => ds.id !== currentDataset?.id).map(ds => {
                   const Icon = getDatasetIcon(ds.icon);
+                  const { bg: dsBg, text: dsText } = getSeededColorTheme(ds.id);
                   return (
                     <DropdownMenuItem key={ds.id} onClick={() => navigate(`/dataset/${ds.id}`)} className="gap-2">
-                      <Icon className="h-4 w-4 text-slate-500 dark:text-slate-300 flex-shrink-0" />
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-opacity-60 dark:bg-opacity-50 ${dsBg}`}>
+                        <Icon className={`h-3 w-3 opacity-60 ${dsText}`} />
+                      </div>
                       <span className="truncate">{ds.name}</span>
                     </DropdownMenuItem>
                   );
@@ -341,7 +346,7 @@ function AppHeader({
           </div>
 
           {/* Center: Logo/Branding */}
-          <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
+          <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group flex-shrink-0">
             <LogoIcon className="w-7 h-7 transition-transform group-hover:scale-105" aria-label="Numbers Go Up" />
             <div className="hidden sm:flex flex-col">
               <h1 className="text-sm font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
@@ -351,7 +356,7 @@ function AppHeader({
           </Link>
 
           {/* Right: Controls */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 flex-shrink-0 flex-1 justify-end">
             <ThemeToggle />
             <SettingsMenu />
             <UserMenu />
