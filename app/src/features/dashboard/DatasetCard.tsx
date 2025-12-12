@@ -21,6 +21,7 @@ export function DatasetCard({
   onOpenEdit,
   onOpenImport,
   onOpenExport,
+  onDuplicateDataset,
 }: { 
   dataset: Dataset; 
   year: number; 
@@ -29,6 +30,7 @@ export function DatasetCard({
   onOpenEdit: (dataset: Dataset) => void;
   onOpenImport: (datasetId: string) => void;
   onOpenExport: (datasetId: string) => void;
+  onDuplicateDataset: (datasetId: string) => void;
 }) {
   const { data: monthData = {} } = useMonth(dataset.id, year, month);
   const { data: priorMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, toDayKey(year, month, 1));
@@ -195,7 +197,10 @@ export function DatasetCard({
                       Settings
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={(e) => e.stopPropagation()}>
+                    <DropdownMenuItem onClick={ (e) => {
+                      e.stopPropagation();
+                      onDuplicateDataset(dataset.id);
+                    }}>
                       <Copy className="w-4 h-4 mr-2" />
                       Duplicate
                     </DropdownMenuItem>

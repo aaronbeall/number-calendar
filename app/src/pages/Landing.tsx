@@ -14,6 +14,7 @@ export function Landing({
   onOpenEdit,
   onOpenImport,
   onOpenExport,
+  onDuplicateDataset,
 }: { 
   datasets: Dataset[]; 
   onSelectDataset: (datasetId: string) => void; 
@@ -21,6 +22,7 @@ export function Landing({
   onOpenEdit: (dataset: Dataset) => void;
   onOpenImport: (datasetId: string) => void;
   onOpenExport: (datasetId: string) => void;
+  onDuplicateDataset: (datasetId: string) => void;
 }) {
   const searchParams = useSearchParams();
   const now = new Date();
@@ -41,6 +43,7 @@ export function Landing({
       onOpenEdit={onOpenEdit}
       onOpenImport={onOpenImport}
       onOpenExport={onOpenExport}
+      onDuplicateDataset={onDuplicateDataset}
     />
   );
 }
@@ -163,6 +166,7 @@ function DatasetsLanding({
   onOpenEdit,
   onOpenImport,
   onOpenExport,
+  onDuplicateDataset,
 }: { 
   datasets: Dataset[]; 
   year: number; 
@@ -172,6 +176,7 @@ function DatasetsLanding({
   onOpenEdit: (dataset: Dataset) => void;
   onOpenImport: (datasetId: string) => void;
   onOpenExport: (datasetId: string) => void;
+  onDuplicateDataset: (datasetId: string) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'created' | 'updated'>('updated');
@@ -283,6 +288,7 @@ function DatasetsLanding({
               onOpenEdit={onOpenEdit}
               onOpenImport={onOpenImport}
               onOpenExport={onOpenExport}
+              onDuplicateDataset={onDuplicateDataset}
             />
           ))}
           

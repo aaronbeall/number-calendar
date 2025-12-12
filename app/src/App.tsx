@@ -18,6 +18,7 @@ import { useDataset, useDatasets } from './features/db/useDatasetData';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import ImportDialog from './features/dataset/ImportDialog';
 import ExportDialog from './features/dataset/ExportDialog';
+import DuplicateDialog from './features/dataset/DuplicateDialog';
 import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -52,6 +53,7 @@ function AppLayout() {
   const [editingDataset, setEditingDataset] = useState<Dataset | undefined>(undefined);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [activeDatasetId, setActiveDatasetId] = useState<string | null>(null);
   const [exportDateRange, setExportDateRange] = useState<{ startDate: string; endDate: string } | undefined>(undefined);
   const navigate = useNavigate();
@@ -78,6 +80,10 @@ function AppLayout() {
     setExportDateRange(dateRange);
     setShowExportDialog(true);
   };
+  const handleOpenDuplicate = (datasetId: string) => {
+    setActiveDatasetId(datasetId);
+    setShowDuplicateDialog(true);
+  };
 
   if (datasetsLoading) {
     return (
@@ -100,6 +106,7 @@ function AppLayout() {
               onOpenEdit={handleOpenEdit}
               onOpenImport={handleOpenImport}
               onOpenExport={(datasetId) => handleOpenExport(datasetId)}
+              onDuplicateDataset={handleOpenDuplicate}
             />
           </div>
         } />
@@ -139,6 +146,14 @@ function AppLayout() {
           onOpenChange={setShowExportDialog}
           datasetId={activeDatasetId}
           defaultDateRange={exportDateRange}
+        />
+      )}
+      { activeDatasetId && showDuplicateDialog && (
+        <DuplicateDialog
+          open={showDuplicateDialog}
+          onOpenChange={setShowDuplicateDialog}
+          onDuplicated={id => navigate(`/dataset/${id}`)}
+          dataset={datasets.find(d => d.id === activeDatasetId)!}
         />
       )}
     </>
