@@ -119,16 +119,26 @@ export function parseExpression(expr: string, tracking: Tracking): number[] | nu
 
 export function detectExpressionTrackingFormat(expr: string): Tracking | null {
   // Check the format for expresion format for matches of what parseSeriesExpression and parseTrendExpression expect
-  const seriesPattern = /^-?\d+([+-]\d+|=\d+)*$/;
-  const trendPattern = /^-?\d+(\s+-?\d+|\s+[+-]=\d+)*$/;
+  // Normalize: remove currency and all non-numeric relevant symbols and commas (thousands separators)
+  const normalized = expr
+    .replace(/[$€£¥₹]/g, '')
+    .replace(/,/g, '')
+    .trim();
 
-  const cleaned = expr.trim();
-
-  if (seriesPattern.test(cleaned)) {
-    return 'series';
-  } else if (trendPattern.test(cleaned)) {
+  // Check trend pattern first (requires spaces as delimiters)
+  const trendPattern = /^-?\d+(\s+-?\d+|\s+[+-]=-?\d+)+$/;
+  if (trendPattern.test(normalized)) {
     return 'trend';
   }
+
+  // Check series pattern (remove spaces since series format has no spaces)
+  const noSpaces = normalized.replace(/\s+/g, '');
+  // Require at least one operator to distinguish from plain numbers
+  const seriesPattern = /^-?\d+([+-]\d+|=-?\d+)+$/;
+  if (seriesPattern.test(noSpaces)) {
+    return 'series';
+  }
+
   return null;
 }
 

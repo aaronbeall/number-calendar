@@ -1,5 +1,5 @@
 import type { DayEntry, DayKey } from "@/features/db/localdb";
-import { detectExpressionTrackingFormat, parseExpression } from "./expression";
+import { parseSingleNumberExpression } from "./expression";
 import { dateToDayKey } from "./friendly-date";
 
 
@@ -41,15 +41,40 @@ export const parseDateString = (rawValue: string) => {
 
 // Helper to parse numeric strings or expressions
 export const parseNumericString = (expr: string): number | number[] | null => {
-  const format = detectExpressionTrackingFormat(expr);
-  if (format == null) {
-    const float = parseFloat(expr);
-    if (!isNaN(float)) {
-      return float;
-    }
-    return null;
+  const raw = expr ?? '';
+
+  // 1) Normalize: drop currency symbols and any non numeric-related chars, keep digits, +, -, ., commas, semicolons, spaces, tabs
+  const normalized = raw
+    .replace(/[$€£¥₹]/g, '')
+    .replace(/[^0-9+\-.,;\s\t]/g, ' ')
+    // remove thousands separators (commas or spaces) that sit between digit groups of three
+    .replace(/(?<=\d)[,\s](?=\d{3}\b)/g, '')
+    .trim();
+
+  if (!normalized) return null;
+
+  // 2) Split on delimiters: space, comma, semicolon, tab
+  const coarseParts = normalized.split(/[\s,;\t]+/).filter(Boolean);
+  if (!coarseParts.length) return null;
+
+  const tokens: string[] = [];
+  // 3) Further split each part on + or - boundaries, preserving the operator with the following number
+  for (const part of coarseParts) {
+    const sub = part.split(/(?=[+-])/).filter(Boolean);
+    tokens.push(...sub);
   }
-  return parseExpression(expr, format);
+
+  if (!tokens.length) return null;
+
+  const numbers: number[] = [];
+  for (const t of tokens) {
+    const n = parseSingleNumberExpression(t);
+    if (n === null) return null;
+    numbers.push(n);
+  }
+
+  if (numbers.length === 1) return numbers[0];
+  return numbers;
 }
 
 // Helper functions for cell parsing and validation
