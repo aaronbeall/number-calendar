@@ -244,58 +244,17 @@ function AppHeader({
   
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-      <div className="max-w-4xl mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      <div className="max-w-4xl mx-auto px-4 py-3">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: Menu + Dataset */}
+          <div className="flex items-center gap-3 min-w-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                   <Menu className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  Dataset
-                </DropdownMenuLabel>
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-md mx-1 mb-1 hover:from-blue-100 hover:to-indigo-100 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800">
-                    {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className="h-4 w-4 text-blue-600 dark:text-blue-300" />; })()}
-                    <span className="font-semibold text-blue-900 dark:text-blue-200">{currentDataset?.name || 'Dataset'}</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent>
-                    <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Other Datasets</DropdownMenuLabel>
-                    {datasets.filter(ds => ds.id !== currentDataset?.id).length === 0 && (
-                      <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
-                    )}
-                    {datasets.filter(ds => ds.id !== currentDataset?.id).map(ds => {
-                      const Icon = getDatasetIcon(ds.icon);
-                      return (
-                        <DropdownMenuItem key={ds.id} onClick={() => navigate(`/dataset/${ds.id}`)} className="gap-2">
-                          <Icon className="h-4 w-4 text-slate-500 dark:text-slate-300" />
-                          {ds.name}
-                        </DropdownMenuItem>
-                      );
-                    })}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="gap-2"
-                      onClick={() => currentDataset && onOpenEdit(currentDataset)}
-                    >
-                      <Settings className="h-4 w-4" />
-                      Settings…
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="gap-2"
-                      onClick={() => {
-                        onOpenCreate();
-                      }}
-                    >
-                      <Plus className="h-4 w-4" />
-                      New Dataset
-                    </DropdownMenuItem>
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem className="gap-2" asChild>
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
                     <Trophy className="h-4 w-4" />
@@ -335,17 +294,64 @@ function AppHeader({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Link to="/" className="flex items-center gap-2 group">
-              <LogoIcon className="w-10 h-10 transition-transform group-hover:scale-105" aria-label="Numbers Go Up" />
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
-                  Numbers Go Up
-                </h1>
-                <p className="text-xs text-slate-500 font-medium">A calendar for numberphiles</p>
-              </div>
-            </Link>
+
+            {/* Dataset Badge Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 hover:from-blue-100 hover:to-indigo-100 dark:from-slate-800 dark:to-slate-700 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-600 min-w-0 transition-colors cursor-pointer">
+                  {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className="h-4 w-4 text-blue-600 dark:text-blue-300 flex-shrink-0" />; })()}
+                  <span className="font-semibold text-blue-900 dark:text-blue-100 truncate text-sm">{currentDataset?.name || 'Dataset'}</span>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
+                  Datasets
+                </DropdownMenuLabel>
+                {datasets.filter(ds => ds.id !== currentDataset?.id).length === 0 && (
+                  <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
+                )}
+                {datasets.filter(ds => ds.id !== currentDataset?.id).map(ds => {
+                  const Icon = getDatasetIcon(ds.icon);
+                  return (
+                    <DropdownMenuItem key={ds.id} onClick={() => navigate(`/dataset/${ds.id}`)} className="gap-2">
+                      <Icon className="h-4 w-4 text-slate-500 dark:text-slate-300 flex-shrink-0" />
+                      <span className="truncate">{ds.name}</span>
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => currentDataset && onOpenEdit(currentDataset)}
+                >
+                  <Settings className="h-4 w-4" />
+                  Settings…
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onClick={() => {
+                    onOpenCreate();
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                  New Dataset
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Center: Logo/Branding */}
+          <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
+            <LogoIcon className="w-7 h-7 transition-transform group-hover:scale-105" aria-label="Numbers Go Up" />
+            <div className="hidden sm:flex flex-col">
+              <h1 className="text-sm font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+                Numbers Go Up
+              </h1>
+            </div>
+          </Link>
+
+          {/* Right: Controls */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <ThemeToggle />
             <SettingsMenu />
             <UserMenu />
