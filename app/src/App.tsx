@@ -1,40 +1,41 @@
-import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award, Download, Upload, Share2, RefreshCw, Info, Mail, Bell, Flag } from 'lucide-react';
-import LogoIcon from '@/assets/icon.svg?react';
 import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
+import LogoIcon from '@/assets/icon.svg?react';
 import PatreonIcon from '@/assets/patreon.svg?react';
-import { useState } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  useParams,
-  useNavigate,
-  Navigate,
-  Link,
-} from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { getDatasetIcon } from './lib/dataset-icons';
-import { getSeededColorTheme } from './lib/colors';
-import { useDataset, useDatasets } from './features/db/useDatasetData';
-import DatasetDialog from './features/dataset/DatasetDialog';
-import ImportDialog from './features/dataset/ImportDialog';
-import ExportDialog from './features/dataset/ExportDialog';
-import DuplicateDialog from './features/dataset/DuplicateDialog';
-import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { useTheme } from './components/ThemeProvider';
-import type { Dataset } from './features/db/localdb';
-import { Landing } from './pages/Landing';
-import { Calendar } from './pages/Calendar';
-import Records from './pages/Records';
-import { Spinner } from './components/ui/spinner';
-import { Skeleton } from './components/ui/skeleton';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Award, Bell, Download, Flag, Info, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User, CalendarIcon } from 'lucide-react';
+import { useState } from 'react';
+import {
+  Link,
+  Navigate,
+  Route,
+  BrowserRouter as Router,
+  Routes,
+  useMatch,
+  useNavigate,
+  useParams,
+} from 'react-router-dom';
+import { useTheme } from './components/ThemeProvider';
+import { Skeleton } from './components/ui/skeleton';
+import { Spinner } from './components/ui/spinner';
+import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
+import DatasetDialog from './features/dataset/DatasetDialog';
+import DuplicateDialog from './features/dataset/DuplicateDialog';
+import ExportDialog from './features/dataset/ExportDialog';
+import ImportDialog from './features/dataset/ImportDialog';
+import type { Dataset } from './features/db/localdb';
+import { useDataset, useDatasets } from './features/db/useDatasetData';
 import { usePreference } from './hooks/usePreference';
+import { getSeededColorTheme } from './lib/colors';
+import { getDatasetIcon } from './lib/dataset-icons';
+import { Calendar } from './pages/Calendar';
+import { Landing } from './pages/Landing';
+import Records from './pages/Records';
 
 
 function App() {
@@ -244,6 +245,10 @@ function AppHeader({
   const { getDefaultExportDateRange } = useCalendarContext();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   
+  // Check if currently on the calendar view (index route of dataset)
+  const calendarMatch = useMatch(`/dataset/${currentDataset.id}`);
+  const isOnCalendar = calendarMatch !== null;
+  
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="max-w-4xl mx-auto px-4 py-3">
@@ -257,6 +262,17 @@ function AppHeader({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
+                {!isOnCalendar && (
+                  <>
+                    <DropdownMenuItem className="gap-2" asChild>
+                      <Link to={currentDataset ? `/dataset/${currentDataset.id}` : '#'}>
+                        <CalendarIcon className="h-4 w-4" />
+                        Calendar
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 <DropdownMenuItem className="gap-2" asChild>
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
                     <Trophy className="h-4 w-4" />
