@@ -1,4 +1,4 @@
-import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award, Download, Upload, Share2 } from 'lucide-react';
+import { Menu, Settings, User, Trophy, Target, Plus, Sparkles, Sun, Moon, Award, Download, Upload, Share2, RefreshCw, Info, Mail, Bell } from 'lucide-react';
 import LogoIcon from '@/assets/icon.svg?react';
 import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
 import PatreonIcon from '@/assets/patreon.svg?react';
@@ -31,6 +31,7 @@ import { Skeleton } from './components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 
 
 function App() {
@@ -382,10 +383,172 @@ export function SettingsMenu() {
 }
 
 export function UserMenu() {
+  const [openSync, setOpenSync] = useState(false);
+  const [openAbout, setOpenAbout] = useState(false);
+  const [openSubscribe, setOpenSubscribe] = useState(false);
+
   return (
-    <Button variant="ghost" size="icon" className="h-8 w-8">
-      <User className="h-4 w-4" />
-    </Button>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="User menu">
+            <User className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-64">
+          <DropdownMenuLabel className="text-xs text-slate-500 whitespace-normal leading-snug">
+            This app is free. Your data stays on this device. No account required.
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="gap-2" onSelect={() => setOpenSync(true)}>
+            <RefreshCw className="h-4 w-4 text-slate-500" />
+            Sync Data
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2" onSelect={() => setOpenAbout(true)}>
+            <Info className="h-4 w-4 text-slate-500" />
+            About
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2" asChild>
+            <a href="mailto:support@metamodernmonkey.com" className="flex w-full items-center gap-2">
+              <Mail className="h-4 w-4 text-slate-500" />
+              Contact Support
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2" onSelect={() => setOpenSubscribe(true)}>
+            <Bell className="h-4 w-4 text-slate-500" />
+            Signup for Updates
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="gap-2" asChild>
+            <a
+              href="https://patreon.com/metamodernmonkey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center gap-2"
+            >
+              <PatreonIcon className="h-4 w-4 text-slate-500" /> Patreon
+            </a>
+          </DropdownMenuItem>
+          <DropdownMenuItem className="gap-2" asChild>
+            <a
+              href="https://buymeacoffee.com/metamodernmonkey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center gap-2"
+            >
+              <BuyMeACoffeeIcon className="h-4 w-4 text-slate-500" /> Buy Me a Coffee
+            </a>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* Sync Data Dialog */}
+      <Dialog open={openSync} onOpenChange={setOpenSync}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Sync Data</DialogTitle>
+            <DialogDescription>
+              Sync across devices is coming soon. For now, you can export and import your data from the dataset menu.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* About Dialog */}
+      <Dialog open={openAbout} onOpenChange={setOpenAbout}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-3">
+                <LogoIcon className="h-6 w-6" aria-label="Numbers Go Up" />
+                <DialogTitle>About Numbers Go Up</DialogTitle>
+              </div>
+              {/* <div className="text-xs text-slate-500 dark:text-slate-400">
+                Version: {import.meta.env.VITE_APP_VERSION || 'Beta'}
+              </div> */}
+            </div>
+            <DialogDescription>
+              Numbers Go Up is crafted by
+              {' '}<a href="https://metamodernmonkey.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">Meta Modern Monkey</a>
+              {' '}for people who love numbers, calendars, and the motivation to keep improving — and to celebrate the wins that come with reaching your goals.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 text-sm text-slate-700 dark:text-slate-300">
+            <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+              <p>
+                Privacy-first: all data is stored on your device. No accounts, no servers, no tracking.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-3">
+              <p>
+                Free for any use. If you find it helpful, your support keeps it free for everyone.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <a
+                  href="https://patreon.com/metamodernmonkey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-2 py-1 rounded-md hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors"
+                >
+                  <PatreonIcon className="h-4 w-4 text-pink-600" />
+                  <span className="font-medium">Become a Patreon Member</span>
+                </a>
+                <a
+                  href="https://buymeacoffee.com/metamodernmonkey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-2 py-1 rounded-md hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors"
+                >
+                  <BuyMeACoffeeIcon className="h-4 w-4 text-yellow-600" />
+                  <span className="font-medium">Buy Me a Coffee</span>
+                </a>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span>&copy; {new Date().getFullYear()} Meta Modern Monkey</span>
+              <a href="mailto:support@metamodernmonkey.com" className="underline">support@metamodernmonkey.com</a>
+            </div>
+
+            
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Subscribe Dialog */}
+      <Dialog open={openSubscribe} onOpenChange={setOpenSubscribe}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Subscribe for Updates</DialogTitle>
+            <DialogDescription>
+              Get occasional updates about new features.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            <Label htmlFor="subscribe-email" className="text-sm">Email</Label>
+            <Input id="subscribe-email" type="email" placeholder="you@example.com" />
+          </div>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button">Done</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
@@ -439,7 +602,7 @@ export function AppFooter() {
           className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors group"
           aria-label="Patreon"
         >
-          <PatreonIcon className="w-3 h-3 fill-slate-400 group-hover:fill-pink-600 transition-colors" />
+          <PatreonIcon className="w-3 h-3 text-slate-400 group-hover:text-pink-600 transition-colors" />
           <span className="group-hover:text-pink-600 transition-colors">Patreon</span>
         </a>
 
@@ -450,7 +613,7 @@ export function AppFooter() {
           className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors group"
           aria-label="Buy Me a Coffee"
         >
-          <BuyMeACoffeeIcon className="w-3 h-3 fill-slate-400 group-hover:fill-yellow-600 transition-colors" />
+          <BuyMeACoffeeIcon className="w-3 h-3 text-slate-400 group-hover:text-yellow-600 transition-colors" />
           <span className="group-hover:text-yellow-600 transition-colors">Buy Me a Coffee</span>
         </a>
 
