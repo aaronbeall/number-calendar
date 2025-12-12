@@ -142,7 +142,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-h-[90vh] p-0 gap-0">
+      <DialogContent className="max-h-[90vh] p-0 gap-0 w-full sm:max-w-3xl">
         <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
           <DialogHeader className="flex-shrink-0 px-6 pt-6">
             <DialogTitle>{isEditMode ? `Edit "${dataset?.name}"` : 'Create New Dataset'}</DialogTitle>

@@ -153,7 +153,7 @@ export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Export from "{dataset?.name}"</DialogTitle>
           <DialogDescription>
