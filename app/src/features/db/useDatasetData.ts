@@ -5,6 +5,7 @@ import {
   updateDataset,
   deleteDataset,
   listDatasets,
+  type Dataset,
 } from './localdb';
 
 // Hook to list all datasets
@@ -40,8 +41,16 @@ export function useUpdateDataset() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateDataset,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['datasets'] });
+    onSuccess: (_, updated) => {
+      // Update list cache
+      queryClient.setQueryData(['datasets'], (existing: Dataset) => {
+        if (!Array.isArray(existing)) return existing;
+        return existing.map(d => (d?.id === updated?.id ? updated : d));
+      });
+      // Update single item cache
+      if (updated?.id) {
+        queryClient.setQueryData(['dataset', updated.id], updated);
+      }
     },
   });
 }

@@ -47,8 +47,8 @@ export function isNeutral(value: boolean | number, valence: Valence): boolean {
  * 
  * Example:
  * ```
- * getValueForValence(10, 'positive', { good: 'up', bad: 'down', neutral: 'flat' }) // returns 'up'
- * getValueForValence(-5, 'negative', { 
+ * const direction = getValueForValence(10, 'positive', { good: 'up', bad: 'down', neutral: 'flat' }) // returns 'up'
+ * const { text, background } = getValueForValence(-5, 'negative', { 
  *  good: { text: 'green', background: 'lightgreen' }, 
  *  bad: { text: 'red', background: 'lightred' }, 
  *  neutral: { text: 'gray', background: 'lightgray' } }
