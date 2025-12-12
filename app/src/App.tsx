@@ -33,6 +33,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
+import { usePreference } from './hooks/usePreference';
 
 
 function App() {
@@ -357,8 +358,8 @@ function AppHeader({
 
 export function SettingsMenu() {
   const { theme, setTheme } = useTheme();
-  const [reduceMotion, setReduceMotion] = useState<boolean>(false);
-  const [showTips, setShowTips] = useState<boolean>(true);
+  const [reduceMotion, setReduceMotion] = usePreference("reduceMotion", false);
+  const [showTips, setShowTips] = usePreference("showTips", true);
 
   return (
     <Dialog>

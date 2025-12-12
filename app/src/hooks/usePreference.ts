@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
 
 
 // Safe JSON parse for localStorage values
@@ -57,12 +57,5 @@ export function usePreference<T>(key: string, initialValue: T | (() => T)) {
     return () => window.removeEventListener("storage", handleStorage);
   }, [key]);
 
-  const setPreference: React.Dispatch<React.SetStateAction<T>> = React.useCallback(
-    (next) => {
-      setValue((prev) => (typeof next === "function" ? (next as (value: T) => T)(prev) : next));
-    },
-    []
-  );
-
-  return [value, setPreference] as const;
+  return [value, setValue] as const;
 }
