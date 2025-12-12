@@ -409,6 +409,9 @@ export function UserMenu() {
   const [openSync, setOpenSync] = useState(false);
   const [openAbout, setOpenAbout] = useState(false);
   const [openSubscribe, setOpenSubscribe] = useState(false);
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleShare = async () => {
     try {
@@ -421,6 +424,38 @@ export function UserMenu() {
       if ((err as Error).name !== 'AbortError') {
         console.error('Share failed:', err);
       }
+    }
+  };
+
+  const handleSubscribeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setStatus('loading');
+    setErrorMessage('');
+
+    try {
+      const response = await fetch('https://metamodernmonkey.com/api/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setStatus('error');
+        setErrorMessage(data.error || 'Something went wrong. Please try again.');
+        return;
+      }
+
+      setStatus('success');
+      setEmail('');
+      setTimeout(() => setStatus('idle'), 3000);
+    } catch (error) {
+      setStatus('error');
+      setErrorMessage('Something went wrong. Please try again.');
+      console.error('Subscribe error:', error);
     }
   };
 
@@ -580,15 +615,41 @@ export function UserMenu() {
               Get occasional updates about new features.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="subscribe-email" className="text-sm">Email</Label>
-            <Input id="subscribe-email" type="email" placeholder="you@example.com" />
-          </div>
-          <DialogFooter>
-            <DialogClose asChild>
-              <Button type="button">Done</Button>
-            </DialogClose>
-          </DialogFooter>
+          <form onSubmit={handleSubscribeSubmit} className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="subscribe-email" className="text-sm">Email</Label>
+              <Input 
+                id="subscribe-email" 
+                type="email" 
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={status === 'loading'}
+              />
+            </div>
+            {status === 'error' && (
+              <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-400">
+                {errorMessage}
+              </div>
+            )}
+            {status === 'success' && (
+              <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-400">
+                Successfully subscribed! Check your email for confirmation.
+              </div>
+            )}
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button type="button" variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button 
+                type="submit" 
+                disabled={status === 'loading' || !email}
+              >
+                {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>
