@@ -1,3 +1,4 @@
+import { AppFooter } from '@/App';
 import LogoIcon from '@/assets/icon.svg?react';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
@@ -146,6 +147,8 @@ function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingData: bool
           </p>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 }
@@ -270,6 +273,8 @@ function DatasetsLanding({
           </button>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 }
