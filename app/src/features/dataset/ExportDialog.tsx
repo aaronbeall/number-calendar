@@ -155,7 +155,7 @@ export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Export Data</DialogTitle>
+          <DialogTitle>Export from "{dataset?.name}"</DialogTitle>
           <DialogDescription>
             Export your calendar data in various formats. Choose the export type, date range, and format.
           </DialogDescription>

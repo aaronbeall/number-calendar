@@ -6,11 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useCreateDataset, useUpdateDataset, useDeleteDataset } from '../db/useDatasetData';
+import { useCreateDataset, useUpdateDataset, useDeleteDataset, useDatasets } from '../db/useDatasetData';
 import { Confirmation } from '@/components/ui/confirmation';
 import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
-import { cn } from '@/lib/utils';
+import { cn, isNameTaken } from '@/lib/utils';
 import { TrendingUp, BarChart3 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
@@ -27,6 +27,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
   const createDatasetMutation = useCreateDataset();
   const updateDatasetMutation = useUpdateDataset();
   const deleteDatasetMutation = useDeleteDataset();
+  const { data: existingDatasets = [] } = useDatasets();
   const isEditMode = !!dataset;
   
   const [name, setName] = useState('');
@@ -34,6 +35,9 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
   const [icon, setIcon] = useState<DatasetIconName>('database');
   const [tracking, setTracking] = useState<Tracking>('series');
   const [valence, setValence] = useState<Valence>('positive');
+
+  const nameExists = isNameTaken({ ...dataset, name }, existingDatasets, 'name', 'id');
+  const isNameValid = name.trim().length > 0 && !nameExists;
 
   // Trend preview sequences for valence buttons (show direction evaluation by deltas)
   const trendPositiveSeq = [10, 14, 13, 18, 21]; // upward changes good (green), dips bad (red)
@@ -85,7 +89,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!isNameValid) return;
     
     if (isEditMode) {
       // Update existing dataset
@@ -141,7 +145,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       <DialogContent className="max-h-[90vh] p-0 gap-0">
         <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
           <DialogHeader className="flex-shrink-0 px-6 pt-6">
-            <DialogTitle>{isEditMode ? 'Edit Dataset' : 'Create New Dataset'}</DialogTitle>
+            <DialogTitle>{isEditMode ? `Edit "${dataset?.name}"` : 'Create New Dataset'}</DialogTitle>
             <DialogDescription>
               {isEditMode ? 'Update your dataset settings.' : 'Organize numbers for a goal or project.'}
             </DialogDescription>
@@ -161,6 +165,9 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
             <div className="space-y-2">
               <Label htmlFor="dataset-name">Name</Label>
               <Input id="dataset-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Fitness Journey" required />
+              {name.trim().length > 0 && nameExists && (
+                <p className="text-xs text-red-600 dark:text-red-400">Dataset name already exists</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -451,7 +458,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
               <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
               <Button
                 type="submit"
-                disabled={!name.trim() || createDatasetMutation.isPending || updateDatasetMutation.isPending}
+                disabled={!isNameValid || createDatasetMutation.isPending || updateDatasetMutation.isPending}
               >
                 {isEditMode
                   ? (updateDatasetMutation.isPending ? 'Saving…' : 'Save Changes')

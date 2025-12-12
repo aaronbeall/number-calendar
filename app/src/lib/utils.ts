@@ -1,4 +1,4 @@
-import type { ISODateString } from "@/features/db/localdb";
+import type { ISODateString, Dataset } from "@/features/db/localdb";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
  
@@ -43,3 +43,18 @@ export const entriesOf = <T extends object>(obj: T) =>
  */
 export const keysOf = <T extends object>(obj: T) =>
   Object.keys(obj) as (keyof T)[];
+
+/**
+ * Check if a name is already taken in a collection of items
+ */
+export function isNameTaken<T>(
+  current: T | null | undefined,
+  existing: T[],
+  nameKey: keyof T,
+  idKey: keyof T
+): boolean {
+  return existing.some(item =>
+    String(item[nameKey]).toLowerCase() === String(current?.[nameKey]).toLowerCase() &&
+    (!current || item[idKey] !== current[idKey]) // Allow current name in edit mode
+  );
+}

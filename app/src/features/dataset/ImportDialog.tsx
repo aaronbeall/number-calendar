@@ -12,6 +12,7 @@ import { AlertCircle, Clipboard, Eraser, File, FileJson, Info, Table, Upload } f
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DayEntry, DayKey } from '../db/localdb';
 import { useAllDays, useSaveDay } from '../db/useCalendarData';
+import { useDataset } from '../db/useDatasetData';
 
 interface ImportDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function ImportDialog({ open, onOpenChange, datasetId }: ImportDialogProp
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { data: existingDays = [] } = useAllDays(datasetId);
+  const { data: dataset } = useDataset(datasetId);
   const saveDay = useSaveDay();
 
   const parseData = (text: string, fileName?: string): void => {
@@ -340,7 +342,7 @@ export function ImportDialog({ open, onOpenChange, datasetId }: ImportDialogProp
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Import Data</DialogTitle>
+          <DialogTitle>Import to "{dataset?.name}"</DialogTitle>
           <DialogDescription>
             {importing
               ? 'Importing your data into the dataset...'
