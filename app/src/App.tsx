@@ -552,7 +552,7 @@ export function UserMenu() {
             </div>
             <DialogDescription>
               Numbers Go Up is crafted by
-              {' '}<a href="https://metamodernmonkey.com" target="_blank" rel="noopener noreferrer" className="underline font-medium">Meta Modern Monkey</a>
+              {' '}<a href="https://metamodernmonkey.com" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Meta Modern Monkey</a>
               {' '}for people who love numbers, calendars, and the motivation to keep improving — and to celebrate the wins that come with reaching your goals.
             </DialogDescription>
           </DialogHeader>
@@ -591,8 +591,8 @@ export function UserMenu() {
             </div>
 
             <div className="flex items-center justify-between text-xs text-slate-500">
-              <span>&copy; {new Date().getFullYear()} Meta Modern Monkey</span>
-              <a href="mailto:support@metamodernmonkey.com" className="underline">support@metamodernmonkey.com</a>
+              <span>&copy; {new Date().getFullYear()} <a href="https://metamodernmonkey.com" target="_blank" rel="noopener noreferrer" className="underline font-medium hover:text-blue-600 dark:hover:text-blue-400 transition-colors">Meta Modern Monkey</a></span>
+              <a href="mailto:support@metamodernmonkey.com" className="underline hover:text-blue-600 dark:hover:text-blue-400 transition-colors">support@metamodernmonkey.com</a>
             </div>
 
             
