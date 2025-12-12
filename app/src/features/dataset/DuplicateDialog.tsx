@@ -1,18 +1,18 @@
-import { useState, useEffect, useMemo } from 'react';
-import { nanoid } from 'nanoid';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Copy } from 'lucide-react';
-import { useCreateDataset, useDatasets } from '../db/useDatasetData';
-import { useAllDays, useSaveDay } from '../db/useCalendarData';
 import { dateToDayKey, dateToMonthKey } from '@/lib/friendly-date';
 import { isNameTaken } from '@/lib/utils';
-import type { Dataset, ISODateString, DayKey } from '../db/localdb';
+import { AlertCircle, Copy } from 'lucide-react';
+import { nanoid } from 'nanoid';
+import { useEffect, useMemo, useState } from 'react';
+import type { Dataset, ISODateString } from '../db/localdb';
+import { useAllDays, useSaveDay } from '../db/useCalendarData';
+import { useCreateDataset, useDatasets } from '../db/useDatasetData';
 
 type CopyDataOption = 'all' | 'range';
 type DateType = 'date' | 'month';
@@ -28,7 +28,7 @@ export function DuplicateDialog({ open, onOpenChange, onDuplicated, dataset }: D
   const [newName, setNewName] = useState('');
   const [shouldCopyData, setShouldCopyData] = useState(false);
   const [copyDataOption, setCopyDataOption] = useState<CopyDataOption>('all');
-  const [dateType, setDateType] = useState<DateType>('date');
+  const [dateType] = useState<DateType>('date');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [duplicating, setDuplicating] = useState(false);
