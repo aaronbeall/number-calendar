@@ -1,5 +1,6 @@
 import { AppFooter } from '@/App';
 import LogoIcon from '@/assets/icon.svg?react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
 import { ArrowRight, BarChart as BarChartIcon, Info, Plus, Search, Sparkles, Target, TrendingUp } from 'lucide-react';
@@ -173,16 +174,26 @@ function DatasetsLanding({
   onOpenExport: (datasetId: string) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<'created' | 'updated'>('updated');
 
   const filteredDatasets = useMemo(() => {
-    if (!searchQuery.trim()) return datasets;
-    const query = searchQuery.toLowerCase();
-    return datasets.filter(
-      (dataset) =>
-        dataset.name.toLowerCase().includes(query) ||
-        (dataset.description && dataset.description.toLowerCase().includes(query))
-    );
-  }, [datasets, searchQuery]);
+    const base = !searchQuery.trim()
+      ? datasets
+      : datasets.filter(ds => {
+          const query = searchQuery.toLowerCase();
+          return (
+            ds.name.toLowerCase().includes(query) ||
+            (ds.description && ds.description.toLowerCase().includes(query))
+          );
+        });
+    const sorted = [...base].sort((a, b) => {
+      const aTime = new Date(sortBy === 'updated' ? a.updatedAt : a.createdAt).getTime();
+      const bTime = new Date(sortBy === 'updated' ? b.updatedAt : b.createdAt).getTime();
+      // Newest first
+      return bTime - aTime;
+    });
+    return sorted;
+  }, [datasets, searchQuery, sortBy]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
@@ -237,13 +248,27 @@ function DatasetsLanding({
 
       {/* Main Content */}
       <div className="flex-1 w-full max-w-7xl mx-auto px-8 py-8">
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">Your Dashboard</h2>
-          <p className="text-slate-600 dark:text-slate-400">
-            {filteredDatasets.length} {filteredDatasets.length === 1 ? 'dataset' : 'datasets'} • Showing data for {new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </p>
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">Your Dashboard</h2>
+            <p className="text-slate-600 dark:text-slate-400">
+              {filteredDatasets.length} {filteredDatasets.length === 1 ? 'dataset' : 'datasets'} • Showing data for {new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-slate-600 dark:text-slate-300">Sort:</span>
+            <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'created' | 'updated')}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="updated">Updated</SelectItem>
+                <SelectItem value="created">Created</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDatasets.map(ds => (
             <DatasetCard
