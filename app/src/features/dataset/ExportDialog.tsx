@@ -30,7 +30,7 @@ export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }
   const [error, setError] = useState<string | null>(null);
 
   const { data: allDays = [] } = useAllDays(datasetId);
-  const { data: dataset } = useDataset(datasetId);
+  const { data: dataset = null } = useDataset(datasetId);
   const tracking = dataset?.tracking ?? 'series';
 
   const dateType = exportType === 'monthly' ? 'month' : 'date';
@@ -75,7 +75,6 @@ export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }
         exportData,
         format,
         dataset,
-        datasetId,
         exportType,
         rangeType,
         startDate,
@@ -99,7 +98,6 @@ export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }
         exportData,
         format,
         dataset,
-        datasetId,
         exportType,
         rangeType,
         startDate,

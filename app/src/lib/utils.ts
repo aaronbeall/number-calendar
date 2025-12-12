@@ -1,3 +1,4 @@
+import type { ISODateString } from "@/features/db/localdb";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
  
@@ -5,9 +6,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getRelativeTime(timestamp: number): string {
+export function getRelativeTime(timestamp: number | ISODateString): string {
   const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto', style: 'short' });
-  const diff = timestamp - Date.now();
+  const time = typeof timestamp === 'string' ? new Date(timestamp).getTime() : timestamp;
+  const diff = time - Date.now();
   const absDiff = Math.abs(diff);
   
   const minute = 60 * 1000;

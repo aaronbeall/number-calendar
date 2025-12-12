@@ -9,8 +9,7 @@ export type ExportFormat = 'csv' | 'tsv' | 'json';
 
 export type JsonExportData = {
   version: string;
-  datasetId: string;
-  datasetName: string;
+  dataset: Dataset | null;
   exportType: ExportType;
   exportedAt: string;
   range: {
@@ -56,7 +55,7 @@ export function generateExportData({
   endDate,
   tracking
 }: {
-  dataset: Dataset | undefined;
+  dataset: Dataset | null;
   allDays: DayEntry[];
   exportType: ExportType;
   rangeType: ExportRangeType;
@@ -138,7 +137,6 @@ export const generateFileContent = ({
   exportData,
   format,
   dataset,
-  datasetId,
   exportType,
   rangeType,
   startDate,
@@ -146,8 +144,7 @@ export const generateFileContent = ({
 }: {
   exportData: ExportData;
   format: ExportFormat;
-  dataset: Dataset | undefined;
-  datasetId: string;
+  dataset: Dataset | null;
   exportType: ExportType;
   rangeType: ExportRangeType;
   startDate: string;
@@ -158,8 +155,7 @@ export const generateFileContent = ({
   if (format === 'json') {
     const jsonData: Omit<JsonExportData, 'data'> & { data: JsonExportData['data'] } = {
       version: '1.0',
-      datasetId,
-      datasetName: dataset?.name ?? "",
+      dataset,
       exportedAt: new Date().toISOString(),
       exportType,
       range: rangeType === 'all' ? { type: 'all' } : {

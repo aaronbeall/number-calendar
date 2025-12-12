@@ -11,9 +11,11 @@ export interface Dataset {
   icon?: DatasetIconName;
   tracking: Tracking;
   valence: Valence;
-  createdAt: number;
-  updatedAt: number;
+  createdAt: number | ISODateString;
+  updatedAt: number | ISODateString;
 }
+
+export type ISODateString = `${number}-${number}-${number}T${number}:${number}:${number}Z`;
 
 /**
  * Types of tracking:

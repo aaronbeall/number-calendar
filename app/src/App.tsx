@@ -9,7 +9,6 @@ import {
   useNavigate,
   Navigate,
   Link,
-  data,
 } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { getDatasetIcon } from './lib/dataset-icons';

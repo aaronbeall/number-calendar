@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useCreateDataset, useUpdateDataset, useDeleteDataset } from '../db/useDatasetData';
 import { Confirmation } from '@/components/ui/confirmation';
-import type { Dataset, Tracking, Valence } from '../db/localdb';
+import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { cn } from '@/lib/utils';
 import { TrendingUp, BarChart3 } from 'lucide-react';
@@ -105,7 +105,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       });
     } else {
       // Create new dataset
-      const now = Date.now();
+      const now = new Date().toISOString() as ISODateString;
       const id = nanoid();
       const newDataset: Dataset = {
         id,
