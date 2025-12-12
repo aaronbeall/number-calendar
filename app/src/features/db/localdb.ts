@@ -266,6 +266,12 @@ export async function listDatasets(): Promise<Dataset[]> {
 export async function saveDay(datasetId: string, date: DayKey, numbers: number[]) {
   const db = await getDb();
   await db.put('entries', { datasetId, date, numbers });
+  // Also update the dataset's updatedAt timestamp
+  const ds = await db.get('datasets', datasetId) as Dataset | undefined;
+  if (ds) {
+    ds.updatedAt = new Date().toISOString() as ISODateString;
+    await db.put('datasets', ds);
+  }
 }
 
 export async function loadDay(datasetId: string, date: DayKey): Promise<number[]> {

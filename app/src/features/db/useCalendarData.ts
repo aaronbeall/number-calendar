@@ -4,6 +4,7 @@ import {
   findMostRecentPopulatedMonthBefore, loadAllDays, loadDay,
   loadMonth,
   loadYear, saveDay,
+  type Dataset,
   type DayEntry,
   type DayKey
 } from './localdb';
@@ -91,6 +92,16 @@ export function useSaveDay() {
           queryClient.invalidateQueries({ queryKey: ['mostRecentPopulatedMonthBefore', datasetId, beforeDate] });
         }
       }
+
+        // Update dataset caches to reflect updatedAt touched during saveDay
+        queryClient.setQueryData(['datasets'], (existing: Dataset[] | undefined) => {
+          if (!Array.isArray(existing)) return existing;
+          return existing.map((d: any) => (d?.id === datasetId ? { ...d, updatedAt: Date.now() } : d));
+        });
+        queryClient.setQueryData(['dataset', datasetId], (existing: Dataset | undefined) => {
+          if (!existing) return existing;
+          return { ...existing, id: datasetId, updatedAt: Date.now() };
+        });
     },
   });
 }
