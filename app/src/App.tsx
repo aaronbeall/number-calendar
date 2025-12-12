@@ -348,18 +348,16 @@ function AppHeader({
 
 export function AppFooter() {
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Numbers Go Up',
-          text: 'A calendar for numberphiles - Track your daily numbers and visualize your progress!',
-          url: window.location.href,
-        });
-      } catch (err) {
-        // User cancelled or share failed
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Share failed:', err);
-        }
+    try {
+      await navigator.share({
+        title: 'Numbers Go Up',
+        text: 'A calendar for numberphiles - Track your daily numbers and visualize your progress!',
+        url: window.location.href,
+      });
+    } catch (err) {
+      // User cancelled or share failed
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Share failed:', err);
       }
     }
   };
@@ -393,7 +391,7 @@ export function AppFooter() {
           <span className="group-hover:text-yellow-600 transition-colors">Buy Me a Coffee</span>
         </a>
 
-        {navigator.share && (
+        {typeof navigator.share === 'function' && (
           <button
             onClick={handleShare}
             className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group"
