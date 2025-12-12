@@ -5,6 +5,7 @@ import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
 import { ArrowRight, BarChart as BarChartIcon, Info, Plus, Search, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { usePreference } from '@/hooks/usePreference';
 import { Link, useSearchParams } from 'react-router-dom';
 
 export function Landing({ 
@@ -179,7 +180,7 @@ function DatasetsLanding({
   onDuplicateDataset: (datasetId: string) => void;
 }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'created' | 'updated'>('updated');
+  const [sortBy, setSortBy] = usePreference<'created' | 'updated'>('datasets.sortOrder', 'updated');
 
   const filteredDatasets = useMemo(() => {
     const base = !searchQuery.trim()
