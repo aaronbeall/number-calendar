@@ -402,6 +402,20 @@ export function UserMenu() {
   const [openAbout, setOpenAbout] = useState(false);
   const [openSubscribe, setOpenSubscribe] = useState(false);
 
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: 'Numbers Go Up',
+        text: 'A calendar for numberphiles - Track your daily numbers and visualize your progress!',
+        url: window.location.href,
+      });
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Share failed:', err);
+      }
+    }
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -433,6 +447,12 @@ export function UserMenu() {
             <Bell className="h-4 w-4 text-slate-500" />
             Signup for Updates
           </DropdownMenuItem>
+          {typeof navigator.share === 'function' && (
+            <DropdownMenuItem className="gap-2" onSelect={handleShare}>
+              <Share2 className="h-4 w-4 text-slate-500" />
+              Share
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem className="gap-2" asChild>
             <a
