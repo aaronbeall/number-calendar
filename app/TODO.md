@@ -85,18 +85,18 @@ I'm liking this one.
 
 ## Product
 - [x] Dark mode
-- [ ] Promo landing page
+- [x] Promo landing page
 - [ ] Mobile friendly
 - [ ] PWA
 - [ ] App store
 - [ ] User social login/data sync
-- [ ] Support (Patreon, Buy Me A Coffee)
-- [ ] Feedback
+- [x] Support (Patreon, Buy Me A Coffee)
+- [x] Feedback
 - [ ] Ads
-- [ ] Share
+- [x] Share
 - [ ] Copyright/authorship
 - [ ] About
-- [ ] Routing (deep linking)
+- [x] Routing (deep linking)
 - [ ] Premium features
   - [ ] No ads
   - [ ] Number of datasets
