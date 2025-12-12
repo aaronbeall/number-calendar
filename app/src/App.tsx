@@ -28,6 +28,9 @@ import { Calendar } from './pages/Calendar';
 import Records from './pages/Records';
 import { Spinner } from './components/ui/spinner';
 import { Skeleton } from './components/ui/skeleton';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 
 
 function App() {
@@ -330,10 +333,51 @@ function AppHeader({
 }
 
 export function SettingsMenu() {
+  const { theme, setTheme } = useTheme();
+  const [reduceMotion, setReduceMotion] = useState<boolean>(false);
+  const [showTips, setShowTips] = useState<boolean>(true);
+
   return (
-    <Button variant="ghost" size="icon" className="h-8 w-8">
-      <Settings className="h-4 w-4" />
-    </Button>
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Preferences">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Preferences</DialogTitle>
+          <DialogDescription>Customize your experience.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="pref-theme" className="text-sm">Theme</Label>
+            <div className="flex items-center gap-2">
+              <Button variant={theme === 'light' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('light')}>Light</Button>
+              <Button variant={theme === 'dark' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('dark')}>Dark</Button>
+              <Button variant={theme === 'system' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('system')}>System</Button>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="pref-motion" className="text-sm">Reduce Motion</Label>
+            <Switch id="pref-motion" checked={reduceMotion} onCheckedChange={setReduceMotion} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Label htmlFor="pref-tips" className="text-sm">Show Tips</Label>
+            <Switch id="pref-tips" checked={showTips} onCheckedChange={setShowTips} />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="default">Done</Button>
+          </DialogClose>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

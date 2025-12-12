@@ -17,15 +17,20 @@ I'm liking this one.
 - [ ] Notifications on new Records/Achievements/Streaks
 - [ ] Onboarding
   - [ ] Example datasets
+  - [ ] Create dataset from template (Weightloss, P&L, Diet, etc)
 - [ ] App preferences
-- [ ] Data import/export
+- [x] Data import
+  - [ ] Option to skip conflicting data
+  - [ ] Detect totals columns and auto-deselect
+  - [ ] Import dataset (with name, settings, etc)
+- [x] Data export
 - [ ] Data settings
   - [x] Which is better: higher, lower, etc
-  - [ ] Allowed range
+    - [ ] Advanced valence: above, blow, inside, outside
+  - [ ] Limit range
   - [ ] Formatting style (none, currency, percent, unit)
     - [ ] Options (sign display, accounting, precision)
   - [x] Tracking: trend (weight, etc), log (P&L, etc)
-  - [ ] Presets (weight, profit & loss, etc)
   - [ ] Computed data (formula)
   - [ ] Primary metric
 - [ ] Notes (Day, Week, Month) with rich text/markdown support
@@ -45,7 +50,7 @@ I'm liking this one.
 - [ ] Calendar options
   - [ ] Heatmap
   - [ ] Show/hide week summaries
-  - [ ] Week summary across months
+  - [ ] Weeks across months
   - [ ] Abbreviate numbers
   - [ ] Customize displayed stats
 - [ ] Full math support, ex `1+(100/23)`
@@ -53,10 +58,10 @@ I'm liking this one.
   - [x] Support math expressions in individual number editor
   - [ ] Support accounting format negatives `($455)` is `-455`
   - [x] Support `=` in expression parsing
-- [ ] Combined datasets view
-- [ ] Dashboards (for multiple data sets)
+- [ ] Combined datasets view for comparisons
+- [x] Dashboard (for multiple data sets)
 - [ ] Chart improvements
-  - [ ] Line chart
+  - [x] Line chart
   - [ ] Rolling averages
   - [ ] Compare
   - [ ] Rolling start from
@@ -64,10 +69,11 @@ I'm liking this one.
   - [ ] Expand/fullscreen
   - [ ] Export image/pdf
 - [ ] Data integrations
+  - [ ] Public data sources (weather, demographics, etc)
 - [ ] Additional add options
   - [x] Add by diff
   - [ ] Global quick add (with options)
-  - [ ] Add from rollups (week, month, year)
+  - [ ] Add to rollups (week, month, year) -- how to distribute?
   - [ ] Multi-line add (re-use import code)
 - [ ] Prev/Next in the panel
 - [ ] Time tracking with data
