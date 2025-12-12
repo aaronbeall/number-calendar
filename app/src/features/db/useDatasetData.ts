@@ -43,7 +43,7 @@ export function useUpdateDataset() {
     mutationFn: updateDataset,
     onSuccess: (_, updated) => {
       // Update list cache
-      queryClient.setQueryData(['datasets'], (existing: Dataset) => {
+      queryClient.setQueryData(['datasets'], (existing: Dataset[]) => {
         if (!Array.isArray(existing)) return existing;
         return existing.map(d => (d?.id === updated?.id ? updated : d));
       });
@@ -60,8 +60,9 @@ export function useDeleteDataset() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteDataset,
-    onSuccess: () => {
+    onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['datasets'] });
+      queryClient.invalidateQueries({ queryKey: ['dataset', deletedId] });
     },
   });
 }

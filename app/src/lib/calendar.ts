@@ -68,63 +68,63 @@ export function getCalendarData(numbers: number[], priorNumbers: number[] | unde
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days: true; weeks?: false; month?: false }
 ): Record<DayKey, number[]>;
 
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days: true; weeks: true; month?: false }
 ): Record<DayKey | WeekKey, number[]>;
 
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days: true; weeks?: false; month: true }
 ): Record<DayKey | MonthKey, number[]>;
 
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days: true; weeks: true; month: true }
 ): Record<DayKey | WeekKey | MonthKey, number[]>;
 
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days?: false; weeks: true; month?: false }
 ): Record<WeekKey, number[]>;
 
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days?: false; weeks?: false; month: true }
 ): Record<MonthKey, number[]>;
 
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days?: false; weeks: true; month: true }
 ): Record<WeekKey | MonthKey, number[]>;
 
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
 ): Record<DayKey | WeekKey | MonthKey, number[]>;
 
 // Implementation signature (general case)
 export function getPriorMonthNumbersMap(
   days: DayKey[],
   monthData: Record<DayKey, number[]>,
-  priorMonthData: Record<DayKey, number[]> | undefined,
+  priorMonthData: Record<DayKey, number[]> | undefined | null,
   include: { days?: boolean; weeks?: boolean; month?: boolean } = { days: true, weeks: true, month: true }
 ): Record<DayKey | WeekKey | MonthKey, number[]> {
 
@@ -218,7 +218,11 @@ export function getPriorMonthNumbersMap(
   return result;
 }
 
-export function getPriorYearMonthNumbersMap(year: number, yearData: Record<DayKey, number[]>, priorYearMonthData?: Record<DayKey, number[]>): Record<DayKey | MonthKey, number[]> {
+export function getPriorYearMonthNumbersMap(
+  year: number, 
+  yearData: Record<DayKey, number[]>, 
+  priorYearMonthData?: Record<DayKey, number[]> | null
+): Record<DayKey | MonthKey, number[]> {
   const result = {} as Record<DayKey | MonthKey, number[]>;
   let lastPopulated: number[] = [];
 

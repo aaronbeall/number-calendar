@@ -241,9 +241,9 @@ export async function createDataset(dataset: Dataset): Promise<void> {
   await db.add('datasets', dataset);
 }
 
-export async function getDataset(id: string): Promise<Dataset | undefined> {
+export async function getDataset(id: string): Promise<Dataset | null> {
   const db = await getDb();
-  return await db.get('datasets', id);
+  return await db.get('datasets', id) ?? null;
 }
 
 export async function updateDataset(dataset: Dataset): Promise<void> {
@@ -300,7 +300,7 @@ export async function loadAllDays(datasetId: string): Promise<DayEntry[]> {
 
 
 // Efficiently find the most recent populated entry before a given date for a dataset, then load the entire month for that entry
-export async function findMostRecentPopulatedMonthBefore(datasetId: string, beforeDate: DayKey): Promise<Record<DayKey, number[]> | undefined> {
+export async function findMostRecentPopulatedMonthBefore(datasetId: string, beforeDate: DayKey): Promise<Record<DayKey, number[]> | null> {
   const db = await getDb();
   const tx = db.transaction('entries', 'readonly');
   const store = tx.objectStore('entries');
@@ -317,5 +317,5 @@ export async function findMostRecentPopulatedMonthBefore(datasetId: string, befo
     }
     cursor = await cursor.continue();
   }
-  return undefined;
+  return null;
 }

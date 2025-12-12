@@ -9,6 +9,7 @@ import {
   useNavigate,
   Navigate,
   Link,
+  data,
 } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { getDatasetIcon } from './lib/dataset-icons';
@@ -155,6 +156,7 @@ function DatasetLayout({
 }) {
   const { datasetId } = useParams();
   const { data: dataset, isLoading } = useDataset(datasetId ?? '');
+  
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
