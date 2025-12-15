@@ -75,8 +75,26 @@ export function Records({ datasetId }: { datasetId: string }) {
     }
   });
 
+  // Group records by month/year (using end date for streaks, date for others)
+  const recordsByMonth: { [month: string]: RecordCardProps[] } = {};
+  recordCards.forEach((rec) => {
+    const dateKey = rec.type === 'streak' ? rec.end : rec.date;
+    let monthKey = '';
+    try {
+      const d = parseDateKey(dateKey);
+      monthKey = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : 'Unknown';
+    } catch {
+      monthKey = 'Unknown';
+    }
+    if (!recordsByMonth[monthKey]) recordsByMonth[monthKey] = [];
+    recordsByMonth[monthKey].push(rec);
+  });
+
+  // Sort months descending (most recent first)
+  const sortedMonthKeys = Object.keys(recordsByMonth).sort((a, b) => b.localeCompare(a));
+
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-8">
+    <div className="max-w-5xl mx-auto p-4 md:p-8">
       <nav className="mb-4 text-xs text-slate-500 flex items-center gap-2">
         <Link to={"/dataset/" + dataset.id} className="hover:underline text-blue-600">{dataset.name}</Link>
         <span className="mx-1">/</span>
@@ -85,13 +103,37 @@ export function Records({ datasetId }: { datasetId: string }) {
       <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
         <Award className="w-7 h-7 md:w-8 md:h-8 text-yellow-400" /> Records
       </h2>
-      <ul className="flex flex-col gap-3 md:gap-4">
-        {recordCards.map((rec) => (
-          <li key={`${rec.type}-${rec.label}`}>
-            <RecordCard {...rec} />
-          </li>
-        ))}
-      </ul>
+      <div className="space-y-8">
+        {sortedMonthKeys.map((monthKey) => {
+          const group = recordsByMonth[monthKey];
+          // Format header as 'MMMM yyyy' using the first record's date
+          let header = 'Unknown';
+          try {
+            const d = parseDateKey(group[0].type === 'streak' ? group[0].end : group[0].date);
+            header = d ? d.toLocaleString('default', { month: 'long', year: 'numeric' }) : 'Unknown';
+          } catch {}
+          return (
+            <div key={monthKey}>
+              <div className="flex items-center gap-2 mb-4 mt-8">
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
+                  {header}
+                  <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-semibold align-middle border border-slate-200 dark:border-slate-700 ml-1">
+                    {group.length}
+                  </span>
+                </span>
+                <span className="flex-1"><span className="block h-[1px] w-full bg-slate-200 dark:bg-slate-800" /></span>
+              </div>
+              <ul className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {group.map((rec) => (
+                  <li key={`${rec.type}-${rec.label}`}>
+                    <RecordCard {...rec} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -114,100 +156,94 @@ type RecordCardProps = {
 
 function RecordCard(props: RecordCardProps) {
   const { label, valence, date, type } = props;
-  // Grouped class names for container, date badge, icon, and text
   let icon: React.ReactNode;
   let displayLabel = label;
-  let containerClass = '';
-  let dateBadgeClass = '';
-  let iconClass = '';
-  let textClass = '';
+  let iconBg = '';
+  let valueColor = '';
+  let badgeBg = '';
+  let badgeText = '';
+  let borderColor = '';
+  let displayDate = '';
+  let displayValue = '';
 
-  // Set icon and regular styles first
   if (type === "streak") {
-    // Streak record
-    icon = <Flame className="w-5 h-5 text-amber-500" />;
-    containerClass = 'border-amber-200 dark:border-amber-700 bg-amber-50/80 dark:bg-amber-900/60';
-    dateBadgeClass = 'bg-amber-100/80 dark:bg-amber-900/80 border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-200';
-    iconClass = 'bg-amber-100/80 dark:bg-amber-900/80 border-amber-200 dark:border-amber-700';
-    textClass = 'text-amber-600 dark:text-amber-300';
+    icon = <Flame className="w-6 h-6 text-amber-500" />;
+    iconBg = 'bg-amber-100 dark:bg-amber-900';
+    valueColor = 'text-amber-600 dark:text-amber-300';
+    badgeBg = 'bg-amber-50 dark:bg-amber-900 border-amber-200 dark:border-amber-700';
+    badgeText = 'text-amber-700 dark:text-amber-200';
+    borderColor = 'border-amber-200 dark:border-amber-700';
     displayLabel = `Best ${label}`;
   } else if (type === "best") {
     if (valence === 'neutral') {
-      // Neutral valence uses trending icon
-      icon = <TrendingUp className="w-5 h-5 text-blue-500" />;
-      containerClass = 'border-blue-300 dark:border-blue-700 bg-blue-50/80 dark:bg-blue-900/60';
-      dateBadgeClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-200';
-      iconClass = 'bg-blue-100/80 dark:bg-blue-900/80 border-blue-200 dark:border-blue-700';
-      textClass = 'text-blue-600 dark:text-blue-300';
+      icon = <TrendingUp className="w-6 h-6 text-blue-500" />;
+      iconBg = 'bg-blue-100 dark:bg-blue-900';
+      valueColor = 'text-blue-600 dark:text-blue-300';
+      badgeBg = 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700';
+      badgeText = 'text-blue-700 dark:text-blue-200';
+      borderColor = 'border-blue-200 dark:border-blue-700';
       displayLabel = `Highest ${label}`;
     } else {
-      // Positive/Negative valence uses trophy icon
-      icon = <Trophy className="w-5 h-5 text-green-500" />;
-      containerClass = 'border-green-300 dark:border-green-700 bg-green-50/80 dark:bg-green-900/60';
-      dateBadgeClass = 'bg-green-100/80 dark:bg-green-900/80 border-green-200 dark:border-green-700 text-green-700 dark:text-green-200';
-      iconClass = 'bg-green-100/80 dark:bg-green-900/80 border-green-200 dark:border-green-700';
-      textClass = 'text-green-600 dark:text-green-300';
+      icon = <Trophy className="w-6 h-6 text-green-500" />;
+      iconBg = 'bg-green-100 dark:bg-green-900';
+      valueColor = 'text-green-600 dark:text-green-300';
+      badgeBg = 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700';
+      badgeText = 'text-green-700 dark:text-green-200';
+      borderColor = 'border-green-200 dark:border-green-700';
       displayLabel = `Best ${label}`;
     }
   } else if (type === "worst") {
     if (valence === 'neutral') {
-      // Neutral valence uses trending down icon
-      icon = <TrendingDown className="w-5 h-5 text-purple-500" />;
-      containerClass = 'border-purple-300 dark:border-purple-700 bg-purple-50/80 dark:bg-purple-900/60';
-      dateBadgeClass = 'bg-purple-100/80 dark:bg-purple-900/80 border-purple-200 dark:border-purple-700 text-purple-700 dark:text-purple-200';
-      iconClass = 'bg-purple-100/80 dark:bg-purple-900/80 border-purple-200 dark:border-purple-700';
-      textClass = 'text-purple-600 dark:text-purple-300';
+      icon = <TrendingDown className="w-6 h-6 text-purple-500" />;
+      iconBg = 'bg-purple-100 dark:bg-purple-900';
+      valueColor = 'text-purple-600 dark:text-purple-300';
+      badgeBg = 'bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-700';
+      badgeText = 'text-purple-700 dark:text-purple-200';
+      borderColor = 'border-purple-200 dark:border-purple-700';
       displayLabel = `Lowest ${label}`;
     } else {
-      // Positive/Negative valence uses skull icon
-      icon = <Skull className="w-5 h-5 text-red-400" />;
-      containerClass = 'border-red-300 dark:border-red-700 bg-red-50/80 dark:bg-red-900/60';
-      dateBadgeClass = 'bg-red-100/80 dark:bg-red-900/80 border-red-200 dark:border-red-700 text-red-700 dark:text-red-200';
-      iconClass = 'bg-red-100/80 dark:bg-red-900/80 border-red-200 dark:border-red-700';
-      textClass = 'text-red-600 dark:text-red-300';
+      icon = <Skull className="w-6 h-6 text-red-400" />;
+      iconBg = 'bg-red-100 dark:bg-red-900';
+      valueColor = 'text-red-600 dark:text-red-300';
+      badgeBg = 'bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700';
+      badgeText = 'text-red-700 dark:text-red-200';
+      borderColor = 'border-red-200 dark:border-red-700';
       displayLabel = `Worst ${label}`;
     }
   }
-;
-  let displayDate = '';
-  let displayValue = '';
 
   if (!date) {
-    // No record case
     displayDate = 'Never';
     displayValue = '—';
-    containerClass = 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 opacity-60';
-    dateBadgeClass = 'bg-slate-100/80 dark:bg-slate-900/80 border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500';
-    iconClass = 'bg-slate-100 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
-    textClass = 'text-slate-400 dark:text-slate-500';
+    iconBg = 'bg-slate-100 dark:bg-slate-900';
+    valueColor = 'text-slate-400 dark:text-slate-500';
+    badgeBg = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
+    badgeText = 'text-slate-400 dark:text-slate-500';
+    borderColor = 'border-slate-200 dark:border-slate-700';
   } else {
-    // Normal record case
     displayValue = Intl.NumberFormat().format(type == 'streak' ? props.length : props.value)
     displayDate = type === 'streak'
       ? formatFriendlyDate(props.start, props.end)
       : formatFriendlyDate(date);
   }
 
-
-
   return (
-    <div className={`rounded-xl border flex items-center px-4 py-3 md:py-4 md:px-6 shadow-sm hover:shadow-md transition-shadow ${containerClass}`}>
-      {/* Left: icon, label, value */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <div className={`flex-shrink-0 rounded-full p-2 border shadow-sm ${iconClass}`}>
-          {icon}
-        </div>
-        <div className="min-w-0">
-          <div className="text-xs font-semibold mb-0.5 truncate opacity-80">{displayLabel}</div>
-          <div className={`text-xl md:text-2xl font-extrabold leading-tight ${textClass}`}>{displayValue}</div>
-        </div>
-      </div>
-      {/* Right: date badge */}
-      <div className="flex-shrink-0 pl-2 flex items-center h-full">
-        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[11px] font-medium ${dateBadgeClass}`}>
-          <CalendarDays className="w-3.5 h-3.5 opacity-70" />
-          {displayDate}
+    <div className={`relative rounded-xl border bg-white/80 dark:bg-slate-900/80 shadow-sm group transition-all hover:scale-[1.012] hover:shadow-md h-full flex flex-col justify-center ${borderColor}`}>
+      {/* Floating date badge */}
+      <div className="absolute left-0 right-0 -top-3 z-10 flex justify-center px-4">
+        <span className={`inline-flex items-center gap-1 px-4 py-1 rounded-full border text-xs font-medium shadow-md max-w-full ${badgeBg} ${badgeText}`} style={{maxWidth:'95%'}}>
+          <CalendarDays className="w-4 h-4 opacity-70" />
+          <span className="truncate">{displayDate}</span>
         </span>
+      </div>
+      <div className="flex items-center gap-4 px-4 py-4 md:py-5 md:px-6 h-full">
+        {/* Icon */}
+        <div className={`flex-shrink-0 rounded-lg p-2 border shadow-sm ${iconBg}`}>{icon}</div>
+        {/* Main content: label and value */}
+        <div className="flex-1 min-w-0 flex flex-col justify-center">
+          <div className="text-xs font-semibold truncate opacity-80 mb-1">{displayLabel}</div>
+          <div className={`text-2xl md:text-3xl font-extrabold leading-tight ${valueColor}`}>{displayValue}</div>
+        </div>
       </div>
     </div>
   );
