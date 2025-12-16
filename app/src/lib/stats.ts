@@ -16,6 +16,9 @@ export interface NumberStats {
   changePercent: number; // (last - first) / first * 100
 }
 
+// NumberStats can represent different sources: 'stats' (values), 'deltas' (change values), or 'percents' (percentage changes)
+export type NumberSource = 'stats' | 'deltas' | 'percents';
+
 /**
  * Compute basic statistics for an array of numbers
  */

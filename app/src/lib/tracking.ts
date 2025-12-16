@@ -1,5 +1,5 @@
 import type { Tracking } from "@/features/db/localdb";
-import type { NumberStats, StatsExtremes } from "./stats";
+import type { NumberSource, NumberStats, StatsExtremes } from "./stats";
 import { capitalize } from "./utils";
 
 /**
@@ -50,7 +50,7 @@ export function getPrimaryMetricLowFromExtremes(extremes: StatsExtremes, trackin
 /**
  * Returns the source of valence (good or bad) based on tracking type.
  */
-export function getValenceSource(tracking: Tracking) {
+export function getValenceSource(tracking: Tracking): Exclude<NumberSource, 'percents'> {
   return {
     series: 'stats' as const,
     trend: 'deltas' as const,

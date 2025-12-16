@@ -2,6 +2,8 @@
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
 import { endOfISOWeek, format, getWeek, isValid, parse, parseISO, startOfISOWeek } from 'date-fns';
 
+export type DateKeyType = 'day' | 'week' | 'month' | 'year';
+
 // Type guards for date keys
 export function isDayKey(key: DateKey): key is DayKey {
   return /^\d{4}-\d{2}-\d{2}$/.test(key); // YYYY-MM-DD
@@ -51,8 +53,8 @@ export function convertDateKey(dateKey: DateKey, targetType: 'day'): DayKey;
 export function convertDateKey(dateKey: DateKey, targetType: 'week'): WeekKey;
 export function convertDateKey(dateKey: DateKey, targetType: 'month'): MonthKey;
 export function convertDateKey(dateKey: DateKey, targetType: 'year'): YearKey;
-export function convertDateKey(dateKey: DateKey, targetType: 'day' | 'week' | 'month' | 'year'): DateKey;
-export function convertDateKey(dateKey: DateKey, targetType: 'day' | 'week' | 'month' | 'year'): DateKey {
+export function convertDateKey(dateKey: DateKey, targetType: DateKeyType): DateKey;
+export function convertDateKey(dateKey: DateKey, targetType: DateKeyType): DateKey {
   const date = parseDateKey(dateKey);
   return formatDateAsKey(date, targetType);
 }
@@ -187,8 +189,8 @@ export function formatDateAsKey(date: Date, type: 'day'): DayKey;
 export function formatDateAsKey(date: Date, type: 'week'): WeekKey;
 export function formatDateAsKey(date: Date, type: 'month'): MonthKey;
 export function formatDateAsKey(date: Date, type: 'year'): YearKey;
-export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'year'): DateKey
-export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'year'): DateKey {
+export function formatDateAsKey(date: Date, type: DateKeyType): DateKey
+export function formatDateAsKey(date: Date, type: DateKeyType): DateKey {
   switch (type) {
     case 'day':
       return format(date, 'yyyy-MM-dd') as DayKey;
@@ -206,7 +208,7 @@ export function formatDateAsKey(date: Date, type: 'day' | 'week' | 'month' | 'ye
 /**
  * Returns the type of a DateKey ('day', 'week', 'month', 'year').
  */
-export function getDateKeyType(key: DateKey): 'day' | 'week' | 'month' | 'year' {
+export function getDateKeyType(key: DateKey): DateKeyType {
   if (isDayKey(key)) return 'day';
   if (isWeekKey(key)) return 'week';
   if (isMonthKey(key)) return 'month';

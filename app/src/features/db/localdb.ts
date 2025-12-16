@@ -1,7 +1,8 @@
 import { nanoid } from 'nanoid';
 import type { DatasetIconName } from '@/lib/dataset-icons';
-import { toMonthKey, toYearKey } from '@/lib/friendly-date';
+import { toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
 import { openDB } from 'idb';
+import type { NumberSource, NumberStats } from '@/lib/stats';
 
 // Dataset entity
 export interface Dataset {
@@ -33,6 +34,7 @@ export type Tracking = 'trend' | 'series';
 export type Valence = 'positive' | 'negative' | 'neutral';
 
 export type DayNumbers = number[];
+
 export type DayEntry = {
   date: DayKey; // YYYY-MM-DD
   numbers: DayNumbers;
@@ -66,6 +68,59 @@ export interface ImageAttachment {
   mimeType: string;
   createdAt: number;
   updatedAt: number;
+}
+
+// Generic metric goal type, can be used as a target (repeating), milestone (one-time), or achievement requirement
+export type MetricGoal = {
+  metric: keyof NumberStats;
+  source: NumberSource;
+} & (
+  | { condition: 'above' | 'below' | 'equal'; value: number; }
+  | { condition: 'inside' | 'outside'; range: [number, number]; }
+);
+
+// Goal entity
+export type Goal = {
+  id: string;
+  datasetId: string;
+  createdAt: number;
+  title: string;
+  description?: string;
+  goal: MetricGoal;
+} & (
+  | { 
+    // Milestone -- a specific goal with optional target date (target date does not affect achievement)
+    type: 'milestone';
+    targetDate?: DayKey;
+    timePeriod: 'anytime';
+    count: 1;
+  }
+  | { 
+    // Target -- recurring goals over a time period
+    type: 'target';
+    timePeriod: TimePeriod;
+    count: 1;
+  }
+  | { 
+    // Goal -- custom goal achievement criteria
+    type: 'goal'; 
+    timePeriod: TimePeriod; 
+    count: number; // Used for streaks or multiple completions
+    consecutive?: boolean; // Consecutive allows null gaps, but not failures
+    resets?: TimePeriod; // Used to reset counting at specific intervals -- TODO: not currently implemented
+  }
+);
+
+// Goal time period types
+export type TimePeriod = DateKeyType | 'anytime';
+
+// Achievement -- tracks user progress on goals
+export interface Achievement {
+  goalId: string;
+  datasetId: string;
+  progress: number;
+  startedAt?: DateKey; // corresponds to the goal.timePeriod type
+  completedAt?: DateKey; // corresponds to the goal.timePeriod type
 }
 
 // Main DB structure
