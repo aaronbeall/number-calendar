@@ -86,6 +86,12 @@ export type Goal = {
   createdAt: number;
   title: string;
   description?: string;
+  badge: {
+    style: 'star' | 'ribbon' | 'medal' | 'trophy' | 'badge' | 'shield';
+    icon: string;
+    color: string;
+    label: string;
+  }
   goal: MetricGoal;
 } & (
   | { 
