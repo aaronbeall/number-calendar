@@ -3,6 +3,7 @@ import type { DatasetIconName } from '@/lib/dataset-icons';
 import { toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
 import { openDB } from 'idb';
 import type { NumberSource, NumberStats } from '@/lib/stats';
+import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from '@/lib/achievements';
 
 // Dataset entity
 export interface Dataset {
@@ -79,19 +80,22 @@ export type MetricGoal = {
   | { condition: 'inside' | 'outside'; range: [number, number]; }
 );
 
-// Goal entity
+// Reward visuals for goals
+export type GoalBadge = {
+  style: AchievementBadgeStyle;
+  color: AchievementBadgeColor;
+  icon?: AchievementBadgeIcon;
+  label?: string;
+}
+
+// Goal entity -- used for milestones, targets, and achievements
 export type Goal = {
   id: string;
   datasetId: string;
   createdAt: number;
   title: string;
   description?: string;
-  badge: {
-    style: 'star' | 'ribbon' | 'medal' | 'trophy' | 'badge' | 'shield';
-    icon: string;
-    color: string;
-    label: string;
-  }
+  badge: GoalBadge;
   goal: MetricGoal;
 } & (
   | { 
@@ -104,7 +108,7 @@ export type Goal = {
   | { 
     // Target -- recurring goals over a time period
     type: 'target';
-    timePeriod: TimePeriod;
+    timePeriod: Exclude<TimePeriod, 'anytime'>;
     count: 1;
   }
   | { 
@@ -120,11 +124,12 @@ export type Goal = {
 // Goal time period types
 export type TimePeriod = DateKeyType | 'anytime';
 
-// Achievement -- tracks user progress on goals
+// Achievement -- tracks user progress on goals, each goal can potentially have multiple achievements
 export interface Achievement {
+  id: string;
   goalId: string;
   datasetId: string;
-  progress: number;
+  progress: number; // For goals with count > 1
   startedAt?: DateKey; // corresponds to the goal.timePeriod type
   completedAt?: DateKey; // corresponds to the goal.timePeriod type
 }

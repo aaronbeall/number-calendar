@@ -2,6 +2,7 @@ import { type Achievement, type DateKey, type DayKey, type Goal, type MetricGoal
 import { convertDateKey, isDayKey, type DateKeyType } from './friendly-date';
 import { computeNumberStats, type NumberStats } from './stats';
 import { keysOf } from './utils';
+import { nanoid } from 'nanoid';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
 function evalCondition(cond: MetricGoal, value: number): boolean {
@@ -73,7 +74,39 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
   return { getPeriods, getPeriodData, getPeriodStats, getAnytimeStats };
 }
 
-// Main function: update achievements progress
+export interface GoalResults {
+  goal: Goal;
+  achievements: Achievement[];
+  completedCount: number;
+  currentProgress: number;
+  lastCompletedAt?: DateKey;
+  firstCompletedAt?: DateKey;
+}
+
+/**
+ * Updates and computes the progress and completion state of all goals for a dataset, returning a summary for each goal.
+ * 
+ * This function processes a list of goals, existing achievements, and the current dataset's data to:
+ * - Determine which goals have been completed, are in progress, or are locked.
+ * - Create or update achievement records for each goal, including handling streaks, multi-period counts, and one-time goals.
+ * - For 'anytime' goals, finds the exact day the goal was achieved and sets completedAt accordingly.
+ * - For periodic goals (day/week/month/year), tracks completed and in-progress achievements, including streaks and multi-period counts.
+ * - Ensures completed achievements are always preserved, but in-progress achievements are only preserved if they remain valid with the current data.
+ * - Returns a summary for each goal, including the list of achievements, completed count, current progress, and completion dates.
+ *
+ * @param {Object} params
+ * @param {Goal[]} params.goals - The list of goals to evaluate.
+ * @param {Achievement[]} params.achievements - The list of existing achievement records for the dataset.
+ * @param {Record<DayKey, number[]>} params.data - The dataset's data, keyed by day.
+ * @param {string} params.datasetId - The dataset ID.
+ * @returns {GoalResults[]} An array of results, one per goal, with computed achievements, progress, and completion info.
+ *
+ * Notes:
+ * - For non-repeating (anytime) goals, only one achievement is tracked and completedAt is set to the exact day the goal was achieved.
+ * - For repeating goals, completed achievements are always preserved, but in-progress achievements are only preserved if the streak/progress is still valid.
+ * - Handles both consecutive and non-consecutive count goals, as well as streaks and multi-period goals.
+ * - Designed to be idempotent and safe to call repeatedly as data or achievements change.
+ */
 export function updateAchievements({
   goals,
   achievements,
@@ -84,22 +117,20 @@ export function updateAchievements({
   achievements: Achievement[];
   data: Record<DayKey, number[]>;
   datasetId: string;
-}): Array<{
-  goal: Goal;
-  achievements: Achievement[];
-  completedCount: number;
-  currentProgress: number;
-  lastCompletedAt?: DateKey;
-  firstCompletedAt?: DateKey;
-}> {
+}): GoalResults[] {
+
   const { getPeriods, getPeriodData, getPeriodStats, getAnytimeStats } = createPeriodCache(data);
-  const achievementsByGoalId: Record<string, Achievement[]> = goals.reduce((acc, goal) => {
-    acc[goal.id] = achievements.filter(a => a.goalId === goal.id && a.datasetId === datasetId);
+
+  const achievementsByGoalId: Record<string, Achievement[]> = achievements.reduce((acc, ach) => {
+    if (!acc[ach.goalId]) acc[ach.goalId] = [];
+    acc[ach.goalId].push(ach);
     return acc;
   }, {} as Record<string, Achievement[]>);
-  const result: ReturnType<typeof updateAchievements> = [];
+
+  const result: GoalResults[] = [];
+
   for (const goal of goals) {
-    const goalAchievements = achievementsByGoalId[goal.id] || [];
+    const goalAchievements = achievementsByGoalId[goal.id] ?? [];
     let completedCount = 0;
     let currentProgress = 0;
     let lastCompletedAt: DateKey | undefined = undefined;
@@ -108,7 +139,7 @@ export function updateAchievements({
 
     // ANYTIME: Only one achievement, only update if not already completed
     if (goal.timePeriod === 'anytime') {
-      let ach = goalAchievements[0] || { goalId: goal.id, datasetId, progress: 0 };
+      let ach = goalAchievements[0] ?? { goalId: goal.id, datasetId, progress: 0 };
       if (ach.completedAt) {
         // Already completed, nothing to do
         newAchievements.push(ach);
@@ -120,7 +151,19 @@ export function updateAchievements({
         const met = stat && evalCondition(goal.goal, stat[goal.goal.metric]);
         if (met) {
           ach.progress = 1;
-          ach.completedAt = ach.completedAt || (keysOf(data).length ? keysOf(data).sort().slice(-1)[0] : undefined);
+          // Find the exact day when the goal was met
+          let completedAt: DateKey | undefined = undefined;
+          keysOf(data).reduce((acc, day) => {
+            if (completedAt) return acc;
+            const numbers = data[day];
+            acc.push(...numbers);
+            const stats = computeNumberStats(acc);
+            if (stats && evalCondition(goal.goal, stats[goal.goal.metric])) {
+              completedAt = day;
+            }
+            return acc;
+          }, [] as number[]);
+          ach.completedAt = completedAt;
           completedCount = 1;
           lastCompletedAt = ach.completedAt;
         } else {
@@ -155,7 +198,7 @@ export function updateAchievements({
           const met = stat && evalCondition(goal.goal, stat[goal.goal.metric]);
           if (met) {
             if (!ach) {
-              ach = { goalId: goal.id, datasetId, progress: 1, startedAt: period, completedAt: period };
+              ach = { id: nanoid(), goalId: goal.id, datasetId, progress: 1, startedAt: period, completedAt: period };
               completedCount++;
               lastCompletedAt = period;
             } else {
@@ -169,7 +212,7 @@ export function updateAchievements({
         }
         currentProgress = completedCount;
       } else {
-        // count > 1: streaks or multi-period
+        // count > 1: streaks and multi-period counts
         // Build a set of periods already covered by completed achievements
         const usedPeriods = new Set<DateKey>();
         for (const ach of goalAchievements) {
@@ -201,7 +244,7 @@ export function updateAchievements({
             streakEnd = period;
             if (streak.length === goal.count) {
               // Completed a new achievement
-              const ach: Achievement = { goalId: goal.id, datasetId, progress: goal.count, startedAt: streakStart, completedAt: streakEnd };
+              const ach: Achievement = { id: nanoid(), goalId: goal.id, datasetId, progress: goal.count, startedAt: streakStart, completedAt: streakEnd };
               newAchievements.push(ach);
               completedCount++;
               lastCompletedAt = streakEnd;
@@ -214,7 +257,7 @@ export function updateAchievements({
           } else if (numbers.length === 0) {
             // Allow null/empty gaps for consecutive
             // streak remains unchanged
-          } else {
+          } else if ('consecutive' in goal && goal.consecutive) {
             // Not met, break streak
             streak = [];
             streakStart = undefined;
@@ -223,13 +266,14 @@ export function updateAchievements({
         }
         // If streak is not empty and not completed, add as in-progress
         if (streak.length > 0 && streak.length < goal.count) {
-          const ach: Achievement = { goalId: goal.id, datasetId, progress: streak.length, startedAt: streakStart };
+          const progress = streak.length;
+          const ach: Achievement = { id: nanoid(), goalId: goal.id, datasetId, progress, startedAt: streakStart };
           newAchievements.push(ach);
-          currentProgress = streak.length;
+          currentProgress = progress;
         }
       }
     }
-    // After all logic for this goal:
+    // After all logic for this goal, find firstCompletedAt
     firstCompletedAt = newAchievements.find(a => !!a.completedAt)?.completedAt;
 
     result.push({

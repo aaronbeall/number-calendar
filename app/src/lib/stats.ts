@@ -2,6 +2,7 @@ import type { DayKey, MonthKey } from "@/features/db/localdb";
 import { toMonthKey } from "./friendly-date";
 import { capitalize, entriesOf } from "./utils";
 
+// Stats for an array of numbers
 export interface NumberStats {
   count: number; // number of entries
   total: number; // sum of all numbers
@@ -17,7 +18,7 @@ export interface NumberStats {
 }
 
 // NumberStats can represent different sources: 'stats' (values), 'deltas' (change values), or 'percents' (percentage changes)
-export type NumberSource = 'stats' | 'deltas' | 'percents';
+export type NumberSource = 'stats' | 'deltas' | 'percents'; // TODO: | 'cumulatives' | 'averages' | 'extremes'
 
 /**
  * Compute basic statistics for an array of numbers
@@ -191,8 +192,8 @@ export function getStatsDelta(current: NumberStats, prior: NumberStats): Record<
 }
 
 // Returns the percent change (delta/prior) for each metric in NumberStats
-export function getStatsPercentChange(current: NumberStats, prior: NumberStats): Partial<Record<keyof NumberStats, number>> {
-  const result: Partial<Record<keyof NumberStats, number>> = {};
+export function getStatsPercentChange(current: NumberStats, prior: NumberStats): Partial<NumberStats> {
+  const result: Partial<NumberStats> = {};
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
     if (typeof current[key] === 'number' && typeof prior[key] === 'number' && prior[key] !== 0) {
       result[key] = ((current[key] as number) - (prior[key] as number)) / Math.abs(prior[key] as number) * 100;
@@ -202,3 +203,39 @@ export function getStatsPercentChange(current: NumberStats, prior: NumberStats):
   }
   return result;
 }
+
+// Returns the cumulative totals for each metric in NumberStats (priorCumulatives + current)
+export function getStatsCumulatives(current: NumberStats, priorCumulatives: Partial<NumberStats>): Partial<NumberStats> {
+  const result: Partial<NumberStats> = {};
+  for (const key of Object.keys(current) as (keyof NumberStats)[]) {
+    if (typeof current[key] === 'number') {
+      const priorCum = priorCumulatives[key] ?? 0;
+      result[key] = priorCum + (current[key] as number);
+    }
+  }
+  return result;
+}
+
+// WIP
+export type AllStats = Record<NumberSource, Partial<NumberStats>>;
+
+export function computeAllStats(numbers: number[], prior?: NumberStats, priorCumulatives?: Partial<NumberStats>): AllStats | null {
+  const stats = computeNumberStats(numbers);
+  if (!stats) return stats;
+  const deltas = prior ? getStatsDelta(stats, prior) : {};
+  const percents = prior ? getStatsPercentChange(stats, prior) : {};
+  const cumulatives = priorCumulatives ? getStatsCumulatives(stats, priorCumulatives) : {};
+  return {
+    stats,
+    deltas,
+    percents,
+    // cumulatives,
+  };
+}
+
+// export function getAllNumberSourceStats(data: Record<DayKey, number[]>, timePeriod: TimePeriod): Record<DateKey | 'all', AllStats> {
+//   const result: Record<DateKey | 'all', AllStats> = {};
+//   const allNumbers: number[] = [];
+
+  
+// }

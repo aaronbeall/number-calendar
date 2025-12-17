@@ -1,4 +1,4 @@
-import type { DayKey, MonthKey, Tracking, WeekKey } from "@/features/db/localdb";
+import type { DayEntry, DayKey, MonthKey, Tracking, WeekKey } from "@/features/db/localdb";
 import { getWeek, parseISO } from "date-fns";
 import { dateToWeekKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import { computeNumberStats, getStatsDelta, getStatsPercentChange, type StatsExtremes } from "./stats";
@@ -268,5 +268,13 @@ export function getPriorYearMonthNumbersMap(
     }
   }
 
+  return result;
+}
+
+export function getDaysData(days: DayEntry[]): Record<DayKey, number[]> {
+  const result: Record<DayKey, number[]> = {};
+  for (const dayEntry of days) {
+    result[dayEntry.date] = dayEntry.numbers;
+  }
   return result;
 }

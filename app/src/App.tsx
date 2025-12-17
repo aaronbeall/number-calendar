@@ -36,6 +36,9 @@ import { getDatasetIcon } from './lib/dataset-icons';
 import { Calendar } from './pages/Calendar';
 import { Landing } from './pages/Landing';
 import Records from './pages/Records';
+import Milestones from './pages/Milestones';
+import Targets from './pages/Targets';
+import Achievements from './pages/Achievements';
 
 
 function App() {
@@ -113,6 +116,9 @@ function AppLayout() {
             />
           </div>
         } />
+        <Route path="milestones" element={<Milestones />} />
+        <Route path="targets" element={<Targets />} />
+        <Route path="achievements" element={<Achievements />} />
         <Route path="dataset/:datasetId/*" element={
           <CalendarProvider>
             <DatasetLayout
@@ -212,9 +218,9 @@ function DatasetLayout({
       <div className="flex-1 w-full">
         <Routes>
           <Route index element={<Calendar dataset={dataset} />} />
-          <Route path="achievements" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Achievements</h2></div>} />
-          <Route path="targets" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Targets</h2></div>} />
-          <Route path="milestones" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Milestones</h2></div>} />
+          <Route path="achievements" element={<Achievements />} />
+          <Route path="targets" element={<Targets />} />
+          <Route path="milestones" element={<Milestones />} />
           <Route path="records" element={<Records datasetId={dataset.id} />} />
           <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
         </Routes>

@@ -15,7 +15,7 @@ import { getMonthDays, getPriorMonthNumbersMap, getPriorYearMonthNumbersMap } fr
 import { toDayKey, toMonthKey } from '@/lib/friendly-date';
 import { calculateDailyExtremes, calculateMonthlyExtremes, type StatsExtremes } from '@/lib/stats';
 import { useCalendarContext } from '@/context/CalendarContext';
-import { CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
+import { CalendarCheck2, CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export function Calendar({ dataset }: { dataset: Dataset; }) {
@@ -92,11 +92,11 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
             >
               <ToggleGroupItem value="daily" aria-label="Daily View">
                 <CalendarDays className="h-4 w-4 mr-1" />
-                <span>Daily</span>
+                <span className="hidden sm:inline">Daily</span>
               </ToggleGroupItem>
               <ToggleGroupItem value="monthly" aria-label="Monthly View">
                 <Grid3X3 className="h-4 w-4 mr-1" />
-                <span>Monthly</span>
+                <span className="hidden sm:inline">Monthly</span>
               </ToggleGroupItem>
             </ToggleGroup>
             
@@ -107,8 +107,8 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               onClick={goToToday}
               className="gap-1 h-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
             >
-              <CalendarIcon className="h-3 w-3 text-slate-700 dark:text-blue-300" />
-              <span className="text-slate-700 dark:text-blue-300">Today</span>
+              <CalendarCheck2 className="h-3 w-3 text-slate-700 dark:text-blue-300" />
+              <span className="text-slate-700 dark:text-blue-300 hidden sm:inline">Today</span>
             </Button>
             
             {/* Date Navigation */}
@@ -150,7 +150,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                 className="gap-1 h-8 text-slate-700 dark:text-slate-200"
               >
                 <CalendarOff className={`h-4 w-4 ${showWeekends ? "text-slate-400 dark:text-slate-500" : "text-blue-500 dark:text-blue-300"}`} />
-                <span className="text-slate-700 dark:text-blue-300">{showWeekends ? "Hide weekends" : "Show weekends"}</span>
+                <span className="text-slate-700 dark:text-blue-300 hidden sm:inline">{showWeekends ? "Hide weekends" : "Show weekends"}</span>
               </Button>
             )}
           </div>

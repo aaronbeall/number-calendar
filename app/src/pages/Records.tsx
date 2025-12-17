@@ -163,6 +163,7 @@ function RecordCard(props: RecordCardProps) {
   let badgeBg = '';
   let badgeText = '';
   let borderColor = '';
+  let bgColor = '';
   let displayDate = '';
   let displayValue = '';
 
@@ -173,6 +174,7 @@ function RecordCard(props: RecordCardProps) {
     badgeBg = 'bg-amber-50 dark:bg-amber-900 border-amber-200 dark:border-amber-700';
     badgeText = 'text-amber-700 dark:text-amber-200';
     borderColor = 'border-amber-200 dark:border-amber-700';
+    bgColor = 'bg-amber-50/50 dark:bg-amber-900/50';
     displayLabel = `Best ${label}`;
   } else if (type === "best") {
     if (valence === 'neutral') {
@@ -182,6 +184,7 @@ function RecordCard(props: RecordCardProps) {
       badgeBg = 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700';
       badgeText = 'text-blue-700 dark:text-blue-200';
       borderColor = 'border-blue-200 dark:border-blue-700';
+      bgColor = 'bg-blue-50/50 dark:bg-blue-900/50';
       displayLabel = `Highest ${label}`;
     } else {
       icon = <Trophy className="w-6 h-6 text-green-500" />;
@@ -190,6 +193,7 @@ function RecordCard(props: RecordCardProps) {
       badgeBg = 'bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700';
       badgeText = 'text-green-700 dark:text-green-200';
       borderColor = 'border-green-200 dark:border-green-700';
+      bgColor = 'bg-green-50/50 dark:bg-green-900/50';
       displayLabel = `Best ${label}`;
     }
   } else if (type === "worst") {
@@ -200,6 +204,7 @@ function RecordCard(props: RecordCardProps) {
       badgeBg = 'bg-purple-50 dark:bg-purple-900 border-purple-200 dark:border-purple-700';
       badgeText = 'text-purple-700 dark:text-purple-200';
       borderColor = 'border-purple-200 dark:border-purple-700';
+      bgColor = 'bg-purple-50/50 dark:bg-purple-900/50';
       displayLabel = `Lowest ${label}`;
     } else {
       icon = <Skull className="w-6 h-6 text-red-400" />;
@@ -208,6 +213,7 @@ function RecordCard(props: RecordCardProps) {
       badgeBg = 'bg-red-50 dark:bg-red-900 border-red-200 dark:border-red-700';
       badgeText = 'text-red-700 dark:text-red-200';
       borderColor = 'border-red-200 dark:border-red-700';
+      bgColor = 'bg-red-50/50 dark:bg-red-900/50';
       displayLabel = `Worst ${label}`;
     }
   }
@@ -220,6 +226,7 @@ function RecordCard(props: RecordCardProps) {
     badgeBg = 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700';
     badgeText = 'text-slate-400 dark:text-slate-500';
     borderColor = 'border-slate-200 dark:border-slate-700';
+    bgColor = 'bg-slate-50/50 dark:bg-slate-900/50';
   } else {
     displayValue = Intl.NumberFormat().format(type == 'streak' ? props.length : props.value)
     displayDate = type === 'streak'
@@ -228,7 +235,7 @@ function RecordCard(props: RecordCardProps) {
   }
 
   return (
-    <div className={`relative rounded-xl border bg-white/80 dark:bg-slate-900/80 shadow-sm group transition-all hover:scale-[1.012] hover:shadow-md h-full flex flex-col justify-center ${borderColor}`}>
+    <div className={`relative rounded-xl border ${bgColor} dark:bg-slate-900/80 shadow-sm group transition-all hover:scale-[1.012] hover:shadow-md h-full flex flex-col justify-center ${borderColor}`}>
       {/* Floating date badge */}
       <div className="absolute left-0 right-0 -top-3 z-10 flex justify-center px-4">
         <span className={`inline-flex items-center gap-1 px-4 py-1 rounded-full border text-xs font-medium shadow-md max-w-full ${badgeBg} ${badgeText}`} style={{maxWidth:'95%'}}>
