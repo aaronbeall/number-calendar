@@ -3,6 +3,14 @@
 import type { Tracking } from "@/features/db/localdb";
 
 /**
+ * Rounds a number to 10 decimal places to avoid floating point precision errors.
+ * Example: 0.1 + 0.2 = 0.30000000000004 => 0.3
+ */
+function round(num: number): number {
+  return Math.round(num * 1e10) / 1e10;
+}
+
+/**
  * Formats an array of numbers for trend mode: space-delimited, e.g. "35 21 -76 2000"
  */
 export function buildTrendExpressionFromNumbers(nums: number[]): string {
@@ -60,7 +68,7 @@ export function parseTrendExpression(expr: string): number[] | null {
         const deltaVal = parseSingleNumberExpression(deltaMatch[2]);
         if (deltaVal === null) return null;
         const lastNum = numbers[numbers.length - 1];
-        const newNum = sign === '+' ? lastNum + deltaVal : lastNum - deltaVal;
+        const newNum = round(sign === '+' ? lastNum + deltaVal : lastNum - deltaVal);
         numbers.push(newNum);
         continue;
       }
@@ -95,7 +103,7 @@ export function parseSingleNumberExpression(expr: string): number | null {
     // eslint-disable-next-line no-new-func
     const result = Function(`"use strict";return (${cleaned})`)();
     if (typeof result === 'number' && !isNaN(result)) {
-      return result;
+      return round(result);
     }
     return null;
   } catch {
@@ -179,7 +187,7 @@ export function parseSeriesExpression(expr: string): number[] | null {
     if (numbers.length === 0) return null; // nothing valid before '='
 
     // Running sum after initial numbers
-    let runningSum = numbers.reduce((a, b) => a + b, 0);
+    let runningSum = round(numbers.reduce((a, b) => a + b, 0));
 
     // For each subsequent '=' segment, treat segment as a target total and append the delta (target - current runningSum)
     for (let i = 1; i < segments.length; i++) {
@@ -192,9 +200,9 @@ export function parseSeriesExpression(expr: string): number[] | null {
       const target = parseSingleNumberExpression(segClean);
       if (target === null) return null; // invalid target expression
 
-      const delta = target - runningSum;
+      const delta = round(target - runningSum);
       numbers.push(delta);
-      runningSum = runningSum + delta; // should equal target
+      runningSum = round(runningSum + delta); // should equal target
     }
 
     return numbers.length > 0 ? numbers : null;
