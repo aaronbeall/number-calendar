@@ -4,10 +4,10 @@ import { useMemo, useState } from 'react';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { useDataset } from '@/features/db/useDatasetData';
-import { updateAchievements } from '@/lib/goals';
+import { processAchievements } from '@/lib/goals';
 import type { Achievement, Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
-import { getDaysData } from '@/lib/calendar';
+import { getDaysMap } from '@/lib/calendar';
 
 export default function Targets() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -16,7 +16,7 @@ export default function Targets() {
   const { data: dataset } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
 
-  const allData = useMemo(() => getDaysData(allDays ?? []), [allDays]);
+  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
   
   // Dummy targets (Goal type)
   const targets: Goal[] = [
@@ -82,7 +82,7 @@ export default function Targets() {
     }
   ];
   // Compute achievement results from goals
-  const achievementResults = updateAchievements({
+  const achievementResults = processAchievements({
     goals: targets,
     achievements: [],
     data: allData,

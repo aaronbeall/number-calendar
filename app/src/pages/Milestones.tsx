@@ -3,8 +3,8 @@ import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import type { Achievement, Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
-import { getDaysData } from '@/lib/calendar';
-import { updateAchievements } from '@/lib/goals';
+import { getDaysMap } from '@/lib/calendar';
+import { processAchievements } from '@/lib/goals';
 import { Flag } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -15,7 +15,7 @@ export default function Milestones() {
   const { data: dataset } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
 
-  const allData = useMemo(() => getDaysData(allDays ?? []), [allDays]);
+  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
   // Dummy milestones (Goal type)
   const milestones: Goal[] = [
@@ -47,7 +47,7 @@ export default function Milestones() {
   const hasMilestones = milestones.length > 0;
 
   // Compute achievement results from goals
-  const achievementResults = updateAchievements({
+  const achievementResults = processAchievements({
     goals: milestones,
     achievements: [],
     data: allData,

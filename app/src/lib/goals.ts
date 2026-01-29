@@ -93,6 +93,8 @@ export interface GoalResults {
  * - For periodic goals (day/week/month/year), tracks completed and in-progress achievements, including streaks and multi-period counts.
  * - Ensures completed achievements are always preserved, but in-progress achievements are only preserved if they remain valid with the current data.
  * - Returns a summary for each goal, including the list of achievements, completed count, current progress, and completion dates.
+ * 
+ * TODO: Does not handle goal.source yet, it evaluates all goals are based on 'stats' source.
  *
  * @param {Object} params
  * @param {Goal[]} params.goals - The list of goals to evaluate.
@@ -107,7 +109,7 @@ export interface GoalResults {
  * - Handles both consecutive and non-consecutive count goals, as well as streaks and multi-period goals.
  * - Designed to be idempotent and safe to call repeatedly as data or achievements change.
  */
-export function updateAchievements({
+export function processAchievements({
   goals,
   achievements,
   data,

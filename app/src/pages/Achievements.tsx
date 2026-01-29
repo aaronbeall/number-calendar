@@ -4,8 +4,8 @@ import { BadgePreviews } from '@/features/achievements/BadgePreview';
 import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
-import { getDaysData } from '@/lib/calendar';
-import { updateAchievements } from '@/lib/goals';
+import { getDaysMap } from '@/lib/calendar';
+import { processAchievements } from '@/lib/goals';
 import { Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
@@ -18,7 +18,7 @@ export default function Achievements() {
   const [searchParams] = useSearchParams();
   const isPreview = searchParams.has('badges-preview');
 
-  const allData = useMemo(() => getDaysData(allDays ?? []), [allDays]);
+  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
   // Dummy goals for demo
   const goals: Goal[] = [
@@ -136,7 +136,7 @@ export default function Achievements() {
     },
   ];
   // Compute achievement results from goals
-  const achievementResults = updateAchievements({
+  const achievementResults = processAchievements({
     goals,
     achievements: [],
     data: allData,

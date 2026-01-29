@@ -27,6 +27,7 @@ export function getYearDays(year: number): DayKey[] {
 
 /**
  * Aggregates calendar data for a given set of numbers, prior numbers, extremes, and tracking type.
+ * This could be used for a day, week, month, year, or any arbitrary period.
  */
 export function getCalendarData(numbers: number[], priorNumbers: number[] | undefined, extremes: StatsExtremes | undefined, tracking: Tracking) {
   const stats = computeNumberStats(numbers);
@@ -271,10 +272,16 @@ export function getPriorYearMonthNumbersMap(
   return result;
 }
 
-export function getDaysData(days: DayEntry[]): Record<DayKey, number[]> {
+// Convert an array of DayEntry to a Record<DayKey, number[]>
+export function getDaysMap(days: DayEntry[]): Record<DayKey, number[]> {
   const result: Record<DayKey, number[]> = {};
   for (const dayEntry of days) {
     result[dayEntry.date] = dayEntry.numbers;
   }
   return result;
+}
+
+
+export function getAllCalendarDays(days: DayEntry[]) {
+
 }
