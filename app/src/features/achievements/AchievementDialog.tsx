@@ -83,7 +83,7 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
   const [goal, setGoal] = useState<Partial<GoalAttributes>>(initialData?.goal ?? getDefaultGoal());
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
 
-  const sugggested = getSuggestedGoalContent({ title, description, badge, ...goal });
+  const sugggested = getSuggestedGoalContent({ type, title, description, badge, ...goal });
 
   const previewBadge = useMemo(() => ({
     ...badge,
