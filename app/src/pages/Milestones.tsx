@@ -69,7 +69,7 @@ export default function Milestones() {
           Add Milestone
         </button>
       </div>
-      <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" />
+      <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} />
       {!hasMilestones ? (
         <div className="text-center text-slate-500 py-16">
           <p className="mb-4">No milestones yet.</p>

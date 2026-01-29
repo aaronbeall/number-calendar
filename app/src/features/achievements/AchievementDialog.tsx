@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { type GoalAttributes, type GoalBadge, type GoalType } from '@/features/db/localdb';
+import { type Dataset, type GoalAttributes, type GoalBadge, type GoalType } from '@/features/db/localdb';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
 import { randomKeyOf } from '@/lib/utils';
@@ -11,13 +11,17 @@ import React, { useMemo, useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 import { BadgeEditDialog } from './BadgeEditDialog';
 import { GoalBuilder } from './GoalBuilder';
+import { MilestoneBuilder } from './MilestoneBuilder';
+import { TargetBuilder } from './TargetBuilder';
+import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 
 interface AchievementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit?: (data: AchievementDialogData) => void;
   initialData?: AchievementDialogData;
-  type: GoalType; 
+  type: GoalType;
+  dataset: Dataset;
 }
 
 export interface AchievementDialogData {
@@ -27,11 +31,56 @@ export interface AchievementDialogData {
   goal: GoalAttributes;
 }
 
-export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, type }: AchievementDialogProps) {
+export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, type, dataset }: AchievementDialogProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [badge, setBadge] = useState<GoalBadge>(initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
-  const [goal, setGoal] = useState<Partial<GoalAttributes>>(initialData?.goal ?? { count: 1 });
+  
+  // Create sensible defaults based on goal type and dataset
+  const getDefaultGoal = (): Partial<GoalAttributes> => {
+    if (!dataset) return { count: 1 };
+    
+    const primaryMetric = getPrimaryMetric(dataset.tracking);
+    const defaultCondition = dataset.valence === 'negative' ? 'below' : 'above';
+    const defaultSource = type == 'milestone' ? 'stats' : getValenceSource(dataset.tracking);
+    
+    if (type === 'milestone') {
+      return {
+        goal: {
+          metric: primaryMetric,
+          source: defaultSource,
+          condition: defaultCondition,
+          value: undefined,
+        } as any,
+        timePeriod: 'anytime',
+        count: 1,
+      };
+    } else if (type === 'target') {
+      return {
+        goal: {
+          metric: primaryMetric,
+          source: defaultSource,
+          condition: defaultCondition,
+          value: undefined,
+        } as any,
+        timePeriod: 'week',
+        count: 1,
+      };
+    } else {
+      // goal type
+      return {
+        goal: {
+          metric: primaryMetric,
+          source: defaultSource,
+          condition: defaultCondition,
+          value: undefined,
+        } as any,
+        count: 1,
+      };
+    }
+  };
+  
+  const [goal, setGoal] = useState<Partial<GoalAttributes>>(initialData?.goal ?? getDefaultGoal());
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
 
   const sugggested = getSuggestedGoalContent({ title, description, badge, ...goal });
@@ -81,8 +130,15 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
             <div className="flex flex-col gap-6 md:flex-row md:gap-8">
               {/* Left Column: Goal Builder */}
               <div className="flex flex-col gap-2 md:w-1/2">
-                <label className="block text-sm font-medium">Goal</label>
-                <GoalBuilder value={goal} onChange={setGoal} />
+                {type === 'milestone' && (
+                  <MilestoneBuilder value={goal} onChange={setGoal} tracking={dataset?.tracking} valence={dataset?.valence} />
+                )}
+                {type === 'target' && (
+                  <TargetBuilder value={goal} onChange={setGoal} tracking={dataset?.tracking} valence={dataset?.valence} />
+                )}
+                {type === 'goal' && (
+                  <GoalBuilder value={goal} onChange={setGoal} tracking={dataset?.tracking} valence={dataset?.valence} />
+                )}
               </div>
               {/* Right Column: Badge, Title, Description */}
               <div className="flex flex-col gap-4 md:w-1/2">

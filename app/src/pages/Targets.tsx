@@ -105,7 +105,7 @@ export default function Targets() {
           Add Target
         </button>
       </div>
-      <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" />
+      <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset!} />
       {!hasTargets ? (
         <div className="text-center text-slate-500 py-16">
           <p className="mb-4">No targets yet.</p>

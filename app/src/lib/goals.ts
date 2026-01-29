@@ -313,6 +313,11 @@ export function isValidGoalAttributes(goal: Partial<GoalAttributes>): goal is Go
   if (!metricGoal || !timePeriod || !count) return false;
   const { condition, metric, source } = metricGoal;
   if (!condition || !metric || !source) return false;
+  if (isRangeCondition(condition)) {
+    if (!metricGoal.range || metricGoal.range.length !== 2) return false;
+  } else {
+    if (metricGoal.value === undefined) return false;
+  }
   return true;
 }
 
@@ -329,7 +334,7 @@ function formatValue(num: number | undefined, { short = false, percent = false, 
   }
   if (delta) {
     options = { ...options, signDisplay: 'always' };
-    symbol = 'Δ'
+    // symbol = 'Δ'
   }
   const formatted = new Intl.NumberFormat('en-US', options).format(num);
   return `${formatted}${symbol}`;

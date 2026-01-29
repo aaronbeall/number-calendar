@@ -3,17 +3,21 @@ import { METRIC_DISPLAY_INFO, METRIC_SOURCES_DISPLAY_INFO, type NumberMetric, ty
 import { entriesOf } from '@/lib/utils';
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { GoalAttributes, MetricGoal, TimePeriod } from '../db/localdb';
+import type { GoalAttributes, MetricGoal, TimePeriod, Tracking, Valence } from '../db/localdb';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import { HelpCircle } from 'lucide-react';
 import { isRangeCondition } from '@/lib/goals';
+import { getPrimaryMetric } from '@/lib/tracking';
 
 type GoalBuilderProps = {
   value: Partial<GoalAttributes>;
   onChange: (v: Partial<GoalAttributes>) => void;
+  tracking?: Tracking;
+  valence?: Valence;
 };
 
 const METRICS = METRIC_DISPLAY_INFO;
@@ -41,12 +45,13 @@ const FREQUENCIES = {
   'times': 'Multiple Times',
 };
 
-export function GoalBuilder({ value, onChange }: GoalBuilderProps) {
+export function GoalBuilder({ value, onChange, tracking: propTracking, valence: propValence }: GoalBuilderProps) {
 
   const [searchParams] = useSearchParams();
   const datasetId = searchParams.get('datasetId');
   const { data: dataset } = useDataset(datasetId ?? '');
-  const { tracking } = dataset || {};
+  const tracking = propTracking ?? dataset?.tracking;
+  const valence = propValence ?? dataset?.valence;
 
   console.log("GoalBuilder", value)
 
@@ -80,18 +85,33 @@ export function GoalBuilder({ value, onChange }: GoalBuilderProps) {
         <Select value={metric || ''} onValueChange={v => updateMetricGoalField('metric', v as NumberMetric)}>
           <SelectTrigger className="w-full">
             <SelectValue placeholder="Choose a metric…">
-              {metric && METRICS[metric].label}
+              {metric && (
+                <div className="flex items-center gap-2">
+                  <span>{METRICS[metric].label}</span>
+                  {tracking && metric === getPrimaryMetric(tracking) && (
+                    <Badge variant="secondary" className="text-xs">Primary</Badge>
+                  )}
+                </div>
+              )}
             </SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {entriesOf(METRICS).map(([key, { label, description }]) => (
-              <SelectItem key={key} value={key}>
-                <div className="flex flex-col">
-                  <span className="font-medium">{label}</span>
-                  <span className="text-xs text-slate-500">{description}</span>
-                </div>
-              </SelectItem>
-            ))}
+            {entriesOf(METRICS).map(([key, { label, description }]) => {
+              const isPrimary = tracking && key === getPrimaryMetric(tracking);
+              return (
+                <SelectItem key={key} value={key}>
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{label}</span>
+                        {isPrimary && <Badge variant="secondary" className="text-xs">Primary</Badge>}
+                      </div>
+                      <span className="text-xs text-slate-500">{description}</span>
+                    </div>
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
