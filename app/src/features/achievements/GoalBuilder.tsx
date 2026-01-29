@@ -37,7 +37,7 @@ const PERIODS = {
   week: 'In a Week',
   month: 'In a Month',
   year: 'In a Year',
-  anytime: 'Anytime',
+  anytime: 'All Time',
 } as const satisfies Record<TimePeriod, string>;
 
 const FREQUENCIES = {

@@ -94,7 +94,11 @@ export interface GoalResults {
  * - Ensures completed achievements are always preserved, but in-progress achievements are only preserved if they remain valid with the current data.
  * - Returns a summary for each goal, including the list of achievements, completed count, current progress, and completion dates.
  * 
- * TODO: Does not handle goal.source yet, it evaluates all goals are based on 'stats' source.
+ * TODO: 
+ * - Does not handle goal.source yet, it evaluates all goals are based on 'stats' source.
+ * - Does not support `resets` logic, all goals implicitly reset in their respective periods, so "1k a Day in a Week" is not possible, only "7 x 1k Days" or "7-Day 1k Streak".
+ * - Does not support `repeatable` flag, all goals are treated as repeatable except 'anytime' goals.
+ * 
  *
  * @param {Object} params
  * @param {Goal[]} params.goals - The list of goals to evaluate.
@@ -425,7 +429,7 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
   } else if (isMultiPeriod) {
     // For non-consecutive multi-period goals, use "N Days", "N Weeks", etc.
     streakStr = `${capitalize(timePeriod)}s`;
-  } else if(type === 'goal') {
+  } else if(type === 'goal' && timePeriod !== 'anytime') {
     // For single-period goals, use "{goal} Day", "{goal} Week", etc.
     streakStr = capitalize(timePeriod);
   }

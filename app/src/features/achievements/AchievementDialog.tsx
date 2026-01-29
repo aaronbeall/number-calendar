@@ -158,7 +158,7 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
                     placeholder={sugggested.title} 
                     onChange={e => setTitle(e.target.value)} 
                     maxLength={64}
-                    className="font-bold text-lg text-center border-0 bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-offset-0 px-2 py-1"
+                    className="font-bold text-lg text-center border-0 bg-slate-100 dark:bg-slate-950/50 shadow-none focus-visible:ring-1 focus-visible:ring-offset-0 px-2 py-1"
                   />
                   <Textarea 
                     value={description} 
@@ -166,7 +166,7 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
                     onChange={e => setDescription(e.target.value)} 
                     maxLength={256} 
                     rows={3}
-                    className="text-xs text-slate-500 text-center border-0 bg-transparent shadow-none focus-visible:ring-1 focus-visible:ring-offset-0 resize-none px-2 py-1"
+                    className="text-xs text-slate-500 text-center border-0 bg-slate-100 dark:bg-slate-950/50 shadow-none focus-visible:ring-1 focus-visible:ring-offset-0 resize-none px-2 py-1"
                   />
                   <BadgeEditDialog
                     open={badgeEditOpen}
@@ -181,7 +181,7 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
           {/* Footer always visible */}
           <DialogFooter className="flex-shrink-0 px-6 pb-6 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={!isValid}>Create</Button>
+            <Button type="submit" disabled={!isValid}>Create {capitalize(type)}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
