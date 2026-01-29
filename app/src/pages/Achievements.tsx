@@ -103,7 +103,7 @@ export default function Achievements() {
       title: '10% Weekly Target',
       description: 'Increase by 10% in a week',
       badge: { style: 'ribbon', icon: 'trend', color: 'red', label: '10%' },
-      goal: { condition: 'above', metric: 'total', source: 'percents', value: 0.1 },
+      goal: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
       type: 'target',
       timePeriod: 'week',
       count: 1,
@@ -131,9 +131,20 @@ export default function Achievements() {
       type: 'goal',
       timePeriod: 'day',
       count: 7,
-      consecutive: true,
-      resets: 'week',
+      consecutive: true
     },
+    {
+      id: 'g10',
+      datasetId: datasetId ?? '',
+      createdAt: Date.now(),
+      title: '100% Daily Growth',
+      description: 'Increase by 1%',
+      badge: { style: 'border_badge', icon: 'trend', color: 'green', label: '100%' },
+      goal: { condition: 'above', metric: 'total', source: 'percents', value: 1 },
+      type: 'goal',
+      timePeriod: 'day',
+      count: 1,
+    }
   ];
   // Compute achievement results from goals
   const achievementResults = processAchievements({

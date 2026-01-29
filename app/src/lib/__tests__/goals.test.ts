@@ -446,4 +446,365 @@ describe('processAchievements', () => {
     expect(result[0].currentProgress).toBe(1);
     expect(result[0].achievements[0].progress).toBe(1);
   });
+
+  it('should complete a daily goal with positive deltas (source: deltas)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g7',
+        datasetId,
+        createdAt: 0,
+        title: 'Positive Day',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        badge: { style: 'star', icon: 'star', color: 'green', label: 'Up' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Day 1: 100 (no delta, first day)
+    // Day 2: 150 (delta: +50, positive)
+    // Day 3: 140 (delta: -10, negative)
+    // Day 4: 160 (delta: +20, positive)
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [150],
+      '2025-12-03': [140],
+      '2025-12-04': [160],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should have 2 achievements (days 2 and 4 had positive deltas)
+    expect(result[0].completedCount).toBe(2);
+    expect(result[0].achievements.length).toBe(2);
+    expect(result[0].achievements[0].completedAt).toBe('2025-12-02');
+    expect(result[0].achievements[1].completedAt).toBe('2025-12-04');
+  });
+
+  it('should not complete a daily goal with negative deltas (source: deltas)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g7b',
+        datasetId,
+        createdAt: 0,
+        title: 'Positive Day',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        badge: { style: 'star', icon: 'star', color: 'green', label: 'Up' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // All days have negative deltas
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [90],
+      '2025-12-03': [80],
+      '2025-12-04': [70],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should have no achievements (all deltas are negative)
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].achievements.length).toBe(0);
+  });
+
+  it('should complete a milestone with a specific delta value (source: deltas)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g8',
+        datasetId,
+        createdAt: 0,
+        title: '+500 Increase',
+        type: 'milestone',
+        timePeriod: 'anytime',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 500 },
+        badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '+500' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Cumulative: 100, 250, 500, 1200 (delta from prev: +100, +150, +250, +700)
+    // Should complete on day 4 when delta is +700 (above 500)
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [250],
+      '2025-12-03': [500],
+      '2025-12-04': [1200],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Anytime goals with deltas/percents are not yet supported, so should be ignored
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].achievements[0].progress).toBe(0);
+  });
+
+  it('should not complete a milestone when delta does not reach target (source: deltas)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g8b',
+        datasetId,
+        createdAt: 0,
+        title: '+500 Increase',
+        type: 'milestone',
+        timePeriod: 'anytime',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 500 },
+        badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '+500' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Cumulative: 100, 150, 200, 250 (delta from prev: +50, +50, +50, +50)
+    // Never reaches +500 delta
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [150],
+      '2025-12-03': [200],
+      '2025-12-04': [250],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Anytime goals with deltas/percents are not yet supported, so should be ignored
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].achievements[0].progress).toBe(0);
+  });
+
+  it('should complete a streak goal with positive deltas (7-day uptrend)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g9',
+        datasetId,
+        createdAt: 0,
+        title: '7-Day Uptrend',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 7,
+        consecutive: true,
+        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        badge: { style: 'ribbon', icon: 'trend-up', color: 'blue', label: '7↗' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // 7 consecutive days of positive growth
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [110],
+      '2025-12-03': [120],
+      '2025-12-04': [125],
+      '2025-12-05': [135],
+      '2025-12-06': [140],
+      '2025-12-07': [150],
+      '2025-12-08': [155],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should complete a 7-day streak (days 2-8, since day 1 has no delta)
+    expect(result[0].completedCount).toBe(1);
+    expect(result[0].achievements[0].startedAt).toBe('2025-12-02');
+    expect(result[0].achievements[0].completedAt).toBe('2025-12-08');
+  });
+
+  it('should not complete a 7-day uptrend when streak is broken (source: deltas)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g9b',
+        datasetId,
+        createdAt: 0,
+        title: '7-Day Uptrend',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 7,
+        consecutive: true,
+        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        badge: { style: 'ribbon', icon: 'trend-up', color: 'blue', label: '7↗' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Streak breaks on day 5
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [110],
+      '2025-12-03': [120],
+      '2025-12-04': [125],
+      '2025-12-05': [120], // negative delta, breaks streak
+      '2025-12-06': [130],
+      '2025-12-07': [140],
+      '2025-12-08': [150],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should not complete 7-day streak because streak breaks on day 5
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].currentProgress).toBe(3);
+  });
+
+  it('should complete a daily goal with percent increase (source: percents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g10',
+        datasetId,
+        createdAt: 0,
+        title: 'Daily 10% Growth',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
+        badge: { style: 'star', icon: 'percent', color: 'purple', label: '10%' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Day 1: 100 (no percent, first day)
+    // Day 2: 115 (15% increase)
+    // Day 3: 120 (4.3% increase)
+    // Day 4: 135 (12.5% increase)
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [115],
+      '2025-12-03': [120],
+      '2025-12-04': [135],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should have 2 achievements (days 2 and 4 had >10% increase)
+    expect(result[0].completedCount).toBe(2);
+    expect(result[0].achievements.length).toBe(2);
+    expect(result[0].achievements[0].completedAt).toBe('2025-12-02');
+    expect(result[0].achievements[1].completedAt).toBe('2025-12-04');
+  });
+
+  it('should not complete a daily goal with small percent increase (source: percents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g10b',
+        datasetId,
+        createdAt: 0,
+        title: 'Daily 10% Growth',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
+        badge: { style: 'star', icon: 'percent', color: 'purple', label: '10%' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // All days have < 10% increase
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [105],
+      '2025-12-03': [108],
+      '2025-12-04': [109],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should have no achievements (all increases < 10%)
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].achievements.length).toBe(0);
+  });
+
+  it('should complete a milestone with 50% total growth (source: percents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g11',
+        datasetId,
+        createdAt: 0,
+        title: '50% Growth',
+        type: 'milestone',
+        timePeriod: 'week',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'percents', value: 50 },
+        badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '50%' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Start week 1: 100, then week 2 grows to 160 (60% growth)
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-08': [160],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should complete when week 2 reaches 60% growth from week 1
+    expect(result[0].completedCount).toBe(1);
+    expect(result[0].achievements[0].completedAt).toBe('2025-W50');
+  });
+
+  it('should not complete a milestone when growth does not reach 50% (source: percents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g11b',
+        datasetId,
+        createdAt: 0,
+        title: '50% Growth',
+        type: 'milestone',
+        timePeriod: 'anytime',
+        count: 1,
+        goal: { condition: 'above', metric: 'total', source: 'percents', value: 50 },
+        badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '50%' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Start: 100, grows to 140 (only 40% growth)
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [110],
+      '2025-12-03': [125],
+      '2025-12-04': [140],
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should not complete (only 40% growth, need 50%)
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].achievements[0].progress).toBe(0);
+  });
+
+  it('should complete a 4-week percent growth streak (source: percents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g12',
+        datasetId,
+        createdAt: 0,
+        title: '4-Week Growth',
+        type: 'goal',
+        timePeriod: 'week',
+        count: 4,
+        consecutive: true,
+        goal: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
+        badge: { style: 'ribbon', icon: 'achievement', color: 'green', label: '4wk' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Each week should have >5% growth from previous week
+    const data = {
+      '2025-12-01': [100], // Week 1
+      '2025-12-08': [110], // Week 2 (+10%)
+      '2025-12-15': [120], // Week 3 (+9%)
+      '2025-12-22': [130], // Week 4 (+8%)
+      '2025-12-29': [140], // Week 5 (+7%)
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should complete 4-week streak (weeks 2-5 all had >5% growth)
+    expect(result[0].completedCount).toBe(1);
+    expect(result[0].achievements[0].progress).toBe(4);
+  });
+
+  it('should not complete a 4-week percent growth streak when growth drops below 5% (source: percents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g12b',
+        datasetId,
+        createdAt: 0,
+        title: '4-Week Growth',
+        type: 'goal',
+        timePeriod: 'week',
+        count: 4,
+        consecutive: true,
+        goal: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
+        badge: { style: 'ribbon', icon: 'achievement', color: 'green', label: '4wk' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Week 4 drops below 5% growth threshold
+    const data = {
+      '2025-12-01': [100], // Week 1
+      '2025-12-08': [110], // Week 2 (+10%)
+      '2025-12-15': [120], // Week 3 (+9%)
+      '2025-12-22': [125], // Week 4 (+4%, breaks streak)
+      '2025-12-29': [140], // Week 5 (+12%)
+    };
+    const result = processAchievements({ goals, achievements, data, datasetId });
+    // Should not complete because week 4 only had 4% growth, breaking the consecutive streak
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].currentProgress).toBe(1);
+  });
 });

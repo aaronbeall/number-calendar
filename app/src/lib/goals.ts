@@ -1,7 +1,7 @@
 import { type Achievement, type DateKey, type DayKey, type Goal, type GoalAttributes, type GoalType, type MetricGoal, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import { convertDateKey, isDayKey, type DateKeyType } from './friendly-date';
-import { computeNumberStats, getMetricDisplayName, type NumberStats } from './stats';
+import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
 import { capitalize, keysOf } from './utils';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
@@ -25,14 +25,18 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
   const periodsCache: Partial<Record<TimePeriod, DateKey[]>> = {};
   const periodDataCache: Partial<Record<TimePeriod, Record<DateKey, number[]>>> = {};
   const periodStatsCache: Partial<Record<TimePeriod, Record<DateKey, NumberStats | null>>> = {};
+  const periodDeltasCache: Partial<Record<TimePeriod, Record<DateKey, Record<keyof NumberStats, number> | null>>> = {};
+  const periodPercentsCache: Partial<Record<TimePeriod, Record<DateKey, Partial<NumberStats> | null>>> = {};
   let anytimeStats: NumberStats | null | undefined = undefined;
 
+  function getPeriods(timePeriod: 'day'): DayKey[]
+  function getPeriods(timePeriod: DateKeyType): DateKey[]
   function getPeriods(timePeriod: DateKeyType): DateKey[] {
     if (periodsCache[timePeriod]) return periodsCache[timePeriod]!;
     let periods: DateKey[] = [];
-    if (timePeriod === 'day') periods = keysOf(data).filter(isDayKey);
+    if (timePeriod === 'day') periods = keysOf(data).filter(isDayKey).sort() as DateKey[];
     else if (timePeriod === 'week' || timePeriod === 'month' || timePeriod === 'year') {
-      periods = Array.from(new Set(keysOf(data).filter(isDayKey).map(d => convertDateKey(d, timePeriod))));
+      periods = Array.from(new Set(keysOf(data).filter(isDayKey).map(d => convertDateKey(d, timePeriod)))).sort() as DateKey[];
     }
     periodsCache[timePeriod] = periods;
     return periods;
@@ -65,13 +69,51 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
     return stats;
   }
 
+  function getPeriodDeltas(timePeriod: DateKeyType): Record<DateKey, Record<keyof NumberStats, number> | null> {
+    if (periodDeltasCache[timePeriod]) return periodDeltasCache[timePeriod]!;
+    const periods = getPeriods(timePeriod);
+    const statsByPeriod = getPeriodStats(timePeriod);
+    const deltas: Record<DateKey, Record<keyof NumberStats, number> | null> = {};
+    let priorStats: NumberStats | null = null;
+    for (const period of periods) {
+      const stats = statsByPeriod[period];
+      if (stats && priorStats) {
+        deltas[period] = getStatsDelta(stats, priorStats);
+      } else {
+        deltas[period] = null;
+      }
+      if (stats) priorStats = stats;
+    }
+    periodDeltasCache[timePeriod] = deltas;
+    return deltas;
+  }
+
+  function getPeriodPercents(timePeriod: DateKeyType): Record<DateKey, Partial<NumberStats> | null> {
+    if (periodPercentsCache[timePeriod]) return periodPercentsCache[timePeriod]!;
+    const periods = getPeriods(timePeriod);
+    const statsByPeriod = getPeriodStats(timePeriod);
+    const percents: Record<DateKey, Partial<NumberStats> | null> = {};
+    let priorStats: NumberStats | null = null;
+    for (const period of periods) {
+      const stats = statsByPeriod[period];
+      if (stats && priorStats) {
+        percents[period] = getStatsPercentChange(stats, priorStats);
+      } else {
+        percents[period] = null;
+      }
+      if (stats) priorStats = stats;
+    }
+    periodPercentsCache[timePeriod] = percents;
+    return percents;
+  }
+
   function getAnytimeStats(): NumberStats | null {
     if (anytimeStats !== undefined) return anytimeStats;
     anytimeStats = computeNumberStats(Object.values(data).flat());
     return anytimeStats;
   }
 
-  return { getPeriods, getPeriodData, getPeriodStats, getAnytimeStats };
+  return { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getAnytimeStats };
 }
 
 export interface GoalResults {
@@ -98,6 +140,8 @@ export interface GoalResults {
  * - Does not handle goal.source yet, it evaluates all goals are based on 'stats' source.
  * - Does not support `resets` logic, all goals implicitly reset in their respective periods, so "1k a Day in a Week" is not possible, only "7 x 1k Days" or "7-Day 1k Streak".
  * - Does not support `repeatable` flag, all goals are treated as repeatable except 'anytime' goals.
+ * - For time periods other than 'anytime', completed in the curren period should be provisional and can be lost if data changes.
+ * - Optimization: only check dates following the last achievement completedAt for each goal.
  * 
  *
  * @param {Object} params
@@ -125,7 +169,7 @@ export function processAchievements({
   datasetId: string;
 }): GoalResults[] {
 
-  const { getPeriods, getPeriodData, getPeriodStats, getAnytimeStats } = createPeriodCache(data);
+  const { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getAnytimeStats } = createPeriodCache(data);
 
   const achievementsByGoalId: Record<string, Achievement[]> = achievements.reduce((acc, ach) => {
     if (!acc[ach.goalId]) acc[ach.goalId] = [];
@@ -142,6 +186,17 @@ export function processAchievements({
     let lastCompletedAt: DateKey | undefined = undefined;
     let firstCompletedAt: DateKey | undefined = undefined;
     let newAchievements: Achievement[] = [];
+    const goalSource = goal.goal.source ?? 'stats';
+    const getMetricValue = (
+      stats: NumberStats | null | undefined,
+      deltas: Record<keyof NumberStats, number> | null | undefined,
+      percents: Partial<NumberStats> | null | undefined,
+    ) => {
+      if (goalSource === 'stats') return stats?.[goal.goal.metric];
+      if (goalSource === 'deltas') return deltas?.[goal.goal.metric];
+      if (goalSource === 'percents') return percents?.[goal.goal.metric];
+      return undefined;
+    };
 
     // ANYTIME: Only one achievement, only update if not already completed
     if (goal.timePeriod === 'anytime') {
@@ -153,37 +208,49 @@ export function processAchievements({
         lastCompletedAt = ach.completedAt;
         currentProgress = 1;
       } else {
-        const stat = getAnytimeStats();
-        const met = stat && evalCondition(goal.goal, stat[goal.goal.metric]);
-        if (met) {
-          ach.progress = 1;
-          // Find the exact day when the goal was met
-          // TODO: Thie would be partially mitigated by a `repeatable` flag, so you can designate `day` time period 
-          //   and `repeatable=false` to get an exact first-day a goal is achieved. Anytime goals would still be ambiguous.
-          let completedAt: DateKey | undefined = undefined;
-          keysOf(data).reduce((acc, day) => {
-            if (completedAt) return acc;
-            const numbers = data[day];
-            acc.push(...numbers);
-            const stats = computeNumberStats(acc);
-            if (stats && evalCondition(goal.goal, stats[goal.goal.metric])) {
-              completedAt = day;
-            }
-            return acc;
-          }, [] as number[]);
-          ach.completedAt = completedAt;
-          completedCount = 1;
-          lastCompletedAt = ach.completedAt;
-        } else {
+        if (goalSource !== 'stats') {
+          // Deltas/percents are not supported for anytime goals yet.
           ach.progress = 0;
+          newAchievements.push(ach);
+          currentProgress = ach.progress;
+        } else {
+          const stat = getAnytimeStats();
+          const value = getMetricValue(stat, undefined, undefined);
+          const met = typeof value === 'number' && evalCondition(goal.goal, value);
+          if (met) {
+            ach.progress = 1;
+            // Find the exact day when the goal was met
+            // TODO: Thie would be partially mitigated by a `repeatable` flag, so you can designate `day` time period 
+            //   and `repeatable=false` to get an exact first-day a goal is achieved. Anytime goals would still be ambiguous.
+            let completedAt: DateKey | undefined = undefined;
+            const days = getPeriods('day');
+            const acc: number[] = [];
+            for (const day of days) {
+              if (completedAt) break;
+              const numbers = data[day] ?? [];
+              acc.push(...numbers);
+              const stats = computeNumberStats(acc);
+              const dayValue = getMetricValue(stats, undefined, undefined);
+              if (typeof dayValue === 'number' && evalCondition(goal.goal, dayValue)) {
+                completedAt = day;
+              }
+            }
+            ach.completedAt = completedAt;
+            completedCount = 1;
+            lastCompletedAt = ach.completedAt;
+          } else {
+            ach.progress = 0;
+          }
+          newAchievements.push(ach);
+          currentProgress = ach.progress;
         }
-        newAchievements.push(ach);
-        currentProgress = ach.progress;
       }
     } else {
       // PERIODIC: day/week/month/year
       const periods = getPeriods(goal.timePeriod);
       const periodStats = getPeriodStats(goal.timePeriod);
+      const periodDeltas = getPeriodDeltas(goal.timePeriod);
+      const periodPercents = getPeriodPercents(goal.timePeriod);
       const periodData = getPeriodData(goal.timePeriod);
       const periodAchievements = goalAchievements.reduce((acc, ach) => {
         if (ach.startedAt) {
@@ -203,7 +270,8 @@ export function processAchievements({
             continue;
           }
           const stat = periodStats[period];
-          const met = stat && evalCondition(goal.goal, stat[goal.goal.metric]);
+          const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
+          const met = typeof value === 'number' && evalCondition(goal.goal, value);
           if (met) {
             if (!ach) {
               ach = { id: nanoid(), goalId: goal.id, datasetId, progress: 1, startedAt: period, completedAt: period };
@@ -245,7 +313,8 @@ export function processAchievements({
           if (usedPeriods.has(period)) continue;
           const stat = periodStats[period];
           const numbers = periodData[period] || [];
-          const met = stat && evalCondition(goal.goal, stat[goal.goal.metric]);
+          const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
+          const met = typeof value === 'number' && evalCondition(goal.goal, value);
           if (met) {
             if (streak.length === 0) streakStart = period;
             streak.push(period);

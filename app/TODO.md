@@ -85,7 +85,7 @@ I'm liking this one.
 - [ ] Filter by expression
 - [ ] Custom queries (expose generic `stats.ts` API)
 - [ ] Add tags (on day/month/week/year)
-- [ ] Tooltips on extremes, ex "January Best" or "
+- [ ] Tooltips on extremes, ex "January Best"
 - [ ] Highlight min/max in editable numbers badge
 - [ ] Number dictionary by data type (ex "calories", lookup calories for food)
 
@@ -101,7 +101,7 @@ I'm liking this one.
 - [ ] Ads
 - [x] Share
 - [ ] Copyright/authorship
-- [ ] About
+- [x] About
 - [x] Routing (deep linking)
 - [ ] Premium features
   - [ ] No ads
@@ -117,10 +117,11 @@ I'm liking this one.
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
 - [ ] Re-render on page activation to sync with current date
 - [x] Negative year summary has green
-- [ ] Hide weekends is causing June days to be wrong
+- [x] [High] Hide weekends is causing June 2026 days to be wrong
 - [ ] Deleting a prior day numbers does not update deltas (changing normally it does)
 - [ ] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun
 - [ ] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
 - [ ] Normalize UUIDs
 - [ ] Week/Month/Year summaries need hover and selected state
 - [ ] Can't delete all data on a day anymore
+- [ ] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days

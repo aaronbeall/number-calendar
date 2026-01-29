@@ -280,8 +280,3 @@ export function getDaysMap(days: DayEntry[]): Record<DayKey, number[]> {
   }
   return result;
 }
-
-
-export function getAllCalendarDays(days: DayEntry[]) {
-
-}
