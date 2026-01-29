@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { type Dataset, type GoalAttributes, type GoalBadge, type GoalType } from '@/features/db/localdb';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
-import { randomKeyOf } from '@/lib/utils';
+import { capitalize, randomKeyOf } from '@/lib/utils';
 import { Dices, Palette } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import AchievementBadge from './AchievementBadge';
@@ -119,9 +119,9 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] p-0 gap-0 w-full sm:max-w-2xl flex flex-col">
         <DialogHeader className="flex-shrink-0 px-6 pt-6">
-          <DialogTitle>{type === 'milestone' ? 'Add Milestone' : 'Add Target'}</DialogTitle>
+          <DialogTitle>{`Add ${capitalize(type)}`}</DialogTitle>
           <DialogDescription>
-            {type === 'milestone' ? 'Create a new milestone with a title, description, badge, and goal.' : 'Create a new target with a title, description, badge, and goal.'}
+            {`Create a new ${type} by defining its conditions, badge, title, and description.`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 max-h-[90vh]">
