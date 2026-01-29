@@ -1,7 +1,7 @@
-import { type Achievement, type DateKey, type DayKey, type Goal, type MetricGoal, type TimePeriod } from '@/features/db/localdb';
+import { type Achievement, type DateKey, type DayKey, type Goal, type GoalAttributes, type GoalType, type MetricGoal, type TimePeriod } from '@/features/db/localdb';
 import { convertDateKey, isDayKey, type DateKeyType } from './friendly-date';
-import { computeNumberStats, type NumberStats } from './stats';
-import { keysOf } from './utils';
+import { computeNumberStats, getMetricDisplayName, type NumberMetric, type NumberStats } from './stats';
+import { capitalize, keysOf } from './utils';
 import { nanoid } from 'nanoid';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
@@ -152,6 +152,8 @@ export function updateAchievements({
         if (met) {
           ach.progress = 1;
           // Find the exact day when the goal was met
+          // TODO: Thie would be partially mitigated by a `repeatable` flag, so you can disgnate `day` time period 
+          //   and `repeatable=false` to get an exact first-day a goal is achieved. Anytime goals would still be ambiguous.
           let completedAt: DateKey | undefined = undefined;
           keysOf(data).reduce((acc, day) => {
             if (completedAt) return acc;
@@ -305,3 +307,210 @@ export function updateAchievements({
 // 4-Week Trend:          { type: 'goal', timePeriod: 'weekly', count: 4, consecutive: true, goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 } }
 // Sustain 90 Days:       { type: 'goal', timePeriod: 'daily', count: 90, consecutive: true, goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 } }
 // Perfect Month:         { type: 'goal', timePeriod: 'monthly', count: 1, goal: { condition: 'above', metric: 'min', source: 'stats', value: 0 } }
+
+export function isValidGoalAttributes(goal: Partial<GoalAttributes>): goal is GoalAttributes {
+  const { goal: metricGoal, timePeriod, count } = goal;
+  if (!metricGoal || !timePeriod || !count) return false;
+  const { condition, metric, source } = metricGoal;
+  if (!condition || !metric || !source) return false;
+  return true;
+}
+
+// Helper to shorten numbers (e.g., 1000 -> 1k)
+function formatValue(num: number | undefined, { short = false, percent = false, delta = false }: { short?: boolean; percent?: boolean; delta?: boolean;  } = {}): string {
+  if (num === undefined || isNaN(num)) return '';
+  let options: Intl.NumberFormatOptions = {};
+  let symbol = '';
+  if (short) {
+    options = { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 };
+  }
+  if (percent) {
+    options = { ...options, style: 'percent', maximumFractionDigits: 2 };
+  }
+  if (delta) {
+    options = { ...options, signDisplay: 'always' };
+    symbol = 'Δ'
+  }
+  const formatted = new Intl.NumberFormat('en-US', options).format(num);
+  return `${formatted}${symbol}`;
+}
+
+export function getGoalCategory(goal: Goal) {
+  const { timePeriod, count, consecutive } = goal;
+  return count > 1
+    ? consecutive
+      ? 'streak'
+      : 'count'
+    : timePeriod === 'anytime'
+      ? 'milestone'
+      : 'target';
+}
+
+export function getSuggestedGoalContent(goal: Partial<Goal>) {
+  const { goal: metricGoal, timePeriod = 'anytime', count = 1, consecutive = false } = goal;
+  const { condition, metric, source } = metricGoal ?? {};
+  const value = metricGoal && 'value' in metricGoal ? metricGoal.value : undefined;
+  const range = metricGoal && 'range' in metricGoal ? metricGoal.range : [];
+
+  // Type suggestion
+  let type: GoalType = 'goal';
+  if (timePeriod === 'anytime' && count === 1) type = 'milestone';
+  else if (count === 1) type = 'target';
+
+  // Title formatting:
+  // {Daily/Weekly/Monthly/Yearly | N-Day/Week/Month/Year | N × } {Value/Range}{Source?} {Metric?} {Streak? | Days/Weeks/Months/Years?} {Milstone/Target?}
+  //   {Daily/Weekly/Monthly/Yearly} for count=1
+  //   | {N-Day/Week/Month/Year} for count>1, consecutive
+  //   | {N × } for count>1, non-consecutive
+  //   {Value/Range} use shortened number format, for value=0 & condition="above" use "Positive", "below" use "Negative", if deltas always use sign
+  //   {Source} skipped if stats, use % for percents, Δ for deltas
+  //   {Metric} skipped if primary metric (total/last/count)
+  //   {Streak} only included if count > 1 and consecutive
+  //   {Days/Weeks/Months/Years} included for count > 1 non-consecutive
+  //   {Streak} only for count>1, consecutive
+  //   {Milestone/Target} skipped for goals
+  // eg. "7 × 1k Days", "100 Positive Days", "Monthly 10% Target", "1k Milestone", "10k Median Milestone", 
+  //    "10-Day +10Δ Streak", "4-Week +5% Trend", "Daily 1k Average Week"
+
+  const isMultiPeriod = !!count && count > 1;
+  const isStreak = !!count && count > 1 && !!consecutive;
+
+  const countStr = isMultiPeriod ? formatValue(count) : '';
+  // If not 0 or delta, add ' ×'
+  const byStr = value !== 0 && source !== 'deltas' ? ' ×' : ' ';
+
+  let intervalStr = '';
+  if (timePeriod == 'day') {
+    intervalStr = isStreak ? `${countStr}-Day` : isMultiPeriod ? `${countStr}${byStr}` : 'Daily';
+  } else if (timePeriod == 'week') {
+    intervalStr = isStreak ? `${countStr}-Week` : isMultiPeriod ? `${countStr}${byStr}` : 'Weekly';
+  } else if (timePeriod == 'month') {
+    intervalStr = isStreak ? `${countStr}-Month` : isMultiPeriod ? `${countStr}${byStr}` : 'Monthly';
+  } else if (timePeriod == 'year') {
+    intervalStr = isStreak ? `${countStr}-Year` : isMultiPeriod ? `${countStr}${byStr}` : 'Yearly';
+  }
+
+  let valueStr = '';
+  const delta = source === 'deltas';
+  const percent = source === 'percents';
+  const isRange = isRangeCondition(condition);
+  if (!isRange && value !== undefined) {
+    if (value === 0) {
+      if (condition === 'above') valueStr = 'Positive'; // TODO: Use valence to formulate better descriptions, like "Green" and "Red"
+      else if (condition === 'below') valueStr = 'Negative';
+    } 
+    if (!valueStr) valueStr = formatValue(value, { short: true, delta, percent });
+  } else if (isRange && range?.length === 2) {
+    valueStr = `${formatValue(range[0], { short: true })}-${formatValue(range[1], { short: true, delta, percent })}`;
+  }
+
+  let metricStr = '';
+  const isPrimary = metric === 'total' || metric === 'last' || metric === 'count'; // TODO: Use dataset primary metric
+  if (!isPrimary && metric) {
+    metricStr = getMetricDisplayName(metric);
+  }
+
+  // Metric string for descriptions - always includes metric name, lowercase, no capitalization
+  const metricDescStr = getMetricDisplayName(metric || 'total').toLowerCase();
+  const metricArticleStr = metricDescStr.startsWith('a') ? 'an' : 'a';
+
+  let streakStr = '';
+  if (isStreak) {
+    streakStr = 'Streak';
+  } else if (isMultiPeriod) {
+    if (timePeriod === 'day') streakStr = 'Days';
+    else if (timePeriod === 'week') streakStr = 'Weeks';
+    else if (timePeriod === 'month') streakStr = 'Months';
+    else if (timePeriod === 'year') streakStr = 'Years';
+  }
+
+  let goalStr = '';
+  if (type === 'milestone') goalStr = 'Milestone';
+  else if (type === 'target') goalStr = 'Target';
+
+  const titleParts = [intervalStr, valueStr, metricStr, streakStr, goalStr].filter(Boolean);
+  const title = titleParts.join(' ').trim();
+  
+
+  // Description
+  // Target [timeframe,count=1]: "Hit 5,000 in a week", "Hit 10% increase in a month", "Hit +100 increase in a day"
+  // Milestone [anytime,count=1]: "Reach 100,000 total"
+  // Streak [count>1,consecutive]: "Positive total for 7 days in a row", "Total of 1,000+ for 30 days in a row", "Average of 500+ for 4 weeks in a row"
+  // Count [count>1,!consecutive]: "Log a positive total on 100 days", "Log a total of 1,000 on 4 weeks"
+  let description = '';
+  
+  if (type === 'target' && count === 1) {
+    // Target [timeframe,count=1]: "Hit 5,000 in a week", "Hit 10% increase in a month", "Hit +100 increase in a day"
+    const valueDisplay = value === 0 && condition === 'above' 
+      ? 'a positive ' + metricDescStr
+      : value === 0 && condition === 'below'
+      ? 'a negative ' + metricDescStr
+      : isRange
+      ? `${metricDescStr} between ${formatValue(range![0])} and ${formatValue(range![1], { delta, percent })}`
+      : `${metricArticleStr} ${metricDescStr} of ${formatValue(value, { delta, percent })}`;
+    
+    let timeframeStr = 'in a ' + (timePeriod === 'day' ? 'day' : timePeriod === 'week' ? 'week' : timePeriod === 'month' ? 'month' : 'year');
+    description = `Hit ${valueDisplay} ${timeframeStr}`;
+  } else if (type === 'milestone' && timePeriod === 'anytime') {
+    // Milestone [anytime,count=1]: "Reach a total of 100,000"
+    const valueDisplay = value === 0 && condition === 'above'
+      ? 'positive ' + metricDescStr
+      : value === 0 && condition === 'below'
+      ? 'negative ' + metricDescStr
+      : isRange
+      ? `${metricDescStr} between ${formatValue(range![0])} and ${formatValue(range![1], { delta, percent })}`
+      : `${metricArticleStr} ${metricDescStr} of ${formatValue(value, { delta, percent })}`;
+    
+    description = `Reach ${valueDisplay}`;
+  } else if (isStreak) {
+    // Streak [count>1,consecutive]: "Positive total for 7 days in a row", "Total of 1,000+ for 30 days in a row", "Average of 500+ for 4 weeks in a row"
+    const valueDisplay = value === 0 && condition === 'above'
+      ? `a positive ${metricDescStr}`
+      : value === 0 && condition === 'below'
+      ? `a negative ${metricDescStr}`
+      : isRange
+      ? `${metricDescStr} between ${formatValue(range![0])} and ${formatValue(range![1], { delta, percent })}`
+      : `${metricArticleStr} ${metricDescStr} of ${formatValue(value, { delta, percent })}`;
+    
+    const periodName = timePeriod === 'day' ? 'days' : timePeriod === 'week' ? 'weeks' : timePeriod === 'month' ? 'months' : 'years';
+    description = `Log ${valueDisplay} for ${count} ${periodName} in a row`;
+  } else if (isMultiPeriod && !consecutive) {
+    // Count [count>1,!consecutive]: "Log a positive total on 100 days", "Log a total of 1,000 on 4 weeks"
+    const valueDisplay = value === 0 && condition === 'above'
+      ? `a positive ${metricDescStr}`
+      : value === 0 && condition === 'below'
+      ? `a negative ${metricDescStr}`
+      : isRange
+      ? `${metricDescStr} between ${formatValue(range![0])} and ${formatValue(range![1], { delta, percent })}`
+      : `${metricArticleStr} ${metricDescStr} of ${formatValue(value, { delta, percent })}`;
+    
+    const periodName = timePeriod === 'day' ? 'days' : timePeriod === 'week' ? 'weeks' : timePeriod === 'month' ? 'months' : 'years';
+    description = `Log ${valueDisplay} on ${count} ${periodName}`;
+  }
+
+  // Badge label
+  let label = '';
+  if (count && count > 1) label = formatValue(count, { short: true });
+  else if (!isRange) label = formatValue(value, { short: true, delta, percent });
+  else if (range) label = `${formatValue(range[0], { short: true })}-${formatValue(range[1], { short: true, delta, percent })}`;
+  // else label = title.slice(0, 4);
+
+  // For now, icon is undefined
+  const icon = undefined;
+
+  return {
+    title,
+    description,
+    icon,
+    label,
+    type,
+  };
+}
+
+export function isRangeGoal(goal: MetricGoal): boolean {
+  return isRangeCondition(goal.condition);
+}
+
+export function isRangeCondition(condition: MetricGoal['condition'] | undefined): condition is 'inside' | 'outside' {
+  return !!condition && (condition === 'inside' || condition === 'outside');
+}

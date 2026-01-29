@@ -1,8 +1,8 @@
+import type { DateKey, GoalBadge, GoalType } from '@/features/db/localdb';
 import { formatFriendlyDate } from '@/lib/friendly-date';
 import { cn } from '@/lib/utils';
-import type { DateKey, Goal, GoalBadge } from '../db/localdb';
-import AchievementBadge from './AchievementBadge';
 import { CheckCircle, Lock, Unlock } from 'lucide-react';
+import AchievementBadge from './AchievementBadge';
 
 
 export interface AchievementCardProps {
@@ -16,7 +16,7 @@ export interface AchievementCardProps {
   goalCount?: number;
   completedCount?: number;
   firstCompletedAt?: DateKey;
-  goalType?: Goal['type'];
+  goalType?: GoalType;
   locked?: boolean;
   repeatable?: boolean;
   createdAt?: number;

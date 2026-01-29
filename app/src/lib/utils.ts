@@ -58,3 +58,21 @@ export function isNameTaken<T>(
     (!current || item[idKey] !== current[idKey]) // Allow current name in edit mode
   );
 }
+
+/**
+ * Get a random key from an object
+ */
+export function randomKeyOf<T extends object>(obj: T): keyof T {
+  const keys = keysOf(obj);
+  if (keys.length === 0) throw new Error("Object has no keys");
+  const randomIndex = Math.floor(Math.random() * keys.length);
+  return keys[randomIndex];
+}
+
+/**
+ * Get a random value from an object
+ */
+export function randomValueOf<T extends object>(obj: T): T[keyof T] {
+  const key = randomKeyOf(obj);
+  return obj[key];
+}

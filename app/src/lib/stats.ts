@@ -17,6 +17,9 @@ export interface NumberStats {
   changePercent: number; // (last - first) / first * 100
 }
 
+// Key type for NumberStats
+export type NumberMetric = keyof NumberStats;
+
 // NumberStats can represent different sources: 'stats' (values), 'deltas' (change values), or 'percents' (percentage changes)
 export type NumberSource = 'stats' | 'deltas' | 'percents'; // TODO: | 'cumulatives' | 'averages' | 'extremes'
 
@@ -225,6 +228,7 @@ export function computeAllStats(numbers: number[], prior?: NumberStats, priorCum
   const deltas = prior ? getStatsDelta(stats, prior) : {};
   const percents = prior ? getStatsPercentChange(stats, prior) : {};
   const cumulatives = priorCumulatives ? getStatsCumulatives(stats, priorCumulatives) : {};
+  console.log(cumulatives)
   return {
     stats,
     deltas,
@@ -239,3 +243,41 @@ export function computeAllStats(numbers: number[], prior?: NumberStats, priorCum
 
   
 // }
+
+export const METRIC_DISPLAY_INFO: Record<NumberMetric, { label: string; description: string }> = {
+  total: { label: 'Total', description: 'Sum of all values in the period' },
+  mean: { label: 'Average', description: 'Mean of all values in the period' },
+  median: { label: 'Median', description: 'Middle value when sorted' },
+  min: { label: 'Minimum', description: 'Lowest value in the period' },
+  max: { label: 'Maximum', description: 'Highest value in the period' },
+  count: { label: 'Count', description: 'Number of data points recorded' },
+  first: { label: 'Opening Value', description: 'First value at the start of the period' },
+  last: { label: 'Closing Value', description: 'Last value at the end of the period' },
+  range: { label: 'Range', description: 'Difference between max and min values' },
+  change: { label: 'Change', description: 'Difference between first and last values' },
+  changePercent: { label: 'Change (%)', description: 'Percentage change from first to last value' },
+};
+
+
+export function getMetricDisplayName(metric: NumberMetric): string {
+  return METRIC_DISPLAY_INFO[metric].label;
+}
+
+export function getMetricDescription(metric: NumberMetric): string {
+  return METRIC_DISPLAY_INFO[metric].description;
+}
+
+export const METRIC_SOURCES_DISPLAY_INFO: Record<NumberSource, { label: string; description: string }> = {
+  stats: { label: 'Value', description: 'Actual recorded value for a time period' },
+  deltas: { label: 'Delta', description: 'Change from prior time period' },
+  percents: { label: 'Percent Change', description: 'Percentage change from prior time period' },
+  // cumulatives: { label: 'Cumulatives', description: 'Based on cumulative totals over time' },
+};
+
+export function getMetricSourceDisplayName(source: NumberSource): string {
+  return METRIC_SOURCES_DISPLAY_INFO[source].label;
+}
+
+export function getMetricSourceDescription(source: NumberSource): string {
+  return METRIC_SOURCES_DISPLAY_INFO[source].description;
+}

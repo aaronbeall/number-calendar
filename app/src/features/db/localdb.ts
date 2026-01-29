@@ -1,9 +1,9 @@
-import { nanoid } from 'nanoid';
+import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from '@/lib/achievements';
 import type { DatasetIconName } from '@/lib/dataset-icons';
 import { toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
+import type { NumberMetric, NumberSource } from '@/lib/stats';
 import { openDB } from 'idb';
-import type { NumberSource, NumberStats } from '@/lib/stats';
-import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from '@/lib/achievements';
+import { nanoid } from 'nanoid';
 
 // Dataset entity
 export interface Dataset {
@@ -73,8 +73,10 @@ export interface ImageAttachment {
 
 // Generic metric goal type, can be used as a target (repeating), milestone (one-time), or achievement requirement
 export type MetricGoal = {
-  metric: keyof NumberStats;
+  metric: NumberMetric;
   source: NumberSource;
+  value?: number;
+  range?: [number, number];
 } & (
   | { condition: 'above' | 'below' | 'equal'; value: number; }
   | { condition: 'inside' | 'outside'; range: [number, number]; }
@@ -96,30 +98,20 @@ export type Goal = {
   title: string;
   description?: string;
   badge: GoalBadge;
+  type: GoalType;
+} & GoalAttributes;
+
+export type GoalAttributes = {
   goal: MetricGoal;
-} & (
-  | { 
-    // Milestone -- a specific goal with optional target date (target date does not affect achievement)
-    type: 'milestone';
-    targetDate?: DayKey;
-    timePeriod: 'anytime';
-    count: 1;
-  }
-  | { 
-    // Target -- recurring goals over a time period
-    type: 'target';
-    timePeriod: Exclude<TimePeriod, 'anytime'>;
-    count: 1;
-  }
-  | { 
-    // Goal -- custom goal achievement criteria
-    type: 'goal'; 
-    timePeriod: TimePeriod; 
-    count: number; // Used for streaks or multiple completions
-    consecutive?: boolean; // Consecutive allows null gaps, but not failures
-    resets?: TimePeriod; // Used to reset counting at specific intervals -- TODO: not currently implemented
-  }
-);
+  targetDate?: DayKey;
+  timePeriod: TimePeriod; 
+  count: number; // Used for streaks or multiple completions
+  consecutive?: boolean; // Consecutive allows null gaps, but not failures
+  // resets?: TimePeriod; // Used to reset counting at specific intervals -- TODO
+  // repeatable?: boolean; // Whether the goal can be achieved multiple times -- TODO
+}
+
+export type GoalType = 'milestone' | 'target' | 'goal';
 
 // Goal time period types
 export type TimePeriod = DateKeyType | 'anytime';
@@ -147,9 +139,11 @@ const STORE_DEFS = [
   { name: 'datasets', keyPath: 'id', indexes: [] },
   { name: 'entries', keyPath: ['datasetId', 'date'], indexes: ['datasetId', 'date'] },
   { name: 'notes', keyPath: ['datasetId', 'date'], indexes: ['datasetId', 'date'] },
-  { name: 'images', keyPath: 'id', indexes: ['datasetId', ['datasetId', 'date']] }
+  { name: 'images', keyPath: 'id', indexes: ['datasetId', ['datasetId', 'date']] },
+  { name: 'goals', keyPath: 'id', indexes: ['datasetId'] },
+  { name: 'achievements', keyPath: 'id', indexes: ['goalId', 'datasetId'] },
 ];
-const DB_VERSION = 8;
+const DB_VERSION = 9;
 
 function getDb() {
   return openDB(DB_NAME, DB_VERSION, {
@@ -299,6 +293,19 @@ function getDb() {
           console.log(`Migrated ${allNotes.length} notes to composite key`);
         }
       }
+
+      // Migration for adding goals and achievements stores (version < 9)
+      if (oldVersion < 9) {
+        if (!db.objectStoreNames.contains('goals')) {
+          const goalsStore = db.createObjectStore('goals', { keyPath: 'id' });
+          goalsStore.createIndex('datasetId', 'datasetId');
+        }
+        if (!db.objectStoreNames.contains('achievements')) {
+          const achievementsStore = db.createObjectStore('achievements', { keyPath: 'id' });
+          achievementsStore.createIndex('goalId', 'goalId');
+          achievementsStore.createIndex('datasetId', 'datasetId');
+        }
+      }
     },
   });
 }
@@ -329,6 +336,39 @@ export async function listDatasets(): Promise<Dataset[]> {
   return await db.getAll('datasets');
 }
 
+// Goal CRUD
+export async function listGoals(datasetId: string): Promise<Goal[]> {
+  const db = await getDb();
+  return await db.getAllFromIndex('goals', 'datasetId', datasetId);
+}
+
+export async function createGoal(goal: Goal): Promise<void> {
+  const db = await getDb();
+  await db.add('goals', goal);
+}
+
+export async function updateGoal(goal: Goal): Promise<void> {
+  const db = await getDb();
+  await db.put('goals', goal);
+}
+
+// Achievement CRUD
+export async function listAchievements(goalId: string): Promise<Achievement[]> {
+  const db = await getDb();
+  return await db.getAllFromIndex('achievements', 'goalId', goalId);
+}
+
+export async function createAchievement(achievement: Achievement): Promise<void> {
+  const db = await getDb();
+  await db.add('achievements', achievement);
+}
+
+export async function updateAchievement(achievement: Achievement): Promise<void> {
+  const db = await getDb();
+  await db.put('achievements', achievement);
+}
+
+// Day Entry CRUD
 export async function saveDay(datasetId: string, date: DayKey, numbers: number[]) {
   const db = await getDb();
   await db.put('entries', { datasetId, date, numbers });

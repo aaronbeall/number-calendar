@@ -1,8 +1,5 @@
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeSizes, achievementBadgeStyles, type AchievementBadgeSize } from '@/lib/achievements';
 import { cn } from '@/lib/utils';
-import {
-  GiCircle
-} from 'react-icons/gi';
 import type { GoalBadge } from '../db/localdb';
 
 
@@ -19,10 +16,10 @@ const colorPresets = achievementBadgeColors;
 const sizePresets = achievementBadgeSizes;
 
 export function AchievementBadge({ badge, size = 'medium', className }: AchievementBadgeProps) {
-  const color = colorPresets[badge.color] || colorPresets.default;
-  const sizePreset = sizePresets[size] || sizePresets.medium;
+  const color = colorPresets[badge.color];
+  const sizePreset = sizePresets[size];
   const containerPx = sizePreset.container;
-  const ShapeIcon = styleIcons[badge.style] || GiCircle;
+  const ShapeIcon = styleIcons[badge.style];
   const CenterIcon = badge.icon && centerIcons[badge.icon];
 
   // Flat design: shape as background, icon and label in center
@@ -50,7 +47,7 @@ export function AchievementBadge({ badge, size = 'medium', className }: Achievem
         className="relative z-10 flex items-center justify-center"
         style={{ width: containerPx, height: containerPx }}
       >
-        {(CenterIcon || (badge.label && badge.label !== '')) && (
+        {(CenterIcon || !!badge.label?.trim()) && (
           <span
             className={cn(
               'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-center select-none flex items-center justify-center gap-1',
