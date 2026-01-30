@@ -53,8 +53,6 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
   inProgress.sort(sortAchievements);
   locked.sort(sortAchievements);
 
-  console.log({ results, gridItems });
-
   if (loading) {
     return (
       <div className="flex justify-center py-16">

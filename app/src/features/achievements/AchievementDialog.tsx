@@ -2,9 +2,11 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { type Dataset, type GoalAttributes, type GoalBadge, type GoalType } from '@/features/db/localdb';
+import { type Dataset, type GoalBadge, type GoalRequirements, type GoalType } from '@/features/db/localdb';
+import { useCreateGoal } from '@/features/db/useGoalsData';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
+import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { capitalize, randomKeyOf } from '@/lib/utils';
 import { Dices, Palette } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
@@ -13,12 +15,10 @@ import { BadgeEditDialog } from './BadgeEditDialog';
 import { GoalBuilder } from './GoalBuilder';
 import { MilestoneBuilder } from './MilestoneBuilder';
 import { TargetBuilder } from './TargetBuilder';
-import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 
 interface AchievementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (data: AchievementDialogData) => void;
   initialData?: AchievementDialogData;
   type: GoalType;
   dataset: Dataset;
@@ -28,25 +28,27 @@ export interface AchievementDialogData {
   title: string;
   description: string;
   badge: GoalBadge;
-  goal: GoalAttributes;
+  goal: GoalRequirements;
 }
 
-export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, type, dataset }: AchievementDialogProps) {
+export function AchievementDialog({ open, onOpenChange, initialData, type, dataset }: AchievementDialogProps) {
   const [title, setTitle] = useState(initialData?.title || '');
   const [description, setDescription] = useState(initialData?.description || '');
   const [badge, setBadge] = useState<GoalBadge>(initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
+  const createGoalMutation = useCreateGoal();
+  const datasetId = dataset.id;
+
+  const {tracking, valence} = dataset;
   
   // Create sensible defaults based on goal type and dataset
-  const getDefaultGoal = (): Partial<GoalAttributes> => {
-    if (!dataset) return { count: 1 };
-    
-    const primaryMetric = getPrimaryMetric(dataset.tracking);
-    const defaultCondition = dataset.valence === 'negative' ? 'below' : 'above';
-    const defaultSource = type == 'milestone' ? 'stats' : getValenceSource(dataset.tracking);
+  const getDefaultGoal = (): Partial<GoalRequirements> => {
+    const primaryMetric = getPrimaryMetric(tracking);
+    const defaultCondition = valence === 'negative' ? 'below' : 'above';
+    const defaultSource = type == 'milestone' ? 'stats' : getValenceSource(tracking);
     
     if (type === 'milestone') {
       return {
-        goal: {
+        target: {
           metric: primaryMetric,
           source: defaultSource,
           condition: defaultCondition,
@@ -57,7 +59,7 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
       };
     } else if (type === 'target') {
       return {
-        goal: {
+        target: {
           metric: primaryMetric,
           source: defaultSource,
           condition: defaultCondition,
@@ -69,7 +71,7 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
     } else {
       // goal type
       return {
-        goal: {
+        target: {
           metric: primaryMetric,
           source: defaultSource,
           condition: defaultCondition,
@@ -80,7 +82,7 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
     }
   };
   
-  const [goal, setGoal] = useState<Partial<GoalAttributes>>(initialData?.goal ?? getDefaultGoal());
+  const [goal, setGoal] = useState<Partial<GoalRequirements>>(initialData?.goal ?? getDefaultGoal());
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
 
   const sugggested = getSuggestedGoalContent({ type, title, description, badge, ...goal });
@@ -92,15 +94,23 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    isValidGoalAttributes(goal) && onSubmit?.({ 
+    if (!isValidGoalAttributes(goal)) return;
+
+    // Create Goal in DB
+    createGoalMutation.mutate({ 
       title: title || sugggested.title, 
       description: description || sugggested.description, 
       badge: {
         ...badge,
         label: badge.label ?? sugggested.label,
       }, 
-      goal
+      type,
+      datasetId,
+      createdAt: Date.now(),
+      id: crypto.randomUUID(),
+      ...goal
     });
+
     onOpenChange(false);
   };
 
@@ -131,13 +141,13 @@ export function AchievementDialog({ open, onOpenChange, onSubmit, initialData, t
               {/* Left Column: Goal Builder */}
               <div className="flex flex-col gap-2 md:w-1/2">
                 {type === 'milestone' && (
-                  <MilestoneBuilder value={goal} onChange={setGoal} tracking={dataset?.tracking} valence={dataset?.valence} />
+                  <MilestoneBuilder value={goal} onChange={setGoal} tracking={tracking} valence={valence} />
                 )}
                 {type === 'target' && (
-                  <TargetBuilder value={goal} onChange={setGoal} tracking={dataset?.tracking} valence={dataset?.valence} />
+                  <TargetBuilder value={goal} onChange={setGoal} tracking={tracking} valence={valence} />
                 )}
                 {type === 'goal' && (
-                  <GoalBuilder value={goal} onChange={setGoal} tracking={dataset?.tracking} valence={dataset?.valence} />
+                  <GoalBuilder value={goal} onChange={setGoal} tracking={tracking} valence={valence} />
                 )}
               </div>
               {/* Right Column: Badge, Title, Description */}

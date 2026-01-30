@@ -1,24 +1,28 @@
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
-import type { Achievement, Goal } from '@/features/db/localdb';
+import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
+import { useGoals } from '@/features/db/useGoalsData';
 import { getDaysMap } from '@/lib/calendar';
 import { processAchievements } from '@/lib/goals';
 import { Flag } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 export default function Milestones() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { datasetId } = useParams();
   const { data: dataset } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
+  const { data: allGoals = [] } = useGoals(datasetId ?? '');
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.has('preview');
 
   const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
-  // Dummy milestones (Goal type)
-  const milestones: Goal[] = [
+  // Dummy milestones (only in preview mode)
+  const demoMilestones: Goal[] = isPreview ? [
     {
       id: 'm1',
       datasetId: datasetId ?? '',
@@ -26,7 +30,7 @@ export default function Milestones() {
       title: 'First 10k',
       description: 'Reach 10,000 total',
       badge: { style: 'medal', icon: 'star', color: 'gold', label: '10k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 10000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 10000 },
       type: 'milestone',
       timePeriod: 'anytime',
       count: 1,
@@ -38,12 +42,15 @@ export default function Milestones() {
       title: 'First 50k',
       description: 'Reach 50,000 total',
       badge: { style: 'trophy', icon: 'trophy', color: 'purple', label: '50k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 50000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 50000 },
       type: 'milestone',
       timePeriod: 'anytime',
       count: 1,
     },
-  ];
+  ] : [];
+  
+  // Filter goals by type 'milestone', combine demo and real data
+  const milestones = isPreview ? demoMilestones : (allGoals.filter(g => g.type === 'milestone') as Goal[]);
   const hasMilestones = milestones.length > 0;
 
   // Compute achievement results from goals
@@ -69,7 +76,7 @@ export default function Milestones() {
           Add Milestone
         </button>
       </div>
-      <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} />
+      { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} /> }
       {!hasMilestones ? (
         <div className="text-center text-slate-500 py-16">
           <p className="mb-4">No milestones yet.</p>

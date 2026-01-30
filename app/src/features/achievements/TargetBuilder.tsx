@@ -1,15 +1,15 @@
-import { METRIC_DISPLAY_INFO, METRIC_SOURCES_DISPLAY_INFO, type NumberMetric, type NumberSource } from '@/lib/stats';
-import { entriesOf } from '@/lib/utils';
-import type { GoalAttributes, MetricGoal, TimePeriod, Tracking, Valence } from '../db/localdb';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { getPrimaryMetric } from '@/lib/tracking';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { isRangeCondition } from '@/lib/goals';
+import { METRIC_DISPLAY_INFO, METRIC_SOURCES_DISPLAY_INFO, type NumberMetric, type NumberSource } from '@/lib/stats';
+import { getPrimaryMetric } from '@/lib/tracking';
+import { entriesOf } from '@/lib/utils';
+import type { GoalRequirements, GoalTarget, TimePeriod, Tracking, Valence } from '../db/localdb';
 
 type TargetBuilderProps = {
-  value: Partial<GoalAttributes>;
-  onChange: (v: Partial<GoalAttributes>) => void;
+  value: Partial<GoalRequirements>;
+  onChange: (v: Partial<GoalRequirements>) => void;
   tracking?: Tracking;
   valence?: Valence;
 };
@@ -26,8 +26,6 @@ const CONDITIONS = {
   'outside': 'Outside Range',
 } as const;
 
-const RANGE_CONDITIONS = new Set(['inside', 'outside']);
-
 const PERIODS = {
   day: 'Daily',
   week: 'Weekly',
@@ -36,20 +34,20 @@ const PERIODS = {
 } as const satisfies Record<Exclude<TimePeriod, 'anytime'>, string>;
 
 export function TargetBuilder({ value, onChange, tracking, valence }: TargetBuilderProps) {
-  const { goal, timePeriod } = value;
+  const { target: goal, timePeriod } = value;
   const { condition, metric, source } = goal ?? {};
   const val = goal?.value;
   const rangeVal = goal?.range ? goal.range : [undefined, undefined];
   const isRange = isRangeCondition(condition);
 
-  const updateValueField = <K extends keyof GoalAttributes>(field: K, fieldValue: GoalAttributes[K]) => {
+  const updateValueField = <K extends keyof GoalRequirements>(field: K, fieldValue: GoalRequirements[K]) => {
     onChange({ ...value, [field]: fieldValue, count: 1 });
   }
 
-  const updateMetricGoalField = <K extends keyof MetricGoal>(field: K, fieldValue: MetricGoal[K]) => {
+  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: GoalTarget[K]) => {
     onChange({ 
       ...value, 
-      goal: { ...goal, [field]: fieldValue } as MetricGoal,
+      target: { ...goal, [field]: fieldValue } as GoalTarget,
       count: 1,
     });
   }
@@ -198,7 +196,7 @@ export function TargetBuilder({ value, onChange, tracking, valence }: TargetBuil
         {source && (
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-widest">Condition</label>
-              <Select value={condition || ''} onValueChange={v => updateMetricGoalField('condition', v as MetricGoal['condition'])}>
+              <Select value={condition || ''} onValueChange={v => updateMetricGoalField('condition', v as GoalTarget['condition'])}>
                 <SelectTrigger className="w-full h-9">
                   <SelectValue placeholder="Choose…" />
                 </SelectTrigger>

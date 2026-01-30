@@ -1,13 +1,14 @@
-import { useParams, Link } from 'react-router-dom';
-import { Target } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
-import { useDataset } from '@/features/db/useDatasetData';
-import { processAchievements } from '@/lib/goals';
-import type { Achievement, Goal } from '@/features/db/localdb';
+import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
+import { useDataset } from '@/features/db/useDatasetData';
+import { useGoals } from '@/features/db/useGoalsData';
 import { getDaysMap } from '@/lib/calendar';
+import { processAchievements } from '@/lib/goals';
+import { Target } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 export default function Targets() {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -15,11 +16,14 @@ export default function Targets() {
   const { datasetId } = useParams();
   const { data: dataset } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
+  const { data: allGoals = [] } = useGoals(datasetId ?? '');
+  const [searchParams] = useSearchParams();
+  const isPreview = searchParams.has('preview');
 
   const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
   
-  // Dummy targets (Goal type)
-  const targets: Goal[] = [
+  // Dummy targets (only in preview mode)
+  const demoTargets: Goal[] = isPreview ? [
     {
       id: 't1',
       datasetId: datasetId ?? '',
@@ -27,7 +31,7 @@ export default function Targets() {
       title: 'Weekly 5k',
       description: 'Hit 5,000 in a week',
       badge: { style: 'ribbon', icon: 'target', color: 'green', label: '5k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 5000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 5000 },
       type: 'target',
       timePeriod: 'week',
       count: 1,
@@ -39,7 +43,7 @@ export default function Targets() {
       title: 'Monthly 20k',
       description: 'Hit 20,000 in a month',
       badge: { style: 'star', icon: 'calendar', color: 'blue', label: '20k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 20000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 20000 },
       type: 'target',
       timePeriod: 'month',
       count: 1,
@@ -51,7 +55,7 @@ export default function Targets() {
       title: 'Monthly 5k',
       description: 'Hit 5,000 in a month',
       badge: { style: 'star', icon: 'calendar', color: 'blue', label: '5k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 5000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 5000 },
       type: 'target',
       timePeriod: 'month',
       count: 1,
@@ -63,7 +67,7 @@ export default function Targets() {
       title: 'Daily 1k',
       description: 'Hit 1,000 in a day',
       badge: { style: 'star', icon: 'calendar', color: 'blue', label: '1k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
       type: 'target',
       timePeriod: 'day',
       count: 1,
@@ -75,12 +79,16 @@ export default function Targets() {
       title: 'Daily 200',
       description: 'Hit 200 in a day',
       badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '200' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 200 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 200 },
       type: 'target',
       timePeriod: 'day',
       count: 1,
     }
-  ];
+  ] : [];
+  
+  // Filter goals by type 'target', combine demo and real data
+  const targets = isPreview ? demoTargets : (allGoals.filter(g => g.type === 'target') as Goal[]);
+  
   // Compute achievement results from goals
   const achievementResults = processAchievements({
     goals: targets,
@@ -105,7 +113,7 @@ export default function Targets() {
           Add Target
         </button>
       </div>
-      <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset!} />
+      { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset} /> }
       {!hasTargets ? (
         <div className="text-center text-slate-500 py-16">
           <p className="mb-4">No targets yet.</p>

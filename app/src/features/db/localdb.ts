@@ -72,7 +72,7 @@ export interface ImageAttachment {
 }
 
 // Generic metric goal type, can be used as a target (repeating), milestone (one-time), or achievement requirement
-export type MetricGoal = {
+export type GoalTarget = {
   metric: NumberMetric;
   source: NumberSource;
   value?: number;
@@ -99,10 +99,8 @@ export type Goal = {
   description?: string;
   badge: GoalBadge;
   type: GoalType;
-} & GoalAttributes;
 
-export type GoalAttributes = {
-  goal: MetricGoal;
+  target: GoalTarget;
   targetDate?: DayKey;
   timePeriod: TimePeriod; 
   count: number; // Used for streaks or multiple completions
@@ -110,6 +108,9 @@ export type GoalAttributes = {
   // resets?: TimePeriod; // Used to reset counting at specific intervals -- TODO
   // repeatable?: boolean; // Whether the goal can be achieved multiple times -- TODO
 }
+
+
+export type GoalRequirements = Pick<Goal, 'target' | 'targetDate' | 'timePeriod' | 'count' | 'consecutive'>;
 
 export type GoalType = 'milestone' | 'target' | 'goal';
 

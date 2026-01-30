@@ -4,6 +4,7 @@ import { BadgePreviews } from '@/features/achievements/BadgePreview';
 import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
+import { useGoals } from '@/features/db/useGoalsData';
 import { getDaysMap } from '@/lib/calendar';
 import { processAchievements } from '@/lib/goals';
 import { Trophy } from 'lucide-react';
@@ -15,13 +16,14 @@ export default function Achievements() {
   const { datasetId } = useParams();
   const { data: dataset } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
+  const { data: allGoals = [] } = useGoals(datasetId ?? '');
   const [searchParams] = useSearchParams();
-  const isPreview = searchParams.has('badges-preview');
+  const isPreview = searchParams.has('preview');
 
   const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
-  // Dummy goals for demo
-  const goals: Goal[] = [
+  // Dummy goals for demo (only in preview mode)
+  const demoGoals: Goal[] = isPreview ? [
     {
       id: 'g1',
       datasetId: datasetId ?? '',
@@ -29,7 +31,7 @@ export default function Achievements() {
       title: 'First Entry',
       description: 'Add your first number',
       badge: { style: 'medal', icon: 'star', color: 'gold', label: '1' },
-      goal: { condition: 'above', metric: 'count', source: 'stats', value: 1 },
+      target: { condition: 'above', metric: 'count', source: 'stats', value: 1 },
       type: 'goal',
       timePeriod: 'anytime',
       count: 1,
@@ -41,7 +43,7 @@ export default function Achievements() {
       title: '7-Day Streak',
       description: 'Positive numbers for 7 days in a row',
       badge: { style: 'ribbon', icon: 'calendar', color: 'blue', label: '7' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
       type: 'goal',
       timePeriod: 'day',
       count: 7,
@@ -54,7 +56,7 @@ export default function Achievements() {
       title: '100k Total',
       description: 'Reach 100,000 total',
       badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '100k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
       type: 'milestone',
       timePeriod: 'anytime',
       count: 1,
@@ -67,7 +69,7 @@ export default function Achievements() {
       title: 'Active Month',
       description: 'Add a number any day this month',
       badge: { style: 'circle', icon: 'calendar', color: 'green', label: 'M' },
-      goal: { condition: 'above', metric: 'count', source: 'stats', value: 1 },
+      target: { condition: 'above', metric: 'count', source: 'stats', value: 1 },
       type: 'goal',
       timePeriod: 'month',
       count: 1,
@@ -79,7 +81,7 @@ export default function Achievements() {
       title: '1k Monthly Target',
       description: 'Reach 1,000 in a month',
       badge: { style: 'border_badge', icon: 'target', color: 'blue', label: '1k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
       type: 'target',
       timePeriod: 'month',
       count: 1,
@@ -91,7 +93,7 @@ export default function Achievements() {
       title: 'Perfect Month',
       description: 'No zero days in a month',
       badge: { style: 'border_circle', icon: 'star', color: 'purple', label: '★' },
-      goal: { condition: 'above', metric: 'min', source: 'stats', value: 0 },
+      target: { condition: 'above', metric: 'min', source: 'stats', value: 0 },
       type: 'goal',
       timePeriod: 'month',
       count: 1,
@@ -103,7 +105,7 @@ export default function Achievements() {
       title: '10% Weekly Target',
       description: 'Increase by 10% in a week',
       badge: { style: 'ribbon', icon: 'trend', color: 'red', label: '10%' },
-      goal: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
+      target: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
       type: 'target',
       timePeriod: 'week',
       count: 1,
@@ -115,7 +117,7 @@ export default function Achievements() {
       title: '100 Positive Days',
       description: 'Log a positive number on 100 days',
       badge: { style: 'circle', icon: 'star', color: 'gold', label: '100' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
       type: 'goal',
       timePeriod: 'day',
       count: 100,
@@ -127,7 +129,7 @@ export default function Achievements() {
       title: '1k a Day Week',
       description: 'Log at least 1,000 each day for a week',
       badge: { style: 'trophy', icon: 'calendar', color: 'blue', label: '1k' },
-      goal: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
       type: 'goal',
       timePeriod: 'day',
       count: 7,
@@ -140,12 +142,16 @@ export default function Achievements() {
       title: '100% Daily Growth',
       description: 'Increase by 1%',
       badge: { style: 'border_badge', icon: 'trend', color: 'green', label: '100%' },
-      goal: { condition: 'above', metric: 'total', source: 'percents', value: 1 },
+      target: { condition: 'above', metric: 'total', source: 'percents', value: 1 },
       type: 'goal',
       timePeriod: 'day',
       count: 1,
     }
-  ];
+  ] : [];
+  
+  // Filter goals by type 'goal', combine demo and real data
+  const goals = isPreview ? demoGoals : (allGoals.filter(g => g.type === 'goal') as Goal[]);
+  
   // Compute achievement results from goals
   const achievementResults = processAchievements({
     goals,
@@ -171,7 +177,7 @@ export default function Achievements() {
           Add Achievement
         </button>
       </div>
-      <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} />
+      { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} /> }
 
       {isPreview && <BadgePreviews />}
 

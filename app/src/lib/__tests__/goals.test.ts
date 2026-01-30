@@ -15,7 +15,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' },
       },
     ];
@@ -37,7 +37,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' },
       },
     ];
@@ -58,7 +58,7 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
         badge: { style: 'star', icon: 'star', color: 'gold', label: 'Star Badge' },
       },
     ];
@@ -80,7 +80,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 3,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
         badge: { style: 'ribbon', icon: 'ribbon', color: 'blue', label: 'Blue Ribbon' }
       },
     ];
@@ -111,7 +111,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 2,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
         badge: { style: 'medal', icon: 'medal', color: 'silver', label: 'Silver Medal' },
       },
     ];
@@ -136,7 +136,7 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
         badge: { style: 'gift', icon: 'present', color: 'green', label: 'Green Present' },
       },
     ];
@@ -161,7 +161,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' }
       },
     ];
@@ -185,7 +185,7 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
         badge: { style: 'star', icon: 'star', color: 'gold', label: 'Star Badge' }
       },
     ];
@@ -211,7 +211,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 3,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
         badge: { style: 'ribbon', icon: 'ribbon', color: 'blue', label: 'Blue Ribbon' }
       },
     ];
@@ -246,7 +246,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 3,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
         badge: { style: 'medal', icon: 'medal', color: 'silver', label: 'Silver Medal' }
       },
     ];
@@ -276,7 +276,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 10000 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 10000 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '10k' },
       },
     ];
@@ -304,7 +304,7 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 10,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
         badge: { style: 'star', icon: 'star', color: 'gold', label: '10' },
       },
     ];
@@ -347,7 +347,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'stats', value: 50000 },
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 50000 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' },
       },
     ];
@@ -369,7 +369,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'below', metric: 'total', source: 'stats', value: 100000 },
+        target: { condition: 'below', metric: 'total', source: 'stats', value: 100000 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' },
       },
     ];
@@ -391,7 +391,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'equal', metric: 'total', source: 'stats', value: 100000 },
+        target: { condition: 'equal', metric: 'total', source: 'stats', value: 100000 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' },
       },
     ];
@@ -413,7 +413,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'inside', metric: 'total', source: 'stats', range: [50000, 100000] },
+        target: { condition: 'inside', metric: 'total', source: 'stats', range: [50000, 100000] },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' },
       },
     ];
@@ -435,7 +435,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'outside', metric: 'total', source: 'stats', range: [50000, 100000] },
+        target: { condition: 'outside', metric: 'total', source: 'stats', range: [50000, 100000] },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' },
       },
     ];
@@ -457,7 +457,7 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
         badge: { style: 'star', icon: 'star', color: 'green', label: 'Up' },
       },
     ];
@@ -490,7 +490,7 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
         badge: { style: 'star', icon: 'star', color: 'green', label: 'Up' },
       },
     ];
@@ -518,7 +518,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 500 },
+        target: { condition: 'above', metric: 'total', source: 'deltas', value: 500 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '+500' },
       },
     ];
@@ -547,7 +547,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 500 },
+        target: { condition: 'above', metric: 'total', source: 'deltas', value: 500 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '+500' },
       },
     ];
@@ -577,8 +577,8 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 7,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
-        badge: { style: 'ribbon', icon: 'trend-up', color: 'blue', label: '7↗' },
+        target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        badge: { style: 'ribbon', icon: 'award', color: 'blue', label: '7↗' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -611,8 +611,8 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 7,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
-        badge: { style: 'ribbon', icon: 'trend-up', color: 'blue', label: '7↗' },
+        target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
+        badge: { style: 'ribbon', icon: 'award', color: 'blue', label: '7↗' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -643,8 +643,8 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
-        badge: { style: 'star', icon: 'percent', color: 'purple', label: '10%' },
+        target: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
+        badge: { style: 'star', icon: 'award', color: 'purple', label: '10%' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -676,8 +676,8 @@ describe('processAchievements', () => {
         type: 'goal',
         timePeriod: 'day',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
-        badge: { style: 'star', icon: 'percent', color: 'purple', label: '10%' },
+        target: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
+        badge: { style: 'star', icon: 'award', color: 'purple', label: '10%' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -704,7 +704,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'week',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'percents', value: 50 },
+        target: { condition: 'above', metric: 'total', source: 'percents', value: 50 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '50%' },
       },
     ];
@@ -730,7 +730,7 @@ describe('processAchievements', () => {
         type: 'milestone',
         timePeriod: 'anytime',
         count: 1,
-        goal: { condition: 'above', metric: 'total', source: 'percents', value: 50 },
+        target: { condition: 'above', metric: 'total', source: 'percents', value: 50 },
         badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: '50%' },
       },
     ];
@@ -759,7 +759,7 @@ describe('processAchievements', () => {
         timePeriod: 'week',
         count: 4,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
+        target: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
         badge: { style: 'ribbon', icon: 'achievement', color: 'green', label: '4wk' },
       },
     ];
@@ -789,7 +789,7 @@ describe('processAchievements', () => {
         timePeriod: 'week',
         count: 4,
         consecutive: true,
-        goal: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
+        target: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
         badge: { style: 'ribbon', icon: 'achievement', color: 'green', label: '4wk' },
       },
     ];

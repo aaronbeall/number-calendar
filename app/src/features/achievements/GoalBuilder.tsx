@@ -1,21 +1,17 @@
-import { useDataset } from '@/features/db/useDatasetData';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { isRangeCondition } from '@/lib/goals';
 import { METRIC_DISPLAY_INFO, METRIC_SOURCES_DISPLAY_INFO, type NumberMetric, type NumberSource } from '@/lib/stats';
+import { getPrimaryMetric } from '@/lib/tracking';
 import { entriesOf } from '@/lib/utils';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import type { GoalAttributes, MetricGoal, TimePeriod, Tracking, Valence } from '../db/localdb';
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { HelpCircle } from 'lucide-react';
-import { isRangeCondition } from '@/lib/goals';
-import { getPrimaryMetric } from '@/lib/tracking';
+import type { GoalRequirements, GoalTarget, TimePeriod, Tracking, Valence } from '../db/localdb';
 
 type GoalBuilderProps = {
-  value: Partial<GoalAttributes>;
-  onChange: (v: Partial<GoalAttributes>) => void;
+  value: Partial<GoalRequirements>;
+  onChange: (v: Partial<GoalRequirements>) => void;
   tracking?: Tracking;
   valence?: Valence;
 };
@@ -30,7 +26,7 @@ const CONDITIONS = {
   'equal': 'Equal To',
   'inside': 'Inside Range',
   'outside': 'Outside Range',
-} as const satisfies Record<MetricGoal['condition'], string>;
+} as const satisfies Record<GoalTarget['condition'], string>;
 
 const PERIODS = {
   day: 'In a Day',
@@ -45,27 +41,18 @@ const FREQUENCIES = {
   'times': 'Multiple Times',
 };
 
-export function GoalBuilder({ value, onChange, tracking: propTracking, valence: propValence }: GoalBuilderProps) {
-
-  const [searchParams] = useSearchParams();
-  const datasetId = searchParams.get('datasetId');
-  const { data: dataset } = useDataset(datasetId ?? '');
-  const tracking = propTracking ?? dataset?.tracking;
-  const valence = propValence ?? dataset?.valence;
-
-  console.log("GoalBuilder", value)
-
-  const { goal, timePeriod, count, consecutive } = value;
+export function GoalBuilder({ value, onChange, tracking }: GoalBuilderProps) {
+  const { target: goal, timePeriod, count, consecutive } = value;
   const { condition, metric, source } = goal ?? {};
   const val = goal && 'value' in goal ? goal.value : undefined;
   const range = goal && 'range' in goal ? goal.range : undefined;
 
-  const updateValueField = <K extends keyof GoalAttributes>(field: K, fieldValue: GoalAttributes[K]) => {
+  const updateValueField = <K extends keyof GoalRequirements>(field: K, fieldValue: GoalRequirements[K]) => {
     onChange({ ...value, [field]: fieldValue });
   }
 
-  const updateMetricGoalField = <K extends keyof MetricGoal>(field: K, fieldValue: MetricGoal[K]) => {
-    onChange({ ...value, goal: { ...goal, [field]: fieldValue } as MetricGoal });
+  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: GoalTarget[K]) => {
+    onChange({ ...value, target: { ...goal, [field]: fieldValue } as GoalTarget });
   }
 
   const [freq, setFreq] = useState<keyof typeof FREQUENCIES>(count && count > 1 ? 'times' : 'once');
@@ -148,7 +135,7 @@ export function GoalBuilder({ value, onChange, tracking: propTracking, valence: 
           <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
             Step 3: Set the condition
           </label>
-          <Select value={condition || ''} onValueChange={v => updateMetricGoalField('condition', v as MetricGoal['condition'])}>
+          <Select value={condition || ''} onValueChange={v => updateMetricGoalField('condition', v as GoalTarget['condition'])}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Choose a condition…" />
             </SelectTrigger>

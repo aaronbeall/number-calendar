@@ -1,11 +1,11 @@
-import { type Achievement, type DateKey, type DayKey, type Goal, type GoalAttributes, type GoalType, type MetricGoal, type TimePeriod } from '@/features/db/localdb';
+import { type Achievement, type DateKey, type DayKey, type Goal, type GoalRequirements, type GoalType, type GoalTarget, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import { convertDateKey, isDayKey, type DateKeyType } from './friendly-date';
 import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
 import { capitalize, keysOf } from './utils';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
-function evalCondition(cond: MetricGoal, value: number): boolean {
+function evalCondition(cond: GoalTarget, value: number): boolean {
   if (cond.condition === 'above') {
     if (cond.value === 0) return value > 0;
     return value >= cond.value;
@@ -186,15 +186,15 @@ export function processAchievements({
     let lastCompletedAt: DateKey | undefined = undefined;
     let firstCompletedAt: DateKey | undefined = undefined;
     let newAchievements: Achievement[] = [];
-    const goalSource = goal.goal.source ?? 'stats';
+    const goalSource = goal.target.source ?? 'stats';
     const getMetricValue = (
       stats: NumberStats | null | undefined,
       deltas: Record<keyof NumberStats, number> | null | undefined,
       percents: Partial<NumberStats> | null | undefined,
     ) => {
-      if (goalSource === 'stats') return stats?.[goal.goal.metric];
-      if (goalSource === 'deltas') return deltas?.[goal.goal.metric];
-      if (goalSource === 'percents') return percents?.[goal.goal.metric];
+      if (goalSource === 'stats') return stats?.[goal.target.metric];
+      if (goalSource === 'deltas') return deltas?.[goal.target.metric];
+      if (goalSource === 'percents') return percents?.[goal.target.metric];
       return undefined;
     };
 
@@ -216,7 +216,7 @@ export function processAchievements({
         } else {
           const stat = getAnytimeStats();
           const value = getMetricValue(stat, undefined, undefined);
-          const met = typeof value === 'number' && evalCondition(goal.goal, value);
+          const met = typeof value === 'number' && evalCondition(goal.target, value);
           if (met) {
             ach.progress = 1;
             // Find the exact day when the goal was met
@@ -231,7 +231,7 @@ export function processAchievements({
               acc.push(...numbers);
               const stats = computeNumberStats(acc);
               const dayValue = getMetricValue(stats, undefined, undefined);
-              if (typeof dayValue === 'number' && evalCondition(goal.goal, dayValue)) {
+              if (typeof dayValue === 'number' && evalCondition(goal.target, dayValue)) {
                 completedAt = day;
               }
             }
@@ -271,7 +271,7 @@ export function processAchievements({
           }
           const stat = periodStats[period];
           const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
-          const met = typeof value === 'number' && evalCondition(goal.goal, value);
+          const met = typeof value === 'number' && evalCondition(goal.target, value);
           if (met) {
             if (!ach) {
               ach = { id: nanoid(), goalId: goal.id, datasetId, progress: 1, startedAt: period, completedAt: period };
@@ -314,7 +314,7 @@ export function processAchievements({
           const stat = periodStats[period];
           const numbers = periodData[period] || [];
           const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
-          const met = typeof value === 'number' && evalCondition(goal.goal, value);
+          const met = typeof value === 'number' && evalCondition(goal.target, value);
           if (met) {
             if (streak.length === 0) streakStart = period;
             streak.push(period);
@@ -383,8 +383,8 @@ export function processAchievements({
 // Sustain 90 Days:       { type: 'goal', timePeriod: 'daily', count: 90, consecutive: true, goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 } }
 // Perfect Month:         { type: 'goal', timePeriod: 'monthly', count: 1, goal: { condition: 'above', metric: 'min', source: 'stats', value: 0 } }
 
-export function isValidGoalAttributes(goal: Partial<GoalAttributes>): goal is GoalAttributes {
-  const { goal: metricGoal, timePeriod, count } = goal;
+export function isValidGoalAttributes(goal: Partial<GoalRequirements>): goal is GoalRequirements {
+  const { target: metricGoal, timePeriod, count } = goal;
   if (!metricGoal || !timePeriod || !count) return false;
   const { condition, metric, source } = metricGoal;
   if (!condition || !metric || !source) return false;
@@ -429,7 +429,7 @@ export function getGoalCategory(goal: Goal) {
 }
 
 export function getSuggestedGoalContent(goal: Partial<Goal>) {
-  const { goal: metricGoal, timePeriod = 'anytime', count = 1, consecutive = false, type = 'goal' } = goal;
+  const { target: metricGoal, timePeriod = 'anytime', count = 1, consecutive = false, type = 'goal' } = goal;
   const { condition, metric, source } = metricGoal ?? {};
   const value = metricGoal?.value;
   const range = metricGoal?.range ?? [];
@@ -563,10 +563,10 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
   };
 }
 
-export function isRangeGoal(goal: MetricGoal): boolean {
+export function isRangeGoal(goal: GoalTarget): boolean {
   return isRangeCondition(goal.condition);
 }
 
-export function isRangeCondition(condition: MetricGoal['condition'] | undefined): condition is 'inside' | 'outside' {
+export function isRangeCondition(condition: GoalTarget['condition'] | undefined): condition is 'inside' | 'outside' {
   return !!condition && (condition === 'inside' || condition === 'outside');
 }
