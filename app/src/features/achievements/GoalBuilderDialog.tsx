@@ -3,15 +3,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown } from 'lucide-react';
 import { generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
+import { formatValue } from '@/lib/goals';
 import { AchievementBadge } from './AchievementBadge';
 import type { Dataset, Goal } from '@/features/db/localdb';
 import { createGoal } from '@/features/db/localdb';
+import { cn } from '@/lib/utils';
+import { getValueForValence, isBad } from '@/lib/valence';
 
 type GoalBuilderDialogProps = {
   open: boolean;
@@ -24,7 +25,7 @@ type Step = 'period' | 'activity' | 'preview';
 
 export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: GoalBuilderDialogProps) {
   const [step, setStep] = useState<Step>('period');
-  const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [period, setPeriod] = useState<'day' | 'week' | 'month' | ''>('');
   const [goodValue, setGoodValue] = useState<string>('');
   const [valueType, setValueType] = useState<'amount' | 'change'>(
     dataset.tracking === 'series' ? 'amount' : 'change'
@@ -33,18 +34,37 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const [generatedGoals, setGeneratedGoals] = useState<GeneratedGoals | null>(null);
   const [selectedGoals, setSelectedGoals] = useState<Set<string>>(new Set());
 
-  const valenceTerm = dataset.valence === 'positive' ? 'good' : dataset.valence === 'negative' ? 'low' : 'consistent';
+  const exampleAmount = getValueForValence(1, dataset.valence, {
+    good: 100,
+    bad: -100,
+    neutral: 100,
+  });
+  const exampleChange = getValueForValence(1, dataset.valence, {
+    good: 10,
+    bad: -10,
+    neutral: 10,
+  });
+  const exampleAmountLabel = formatValue(exampleAmount);
+  const exampleChangeLabel = formatValue(exampleChange, { delta: true });
+
+  const handlePeriodSelect = (value: 'day' | 'week' | 'month') => {
+    setPeriod(value);
+    // Reset defaults when period changes
+    setValueType(dataset.tracking === 'series' ? 'amount' : 'change');
+  };
 
   const handleNext = () => {
     if (step === 'period') {
       setStep('activity');
     } else if (step === 'activity') {
       // Generate goals
+      if (!period) return; // Type guard
+      
       const input: GoalBuilderInput = {
         datasetId: dataset.id,
         tracking: dataset.tracking,
         valence: dataset.valence,
-        period,
+        period: period as 'day' | 'week' | 'month',
         goodValue: parseFloat(goodValue) || 0,
         valueType,
         activityDays: parseFloat(activityDays) || 1,
@@ -88,7 +108,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
 
   const resetState = () => {
     setStep('period');
-    setPeriod('day');
+    setPeriod('');
     setGoodValue('');
     setValueType(dataset.tracking === 'series' ? 'amount' : 'change');
     setActivityDays('');
@@ -124,7 +144,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
 
   const canProceed = () => {
     if (step === 'period') {
-      return goodValue && parseFloat(goodValue) > 0;
+      const numValue = parseFloat(goodValue);
+      if (!period || !goodValue || numValue === 0 || isNaN(numValue)) return false;
+      // Check valence alignment
+      const isWrongSign = isBad(numValue, dataset.valence);
+      return !isWrongSign;
     }
     if (step === 'activity') {
       return activityDays && parseFloat(activityDays) > 0;
@@ -134,86 +158,310 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-            Goal Builder
-          </DialogTitle>
-          <DialogDescription>
-            Let's create personalized goals, targets, and milestones for your dataset
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-h-[90vh] p-0 gap-0 max-w-3xl">
+        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col max-h-[90vh]">
+          <DialogHeader className="flex-shrink-0 px-6 pt-6">
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              Goal Builder
+            </DialogTitle>
+            <DialogDescription>
+              Let's create personalized goals, targets, and milestones for your dataset
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
-          {step === 'period' && (
-            <div className="space-y-6 py-4">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="period">What time period do you want to focus on?</Label>
-                  <RadioGroup value={period} onValueChange={(v) => setPeriod(v as 'day' | 'week' | 'month')}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="day" id="day" />
-                      <Label htmlFor="day" className="cursor-pointer font-normal">
-                        Day
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="week" id="week" />
-                      <Label htmlFor="week" className="cursor-pointer font-normal">
-                        Week
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="month" id="month" />
-                      <Label htmlFor="month" className="cursor-pointer font-normal">
-                        Month
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {step === 'period' && (
+            <div className="space-y-8 py-6 px-4">
+              {/* Step 1: Period Selection */}
+              {!period ? (
+                // Initial large card selection
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="text-center space-y-2">
+                    <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
+                      <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                      Choose Your Focus Period
+                    </h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      What time period would you like to focus on tracking and celebrating?
+                    </p>
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="valueType">How do you measure success?</Label>
-                  <RadioGroup value={valueType} onValueChange={(v) => setValueType(v as 'amount' | 'change')}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="amount" id="amount" />
-                      <Label htmlFor="amount" className="cursor-pointer font-normal">
-                        Total amount in the {period}
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="change" id="change" />
-                      <Label htmlFor="change" className="cursor-pointer font-normal">
-                        Change/growth from previous {period}
-                      </Label>
-                    </div>
-                  </RadioGroup>
-                </div>
+                  <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
+                    {/* Day Option */}
+                    <button
+                      onClick={() => handlePeriodSelect('day')}
+                      className={cn(
+                        'group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200',
+                        'hover:scale-105 active:scale-95',
+                        'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
+                      )}
+                    >
+                      <AchievementBadge
+                        badge={{ style: 'circle', color: 'blue', icon: 'calendar', label: '' }}
+                        size="small"
+                      />
+                      <div className="text-center space-y-1">
+                        <div className="font-bold text-slate-900 dark:text-slate-50">Daily</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                          Day-by-day progress
+                        </div>
+                      </div>
+                    </button>
 
-                <div className="space-y-2">
-                  <Label htmlFor="goodValue">
-                    What would you consider a {valenceTerm} {period}?
-                  </Label>
-                  <Input
-                    id="goodValue"
-                    type="number"
-                    value={goodValue}
-                    onChange={(e) => setGoodValue(e.target.value)}
-                    placeholder={valueType === 'amount' ? 'e.g., 100' : 'e.g., +10'}
-                  />
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    {valueType === 'amount'
-                      ? `The total value you'd like to reach in a ${period}`
-                      : `The amount of change from the previous ${period}`}
-                  </p>
+                    {/* Week Option */}
+                    <button
+                      onClick={() => handlePeriodSelect('week')}
+                      className={cn(
+                        'group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200',
+                        'hover:scale-105 active:scale-95',
+                        'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
+                      )}
+                    >
+                      <AchievementBadge
+                        badge={{ style: 'ribbon', color: 'green', icon: 'calendar', label: '' }}
+                        size="small"
+                      />
+                      <div className="text-center space-y-1">
+                        <div className="font-bold text-slate-900 dark:text-slate-50">Weekly</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                          Week-by-week wins
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Month Option */}
+                    <button
+                      onClick={() => handlePeriodSelect('month')}
+                      className={cn(
+                        'group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200',
+                        'hover:scale-105 active:scale-95',
+                        'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
+                      )}
+                    >
+                      <AchievementBadge
+                        badge={{ style: 'star', color: 'purple', icon: 'calendar', label: '' }}
+                        size="small"
+                      />
+                      <div className="text-center space-y-1">
+                        <div className="font-bold text-slate-900 dark:text-slate-50">Monthly</div>
+                        <div className="text-xs text-slate-600 dark:text-slate-400">
+                          Month-by-month goals
+                        </div>
+                      </div>
+                    </button>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                // Compact toggle buttons after selection
+                <div className="flex items-center justify-center gap-2 animate-in fade-in duration-300">
+                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Period:</Label>
+                  <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900/50">
+                    <button
+                      onClick={() => setPeriod('day')}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                        period === 'day'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                      )}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Daily
+                    </button>
+                    <button
+                      onClick={() => setPeriod('week')}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                        period === 'week'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                      )}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Weekly
+                    </button>
+                    <button
+                      onClick={() => setPeriod('month')}
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                        period === 'month'
+                          ? 'bg-purple-600 text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                      )}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Monthly
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 2 & 3: Value Type and Good Value (fade in after period selection) */}
+              {period && (
+                <div className="space-y-6 animate-in fade-in duration-500">
+                  <Separator />
+
+                  {/* Value Type Selection - only show for series tracking */}
+                  {dataset.tracking === 'series' && (
+                    <div className="space-y-4">
+                      <div className="text-center space-y-2">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          How Do You Measure Success?
+                        </h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                          Choose what matters most for your {period}ly goals
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
+                        {/* Amount Option */}
+                        <button
+                          onClick={() => setValueType('amount')}
+                          className={cn(
+                            'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                            'hover:scale-105 active:scale-95 text-left',
+                            valueType === 'amount'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/20'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <span className="font-bold text-slate-900 dark:text-slate-50">Total Amount</span>
+                            <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                              <Info className="w-3 h-3" />
+                              Typical
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            The total value you want to reach in a {period}
+                          </p>
+                          {valueType === 'amount' && (
+                            <Check className="absolute top-3 right-3 w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          )}
+                        </button>
+
+                        {/* Change Option */}
+                        <button
+                          onClick={() => setValueType('change')}
+                          className={cn(
+                            'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                            'hover:scale-105 active:scale-95 text-left',
+                            valueType === 'change'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/20'
+                              : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                          )}
+                        >
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                            <span className="font-bold text-slate-900 dark:text-slate-50">Change/Growth</span>
+                          </div>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">
+                            How much change from the previous {period}
+                          </p>
+                          {valueType === 'change' && (
+                            <Check className="absolute top-3 right-3 w-5 h-5 text-blue-600 dark:text-blue-400" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Good Value Input */}
+                  <div className="space-y-4 max-w-md mx-auto">
+                    <div className="text-center space-y-2">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
+                        <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                        What's a good {period}?
+                      </h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {valueType === 'amount'
+                          ? `Enter the target ${valueType} you'd like to reach`
+                          : `Enter the ${valueType} that would make you proud`}
+                      </p>
+                    </div>
+
+                    <div className="relative">
+                      <Input
+                        id="goodValue"
+                        type="number"
+                        value={goodValue}
+                        onChange={(e) => setGoodValue(e.target.value)}
+                        placeholder={
+                          valueType === 'amount'
+                            ? `e.g., ${exampleAmountLabel}`
+                            : `e.g., ${exampleChangeLabel}`
+                        }
+                        hideStepperButtons
+                        className="text-center !text-2xl font-bold h-16 pr-12"
+                      />
+                      {valueType === 'change' && (
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                          {getValueForValence(1, dataset.valence, {
+                            good: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
+                            bad: <ArrowDown className="w-6 h-6 text-green-600 dark:text-green-400" />,
+                            neutral: null,
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {goodValue && (() => {
+                      const numValue = parseFloat(goodValue);
+                      const isWrongSign = isBad(numValue, dataset.valence);
+                      const isValid = numValue !== 0 && !isNaN(numValue) && !isWrongSign;
+                      
+                      if (isWrongSign) {
+                        const expectation = dataset.tracking === 'series'
+                          ? getValueForValence(1, dataset.valence, {
+                              good: 'positive numbers (where positive is good)',
+                              bad: 'negative numbers (where negative is good)',
+                              neutral: 'consistent numbers',
+                            })
+                          : getValueForValence(1, dataset.valence, {
+                              good: 'positive numbers (higher is better)',
+                              bad: 'negative numbers (lower is better)',
+                              neutral: 'steady numbers',
+                            });
+                        
+                        return (
+                          <div className="text-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 animate-in fade-in duration-300">
+                            <p className="text-sm text-amber-700 dark:text-amber-300">
+                              For this dataset, we expect {expectation}.{' '}
+                              <button
+                                type="button"
+                                onClick={() => setGoodValue(String(-numValue))}
+                                className="underline hover:no-underline font-medium"
+                              >
+                                Use {formatValue(-numValue, { delta: valueType === 'change' })} instead?
+                              </button>
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      if (isValid) {
+                        return (
+                          <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 animate-in fade-in duration-300">
+                            <p className="text-sm text-green-700 dark:text-green-300">
+                              Great! We'll create goals based on this target 🎯
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      return null;
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {step === 'activity' && (
-            <div className="space-y-6 py-4">
+            <div className="space-y-6 py-4 px-4">
               <div className="space-y-2">
                 <Label htmlFor="activityDays">How many days per {period} will you typically record data?</Label>
                 <Input
@@ -224,6 +472,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   value={activityDays}
                   onChange={(e) => setActivityDays(e.target.value)}
                   placeholder={period === 'week' ? 'e.g., 5' : period === 'month' ? 'e.g., 20' : '1'}
+                  hideStepperButtons
                 />
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   This helps us create realistic targets based on your activity level
@@ -237,9 +486,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                     • Focus period: <strong>{period}</strong>
                   </p>
                   <p>
-                    • {valenceTerm.charAt(0).toUpperCase() + valenceTerm.slice(1)} {period}:{' '}
+                    • Good {period}:{' '}
                     <strong>
-                      {valueType === 'amount' ? goodValue : `+${goodValue}`}{' '}
+                      {formatValue(parseFloat(goodValue), { delta: valueType === 'change' })}{' '}
                       {valueType === 'change' ? 'change' : ''}
                     </strong>
                   </p>
@@ -252,12 +501,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
           )}
 
           {step === 'preview' && generatedGoals && (
-            <ScrollArea className="h-[500px] pr-4">
-              <div className="space-y-6 py-4">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  We've generated {generatedGoals.milestones.length + generatedGoals.targets.length + generatedGoals.achievements.length} personalized goals for you.
-                  Select which ones you'd like to create.
-                </p>
+            <div className="space-y-6 py-4 px-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                We've generated {generatedGoals.milestones.length + generatedGoals.targets.length + generatedGoals.achievements.length} personalized goals for you.
+                Select which ones you'd like to create.
+              </p>
 
                 {/* Milestones */}
                 <div className="space-y-3">
@@ -350,36 +598,36 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   </div>
                 </div>
               </div>
-            </ScrollArea>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t">
-          <Button variant="ghost" onClick={handleBack} disabled={step === 'period'}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back
-          </Button>
-
-          <div className="flex items-center gap-2">
-            {step === 'preview' ? (
-              <>
-                <span className="text-sm text-slate-600 dark:text-slate-400">
-                  {selectedGoals.size} selected
-                </span>
-                <Button onClick={handleCreate} disabled={selectedGoals.size === 0}>
-                  <Check className="w-4 h-4 mr-2" />
-                  Create Goals
-                </Button>
-              </>
-            ) : (
-              <Button onClick={handleNext} disabled={!canProceed()}>
-                Next
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            )}
           </div>
-        </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-4 pb-6 px-6 border-t flex-shrink-0">
+            <Button variant="ghost" onClick={handleBack} disabled={step === 'period'}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back
+            </Button>
+
+            <div className="flex items-center gap-2">
+              {step === 'preview' ? (
+                <>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    {selectedGoals.size} selected
+                  </span>
+                  <Button onClick={handleCreate} disabled={selectedGoals.size === 0}>
+                    <Check className="w-4 h-4 mr-2" />
+                    Create Goals
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={handleNext} disabled={!canProceed()}>
+                  Next
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -2,6 +2,7 @@ import { nanoid } from 'nanoid';
 import type { Goal, GoalTarget, TimePeriod, Tracking, Valence } from '@/features/db/localdb';
 import type { NumberMetric } from './stats';
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
+import { adjectivize, capitalize } from './utils';
 
 // User input for the goal builder
 export interface GoalBuilderInput {
@@ -88,7 +89,7 @@ function generateMilestones(input: GoalBuilderInput): Goal[] {
 
   multipliers.forEach((multiplier, idx) => {
     const value = roundToClean(goodValue * multiplier);
-    const periodName = period.charAt(0).toUpperCase() + period.slice(1);
+    const periodName = capitalize(period);
 
     milestones.push({
       id: nanoid(),
@@ -135,7 +136,7 @@ function generateTargets(input: GoalBuilderInput): Goal[] {
 
     targetValue = roundToClean(targetValue);
 
-    const periodName = targetPeriod.charAt(0).toUpperCase() + targetPeriod.slice(1);
+    const adjectiveName = capitalize(adjectivize(targetPeriod));
     const color: AchievementBadgeColor =
       targetPeriod === 'day' ? 'green' : targetPeriod === 'week' ? 'blue' : 'purple';
 
@@ -144,7 +145,7 @@ function generateTargets(input: GoalBuilderInput): Goal[] {
       datasetId,
       createdAt: Date.now(),
       type: 'target',
-      title: `${periodName}ly Target`,
+      title: `${adjectiveName} Target`,
       description: `Reach ${targetValue} each ${targetPeriod}`,
       badge: createBadge('bolt_shield', color, 'target'),
       target: createTarget(metric, source, condition, targetValue),
@@ -164,7 +165,7 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
 
   const achievements: Goal[] = [];
   const valenceTerm = valence === 'positive' ? 'Good' : valence === 'negative' ? 'Low' : 'Consistent';
-  const periodName = period.charAt(0).toUpperCase() + period.slice(1);
+  const periodName = capitalize(period);
 
   // First Entry
   achievements.push({
@@ -202,7 +203,6 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
   const targetCounts = [5, 10, 20, 100];
   const targetColors: AchievementBadgeColor[] = ['green', 'blue', 'purple', 'magic'];
   ['day', 'week', 'month'].forEach((targetPeriod) => {
-    const targetPeriodName = targetPeriod.charAt(0).toUpperCase() + targetPeriod.slice(1);
     const daysInPeriod = targetPeriod === 'day' ? 1 : targetPeriod === 'week' ? 7 : 30;
     const daysInUserPeriod = period === 'day' ? 1 : period === 'week' ? 7 : 30;
     const expectedActiveDaysInTarget = (activityDays / daysInUserPeriod) * daysInPeriod;
@@ -212,13 +212,14 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
     targetValue = roundToClean(targetValue);
 
     targetCounts.forEach((count, idx) => {
+      const adjectiveName = capitalize(adjectivize(targetPeriod));
       achievements.push({
         id: nanoid(),
         datasetId,
         createdAt: Date.now(),
         type: 'goal',
-        title: `${count} ${targetPeriodName}ly Targets`,
-        description: `Complete ${count} ${targetPeriod}ly targets`,
+        title: `${count} ${adjectiveName} Targets`,
+        description: `Complete ${count} ${adjectivize(targetPeriod)} targets`,
         badge: createBadge('bolt_shield', targetColors[idx], 'target'),
         target: createTarget(metric, source, condition, targetValue),
         timePeriod: targetPeriod as TimePeriod,
@@ -242,7 +243,7 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
     'Centuple',
   ];
   ['day', 'week', 'month'].forEach((targetPeriod) => {
-    const targetPeriodName = targetPeriod.charAt(0).toUpperCase() + targetPeriod.slice(1);
+    const targetPeriodName = capitalize(targetPeriod);
     const daysInPeriod = targetPeriod === 'day' ? 1 : targetPeriod === 'week' ? 7 : 30;
     const daysInUserPeriod = period === 'day' ? 1 : period === 'week' ? 7 : 30;
     const expectedActiveDaysInTarget = (activityDays / daysInUserPeriod) * daysInPeriod;
@@ -306,7 +307,7 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
   // Week/Month streaks
   const periodStreaks = [2, 3, 4, 5, 6, 7, 8, 9, 10];
   ['week', 'month'].forEach((streakPeriod) => {
-    const streakPeriodName = streakPeriod.charAt(0).toUpperCase() + streakPeriod.slice(1);
+    const streakPeriodName = capitalize(streakPeriod);
     periodStreaks.forEach((count) => {
       const color: AchievementBadgeColor = count <= 3 ? 'red' : count <= 6 ? 'red' : 'magic';
       achievements.push({

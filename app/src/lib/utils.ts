@@ -33,6 +33,40 @@ export const capitalize = <S extends string>(str: S): Capitalize<S> => {
 }
 
 /**
+ * Convert a word to plural form (e.g., 'day' -> 'days', 'week' -> 'weeks')
+ * Works for most regular nouns; special cases can be handled manually
+ */
+export const pluralize = (str: string, count: number = 2): string => {
+  if (count === 1) return str; // No change for singular
+  if (str.endsWith('y') && str.length > 1) {
+    const beforeY = str.charAt(str.length - 2).toLowerCase();
+    const isVowel = /[aeiou]/.test(beforeY);
+    // Only change y to ies if preceded by consonant (e.g., "city" -> "cities")
+    // But keep y+s if preceded by vowel (e.g., "day" -> "days")
+    if (!isVowel) return `${str.slice(0, -1)}ies`;
+  }
+  if (str.endsWith('s') || str.endsWith('x') || str.endsWith('z')) return `${str}es`;
+  return `${str}s`;
+}
+
+/**
+ * Convert a word to its adjective/adverbial form using English rules
+ * (e.g., 'happy' -> 'happily', 'simple' -> 'simply', 'quick' -> 'quickly')
+ * Returns lowercase; caller can capitalize if needed
+ */
+export const adjectivize = (str: string): string => {
+  const lower = str.toLowerCase();
+
+  // Irregular: day -> daily (preserve original case prefix)
+  if (lower === 'day') {
+    return `${str.slice(0, -1)}ily`;
+  }
+
+  // Default: add ly
+  return `${str}ly`;
+}
+
+/**
  * Object.entries with key typing
  */
 export const entriesOf = <T extends object>(obj: T) =>

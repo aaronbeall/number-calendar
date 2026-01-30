@@ -2,7 +2,7 @@ import { type Achievement, type DateKey, type DayKey, type Goal, type GoalRequir
 import { nanoid } from 'nanoid';
 import { convertDateKey, isDayKey, type DateKeyType } from './friendly-date';
 import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
-import { capitalize, keysOf } from './utils';
+import { keysOf, capitalize, pluralize, adjectivize } from './utils';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
 function evalCondition(cond: GoalTarget, value: number): boolean {
@@ -397,7 +397,7 @@ export function isValidGoalAttributes(goal: Partial<GoalRequirements>): goal is 
 }
 
 // Helper to shorten numbers (e.g., 1000 -> 1k)
-function formatValue(num: number | undefined, { short = false, percent = false, delta = false }: { short?: boolean; percent?: boolean; delta?: boolean;  } = {}): string {
+export function formatValue(num: number | undefined, { short = false, percent = false, delta = false }: { short?: boolean; percent?: boolean; delta?: boolean;  } = {}): string {
   if (num === undefined || isNaN(num)) return '';
   let options: Intl.NumberFormatOptions = {};
   let symbol = '';
@@ -459,11 +459,11 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
 
   // Interval string
   let intervalStr = isStreak 
-    ? `${formatValue(count)}-${capitalize(timePeriod)}` // e.g., "7-Day", "4-Week"
+    ? `${formatValue(count)}-${capitalize(timePeriod)}` /* e.g., "7-Day", "4-Week" */
     : isMultiPeriod 
-    ? `${formatValue(count)}${value !== 0 && source !== 'deltas' ? ' ×' : ''}` // e.g., "7 × ", "100 × "
+    ? `${formatValue(count)}${value !== 0 && source !== 'deltas' ? ' ×' : ''}`
     : type == 'target' 
-    ? timePeriod == 'day' ? 'Daily' : `${capitalize(timePeriod)}ly` // e.g., "Daily", "Weekly", "Monthly", "Yearly"
+    ? capitalize(adjectivize(timePeriod)) /* e.g., "Daily", "Weekly", "Monthly", "Yearly" */
     : ''
 
   let valueStr = '';
@@ -497,7 +497,7 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
     streakStr = 'Streak';
   } else if (isMultiPeriod) {
     // For non-consecutive multi-period goals, use "N Days", "N Weeks", etc.
-    streakStr = `${capitalize(timePeriod)}s`;
+    streakStr = pluralize(capitalize(timePeriod));
   } else if(type === 'goal' && timePeriod !== 'anytime') {
     // For single-period goals, use "{goal} Day", "{goal} Week", etc.
     streakStr = capitalize(timePeriod);
@@ -536,11 +536,11 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
     description = `Reach ${valueDescStr}`;
   } else if (isStreak) {
     // Streak [count>1,consecutive]: "Log a positive total for 7 days in a row", "Total of 1,000+ for 30 days in a row", "Average of 500+ for 4 weeks in a row"
-    const periodName = `${timePeriod}s`;
+    const periodName = pluralize(timePeriod);
     description = `Log ${valueDescStr} for ${count} ${periodName} in a row`;
   } else if (isMultiPeriod && !consecutive) {
     // Count [count>1,!consecutive]: "Log a positive total on 100 days", "Log a total of 1,000 on 4 weeks"
-    const periodName = `${timePeriod}s`;
+    const periodName = pluralize(timePeriod);
     description = `Log ${valueDescStr} on ${count} ${periodName}`;
   }
 
