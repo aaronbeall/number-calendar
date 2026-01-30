@@ -9,6 +9,7 @@ import {
   Check,
   CheckCircle2,
   Crown,
+  Flag,
   Flame,
   Gift,
   Globe,
@@ -327,6 +328,7 @@ export const achievementBadgeIcons = {
   trend: TrendingUp,
   eye: FaEye,
   tags: Tags,
+  flag: GiFlyingFlag,
 };
 
 export type AchievementBadgeIcon = keyof typeof achievementBadgeIcons;

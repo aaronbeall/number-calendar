@@ -1,5 +1,6 @@
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
+import { EmptyState } from '@/features/achievements/EmptyState';
 import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
@@ -108,19 +109,16 @@ export default function Targets() {
       <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
         <Target className="w-7 h-7 md:w-8 md:h-8 text-green-400" /> Targets
       </h2>
-      <div className="mb-6 flex justify-end">
-        <button className="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700" onClick={() => setDialogOpen(true)}>
-          Add Target
-        </button>
-      </div>
-      { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset} /> }
-      {!hasTargets ? (
-        <div className="text-center text-slate-500 py-16">
-          <p className="mb-4">No targets yet.</p>
+      {hasTargets && (
+        <div className="mb-6 flex justify-end">
           <button className="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700" onClick={() => setDialogOpen(true)}>
-            Create your first target
+            Add Target
           </button>
         </div>
+      )}
+      { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset} /> }
+      {!hasTargets ? (
+        <EmptyState type="target" datasetId={datasetId ?? ''} onAddClick={() => setDialogOpen(true)} />
       ) : (
         <AchievementsGrid results={achievementResults} />
       )}

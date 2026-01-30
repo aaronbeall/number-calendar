@@ -1,6 +1,7 @@
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { BadgePreviews } from '@/features/achievements/BadgePreview';
+import { EmptyState } from '@/features/achievements/EmptyState';
 import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
@@ -172,22 +173,19 @@ export default function Achievements() {
       <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
         <Trophy className="w-7 h-7 md:w-8 md:h-8 text-yellow-400" /> Achievements
       </h2>
-      <div className="mb-6 flex justify-end">
-        <button className="px-4 py-2 rounded bg-yellow-600 text-white font-semibold hover:bg-yellow-700" onClick={() => setDialogOpen(true)}>
-          Add Achievement
-        </button>
-      </div>
+      {hasAchievements && (
+        <div className="mb-6 flex justify-end">
+          <button className="px-4 py-2 rounded bg-yellow-600 text-white font-semibold hover:bg-yellow-700" onClick={() => setDialogOpen(true)}>
+            Add Achievement
+          </button>
+        </div>
+      )}
       { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} /> }
 
       {isPreview && <BadgePreviews />}
 
       {!hasAchievements ? (
-        <div className="text-center text-slate-500 py-16">
-          <p className="mb-4">No achievements yet.</p>
-          <button className="px-4 py-2 rounded bg-yellow-600 text-white font-semibold hover:bg-yellow-700" onClick={() => setDialogOpen(true)}>
-            Create your first achievement
-          </button>
-        </div>
+        <EmptyState type="goal" datasetId={datasetId ?? ''} onAddClick={() => setDialogOpen(true)} />
       ) : (
         <AchievementsGrid results={achievementResults} />
       )}
