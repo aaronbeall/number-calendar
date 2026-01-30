@@ -111,7 +111,7 @@ I'm liking this one.
   - [ ] Data import
   - [ ] Data integrations
 
-## Bugs
+## Issues
 - [ ] System color mode doesn't match light/dark selection
 - [ ] Chart days are off by 1 (timezone offset?)
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
@@ -125,3 +125,4 @@ I'm liking this one.
 - [ ] Week/Month/Year summaries need hover and selected state
 - [ ] Can't delete all data on a day anymore
 - [ ] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
+- [ ] Tracking=series and percents aren't very helpful, percents should be based on cumulative change
