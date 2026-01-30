@@ -1,8 +1,11 @@
 import { nanoid } from 'nanoid';
 import type { Goal, GoalTarget, TimePeriod, Tracking, Valence } from '@/features/db/localdb';
 import type { NumberMetric } from './stats';
+import { getMetricDisplayName } from './stats';
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
 import { adjectivize, capitalize } from './utils';
+import { formatValue } from './goals';
+import { getValueForValence } from './valence';
 
 // User input for the goal builder
 export interface GoalBuilderInput {
@@ -78,29 +81,66 @@ function createBadge(
 
 // Generate milestone goals
 function generateMilestones(input: GoalBuilderInput): Goal[] {
-  const { datasetId, period, goodValue, valueType, tracking, valence } = input;
+  const { datasetId, period, goodValue, valueType, tracking, valence, activityDays } = input;
   const { metric, source } = getMetricAndSource(valueType, tracking);
   const condition = getCondition(valence);
 
   const milestones: Goal[] = [];
-  const multipliers = [1, 2, 5, 10, 100];
-  const milestoneNames = ['First', 'Double', 'Pentuple', 'Decuple', 'Centuple'];
-  const colors: AchievementBadgeColor[] = ['bronze', 'silver', 'gold', 'purple', 'magic'];
+  const periodName = capitalize(period);
+  const metricName = getMetricDisplayName(metric).toLowerCase();
 
-  multipliers.forEach((multiplier, idx) => {
-    const value = roundToClean(goodValue * multiplier);
-    const periodName = capitalize(period);
+  // Keep the first-period milestone
+  milestones.push({
+    id: nanoid(),
+    datasetId,
+    createdAt: Date.now(),
+    type: 'milestone',
+    title: `First ${periodName}`,
+    description: `Reach ${formatValue(goodValue, { delta: source === 'deltas' })} ${metricName} in a ${period}`,
+    badge: createBadge('laurel_trophy', 'bronze', 'flag'),
+    target: createTarget(metric, source, condition, goodValue),
+    timePeriod: period,
+    count: 1,
+  });
+
+  // Monthly target extrapolations using prime multiples
+  const daysInPeriod = period === 'day' ? 1 : period === 'week' ? 7 : 30;
+  const daysInMonth = 30;
+  const expectedActiveDaysInMonth = (activityDays / daysInPeriod) * daysInMonth;
+  let monthlyTargetValue = valueType === 'change'
+    ? goodValue * expectedActiveDaysInMonth
+    : goodValue * (daysInMonth / daysInPeriod);
+  monthlyTargetValue = roundToClean(monthlyTargetValue);
+
+  const multiples = [2, 4, 10, 20, 50, 100];
+  const includeOneMonth = period !== 'month';
+  const monthMultipliers = includeOneMonth ? [1, ...multiples] : multiples;
+  const funNames = [
+    'Warm-Up',
+    'Trailblazer',
+    'Rocket',
+    'Meteor',
+    'Comet',
+    'Nova',
+    'Supernova',
+  ];
+  const colors: AchievementBadgeColor[] = ['silver', 'gold', 'purple', 'magic', 'magic', 'magic', 'magic'];
+
+  monthMultipliers.forEach((multiplier, idx) => {
+    const value = roundToClean(monthlyTargetValue * multiplier);
+    const name = funNames[idx] ?? `Milestone ${multiplier}`;
+    const color = colors[idx] ?? 'magic';
 
     milestones.push({
       id: nanoid(),
       datasetId,
       createdAt: Date.now(),
       type: 'milestone',
-      title: `${milestoneNames[idx]} ${periodName}`,
-      description: `Reach ${value} in a ${period}`,
-      badge: createBadge('laurel_trophy', colors[idx], 'flag'),
+      title: name,
+      description: `Reach ${formatValue(value, { delta: source === 'deltas' })} ${metricName}`,
+      badge: createBadge('laurel_trophy', color, 'flag'),
       target: createTarget(metric, source, condition, value),
-      timePeriod: period,
+      timePeriod: 'anytime',
       count: 1,
     });
   });
@@ -146,7 +186,7 @@ function generateTargets(input: GoalBuilderInput): Goal[] {
       createdAt: Date.now(),
       type: 'target',
       title: `${adjectiveName} Target`,
-      description: `Reach ${targetValue} each ${targetPeriod}`,
+      description: `Reach ${formatValue(targetValue, { delta: source === 'deltas' })} in a ${targetPeriod}`,
       badge: createBadge('bolt_shield', color, 'target'),
       target: createTarget(metric, source, condition, targetValue),
       timePeriod: targetPeriod,
@@ -164,7 +204,9 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
   const condition = getCondition(valence);
 
   const achievements: Goal[] = [];
-  const valenceTerm = valence === 'positive' ? 'Good' : valence === 'negative' ? 'Low' : 'Consistent';
+  const valenceTerm = valueType === 'change'
+    ? getValueForValence(1, valence, { good: 'Uptrend', bad: 'Downtrend', neutral: 'Steady' })
+    : getValueForValence(1, valence, { good: 'Positive', bad: 'Negative', neutral: 'Consistent' });
   const periodName = capitalize(period);
 
   // First Entry
@@ -177,6 +219,20 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
     description: 'Record your first data point',
     badge: createBadge('medal', 'bronze', 'trophy'),
     target: createTarget('count', 'stats', 'above', 0),
+    timePeriod: 'anytime',
+    count: 1,
+  });
+
+  // First Win
+  achievements.push({
+    id: nanoid(),
+    datasetId,
+    createdAt: Date.now(),
+    type: 'goal',
+    title: 'First Win',
+    description: `Record your first ${valenceTerm.toLowerCase()} entry`,
+    badge: createBadge('medal', 'silver', 'trophy'),
+    target: createTarget(metric, source, condition, goodValue),
     timePeriod: 'anytime',
     count: 1,
   });
@@ -262,7 +318,7 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
         createdAt: Date.now(),
         type: 'goal',
         title: `${multipleNames[idx]} ${targetPeriodName}`,
-        description: `Reach ${multipleValue} in a ${targetPeriod}`,
+        description: `Reach ${formatValue(multipleValue, { delta: source === 'deltas' })} in a ${targetPeriod}`,
         badge: createBadge('star_formation', color, 'trophy'),
         target: createTarget(metric, source, condition, multipleValue),
         timePeriod: targetPeriod as TimePeriod,
@@ -294,8 +350,8 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
       datasetId,
       createdAt: Date.now(),
       type: 'goal',
-      title: `${days}-Day ${valenceTerm} Streak`,
-      description: `Maintain a ${days}-day ${valenceTerm.toLowerCase()} streak`,
+      title: `${days}-Day Streak`,
+      description: `Maintain ${days} ${valenceTerm.toLowerCase()} days in a row`,
       badge: createBadge('fire', dayStreakColors[idx], 'flame'),
       target: createTarget(metric, source, condition, goodValue),
       timePeriod: 'day',
@@ -315,8 +371,8 @@ function generateAchievements(input: GoalBuilderInput): Goal[] {
         datasetId,
         createdAt: Date.now(),
         type: 'goal',
-        title: `${count}-${streakPeriodName} ${valenceTerm} Streak`,
-        description: `Maintain a ${count}-${streakPeriod} ${valenceTerm.toLowerCase()} streak`,
+        title: `${count}-${streakPeriodName} Streak`,
+        description: `Maintain ${count} ${valenceTerm.toLowerCase()} ${streakPeriod}s in a row`,
         badge: createBadge('fire', color, 'flame'),
         target: createTarget(metric, source, condition, goodValue),
         timePeriod: streakPeriod as TimePeriod,
