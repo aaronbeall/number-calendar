@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useCalendarContext } from '@/context/CalendarContext';
 import { MonthChart } from '@/features/chart/MonthChart';
 import { TrendChart } from '@/features/chart/TrendChart';
 import YearChart from '@/features/chart/YearChart';
@@ -14,8 +15,7 @@ import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorMonthNumbersMap, getPriorYearMonthNumbersMap } from "@/lib/calendar";
 import { toDayKey, toMonthKey } from '@/lib/friendly-date';
 import { calculateDailyExtremes, calculateMonthlyExtremes, type StatsExtremes } from '@/lib/stats';
-import { useCalendarContext } from '@/context/CalendarContext';
-import { CalendarCheck2, CalendarDays, Calendar as CalendarIcon, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
+import { CalendarCheck2, CalendarDays, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export function Calendar({ dataset }: { dataset: Dataset; }) {

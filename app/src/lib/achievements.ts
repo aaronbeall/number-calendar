@@ -9,7 +9,6 @@ import {
   Check,
   CheckCircle2,
   Crown,
-  Flag,
   Flame,
   Gift,
   Globe,
@@ -33,21 +32,18 @@ import {
   Users,
   Zap
 } from 'lucide-react';
-import { BsArrowThroughHeartFill, BsAwardFill, BsBroadcast, BsFillDiamondFill, BsHearts, BsHeptagonFill, BsLightningFill, BsOctagon, BsOctagonFill, BsPentagonFill, BsXDiamond, BsXDiamondFill } from 'react-icons/bs';
+import { BiSolidCrown } from 'react-icons/bi';
+import { BsArrowThroughHeartFill, BsAwardFill, BsBroadcast, BsFillDiamondFill, BsHearts, BsHeptagonFill, BsLightningFill, BsOctagonFill, BsPentagonFill, BsXDiamondFill } from 'react-icons/bs';
 import {
-  FaArrowTrendDown,
-  FaArrowTrendUp,
   FaAward,
   FaBell,
   FaCircleArrowUp,
   FaCloud,
   FaCloudSun,
   FaCrosshairs,
-  FaCrow,
   FaCrown,
   FaEye,
   FaFeatherPointed,
-  FaFlagCheckered,
   FaGear,
   FaGears,
   FaGift,
@@ -60,7 +56,6 @@ import {
   FaMapPin,
   FaMountainSun,
   FaRibbon,
-  FaRoad,
   FaRocket,
   FaShield,
   FaSkullCrossbones,
@@ -75,7 +70,6 @@ import {
   GiAngelWings,
   GiArcheryTarget,
   GiBigDiamondRing,
-  GiBigGear,
   GiBoltShield,
   GiBurningEmbers,
   GiCardboardBox,
@@ -151,12 +145,10 @@ import {
   GiWingedShield
 } from 'react-icons/gi';
 import { ImShield } from 'react-icons/im';
+import { IoMdPin } from 'react-icons/io';
 import { PiFlagCheckered, PiSunHorizonFill } from 'react-icons/pi';
-import { TbBadgeFilled } from 'react-icons/tb';
-import { IoMdClock, IoMdPin, IoMdTrendingDown, IoMdTrendingUp } from 'react-icons/io';
-import { IoDiamond, IoDiamondOutline, IoDiamondSharp } from 'react-icons/io5';
 import { RiVipDiamondFill } from 'react-icons/ri';
-import { BiSolidCrown } from 'react-icons/bi';
+import { TbBadgeFilled } from 'react-icons/tb';
 
 // Map style to shape icon (background container)
 export const achievementBadgeStyles = {
