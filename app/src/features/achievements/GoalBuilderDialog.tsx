@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown } from 'lucide-react';
@@ -208,9 +207,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
               <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               Goal Builder
             </DialogTitle>
-            <DialogDescription>
-              Let's create personalized goals, targets, and milestones for your dataset
-            </DialogDescription>
           </DialogHeader>
 
           <div className="flex-1 overflow-y-auto px-6 py-4">
@@ -619,13 +615,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         : 'Select All'}
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {generatedGoals.milestones.map((goal) => (
                       <GoalPreviewItem
                         key={goal.id}
                         goal={goal}
                         selected={selectedGoals.has(goal.id)}
                         onToggle={() => toggleGoal(goal.id)}
+                        desaturateUnselected
                       />
                     ))}
                   </div>
@@ -650,13 +647,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         : 'Select All'}
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {generatedGoals.targets.map((goal) => (
                       <GoalPreviewItem
                         key={goal.id}
                         goal={goal}
                         selected={selectedGoals.has(goal.id)}
                         onToggle={() => toggleGoal(goal.id)}
+                        desaturateUnselected
                       />
                     ))}
                   </div>
@@ -681,13 +679,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         : 'Select All'}
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {generatedGoals.achievements.map((goal) => (
                       <GoalPreviewItem
                         key={goal.id}
                         goal={goal}
                         selected={selectedGoals.has(goal.id)}
                         onToggle={() => toggleGoal(goal.id)}
+                        desaturateUnselected
                       />
                     ))}
                   </div>
@@ -698,7 +697,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-4 pb-6 px-6 border-t flex-shrink-0">
-            <Button variant="ghost" onClick={handleBack} disabled={step === 'period'}>
+            <Button variant="ghost" onClick={handleBack} className={step === 'period' ? 'invisible pointer-events-none' : ''}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -733,30 +732,42 @@ function GoalPreviewItem({
   goal,
   selected,
   onToggle,
+  desaturateUnselected = false,
 }: {
   goal: Goal;
   selected: boolean;
   onToggle: () => void;
+  desaturateUnselected?: boolean;
 }) {
   return (
-    <div
-      className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer ${
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cn(
+        'relative text-left w-full h-full p-4 rounded-xl border transition-all',
+        'hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
         selected
           ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
-          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
-      }`}
-      onClick={onToggle}
+          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600',
+        !selected && desaturateUnselected && 'saturate-0 opacity-70'
+      )}
     >
-      <Checkbox checked={selected} onCheckedChange={onToggle} />
-      <AchievementBadge badge={goal.badge} size="small" />
-      <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-sm truncate">{goal.title}</h4>
-        <p className="text-xs text-slate-600 dark:text-slate-400 truncate">{goal.description}</p>
+      {selected && (
+        <span className="absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white">
+          <Check className="w-4 h-4" />
+        </span>
+      )}
+      <div className="flex items-start gap-3">
+        <AchievementBadge badge={goal.badge} size="small" />
+        <div className="min-w-0">
+          <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
+            {goal.title}
+          </h4>
+          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">
+            {goal.description}
+          </p>
+        </div>
       </div>
-      {/* Stub for edit button */}
-      {/* <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); }} disabled>
-        <Edit className="w-3 h-3" />
-      </Button> */}
-    </div>
+    </button>
   );
 }
