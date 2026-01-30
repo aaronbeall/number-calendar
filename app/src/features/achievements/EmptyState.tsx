@@ -1,12 +1,11 @@
 import { AchievementBadge } from './AchievementBadge';
 import type { GoalBadge } from '../db/localdb';
 import { Zap, Flag, Target, Trophy } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 
 type EmptyStateProps = {
   type: 'goal' | 'target' | 'milestone';
-  datasetId: string;
   onAddClick: () => void;
+  onGoalBuilderClick: () => void;
 };
 
 // Sample badge for each type
@@ -46,14 +45,9 @@ const labels: Record<string, { title: string; description: string }> = {
   },
 };
 
-export function EmptyState({ type, datasetId, onAddClick }: EmptyStateProps) {
-  const navigate = useNavigate();
+export function EmptyState({ type, onAddClick, onGoalBuilderClick }: EmptyStateProps) {
   const label = labels[type];
   const badge = sampleBadges[type];
-
-  const handleGoalBuilder = () => {
-    navigate(`/dataset/${datasetId}?builder=${type}`);
-  };
 
   return (
     <div className="min-h-[400px] flex items-center justify-center">
@@ -92,7 +86,7 @@ export function EmptyState({ type, datasetId, onAddClick }: EmptyStateProps) {
 
           <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-lg p-4 space-y-2 border border-slate-200 dark:border-slate-600">
             <button
-              onClick={handleGoalBuilder}
+              onClick={onGoalBuilderClick}
               className="w-full px-6 py-3 rounded-lg font-semibold text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-800 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm hover:shadow-md"
             >
               <Zap className="w-4 h-4" />

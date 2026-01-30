@@ -1,4 +1,5 @@
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
+import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
 import type { Goal } from '@/features/db/localdb';
@@ -13,12 +14,17 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 
 export default function Milestones() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const { datasetId } = useParams();
   const { data: dataset } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
-  const { data: allGoals = [] } = useGoals(datasetId ?? '');
+  const { data: allGoals = [], refetch: refetchGoals } = useGoals(datasetId ?? '');
   const [searchParams] = useSearchParams();
   const isPreview = searchParams.has('preview');
+
+  const handleBuilderComplete = () => {
+    refetchGoals();
+  };
 
   const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
@@ -80,8 +86,9 @@ export default function Milestones() {
         </div>
       )}
       { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} /> }
+      { dataset && <GoalBuilderDialog key={`${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }
       {!hasMilestones ? (
-        <EmptyState type="milestone" datasetId={datasetId ?? ''} onAddClick={() => setDialogOpen(true)} />
+        <EmptyState type="milestone" onAddClick={() => setDialogOpen(true)} onGoalBuilderClick={() => setBuilderOpen(true)} />
       ) : (
         <AchievementsGrid results={achievementResults} />
       )}
