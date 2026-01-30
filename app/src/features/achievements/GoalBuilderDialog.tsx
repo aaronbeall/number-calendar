@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown } from 'lucide-react';
 import { generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
 import { formatValue } from '@/lib/goals';
@@ -31,6 +32,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     dataset.tracking === 'series' ? 'amount' : 'change'
   );
   const [activityDays, setActivityDays] = useState<string>('');
+  const [activityDraft, setActivityDraft] = useState<number | null>(null);
   const [generatedGoals, setGeneratedGoals] = useState<GeneratedGoals | null>(null);
   const [selectedGoals, setSelectedGoals] = useState<Set<string>>(new Set());
 
@@ -46,11 +48,52 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   });
   const exampleAmountLabel = formatValue(exampleAmount);
   const exampleChangeLabel = formatValue(exampleChange, { delta: true });
+  const activityPrompt =
+    period === 'day'
+      ? 'How many days per week will you typically record data?'
+      : period === 'week'
+        ? 'How many weeks per month will you typically record data?'
+        : period === 'month'
+          ? 'How many months per year will you typically record data?'
+          : '';
+  const activitySummaryLabel =
+    period === 'day'
+      ? 'days per week'
+      : period === 'week'
+        ? 'weeks per month'
+        : period === 'month'
+          ? 'months per year'
+          : '';
+  const activityDefaultValue =
+    period === 'day'
+      ? 5
+      : period === 'week'
+        ? 3
+        : period === 'month'
+          ? 10
+          : 1;
+  const activityMax =
+    period === 'day'
+      ? 7
+      : period === 'week'
+        ? 4
+        : period === 'month'
+          ? 12
+          : 0;
+  const activityValue = activityDays
+    ? Math.max(1, Math.min(activityMax, parseInt(activityDays, 10) || activityDefaultValue))
+    : activityDefaultValue;
+  const activitySliderValue = activityDraft ?? activityValue;
+  const activityDisplayValue = Math.max(1, Math.min(activityMax, Math.round(activitySliderValue)));
+  const activitySummaryValue = activityDays
+    ? Math.max(1, Math.min(activityMax, parseInt(activityDays, 10) || activityDisplayValue))
+    : activityDisplayValue;
 
   const handlePeriodSelect = (value: 'day' | 'week' | 'month') => {
     setPeriod(value);
     // Reset defaults when period changes
     setValueType(dataset.tracking === 'series' ? 'amount' : 'change');
+    setActivityDays(value === 'day' ? '5' : value === 'week' ? '3' : '10');
   };
 
   const handleNext = () => {
@@ -461,40 +504,92 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
           )}
 
           {step === 'activity' && (
-            <div className="space-y-6 py-4 px-4">
-              <div className="space-y-2">
-                <Label htmlFor="activityDays">How many days per {period} will you typically record data?</Label>
-                <Input
-                  id="activityDays"
-                  type="number"
-                  min="1"
-                  max={period === 'day' ? 1 : period === 'week' ? 7 : 30}
-                  value={activityDays}
-                  onChange={(e) => setActivityDays(e.target.value)}
-                  placeholder={period === 'week' ? 'e.g., 5' : period === 'month' ? 'e.g., 20' : '1'}
-                  hideStepperButtons
-                />
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  This helps us create realistic targets based on your activity level
+            <div className="space-y-8 py-6 px-4">
+              <div className="text-center space-y-2">
+                <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
+                  <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  Set Your Activity Level
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  {activityPrompt}
                 </p>
               </div>
 
-              <div className="rounded-lg bg-slate-50 dark:bg-slate-800 p-4 space-y-2">
-                <h4 className="font-semibold text-sm">Summary</h4>
-                <div className="text-sm space-y-1 text-slate-600 dark:text-slate-300">
-                  <p>
-                    • Focus period: <strong>{period}</strong>
-                  </p>
-                  <p>
-                    • Good {period}:{' '}
-                    <strong>
-                      {formatValue(parseFloat(goodValue), { delta: valueType === 'change' })}{' '}
-                      {valueType === 'change' ? 'change' : ''}
-                    </strong>
-                  </p>
-                  <p>
-                    • Activity: <strong>{activityDays} days per {period}</strong>
-                  </p>
+              <div className="space-y-4 max-w-2xl mx-auto">
+                <Slider
+                  value={[activitySliderValue]}
+                  min={1}
+                  max={activityMax}
+                  step={0.01}
+                  onValueChange={(value) => setActivityDraft(value[0])}
+                  onValueCommit={(value) => {
+                    setActivityDays(String(Math.round(value[0])));
+                    setActivityDraft(null);
+                  }}
+                  className="w-full"
+                />
+
+                <div className="flex items-center justify-center">
+                  <span className="px-3 py-1 rounded-full bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-300 text-sm font-semibold">
+                    {activityDisplayValue} {activitySummaryLabel}
+                  </span>
+                </div>
+
+                <p className="text-center text-xs text-slate-500 dark:text-slate-400">
+                  Drag the slider to pick a number — this will be used to calculate achievable targets.
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200/70 dark:border-slate-700/70 bg-white/60 dark:bg-slate-900/40 backdrop-blur px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Summary</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      A quick recap before continuing
+                    </p>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                    Step 2
+                  </span>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Period
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {period}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <Trophy className="w-3.5 h-3.5" />
+                      Target
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatValue(parseFloat(goodValue), { delta: valueType === 'change' })}
+                      {valueType === 'change' ? ' change' : ''}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      {valueType === 'change' ? 'Change goal' : 'Total goal'}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <Target className="w-3.5 h-3.5" />
+                      Activity
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {activitySummaryValue} {activitySummaryLabel}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Typical cadence
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
