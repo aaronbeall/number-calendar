@@ -47,7 +47,7 @@ describe('goals-builder: Series Tracking', () => {
       // Pre-baseline (2 leading digits): 6600 * [0.25, 0.5, 0.75]
       // Baseline (unrounded): 5 + 6600
       // Extended (1 leading digit): 5 + 6600 * [2, 4, 10, 20, 50, 100]
-      const milestoneValues = result.milestones.map((m) => m.target.value).sort((a, b) => a - b);
+      const milestoneValues = result.milestones.map((m) => m.target.value!).sort((a, b) => a - b);
       const expectedValues = [110, 510, 1700, 3300, 5000, 6605, 10000, 30000, 70000, 100000, 300000, 700000];
       expect(milestoneValues).toEqual(expectedValues);
 
@@ -90,7 +90,7 @@ describe('goals-builder: Series Tracking', () => {
       // Pre-baseline (2 leading digits): 20 + 80 * [0.25, 0.5, 0.75]
       // Baseline (unrounded): 100
       // Extended (1 leading digit): 20 + 80 * [2, 4, 10, 20, 50, 100]
-      const milestoneValues = result.milestones.map((m) => m.target.value).sort((a, b) => a - b);
+      const milestoneValues = result.milestones.map((m) => m.target.value!).sort((a, b) => a - b);
       const normalizedValues = milestoneValues.map((value) => Number(value.toFixed(1)));
       const expectedValues = [21, 26, 40, 60, 80, 100, 200, 300, 800, 2000, 4000, 8000];
       expect(normalizedValues).toEqual(expectedValues);
@@ -133,7 +133,7 @@ describe('goals-builder: Series Tracking', () => {
       // Pre-baseline (2 leading digits): 25 + 1500 * [0.25, 0.5, 0.75]
       // Baseline (unrounded): 25 + 1500
       // Extended (1 leading digit): 25 + 1500 * [2, 4, 10, 20, 50, 100]
-      const milestoneValues = result.milestones.map((m) => m.target.value).sort((a, b) => a - b);
+      const milestoneValues = result.milestones.map((m) => m.target.value!).sort((a, b) => a - b);
       const expectedValues = [39, 130, 400, 780, 1200, 1525, 3000, 6000, 20000, 30000, 80000, 200000];
       expect(milestoneValues).toEqual(expectedValues);
 
@@ -176,7 +176,7 @@ describe('goals-builder: Series Tracking', () => {
       // Pre-baseline (2 leading digits): 20 + 80 * [0.25, 0.5, 0.75]
       // Baseline (unrounded): 20 + 80
       // Extended (1 leading digit): 20 + 80 * [2, 4, 10, 20, 50, 100]
-      const milestoneValues = result.milestones.map((m) => m.target.value).sort((a, b) => a - b);
+      const milestoneValues = result.milestones.map((m) => m.target.value!).sort((a, b) => a - b);
       const normalizedValues = milestoneValues.map((value) => Number(value.toFixed(1)));
       const expectedValues = [21, 26, 40, 60, 80, 100, 200, 300, 800, 2000, 4000, 8000];
       expect(normalizedValues).toEqual(expectedValues);
@@ -219,7 +219,7 @@ describe('goals-builder: Series Tracking', () => {
       // Pre-baseline (2 leading digits): 12 + 300 * [0.25, 0.5, 0.75]
       // Baseline (unrounded): 12 + 300
       // Extended (1 leading digit): 12 + 300 * [2, 4, 10, 20, 50, 100]
-      const milestoneValues = result.milestones.map((m) => m.target.value).sort((a, b) => a - b);
+      const milestoneValues = result.milestones.map((m) => m.target.value!).sort((a, b) => a - b);
       const normalizedValues = milestoneValues.map((value) => Number(value.toFixed(1)));
       const expectedValues = [15, 35, 87, 160, 240, 312, 600, 1000, 3000, 6000, 20000, 30000];
       expect(normalizedValues).toEqual(expectedValues);
@@ -263,7 +263,7 @@ describe('goals-builder: Series Tracking', () => {
       // Pre-baseline (2 leading digits): 15 + 85 * [0.25, 0.5, 0.75]
       // Baseline (unrounded): 15 + 85
       // Extended (1 leading digit): 15 + 85 * [2, 4, 10, 20, 50, 100]
-      const milestoneValues = result.milestones.map((m) => m.target.value).sort((a, b) => a - b);
+      const milestoneValues = result.milestones.map((m) => m.target.value!).sort((a, b) => a - b);
       const normalizedValues = milestoneValues.map((value) => Number(value.toFixed(1)));
       const expectedValues = [16, 22, 36, 58, 79, 100, 200, 400, 900, 2000, 4000, 9000];
       expect(normalizedValues).toEqual(expectedValues);
