@@ -355,7 +355,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       What time period are you focused on?
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Tracking and celebrating your progress will be seen on all time periods.
+                      Choose how often you'll work toward your goal
                     </p>
                   </div>
 
@@ -428,7 +428,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                 // Compact toggle buttons after selection
                 <div className="space-y-3 animate-in fade-in duration-300">
                   <div className="text-center">
-                    <h3 className="font-semibold text-base text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2 transition-all duration-300">
+                    <h3 className="font-semibold text-base text-slate-900/50 dark:text-slate-50/50 flex items-center justify-center gap-2 transition-all duration-300">
                       <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
                       What time period are you focused on?
                     </h3>
@@ -485,8 +485,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                     <div className="text-center space-y-2">
                       <h3
                         className={cn(
-                          'font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2 transition-all duration-300',
-                          valueType ? 'text-base' : 'text-lg'
+                          'font-bold flex items-center justify-center gap-2 transition-all duration-300',
+                          valueType ? 'text-base text-slate-900/50 dark:text-slate-50/50' : 'text-lg text-slate-900 dark:text-slate-50'
                         )}
                       >
                         <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />

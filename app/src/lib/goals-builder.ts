@@ -171,12 +171,12 @@ function calculateBaselines(input: GoalBuilderInput): BaselineValues {
 
 // Generate milestone goals
 function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
-  const { datasetId, valueType, valence, startingValue } = input;
+  const { datasetId, valueType, valence, tracking, startingValue } = input;
   const { metric, source } = getMetricAndSource(valueType, 'milestone');
   const condition = getCondition(valence);
 
   const milestones: Goal[] = [];
-  const metricName = getMetricDisplayName(metric).toLowerCase();
+  const metricName = tracking == 'trend' ? '' : ` ${getMetricDisplayName(metric).toLowerCase()}`;
   
   const baseValue = baselines.baselineMilestone;
   const startValue = startingValue ?? 0;
@@ -252,7 +252,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
       createdAt: Date.now(),
       type: 'milestone',
       title: name,
-      description: `Reach ${formatValue(value, { delta: source === 'deltas' })} ${metricName}`,
+      description: `Reach ${formatValue(value, { delta: source === 'deltas' })}${metricName}`,
       badge: createBadge('laurel_trophy', color, 'flag'),
       target: createTarget(metric, source, condition, value),
       timePeriod: 'anytime',
@@ -264,6 +264,29 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   const uniqueMilestones = Array.from(new Set(milestones.map(m => m.target.value))).map(value => {
       return milestones.find(m => m.target.value === value);
   }).filter(Boolean) as Goal[];
+
+  // Special case: if trending towards zero, add a "Zero" milestone and remove milestones past zero
+  if (tracking === 'trend') {
+    const approachingZeroDown = condition === 'below' && (startingValue ?? 0) > 0;
+    const approachingZeroUp = condition === 'above' && (startingValue ?? 0) < 0;
+    
+    if (approachingZeroDown || approachingZeroUp) {
+      uniqueMilestones.push({
+        id: nanoid(),
+        datasetId,
+        createdAt: Date.now(),
+        type: 'milestone',
+        title: 'Zero Point',
+        description: `Reach zero${metricName}`,
+        badge: createBadge('laurel_trophy', 'gold', 'flag'),
+        target: createTarget(metric, source, condition, 0),
+        timePeriod: 'anytime',
+        count: 1,
+      });
+    }
+
+    return uniqueMilestones.filter(m => approachingZeroDown ? m.target.value! >= 0 : m.target.value! <= 0);
+  }
 
   return uniqueMilestones;
 }
