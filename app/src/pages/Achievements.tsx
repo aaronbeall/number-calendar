@@ -186,8 +186,8 @@ export default function Achievements() {
           </button>
         </div>
       )}
-      { dataset && <AchievementDialog key={`${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} /> }
-      { dataset && <GoalBuilderDialog key={`${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }
+      { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} /> }
+      { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }
 
       {isPreview && <BadgePreviews />}
 
