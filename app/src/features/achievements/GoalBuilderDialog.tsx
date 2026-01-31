@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import * as React from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown } from 'lucide-react';
 import { generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
@@ -11,7 +10,9 @@ import { formatValue } from '@/lib/goals';
 import { AchievementBadge } from './AchievementBadge';
 import type { Dataset, Goal } from '@/features/db/localdb';
 import { createGoal } from '@/features/db/localdb';
+import { useAllDays } from '@/features/db/useCalendarData';
 import { cn } from '@/lib/utils';
+import { capitalize, adjectivize } from '@/lib/utils';
 import { getValueForValence, isBad } from '@/lib/valence';
 
 type GoalBuilderDialogProps = {
@@ -27,13 +28,30 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const [step, setStep] = useState<Step>('period');
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | ''>('');
   const [goodValue, setGoodValue] = useState<string>('');
-  const [valueType, setValueType] = useState<'amount' | 'change'>(
-    dataset.tracking === 'series' ? 'amount' : 'change'
-  );
-  const [activityDays, setActivityDays] = useState<string>('');
+  const [startingValue, setStartingValue] = useState<string>('');
+  const [valueType, setValueType] = useState<'' | 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target'>('');
+  const [targetDays, setTargetDays] = useState<string>(''); // Stored in days
+  const [timePeriodUnit, setTimePeriodUnit] = useState<'days' | 'weeks' | 'months'>('days');
+  const [activePeriods, setActivePeriods] = useState<string>('');
   const [activityDraft, setActivityDraft] = useState<number | null>(null);
   const [generatedGoals, setGeneratedGoals] = useState<GeneratedGoals | null>(null);
   const [selectedGoals, setSelectedGoals] = useState<Set<string>>(new Set());
+
+  // Load all days to calculate current total/last value
+  const { data: allDays = [] } = useAllDays(dataset.id);
+  
+  // Calculate current value based on tracking type
+  const currentValue = React.useMemo(() => {
+    if (allDays.length === 0) return 0;
+    if (dataset.tracking === 'series') {
+      // Sum all numbers for total
+      return allDays.reduce((sum, day) => sum + day.numbers.reduce((s, n) => s + n, 0), 0);
+    } else {
+      // Get last close value for trend
+      const lastDay = allDays[allDays.length - 1];
+      return lastDay?.numbers[lastDay.numbers.length - 1] ?? 0;
+    }
+  }, [allDays, dataset.tracking]);
 
   const exampleAmount = getValueForValence(1, dataset.valence, {
     good: 100,
@@ -47,6 +65,31 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   });
   const exampleAmountLabel = formatValue(exampleAmount);
   const exampleChangeLabel = formatValue(exampleChange, { delta: true });
+  const parsedStartingValue = Number.isFinite(parseFloat(startingValue)) ? parseFloat(startingValue) : undefined;
+  const allTimePriorValue = parsedStartingValue ?? currentValue;
+  
+  // Convert time period for display
+  const timePeriodDisplayValue = React.useMemo(() => {
+    const days = parseFloat(targetDays);
+    if (!days || isNaN(days)) return '';
+    if (timePeriodUnit === 'days') return String(Math.round(days));
+    if (timePeriodUnit === 'weeks') return String(Math.round(days / 7));
+    if (timePeriodUnit === 'months') return String(Math.round(days / 30));
+    return '';
+  }, [targetDays, timePeriodUnit]);
+  
+  const handleTimePeriodDisplayChange = (value: string) => {
+    const numValue = parseFloat(value);
+    if (!numValue || isNaN(numValue)) {
+      setTargetDays('');
+      return;
+    }
+    if (timePeriodUnit === 'days') setTargetDays(String(Math.round(numValue)));
+    if (timePeriodUnit === 'weeks') setTargetDays(String(Math.round(numValue * 7)));
+    if (timePeriodUnit === 'months') setTargetDays(String(Math.round(numValue * 30)));
+  };
+  const allTimeTotalExample = allTimePriorValue + exampleAmount;
+  const allTimeTargetExample = allTimePriorValue + exampleChange;
   const activityPrompt =
     period === 'day'
       ? 'How many days per week will you typically record data?'
@@ -79,20 +122,32 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
         : period === 'month'
           ? 12
           : 0;
-  const activityValue = activityDays
-    ? Math.max(1, Math.min(activityMax, parseInt(activityDays, 10) || activityDefaultValue))
+  const activityValue = activePeriods
+    ? Math.max(1, Math.min(activityMax, parseInt(activePeriods, 10) || activityDefaultValue))
     : activityDefaultValue;
   const activitySliderValue = activityDraft ?? activityValue;
   const activityDisplayValue = Math.max(1, Math.min(activityMax, Math.round(activitySliderValue)));
-  const activitySummaryValue = activityDays
-    ? Math.max(1, Math.min(activityMax, parseInt(activityDays, 10) || activityDisplayValue))
+  const activitySummaryValue = activePeriods
+    ? Math.max(1, Math.min(activityMax, parseInt(activePeriods, 10) || activityDisplayValue))
     : activityDisplayValue;
 
   const handlePeriodSelect = (value: 'day' | 'week' | 'month') => {
     setPeriod(value);
     // Reset defaults when period changes
-    setValueType(dataset.tracking === 'series' ? 'amount' : 'change');
-    setActivityDays(value === 'day' ? '5' : value === 'week' ? '3' : '10');
+    setValueType('');
+    setActivePeriods(value === 'day' ? '5' : value === 'week' ? '3' : '10');
+    
+    // Set time period unit and default targetDays to match period
+    if (value === 'day') {
+      setTimePeriodUnit('days');
+      setTargetDays('90'); // 90 days
+    } else if (value === 'week') {
+      setTimePeriodUnit('weeks');
+      setTargetDays('91'); // 13 weeks * 7 days
+    } else {
+      setTimePeriodUnit('months');
+      setTargetDays('90'); // 3 months * 30 days
+    }
   };
 
   const handleNext = () => {
@@ -100,16 +155,18 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
       setStep('activity');
     } else if (step === 'activity') {
       // Generate goals
-      if (!period) return; // Type guard
+      if (!period || !valueType) return; // Type guard
       
       const input: GoalBuilderInput = {
         datasetId: dataset.id,
         tracking: dataset.tracking,
         valence: dataset.valence,
         period: period as 'day' | 'week' | 'month',
-        goodValue: parseFloat(goodValue) || 0,
+        value: parseFloat(goodValue) || 0,
         valueType,
-        activityDays: parseFloat(activityDays) || 1,
+        activePeriods: parseFloat(activePeriods) || 1,
+        startingValue: startingValue.trim() ? parseFloat(startingValue) || currentValue : currentValue,
+        targetDays: targetDays ? parseFloat(targetDays) : undefined,
       };
       const goals = generateGoals(input);
       setGeneratedGoals(goals);
@@ -152,8 +209,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     setStep('period');
     setPeriod('');
     setGoodValue('');
-    setValueType(dataset.tracking === 'series' ? 'amount' : 'change');
-    setActivityDays('');
+    setStartingValue('');
+    setValueType('');
+    setTargetDays('');
+    setTimePeriodUnit('weeks');
+    setActivePeriods('');
     setGeneratedGoals(null);
     setSelectedGoals(new Set());
   };
@@ -184,16 +244,89 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     });
   };
 
+  // Consolidated validation and feedback logic
+  const getPeriodStepValidation = () => {
+    if (step !== 'period') return { canProceed: false, feedbackMessage: null };
+    
+    // Check basic requirements
+    if (!period || !valueType || !goodValue) return { canProceed: false, feedbackMessage: null };
+    
+    const numValue = parseFloat(goodValue);
+    if (numValue === 0 || isNaN(numValue)) return { canProceed: false, feedbackMessage: null };
+    
+    // Calculate valence-adjusted value
+    const isAllTime = valueType === 'alltime-total' || valueType === 'alltime-target';
+    
+    // For alltime goals, require targetDays
+    if (isAllTime && (!targetDays || parseFloat(targetDays) <= 0)) {
+      const feedbackMessage = (
+        <div className="flex-1 px-4 animate-in fade-in duration-300">
+          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              Please specify how long you want to reach this goal ⏱️
+            </p>
+          </div>
+        </div>
+      );
+      return { canProceed: false, feedbackMessage };
+    }
+    
+    const valenceValue = isAllTime ? numValue - allTimePriorValue : numValue;
+    const isWrongSign = isBad(valenceValue, dataset.valence);
+    const isValid = !isWrongSign;
+    
+    // Generate feedback message
+    let feedbackMessage: React.ReactNode = null;
+    
+    if (isWrongSign) {
+      const expectation = getValueForValence(1, dataset.valence, {
+        good: valueType.startsWith('alltime') ? 'a higher number than the starting point (higher is better)' : 'positive numbers (higher is better)',
+        bad: valueType.startsWith('alltime') ? 'a lower number than the starting point (lower is better)' : 'negative numbers (lower is better)',
+        neutral: 'steady numbers',
+      });
+      
+      feedbackMessage = (
+        <div className="flex-1 px-4 animate-in fade-in duration-300">
+          <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+            <p className="text-sm text-amber-700 dark:text-amber-300">
+              For this dataset, we expect {expectation}.
+              {!isAllTime && (
+                <>
+                  {' '}
+                  <button
+                    type="button"
+                    onClick={() => setGoodValue(String(-numValue))}
+                    className="underline hover:no-underline font-medium"
+                  >
+                    Use {formatValue(-numValue, { delta: valueType === 'period-change' })} instead?
+                  </button>
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+      );
+    } else if (isValid) {
+      feedbackMessage = (
+        <div className="flex-1 px-4 animate-in fade-in duration-300">
+          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+            <p className="text-sm text-green-700 dark:text-green-300">
+              Great! We'll create goals based on this target 🎯
+            </p>
+          </div>
+        </div>
+      );
+    }
+    
+    return { canProceed: isValid, feedbackMessage };
+  };
+
   const canProceed = () => {
     if (step === 'period') {
-      const numValue = parseFloat(goodValue);
-      if (!period || !goodValue || numValue === 0 || isNaN(numValue)) return false;
-      // Check valence alignment
-      const isWrongSign = isBad(numValue, dataset.valence);
-      return !isWrongSign;
+      return getPeriodStepValidation().canProceed;
     }
     if (step === 'activity') {
-      return activityDays && parseFloat(activityDays) > 0;
+      return activePeriods && parseFloat(activePeriods) > 0;
     }
     return false;
   };
@@ -219,10 +352,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <div className="text-center space-y-2">
                     <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
                       <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                      Choose Your Focus Period
+                      What time period are you focused on?
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      What time period would you like to focus on tracking and celebrating?
+                      Tracking and celebrating your progress will be seen on all time periods.
                     </p>
                   </div>
 
@@ -293,9 +426,15 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                 </div>
               ) : (
                 // Compact toggle buttons after selection
-                <div className="flex items-center justify-center gap-2 animate-in fade-in duration-300">
-                  <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">Period:</Label>
-                  <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900/50">
+                <div className="space-y-3 animate-in fade-in duration-300">
+                  <div className="text-center">
+                    <h3 className="font-semibold text-base text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2 transition-all duration-300">
+                      <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      What time period are you focused on?
+                    </h3>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900/50">
                     <button
                       onClick={() => setPeriod('day')}
                       className={cn(
@@ -332,6 +471,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       <Calendar className="w-3.5 h-3.5" />
                       Monthly
                     </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -339,86 +479,192 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
               {/* Step 2 & 3: Value Type and Good Value (fade in after period selection) */}
               {period && (
                 <div className="space-y-6 animate-in fade-in duration-500">
-                  <Separator />
 
-                  {/* Value Type Selection - only show for series tracking */}
-                  {dataset.tracking === 'series' && (
-                    <div className="space-y-4">
-                      <div className="text-center space-y-2">
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          How Do You Measure Success?
-                        </h3>
+                  {/* Value Type Selection - different for series vs trend */}
+                  <div className="space-y-4">
+                    <div className="text-center space-y-2">
+                      <h3
+                        className={cn(
+                          'font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2 transition-all duration-300',
+                          valueType ? 'text-base' : 'text-lg'
+                        )}
+                      >
+                        <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        How will you measure success?
+                      </h3>
+                      {!valueType && (
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                          Choose what matters most for your {period}ly goals
+                          {dataset.tracking === 'series'
+                            ? `Focus on ${adjectivize(period)} totals or all-time milestones`
+                            : `Track ${adjectivize(period)} changes or overall progress`}
                         </p>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
-                        {/* Amount Option */}
-                        <button
-                          onClick={() => setValueType('amount')}
-                          className={cn(
-                            'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
-                            'hover:scale-105 active:scale-95 text-left',
-                            valueType === 'amount'
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/20'
-                              : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            <span className="font-bold text-slate-900 dark:text-slate-50">Total Amount</span>
-                            <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                              <Info className="w-3 h-3" />
-                              Typical
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">
-                            The total value you want to reach in a {period}
-                          </p>
-                          {valueType === 'amount' && (
-                            <Check className="absolute top-3 right-3 w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </button>
-
-                        {/* Change Option */}
-                        <button
-                          onClick={() => setValueType('change')}
-                          className={cn(
-                            'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
-                            'hover:scale-105 active:scale-95 text-left',
-                            valueType === 'change'
-                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-lg shadow-blue-500/20'
-                              : 'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                            <span className="font-bold text-slate-900 dark:text-slate-50">Change/Growth</span>
-                          </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400">
-                            How much change from the previous {period}
-                          </p>
-                          {valueType === 'change' && (
-                            <Check className="absolute top-3 right-3 w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          )}
-                        </button>
-                      </div>
+                      )}
                     </div>
-                  )}
 
+                    {!valueType ? (
+                      <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
+                        {dataset.tracking === 'series' ? (
+                          <>
+                            {/* Series: Period Total */}
+                            <button
+                              onClick={() => setValueType('period-total')}
+                              className={cn(
+                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                                'hover:scale-105 active:scale-95 text-left',
+                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="font-bold text-slate-900 dark:text-slate-50">{capitalize(adjectivize(period))} Total</span>
+                                <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                                  <Info className="w-3 h-3" />
+                                  Typical
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Set targets for total value each {period}
+                              </p>
+                            </button>
+
+                            {/* Series: All Time Total */}
+                            <button
+                              onClick={() => setValueType('alltime-total')}
+                              className={cn(
+                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                                'hover:scale-105 active:scale-95 text-left',
+                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Trophy className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="font-bold text-slate-900 dark:text-slate-50">All Time Total</span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Build toward cumulative milestones
+                              </p>
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {/* Trend: Period Change */}
+                            <button
+                              onClick={() => setValueType('period-change')}
+                              className={cn(
+                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                                'hover:scale-105 active:scale-95 text-left',
+                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="font-bold text-slate-900 dark:text-slate-50">{capitalize(adjectivize(period))} Change</span>
+                                <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                                  <Info className="w-3 h-3" />
+                                  Typical
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Target improvement each {period}
+                              </p>
+                            </button>
+
+                            {/* Trend: All Time Target */}
+                            <button
+                              onClick={() => setValueType('alltime-target')}
+                              className={cn(
+                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                                'hover:scale-105 active:scale-95 text-left',
+                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                              )}
+                            >
+                              <div className="flex items-center gap-2">
+                                <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                <span className="font-bold text-slate-900 dark:text-slate-50">All Time Target</span>
+                              </div>
+                              <p className="text-xs text-slate-600 dark:text-slate-400">
+                                Reach a specific overall value
+                              </p>
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2 animate-in fade-in duration-300">
+                        <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900/50">
+                          {dataset.tracking === 'series' ? (
+                            <>
+                              <button
+                                onClick={() => setValueType('period-total')}
+                                className={cn(
+                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                                  valueType === 'period-total'
+                                    ? 'bg-purple-600 text-white shadow-sm'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                )}
+                              >
+                                {capitalize(adjectivize(period))} Total
+                              </button>
+                              <button
+                                onClick={() => setValueType('alltime-total')}
+                                className={cn(
+                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                                  valueType === 'alltime-total'
+                                    ? 'bg-purple-600 text-white shadow-sm'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                )}
+                              >
+                                All Time Total
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => setValueType('period-change')}
+                                className={cn(
+                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                                  valueType === 'period-change'
+                                    ? 'bg-purple-600 text-white shadow-sm'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                )}
+                              >
+                                {capitalize(adjectivize(period))} Change
+                              </button>
+                              <button
+                                onClick={() => setValueType('alltime-target')}
+                                className={cn(
+                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                                  valueType === 'alltime-target'
+                                    ? 'bg-purple-600 text-white shadow-sm'
+                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                )}
+                              >
+                                All Time Target
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {valueType && (
+                  <div className="space-y-6 animate-in fade-in duration-300">
                   {/* Good Value Input */}
                   <div className="space-y-4 max-w-md mx-auto">
                     <div className="text-center space-y-2">
                       <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
                         <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                        What's a good {period}?
+                        {valueType === 'period-total' && `What's a good ${period}?`}
+                        {valueType === 'alltime-total' && 'What total do you want to reach?'}
+                        {valueType === 'period-change' && `What's good progress?`}
+                        {valueType === 'alltime-target' && 'What value are you aiming for?'}
                       </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {valueType === 'amount'
-                          ? `Enter the target ${valueType} you'd like to reach`
-                          : `Enter the ${valueType} that would make you proud`}
+                        {valueType === 'period-total' && `Enter the target total for each ${period}`}
+                        {valueType === 'alltime-total' && 'Enter a milestone total you want to achieve'}
+                        {valueType === 'period-change' && `Enter the ${period}ly improvement that would make you proud`}
+                        {valueType === 'alltime-target' && 'Enter the overall target value'}
                       </p>
                     </div>
 
@@ -429,14 +675,18 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         value={goodValue}
                         onChange={(e) => setGoodValue(e.target.value)}
                         placeholder={
-                          valueType === 'amount'
+                          valueType === 'period-total'
                             ? `e.g., ${exampleAmountLabel}`
-                            : `e.g., ${exampleChangeLabel}`
+                            : valueType === 'period-change'
+                              ? `e.g., ${exampleChangeLabel}`
+                              : valueType === 'alltime-total'
+                                ? `e.g., ${formatValue(allTimeTotalExample)}`
+                                : `e.g., ${formatValue(allTimeTargetExample)}`
                         }
                         hideStepperButtons
                         className="text-center !text-2xl font-bold h-16 pr-12"
                       />
-                      {valueType === 'change' && (
+                      {(valueType === 'period-change' || valueType === 'alltime-target') && (
                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
                           {getValueForValence(1, dataset.valence, {
                             good: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
@@ -446,54 +696,119 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         </div>
                       )}
                     </div>
-
-                    {goodValue && (() => {
-                      const numValue = parseFloat(goodValue);
-                      const isWrongSign = isBad(numValue, dataset.valence);
-                      const isValid = numValue !== 0 && !isNaN(numValue) && !isWrongSign;
-                      
-                      if (isWrongSign) {
-                        const expectation = dataset.tracking === 'series'
-                          ? getValueForValence(1, dataset.valence, {
-                              good: 'positive numbers (where positive is good)',
-                              bad: 'negative numbers (where negative is good)',
-                              neutral: 'consistent numbers',
-                            })
-                          : getValueForValence(1, dataset.valence, {
-                              good: 'positive numbers (higher is better)',
-                              bad: 'negative numbers (lower is better)',
-                              neutral: 'steady numbers',
-                            });
-                        
-                        return (
-                          <div className="text-center p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 animate-in fade-in duration-300">
-                            <p className="text-sm text-amber-700 dark:text-amber-300">
-                              For this dataset, we expect {expectation}.{' '}
-                              <button
-                                type="button"
-                                onClick={() => setGoodValue(String(-numValue))}
-                                className="underline hover:no-underline font-medium"
-                              >
-                                Use {formatValue(-numValue, { delta: valueType === 'change' })} instead?
-                              </button>
-                            </p>
-                          </div>
-                        );
-                      }
-                      
-                      if (isValid) {
-                        return (
-                          <div className="text-center p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 animate-in fade-in duration-300">
-                            <p className="text-sm text-green-700 dark:text-green-300">
-                              Great! We'll create goals based on this target 🎯
-                            </p>
-                          </div>
-                        );
-                      }
-                      
-                      return null;
-                    })()}
                   </div>
+
+                  {/* Starting Value and Time Period Inputs - only show after value is entered */}
+                  {goodValue && (() => {
+                    const numValue = parseFloat(goodValue);
+                    if (numValue === 0 || isNaN(numValue)) return null;
+                    
+                    return (
+                      <div className={cn(
+                        "p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20 mx-auto animate-in fade-in duration-500",
+                        valueType.startsWith('alltime') ? "max-w-2xl" : "max-w-md"
+                      )}>
+                        <div className={cn(
+                          "grid gap-6",
+                          valueType.startsWith('alltime') ? "grid-cols-2" : "grid-cols-1"
+                        )}>
+                          {/* Starting Value Input */}
+                          <div className="space-y-3">
+                            <div className="text-center space-y-1">
+                              <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2">
+                                <Flag className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                                Starting point
+                              </h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {dataset.tracking === 'series'
+                                  ? 'Current total (optional)'
+                                  : 'Current value (optional)'}
+                              </p>
+                            </div>
+
+                            <div className="relative">
+                              <Input
+                                id="startingValue"
+                                type="number"
+                                value={startingValue}
+                                onChange={(e) => setStartingValue(e.target.value)}
+                                placeholder={currentValue !== 0 ? formatValue(currentValue) : 'e.g., 0'}
+                                hideStepperButtons
+                                className="text-center !text-base font-medium h-10"
+                              />
+                            </div>
+                          </div>
+                          
+                          {/* Time Period Input (only for alltime options) */}
+                          {valueType.startsWith('alltime') && (
+                            <div className="space-y-3">
+                              <div className="text-center space-y-1">
+                                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2">
+                                  <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                                  How long?
+                                </h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  Time to reach goal
+                                </p>
+                              </div>
+
+                              <div className="flex items-center">
+                                <Input
+                                  id="timePeriod"
+                                  type="number"
+                                  value={timePeriodDisplayValue}
+                                  onChange={(e) => handleTimePeriodDisplayChange(e.target.value)}
+                                  placeholder="e.g., 12"
+                                  className="text-center !text-base font-medium h-10 flex-1 !rounded-r-none border-r-0"
+                                />
+                                
+                                <div className="inline-flex rounded-r-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 h-10">
+                                  <button
+                                    type="button"
+                                    onClick={() => setTimePeriodUnit('days')}
+                                    className={cn(
+                                      'px-3 text-xs font-medium transition-all duration-200',
+                                      timePeriodUnit === 'days'
+                                        ? 'bg-purple-600 text-white shadow-sm'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                    )}
+                                  >
+                                    days
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTimePeriodUnit('weeks')}
+                                    className={cn(
+                                      'px-3 text-xs font-medium transition-all duration-200 border-x border-slate-200 dark:border-slate-700',
+                                      timePeriodUnit === 'weeks'
+                                        ? 'bg-purple-600 text-white shadow-sm'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                    )}
+                                  >
+                                    weeks
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setTimePeriodUnit('months')}
+                                    className={cn(
+                                      'px-3 rounded-r-lg text-xs font-medium transition-all duration-200',
+                                      timePeriodUnit === 'months'
+                                        ? 'bg-purple-600 text-white shadow-sm'
+                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                                    )}
+                                  >
+                                    months
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -504,7 +819,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
               <div className="text-center space-y-2">
                 <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
                   <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  Set Your Activity Level
+                  How actively will you make progress?
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
                   {activityPrompt}
@@ -519,7 +834,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   step={0.01}
                   onValueChange={(value) => setActivityDraft(value[0])}
                   onValueCommit={(value) => {
-                    setActivityDays(String(Math.round(value[0])));
+                    setActivePeriods(String(Math.round(value[0])));
                     setActivityDraft(null);
                   }}
                   className="w-full"
@@ -556,7 +871,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       Period
                     </div>
                     <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {period}
+                      {capitalize(adjectivize(period))}
                     </div>
                   </div>
 
@@ -566,11 +881,15 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       Target
                     </div>
                     <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {formatValue(parseFloat(goodValue), { delta: valueType === 'change' })}
-                      {valueType === 'change' ? ' change' : ''}
+                      {formatValue(parseFloat(goodValue), { 
+                        delta: valueType === 'period-change'
+                      })}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {valueType === 'change' ? 'Change goal' : 'Total goal'}
+                      {valueType === 'period-total' && `${capitalize(adjectivize(period))} total`}
+                      {valueType === 'alltime-total' && 'All-time total'}
+                      {valueType === 'period-change' && `${capitalize(adjectivize(period))} change`}
+                      {valueType === 'alltime-target' && 'All-time target'}
                     </div>
                   </div>
 
@@ -628,8 +947,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   </div>
                 </div>
 
-                <Separator />
-
                 {/* Targets */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -659,8 +976,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                     ))}
                   </div>
                 </div>
-
-                <Separator />
 
                 {/* Achievements */}
                 <div className="space-y-3">
@@ -701,6 +1016,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
+
+            {/* Feedback messages */}
+            {step === 'period' && goodValue && getPeriodStepValidation().feedbackMessage}
 
             <div className="flex items-center gap-2">
               {step === 'preview' ? (
