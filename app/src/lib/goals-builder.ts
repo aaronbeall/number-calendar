@@ -259,8 +259,13 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
       count: 1,
     });
   });
+  
+  // Filter out any duplicate milestone targets
+  const uniqueMilestones = Array.from(new Set(milestones.map(m => m.target.value))).map(value => {
+      return milestones.find(m => m.target.value === value);
+  }).filter(Boolean) as Goal[];
 
-  return milestones;
+  return uniqueMilestones;
 }
 
 // Generate target goals
