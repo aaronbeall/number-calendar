@@ -325,127 +325,256 @@ export const achievementBadgeIcons = {
 
 export type AchievementBadgeIcon = keyof typeof achievementBadgeIcons;
 
+
+/**
+ * {
+ *  bg // Background shape color
+ *  accent // Center icon and label accent color
+ *  label // Label/banner/ribbon background color
+ *  border // Border overlay color
+ * }
+ */
 export const achievementBadgeColors = {
-  gold: {
-    bg: '#ffe082',
-    accent: '#ffd600',
-    text: '#7c5c00',
-    border: '#ffd600',
-  },
-  silver: {
-    bg: '#e0e0e0',
-    accent: '#bdbdbd',
-    text: '#616161',
-    border: '#bdbdbd',
+  copper: {
+    bg: '#d7ccc8',
+    accent: '#8d6e63',
+    label: '#3e2723',
+    border: '#8d6e63',
   },
   bronze: {
     bg: '#ffcc80',
     accent: '#ff9800',
-    text: '#7c4a00',
+    label: '#7c4a00',
     border: '#ff9800',
   },
-  blue: {
+  silver: {
+    bg: '#e0e0e0',
+    accent: '#bdbdbd',
+    label: '#616161',
+    border: '#bdbdbd',
+  },
+  gold: {
+    bg: '#ffe082',
+    accent: '#ffd600',
+    label: '#7c5c00',
+    border: '#ffd600',
+  },
+  platinum: {
+    bg: '#1F1F1F',
+    accent: '#8F9396',
+    label: '#F4F4F2',
+    border: '#8F9396',
+  },
+  diamond: {
+    bg: '#0F172A',
+    accent: '#38BDF8',
+    label: '#F8FAFC',
+    border: '#38BDF8',
+  },
+  sapphire: {
     bg: '#bbdefb',
     accent: '#1976d2',
-    text: '#0d305a',
+    label: '#0d2340',
     border: '#1976d2',
   },
-  green: {
+  emerald: {
     bg: '#c8e6c9',
     accent: '#388e3c',
-    text: '#1b3c1b',
+    label: '#1b3c1b',
     border: '#388e3c',
   },
-  purple: {
+  amethyst: {
     bg: '#e1bee7',
     accent: '#8e24aa',
-    text: '#3d1b4d',
+    label: '#3d1b4d',
     border: '#8e24aa',
   },
-  red: {
+  ruby: {
     bg: '#ef9a9a',
     accent: '#c62828',
-    text: '#7f1d1d',
+    label: '#7f1d1d',
     border: '#c62828',
   },
-  teal: {
+  turquoise: {
     bg: '#b2dfdb',
     accent: '#00796b',
-    text: '#0d3734',
+    label: '#0d3734',
     border: '#00796b',
   },
   pink: {
     bg: '#f8bbd0',
     accent: '#c2185b',
-    text: '#4d1335',
+    label: '#4d1335',
     border: '#c2185b',
   },
   cyan: {
     bg: '#b2ebf2',
     accent: '#0097a7',
-    text: '#0d3740',
+    label: '#0d3740',
     border: '#0097a7',
   },
   synthwave: {
     bg: '#ff6ec4',
     accent: '#7873f5',
-    text: '#3d1473',
+    label: '#3d1473',
     border: '#7873f5',
   },
   cyberpunk: {
     bg: '#0ff',
     accent: '#f0f',
-    text: '#730073',
+    label: '#730073',
     border: '#f0f',
   },
   rage: {
     bg: '#ff3c00',
     accent: '#ffff00',
-    text: '#733a00',
+    label: '#733a00',
     border: '#ffff00',
   },
   tranquil: {
     bg: '#90caf9',
     accent: '#a5d6a7',
-    text: '#1e3a5f',
+    label: '#1e3a5f',
     border: '#a5d6a7',  
   },
   fusion: {
     bg: '#ff9a9e',
     accent: '#fad0c4',
-    text: '#5f2124',
+    label: '#5f2124',
     border: '#fad0c4',
   },
   dark: {
     bg: '#b0bec5',
     accent: '#455a64',
-    text: '#263238',
+    label: '#263238',
     border: '#455a64',
   },
   magic: {
     bg: '#ce93d8',
     accent: '#7e57c2',
-    text: '#311b92',
+    label: '#311b92',
     border: '#7e57c2',
   },
   honor: {
     bg: '#f0f4c3',
     accent: '#c0ca33',
-    text: '#4e5500',
+    label: '#4e5500',
     border: '#c0ca33',
   },
   scifi: {
     bg: '#81d4fa',
     accent: '#4fc3f7',
-    text: '#015f7d',
+    label: '#015f7d',
     border: '#4fc3f7',
   },
   grounded: {
     bg: '#d7ccc8',
     accent: '#6d4c41',
-    text: '#3e2723',
+    label: '#3e2723',
     border: '#6d4c41',
-  }
+  },
+  flame: {
+    bg: '#ffb300',
+    accent: '#ffff00',
+    label: '#664400',
+    border: '#ffff00',
+  },
+  intense_flame: {
+    bg: '#ffa500',
+    accent: '#ff6f00',
+    label: '#664400',
+    border: '#ff6f00',
+  },
+  raging_flame: {
+    bg: '#ff8c00',
+    accent: '#ff3300',
+    label: '#331a00',
+    border: '#ff3300',
+  },
+  infernal_flame: {
+    bg: '#ff6f00',
+    accent: '#cc0000',
+    label: '#330000',
+    border: '#cc0000',
+  },
+  consuming_flame: {
+    bg: '#ff1493',
+    accent: '#0066ff',
+    label: '#330066',
+    border: '#0066ff',
+  },
+  legendary_flame: {
+    bg: '#ff00ff',
+    accent: '#00ffff',
+    label: '#330066',
+    border: '#00ffff',
+  },
+  mystic: {
+    bg: '#3f0f63',
+    accent: '#fce7f3',
+    label: '#ec4899',
+    border: '#ec4899',
+  },
+  cosmic: {
+    bg: '#0a0f1e',
+    accent: '#7c3aed',
+    label: '#e9d5ff',
+    border: '#7c3aed',
+  },
+  passion: {
+    bg: '#dc2626',
+    accent: '#fef3c7',
+    label: '#7f1d1d',
+    border: '#dc2626',
+  },
+  warmth: {
+    bg: '#f59e0b',
+    accent: '#fffbeb',
+    label: '#78350f',
+    border: '#fffbeb',
+  },
+  copper_medallion: {
+    bg: '#1f2937',
+    accent: '#ffcc80',
+    label: '#ff9800',
+    border: '#8d6e63',
+  },
+  bronze_medallion: {
+    bg: '#1f2937',
+    accent: '#ffcc80',
+    label: '#f97316',
+    border: '#ffcc80',
+  },
+  silver_medallion: {
+    bg: '#1f2937',
+    accent: '#e5e7eb',
+    label: '#9ca3af',
+    border: '#e5e7eb',
+  },
+  gold_medallion: {
+    bg: '#1f2937',
+    accent: '#ffecb3',
+    label: '#fbbf24',
+    border: '#ffffff',
+  },
+  platinum_medallion: {
+    bg: '#1f2937',
+    accent: '#9ca3af',
+    label: '#e5e7eb',
+    border: '#9ca3af',
+  },
+  diamond_medallion: {
+    bg: '#1f2937',
+    accent: '#cceeff',
+    label: '#38bdf8',
+    border: '#cceeff',
+  },
+  magic_medallion: {
+    bg: '#1f2937',
+    accent: '#e0b3ff',
+    label: '#a855f7',
+    border: '#e0b3ff',
+  },
 };
 
 export type AchievementBadgeColor = keyof typeof achievementBadgeColors;

@@ -92,7 +92,7 @@ export function BadgePreviews() {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-6">
           {iconVariants.map(icon => (
             <div key={icon} className="flex flex-col items-center gap-2">
-              <AchievementBadge badge={{ style: 'border_badge', icon, color: 'blue', label: '' }} size="medium" />
+              <AchievementBadge badge={{ style: 'border_badge', icon, color: 'sapphire', label: '' }} size="medium" />
               <span className="text-xs text-slate-500">{icon}</span>
             </div>
           ))}

@@ -110,3 +110,11 @@ export function randomValueOf<T extends object>(obj: T): T[keyof T] {
   const key = randomKeyOf(obj);
   return obj[key];
 }
+
+/**
+ * Convert a string to Title Case (e.g., "hello world" -> "Hello World", "my-name_is here" -> "My Name Is Here")
+ */
+export function titleCase(str: string): string {
+  // Split on delims like space, hyphen, underscore
+  return str.split(/[\s-_]+/).map(capitalize).join(' ');
+}

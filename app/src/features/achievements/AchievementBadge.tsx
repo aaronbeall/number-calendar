@@ -57,7 +57,7 @@ export function AchievementBadge({ badge, size = 'medium', className }: Achievem
             )}
             style={{ 
               fontSize: sizePreset.label, 
-              background: `${ color.text }f8`, 
+              background: `${ color.label }f8`, 
               color: color.accent, 
               filter: `drop-shadow(0 0 20px ${color.accent}99)`,
               // textShadow: `0 1px 0 ${color.accent}`

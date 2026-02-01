@@ -81,7 +81,7 @@ describe('processAchievements', () => {
         count: 3,
         consecutive: true,
         target: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
-        badge: { style: 'ribbon', icon: 'ribbon', color: 'blue', label: 'Blue Ribbon' }
+        badge: { style: 'ribbon', icon: 'ribbon', color: 'sapphire', label: 'Blue Ribbon' }
       },
     ];
     const achievements: Achievement[] = [];
@@ -137,7 +137,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 1,
         target: { condition: 'above', metric: 'total', source: 'stats', value: 0 },
-        badge: { style: 'gift', icon: 'present', color: 'green', label: 'Green Present' },
+        badge: { style: 'gift', icon: 'present', color: 'emerald', label: 'Green Present' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -212,7 +212,7 @@ describe('processAchievements', () => {
         count: 3,
         consecutive: true,
         target: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
-        badge: { style: 'ribbon', icon: 'ribbon', color: 'blue', label: 'Blue Ribbon' }
+        badge: { style: 'ribbon', icon: 'ribbon', color: 'sapphire', label: 'Blue Ribbon' }
       },
     ];
     const achievements: Achievement[] = [
@@ -458,7 +458,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 1,
         target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
-        badge: { style: 'star', icon: 'star', color: 'green', label: 'Up' },
+        badge: { style: 'star', icon: 'star', color: 'emerald', label: 'Up' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -491,7 +491,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 1,
         target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
-        badge: { style: 'star', icon: 'star', color: 'green', label: 'Up' },
+        badge: { style: 'star', icon: 'star', color: 'emerald', label: 'Up' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -578,7 +578,7 @@ describe('processAchievements', () => {
         count: 7,
         consecutive: true,
         target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
-        badge: { style: 'ribbon', icon: 'award', color: 'blue', label: '7↗' },
+        badge: { style: 'ribbon', icon: 'award', color: 'sapphire', label: '7↗' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -612,7 +612,7 @@ describe('processAchievements', () => {
         count: 7,
         consecutive: true,
         target: { condition: 'above', metric: 'total', source: 'deltas', value: 0 },
-        badge: { style: 'ribbon', icon: 'award', color: 'blue', label: '7↗' },
+        badge: { style: 'ribbon', icon: 'award', color: 'sapphire', label: '7↗' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -644,7 +644,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 1,
         target: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
-        badge: { style: 'star', icon: 'award', color: 'purple', label: '10%' },
+        badge: { style: 'star', icon: 'award', color: 'amethyst', label: '10%' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -677,7 +677,7 @@ describe('processAchievements', () => {
         timePeriod: 'day',
         count: 1,
         target: { condition: 'above', metric: 'total', source: 'percents', value: 10 },
-        badge: { style: 'star', icon: 'award', color: 'purple', label: '10%' },
+        badge: { style: 'star', icon: 'award', color: 'amethyst', label: '10%' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -760,7 +760,7 @@ describe('processAchievements', () => {
         count: 4,
         consecutive: true,
         target: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
-        badge: { style: 'ribbon', icon: 'achievement', color: 'green', label: '4wk' },
+        badge: { style: 'ribbon', icon: 'achievement', color: 'emerald', label: '4wk' },
       },
     ];
     const achievements: Achievement[] = [];
@@ -790,7 +790,7 @@ describe('processAchievements', () => {
         count: 4,
         consecutive: true,
         target: { condition: 'above', metric: 'total', source: 'percents', value: 5 },
-        badge: { style: 'ribbon', icon: 'achievement', color: 'green', label: '4wk' },
+        badge: { style: 'ribbon', icon: 'achievement', color: 'emerald', label: '4wk' },
       },
     ];
     const achievements: Achievement[] = [];

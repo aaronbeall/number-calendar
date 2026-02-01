@@ -355,7 +355,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       What time period are you focused on?
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Choose how often you'll work toward your goal
+                      Choose how often you'll track your progress
                     </p>
                   </div>
 
@@ -370,7 +370,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       )}
                     >
                       <AchievementBadge
-                        badge={{ style: 'circle', color: 'blue', icon: 'calendar', label: '' }}
+                        badge={{ style: 'circle', color: 'sapphire', icon: 'calendar', label: '' }}
                         size="small"
                       />
                       <div className="text-center space-y-1">
@@ -391,7 +391,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       )}
                     >
                       <AchievementBadge
-                        badge={{ style: 'ribbon', color: 'green', icon: 'calendar', label: '' }}
+                        badge={{ style: 'ribbon', color: 'emerald', icon: 'calendar', label: '' }}
                         size="small"
                       />
                       <div className="text-center space-y-1">
@@ -412,7 +412,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       )}
                     >
                       <AchievementBadge
-                        badge={{ style: 'star', color: 'purple', icon: 'calendar', label: '' }}
+                        badge={{ style: 'star', color: 'amethyst', icon: 'calendar', label: '' }}
                         size="small"
                       />
                       <div className="text-center space-y-1">

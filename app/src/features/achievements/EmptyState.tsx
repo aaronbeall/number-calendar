@@ -19,13 +19,13 @@ const sampleBadges: Record<string, GoalBadge> = {
   target: {
     style: 'bolt_shield',
     icon: 'target',
-    color: 'green',
+    color: 'emerald',
     label: '',
   },
   milestone: {
     style: 'laurel_trophy',
     icon: 'flag',
-    color: 'purple',
+    color: 'amethyst',
     label: '',
   },
 };

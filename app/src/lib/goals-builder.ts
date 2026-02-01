@@ -3,7 +3,7 @@ import type { Goal, GoalTarget, Tracking, Valence } from '@/features/db/localdb'
 import type { NumberMetric } from './stats';
 import { getMetricDisplayName } from './stats';
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
-import { adjectivize, capitalize } from './utils';
+import { adjectivize, capitalize, pluralize } from './utils';
 import { formatValue } from './goals';
 import { getValueForValence } from './valence';
 
@@ -189,62 +189,51 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   const funNames = [
     // Start milestones
     'First Steps',
-    'Good Start',
+    'Solid Start',
     // Pre-baseline
     'Blast Off',
     'Locked In',
-    'Firestarter',
+    'Diamond Hands',
     // Baseline
     'Bullseye',
     // Extended
     'Trailblazer',
-    'Rocket',
-    'Meteor',
-    'Comet',
-    'Galactic',
+    'Moonwalker',
+    'Meteoric Rise',
+    'Comet Chaser',
+    'Galactic Guru',
     'Supernova',
   ];
   const colors: AchievementBadgeColor[] = [
-    'bronze',
-    'bronze',
+    // Starting milestones
     'bronze',
     'silver',
+    // Pre-baseline
     'gold',
-    'purple',
-    'purple',
+    'platinum',
+    'diamond',
+    // Baseline
+    'emerald',
+    // Extended
+    'sapphire',
+    'amethyst',
+    'ruby',
     'magic',
-    'magic',
-    'magic',
-    'magic',
-    'magic',
+    'mystic',
+    'cosmic',
   ];
 
-  const milestonesConfig = [
-    {
-      multiplier: 0,
-      value: roundToClean(startValue + baselines.dayTarget, 2),
-    },
-    {
-      multiplier: 0,
-      value: roundToClean(startValue + baselines.weekTarget, 2),
-    },
-    ...preBaselineFractions.map((fraction) => ({
-      multiplier: fraction,
-      value: roundToClean(startValue + delta * fraction, 2),
-    })),
-    {
-      multiplier: 1,
-      value: baseValue,
-    },
-    ...extendedMultipliers.map((multiplier) => ({
-      multiplier,
-      value: roundToClean(startValue + delta * multiplier, 1),
-    })),
+  const milestonesValues = [
+    roundToClean(startValue + baselines.dayTarget, 2),
+    roundToClean(startValue + baselines.weekTarget, 2),
+    ...preBaselineFractions.map((fraction) => roundToClean(startValue + delta * fraction, 2)),
+    baseValue,
+    ...extendedMultipliers.map((multiplier) => roundToClean(startValue + delta * multiplier, 1)),
   ];
 
-  milestonesConfig.forEach(({ multiplier, value }, idx) => {
-    const name = funNames[idx] ?? `Milestone ${multiplier}x`;
-    const color = colors[idx] ?? 'magic';
+  milestonesValues.forEach((value, idx) => {
+    const name = funNames[idx];
+    const color = colors[idx];
 
     milestones.push({
       id: nanoid(),
@@ -299,9 +288,9 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
   
   const targets: Goal[] = [];
   const periods: Array<{ period: 'day' | 'week' | 'month'; value: number; color: AchievementBadgeColor }> = [
-    { period: 'day', value: baselines.dayTarget, color: 'green' },
-    { period: 'week', value: baselines.weekTarget, color: 'blue' },
-    { period: 'month', value: baselines.monthTarget, color: 'purple' },
+    { period: 'day', value: baselines.dayTarget, color: 'emerald' },
+    { period: 'week', value: baselines.weekTarget, color: 'sapphire' },
+    { period: 'month', value: baselines.monthTarget, color: 'amethyst' },
   ];
 
   periods.forEach(({ period, value, color }) => {
@@ -372,16 +361,16 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   });
 
   // Good Days/Weeks/Months completed (non-consecutive) - use user's period
-  const goodPeriodCounts = [5, 10, 20, 100];
-  const goodPeriodColors: AchievementBadgeColor[] = ['bronze', 'silver', 'gold', 'magic'];
+  const goodPeriodCounts = [1, 5, 10, 20, 100];
+  const goodPeriodColors: AchievementBadgeColor[] = ['copper', 'bronze', 'silver', 'gold', 'diamond'];
   goodPeriodCounts.forEach((count, idx) => {
     achievements.push({
       id: nanoid(),
       datasetId,
       createdAt: Date.now(),
       type: 'goal',
-      title: `${count} ${valenceTerm} ${periodName}s`,
-      description: `Complete ${count} ${valenceTerm.toLowerCase()} ${period}s`,
+      title: `${count > 1 ? `${count} ` : ''} ${valenceTerm} ${pluralize(periodName, count)}`,
+      description: `Complete ${count == 1 ? 'a' : count} ${valenceTerm.toLowerCase()} ${pluralize(period, count)}`,
       badge: createBadge('medal', goodPeriodColors[idx], 'trophy'),
       target: createTarget(metric, source, condition, periodTargets[period]),
       timePeriod: period,
@@ -391,7 +380,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
 
   // Targets Completed - for all periods using baseline targets
   const targetCounts = [5, 10, 20, 100];
-  const targetColors: AchievementBadgeColor[] = ['green', 'blue', 'purple', 'magic'];
+  const targetColors: AchievementBadgeColor[] = ['emerald', 'sapphire', 'amethyst', 'magic'];
   (['day', 'week', 'month'] as const).forEach((targetPeriod) => {
     const targetValue = periodTargets[targetPeriod];
 
@@ -426,13 +415,25 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     'Decuple',
     'Centuple',
   ];
+  const multipleColors: AchievementBadgeColor[] = [
+    'copper_medallion',
+    'bronze_medallion',
+    'silver_medallion',
+    'gold_medallion',
+    'platinum_medallion',
+    'diamond_medallion',
+    'magic_medallion',
+    'cosmic',
+    'mystic',
+    'passion',
+  ];
   (['day', 'week', 'month'] as const).forEach((targetPeriod) => {
     const targetPeriodName = capitalize(targetPeriod);
     const targetValue = periodTargets[targetPeriod];
 
     multiples.forEach((multiple, idx) => {
       const multipleValue = roundToClean(targetValue * multiple);
-      const color: AchievementBadgeColor = multiple <= 3 ? 'gold' : multiple <= 6 ? 'purple' : 'magic';
+      const color = multipleColors[idx];
 
       achievements.push({
         id: nanoid(),
@@ -465,7 +466,8 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
 
   // Day streaks - using day target
   const dayStreaks = [5, 10, 20];
-  const dayStreakColors: AchievementBadgeColor[] = ['red', 'red', 'magic'];
+  const dayStreakColors: AchievementBadgeColor[] = ['rage', 'ruby', 'magic'];
+  const dayStreakStyles: AchievementBadgeStyle[] = ['flame', 'fires', 'sparkles'];
   dayStreaks.forEach((days, idx) => {
     achievements.push({
       id: nanoid(),
@@ -474,7 +476,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
       type: 'goal',
       title: `${days}-Day Streak`,
       description: `Maintain ${days} ${valenceTerm.toLowerCase()} days in a row`,
-      badge: createBadge('fire', dayStreakColors[idx], 'flame'),
+      badge: createBadge(dayStreakStyles[idx], dayStreakColors[idx], 'flame'),
       target: createTarget(metric, source, condition, periodTargets.day),
       timePeriod: 'day',
       count: days,
@@ -483,13 +485,21 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   });
 
   // Week/Month streaks - using respective targets
-  const periodStreaks = [2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const periodStreaks = [2, 3, 4, 5, 6];
+  const periodStreakColors: AchievementBadgeColor[] = [
+    'flame',
+    'intense_flame',
+    'raging_flame',
+    'infernal_flame',
+    'consuming_flame',
+    'legendary_flame',
+  ];
   (['week', 'month'] as const).forEach((streakPeriod) => {
     const streakPeriodName = capitalize(streakPeriod);
     const targetValue = periodTargets[streakPeriod];
     
-    periodStreaks.forEach((count) => {
-      const color: AchievementBadgeColor = count <= 3 ? 'red' : count <= 6 ? 'red' : 'magic';
+    periodStreaks.forEach((count, idx) => {
+      const color = periodStreakColors[idx];
       achievements.push({
         id: nanoid(),
         datasetId,
@@ -528,7 +538,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     type: 'goal',
     title: 'Active Month',
     description: `Record ${activityDays} entries in a month`,
-    badge: createBadge('star_formation', 'blue', 'calendar'),
+    badge: createBadge('star_formation', 'sapphire', 'calendar'),
     target: createTarget('count', 'stats', 'above', activityDays),
     timePeriod: 'month',
     count: 1,

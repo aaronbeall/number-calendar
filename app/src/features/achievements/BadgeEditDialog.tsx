@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
-import { cn, keysOf } from '@/lib/utils';
+import { cn, keysOf, titleCase } from '@/lib/utils';
 import { Dices } from 'lucide-react';
 import { useState } from 'react';
 import type { GoalBadge } from '../db/localdb';
@@ -83,7 +83,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onChange }: {
                       }}
                       aria-label={color}
                       onClick={() => handleUpdateBadgeField('color', color)}
-                      title={color}
+                      title={titleCase(color)}
                     >
                       <div
                         className="w-4 h-2 rounded-full"

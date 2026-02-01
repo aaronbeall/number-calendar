@@ -48,7 +48,7 @@ export default function Milestones() {
       createdAt: Date.now(),
       title: 'First 50k',
       description: 'Reach 50,000 total',
-      badge: { style: 'trophy', icon: 'trophy', color: 'purple', label: '50k' },
+      badge: { style: 'trophy', icon: 'trophy', color: 'amethyst', label: '50k' },
       target: { condition: 'above', metric: 'total', source: 'stats', value: 50000 },
       type: 'milestone',
       timePeriod: 'anytime',
