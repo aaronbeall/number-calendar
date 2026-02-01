@@ -157,7 +157,7 @@ function IconSelector<T extends string>({ options, value, onChange, label, class
               )}
               aria-pressed={selected}
               aria-label={k}
-              title={k}
+              title={titleCase(k)}
             >
               <Icon className="h-4 w-4" />
             </button>

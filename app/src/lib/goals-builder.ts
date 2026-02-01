@@ -485,7 +485,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   });
 
   // Week/Month streaks - using respective targets
-  const periodStreaks = [2, 3, 4, 5, 6];
+  const periodStreaks = [2, 3, 4, 5, 6, 7];
   const periodStreakColors: AchievementBadgeColor[] = [
     'flame',
     'intense_flame',
@@ -543,6 +543,8 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     timePeriod: 'month',
     count: 1,
   });
+
+  // TODO: Perfect Day/Week/Month achievements
 
   return achievements;
 }

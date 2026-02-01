@@ -292,7 +292,7 @@ export const achievementBadgeIcons = {
   sparkles: Sparkles,
   users: Users,
   check: Check,
-  checkCircle: CheckCircle2,
+  check_circle: CheckCircle2,
   calendar: CalendarCheck2,
   flame: Flame,
   crown: Crown,
@@ -308,14 +308,14 @@ export const achievementBadgeIcons = {
   leaf: Leaf,
   shield: ShieldCheck,
   user: UserCheck,
-  thumbsUp: ThumbsUp,
+  thumbs_up: ThumbsUp,
   zap: Zap,
   diamond: GiDiamondTrophy,
   achievement: GiAchievement,
   upgrade: GiUpgrade,
   progression: GiProgression,
   crystal: GiCrystalBall,
-  targetPrize: GiTargetPrize,
+  target_prize: GiTargetPrize,
   stars: GiStarsStack,
   trend: TrendingUp,
   eye: FaEye,
@@ -536,7 +536,7 @@ export const achievementBadgeColors = {
   copper_medallion: {
     bg: '#1f2937',
     accent: '#ffcc80',
-    label: '#ff9800',
+    label: '#a0826d',
     border: '#8d6e63',
   },
   bronze_medallion: {
@@ -582,17 +582,17 @@ export type AchievementBadgeColor = keyof typeof achievementBadgeColors;
 export const achievementBadgeSizes = {
   small: {
     container: 48,
-    icon: 22,
+    icon: 16,
     label: '0.95rem',
   },
   medium: {
     container: 80,
-    icon: 36,
+    icon: 20,
     label: '1.35rem',
   },
   large: {
     container: 120,
-    icon: 54,
+    icon: 30,
     label: '2.1rem',
   },
 };

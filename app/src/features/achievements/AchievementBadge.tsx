@@ -67,10 +67,11 @@ export function AchievementBadge({ badge, size = 'medium', className }: Achievem
               <span
                 className="inline-flex items-center justify-center"
                 style={{
-                  color: color.accent
+                  color: color.accent,
+                  fontSize: sizePreset.icon,
                 }}
               >
-                <CenterIcon />
+                <CenterIcon size={sizePreset.icon} />
               </span>
             )}
             {badge.label && badge.label !== '' && (
