@@ -74,8 +74,8 @@ export function AchievementBadge({ badge, size = 'medium', className }: Achievem
                 <CenterIcon size={sizePreset.icon} />
               </span>
             )}
-            {badge.label && badge.label !== '' && (
-              <span className={ CenterIcon ? 'text-white' : ''}>{badge.label}</span>
+            {badge.label && badge.label !== '' && size !== 'small' && (
+              <span style={{ color: color.bg }}>{badge.label}</span>
             )}
           </span>
         )}

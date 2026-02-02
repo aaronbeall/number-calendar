@@ -590,7 +590,7 @@ export const achievementBadgeSizes = {
   small: {
     container: 48,
     icon: 12,
-    label: '0.95rem',
+    label: '0.8rem',
   },
   medium: {
     container: 80,
