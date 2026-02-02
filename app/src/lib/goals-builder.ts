@@ -3,7 +3,7 @@ import type { Goal, GoalTarget, Tracking, Valence } from '@/features/db/localdb'
 import type { NumberMetric } from './stats';
 import { getMetricDisplayName } from './stats';
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
-import { adjectivize, capitalize, pluralize } from './utils';
+import { adjectivize, capitalize, pluralize, randomValueOf } from './utils';
 import { formatValue } from './goals';
 import { getValueForValence } from './valence';
 
@@ -186,10 +186,28 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   // then extend past baseline using the same direction.
   const preBaselineFractions = [0.25, 0.5, 0.75];
   const extendedMultipliers = [2, 4, 10, 20, 50, 100];
-  const funNames = [
+  const spiritualNames = [
     // Start milestones
     'First Steps',
-    'Solid Start',
+    'Baptism',
+    // Pre-baseline
+    'Awakening',
+    'Redemption',
+    'Transcendence',
+    // Baseline
+    'Enlightenment',
+    // Extended
+    'Ascension',
+    'Eschaton',
+    'Apotheosis',
+    'Nirvana',
+    'Eternity',
+    'Divinity',
+  ]
+  const cosmicNames = [
+    // Start milestones
+    'First Steps',
+    'Ignition',
     // Pre-baseline
     'Blast Off',
     'Locked In',
@@ -201,9 +219,153 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     'Moonwalker',
     'Meteoric Rise',
     'Comet Chaser',
-    'Galactic Guru',
+    'Galactic Legend',
     'Supernova',
   ];
+  const tieredNames = [
+    // Start milestones
+    'Rookie',
+    'Apprentice',
+    // Pre-baseline
+    'Adept',
+    'Expert',
+    'Master',
+    // Baseline
+    'Grandmaster',
+    // Extended
+    'Legendary',
+    'Mythic',
+    'Epic',
+    'Heroic',
+    'Ultimate',
+    'Immortal',
+  ];
+  const rarityNames = [
+    // Start milestones
+    'First Steps',
+    'Getting Started',
+    // Pre-baseline
+    'Excellent',
+    'Epic',
+    'Legendary',
+    // Baseline
+    'Mythic',
+    // Extended
+    'Exotic',
+    'Exquisite',
+    'Radiant',
+    'Celestial',
+    'Ethereal',
+    'Divine',
+  ];
+  const destructiveNames = [
+    // Start milestones
+    'Initiate',
+    'Catalyst',
+    // Pre-baseline
+    'Annihilator',
+    'Obliterator',
+    'Devastator',
+    // Baseline
+    'Apocalypse',
+    // Extended
+    'Worldbreaker',
+    'Doombringer',
+    'Cataclysm',
+    'Armageddon',
+    'Endbringer',
+    'Singularity',
+  ]
+  const growthNames = [
+    // Start milestones
+    'Seedling',
+    'Sprout',
+    // Pre-baseline
+    'Sapling',
+    'Youngling',
+    'Matured',
+    // Baseline
+    'Blooming',
+    // Extended
+    'Flourishing',
+    'Thriving',
+    'Prospering',
+    'Abundant',
+    'Evergreen',
+    'Eternal',
+  ]
+  const climbingNames = [
+    // Start milestones
+    'Base Camp',
+    'Trailhead',
+    // Pre-baseline
+    'Climber',
+    'Mountaineer',
+    'Alpinist',
+    // Baseline
+    'Summit',
+    // Extended
+    'Peak Performer',
+    'Skyward',
+    'Stratosphere',
+    'Apex',
+    'Zenith',
+    'Pinnacle',
+  ]
+  const mindBendingNames = [
+    // Start milestones
+    'Novice',
+    'Seeker',
+    // Pre-baseline
+    'Thinker',
+    'Philosopher',
+    'Sage',
+    // Baseline
+    'Enlightened',
+    // Extended
+    'Illuminated',
+    'Transcendent',
+    'Ascended',
+    'Cosmic Mind',
+    'Universal',
+    'Omniscient',
+  ];
+  const atomicNames = [
+    // Start milestones
+    'Particle',
+    'Atom',
+    // Pre-baseline
+    'Molecule',
+    'Compound',
+    'Element',
+    // Baseline
+    'Reaction',
+    // Extended
+    'Catalyst',
+    'Fusion',
+    'Quantum Leap',
+    'Singularity',
+    'Event Horizon',
+    'Big Bang',
+  ]
+  const classicNames = [
+    // Start milestones
+    'Bronze',
+    'Silver',
+    // Pre-baseline
+    'Gold',
+    'Platinum',
+    'Diamond',
+    // Baseline
+    'Emerald',
+    // Extended
+    'Sapphire',
+    'Amethyst',
+    'Ruby',
+    'Exotic',
+    'Mythic',
+    'Legendary',
+  ]
   const colors: AchievementBadgeColor[] = [
     // Starting milestones
     'bronze',
@@ -222,6 +384,24 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     'mystic',
     'cosmic',
   ];
+  const styles: AchievementBadgeStyle[] = [
+    // Starting milestones
+    'laurel',
+    'laurel',
+    // Pre-baseline
+    'laurel_trophy',
+    'laurel_trophy',
+    'laurel_trophy',
+    // Baseline
+    'award_wings',
+    // Extended
+    'laurel_crown',
+    'laurel_crown',
+    'laurel_crown',
+    'laurel_crown',
+    'laurel_crown',
+    'laurel_crown',
+  ];
 
   const milestonesValues = [
     roundToClean(startValue + baselines.dayTarget, 2),
@@ -231,9 +411,23 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     ...extendedMultipliers.map((multiplier) => roundToClean(startValue + delta * multiplier, 1)),
   ];
 
+  const funNames = randomValueOf({
+    spiritualNames,
+    cosmicNames,
+    tieredNames,
+    rarityNames,
+    destructiveNames,
+    growthNames,
+    climbingNames,
+    mindBendingNames,
+    atomicNames,
+    classicNames,
+  });
+
   milestonesValues.forEach((value, idx) => {
     const name = funNames[idx];
     const color = colors[idx];
+    const style = styles[idx];
 
     milestones.push({
       id: nanoid(),
@@ -242,7 +436,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
       type: 'milestone',
       title: name,
       description: `Reach ${formatValue(value, { delta: source === 'deltas' })}${metricName}`,
-      badge: createBadge('laurel_trophy', color, 'flag'),
+      badge: createBadge(style, color, 'flag'),
       target: createTarget(metric, source, condition, value),
       timePeriod: 'anytime',
       count: 1,
@@ -293,8 +487,9 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
     { period: 'month', value: baselines.monthTarget, color: 'amethyst' },
   ];
 
-  periods.forEach(({ period, value, color }) => {
+  periods.forEach(({ period, value, color }, idx) => {
     const adjectiveName = capitalize(adjectivize(period));
+    const style = (['bolt_shield', 'vibrating_shield', 'wing_shield'] as const)[idx];
     
     targets.push({
       id: nanoid(),
@@ -303,7 +498,7 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
       type: 'target',
       title: `${adjectiveName} Target`,
       description: `Reach ${formatValue(value, { delta: source === 'deltas' })} in a ${period}`,
-      badge: createBadge('bolt_shield', color, 'target'),
+      badge: createBadge(style, color, 'target'),
       target: createTarget(metric, source, condition, value),
       timePeriod: period,
       count: 1,
@@ -315,7 +510,7 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
 
 // Generate achievement goals
 function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
-  const { datasetId, period, valueType, valence, activePeriods: activityDays } = input;
+  const { datasetId, period, valueType, valence } = input;
   const { metric, source } = getMetricAndSource(valueType, 'target');
   const condition = getCondition(valence);
 
@@ -323,7 +518,6 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   const valenceTerm = (valueType === 'period-change' || valueType === 'alltime-target')
     ? getValueForValence(1, valence, { good: 'Uptrend', bad: 'Downtrend', neutral: 'Steady' })
     : getValueForValence(1, valence, { good: 'Positive', bad: 'Negative', neutral: 'Consistent' });
-  const periodName = capitalize(period);
 
   // Use baseline targets for achievement calculations
   const periodTargets = {
@@ -340,7 +534,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     type: 'goal',
     title: 'First Entry',
     description: 'Record your first data point',
-    badge: createBadge('medal', 'bronze', 'trophy'),
+    badge: createBadge('ribbon_medal', 'honor', 'trophy'),
     target: createTarget('count', 'stats', 'above', 0),
     timePeriod: 'anytime',
     count: 1,
@@ -354,35 +548,57 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     type: 'goal',
     title: 'First Win',
     description: `Record your first ${valenceTerm.toLowerCase()} entry`,
-    badge: createBadge('medal', 'silver', 'trophy'),
+    badge: createBadge('sports_medal', 'gold', 'trophy'),
     target: createTarget(metric, source, condition, periodTargets[period]),
     timePeriod: 'anytime',
     count: 1,
   });
 
-  // Good Days/Weeks/Months completed (non-consecutive) - use user's period
-  const goodPeriodCounts = [1, 5, 10, 20, 100];
-  const goodPeriodColors: AchievementBadgeColor[] = ['copper', 'bronze', 'silver', 'gold', 'diamond'];
-  goodPeriodCounts.forEach((count, idx) => {
-    achievements.push({
-      id: nanoid(),
-      datasetId,
-      createdAt: Date.now(),
-      type: 'goal',
-      title: `${count > 1 ? `${count} ` : ''} ${valenceTerm} ${pluralize(periodName, count)}`,
-      description: `Complete ${count == 1 ? 'a' : count} ${valenceTerm.toLowerCase()} ${pluralize(period, count)}`,
-      badge: createBadge('medal', goodPeriodColors[idx], 'trophy'),
-      target: createTarget(metric, source, condition, periodTargets[period]),
-      timePeriod: period,
-      count,
+  // Good Days/Weeks/Months completed (non-consecutive)
+  const goodPeriodCounts = [1, 5, 10, 20, 50, 100];
+  const goodPeriodColors: AchievementBadgeColor[] = ['copper', 'bronze', 'silver', 'gold', 'diamond', 'magic'];
+  (['day', 'week', 'month'] as const).forEach((p, idx, periods) => {
+    if (idx < periods.indexOf(period)) return; // Skip periods before user's selected period
+    const periodName = capitalize(p);
+    const style = (['medal', 'star_medal', 'wings'] as const)[idx];
+    goodPeriodCounts.forEach((count, idx) => {
+      achievements.push({
+        id: nanoid(),
+        datasetId,
+        createdAt: Date.now(),
+        type: 'goal',
+        title: `${count > 1 ? `${count} ` : ''} ${valenceTerm} ${pluralize(periodName, count)}`,
+        description: `Complete ${count == 1 ? 'a' : count} ${valenceTerm.toLowerCase()} ${pluralize(p, count)}`,
+        badge: createBadge(style, goodPeriodColors[idx], 'crown'),
+        target: createTarget(metric, source, condition, 0),
+        timePeriod: p,
+        count,
+      });
     });
   });
 
-  // Targets Completed - for all periods using baseline targets
-  const targetCounts = [5, 10, 20, 100];
-  const targetColors: AchievementBadgeColor[] = ['emerald', 'sapphire', 'amethyst', 'magic'];
-  (['day', 'week', 'month'] as const).forEach((targetPeriod) => {
+  // Good Year
+  achievements.push({
+    id: nanoid(),
+    datasetId,
+    createdAt: Date.now(),
+    type: 'goal',
+    title: `${valenceTerm} Year`,
+    description: `Have a ${valenceTerm.toLowerCase()} year`,
+    badge: createBadge('angel', 'gold', 'crown'),
+    target: createTarget(metric, source, condition, 0),
+    timePeriod: 'year',
+    count: 1,
+  });
+
+  // Targets Completed
+  const targetCounts = [5, 10, 20, 50, 100];
+  const targetColors: AchievementBadgeColor[] = ['emerald', 'sapphire', 'amethyst', 'synthwave', 'cyberpunk'];
+  (['day', 'week', 'month'] as const).forEach((targetPeriod, idx, periods) => {
+    if (idx < periods.indexOf(period)) return; // Skip periods before user's selected period
+
     const targetValue = periodTargets[targetPeriod];
+    const style = (['bolt_shield', 'vibrating_shield', 'wing_shield'] as const)[idx];
 
     targetCounts.forEach((count, idx) => {
       const adjectiveName = capitalize(adjectivize(targetPeriod));
@@ -393,7 +609,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
         type: 'goal',
         title: `${count} ${adjectiveName} Targets`,
         description: `Complete ${count} ${adjectivize(targetPeriod)} targets`,
-        badge: createBadge('bolt_shield', targetColors[idx], 'target'),
+        badge: createBadge(style, targetColors[idx], 'target'),
         target: createTarget(metric, source, condition, targetValue),
         timePeriod: targetPeriod,
         count,
@@ -401,7 +617,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     });
   });
 
-  // Multiple target achievements (Double, Triple, etc.) - for all periods
+  // Multiple target achievements (Double, Triple, etc.)
   const multiples = [2, 3, 4, 5, 6, 7, 8, 9, 10, 100];
   const multipleNames = [
     'Double',
@@ -416,20 +632,27 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     'Centuple',
   ];
   const multipleColors: AchievementBadgeColor[] = [
-    'copper_medallion',
-    'bronze_medallion',
-    'silver_medallion',
-    'gold_medallion',
-    'platinum_medallion',
-    'diamond_medallion',
-    'magic_medallion',
+    'copper',
+    'bronze',
+    'silver',
+    'gold',
+    'platinum',
+    'diamond',
+    'magic',
     'cosmic',
     'mystic',
     'passion',
   ];
-  (['day', 'week', 'month'] as const).forEach((targetPeriod) => {
+  const multipleStyles: AchievementBadgeStyle[] = [
+    'star_formation',
+    'star_stack',
+    'staryu',
+  ];
+  (['day', 'week', 'month'] as const).forEach((targetPeriod, idx, periods) => {
+    if (idx < periods.indexOf(period)) return; // Skip periods before user's selected period
     const targetPeriodName = capitalize(targetPeriod);
     const targetValue = periodTargets[targetPeriod];
+    const style = multipleStyles[idx];
 
     multiples.forEach((multiple, idx) => {
       const multipleValue = roundToClean(targetValue * multiple);
@@ -442,7 +665,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
         type: 'goal',
         title: `${multipleNames[idx]} ${targetPeriodName}`,
         description: `Reach ${formatValue(multipleValue, { delta: source === 'deltas' })} in a ${targetPeriod}`,
-        badge: createBadge('star_formation', color, 'trophy'),
+        badge: createBadge(style, color, 'trophy'),
         target: createTarget(metric, source, condition, multipleValue),
         timePeriod: targetPeriod,
         count: 1,
@@ -450,56 +673,22 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     });
   });
 
-  // Good Year - using monthly target
-  achievements.push({
-    id: nanoid(),
-    datasetId,
-    createdAt: Date.now(),
-    type: 'goal',
-    title: `${valenceTerm} Year`,
-    description: `Have a ${valenceTerm.toLowerCase()} year`,
-    badge: createBadge('laurel_trophy', 'magic', 'trophy'),
-    target: createTarget(metric, source, condition, roundToClean(periodTargets.month * 12)),
-    timePeriod: 'year',
-    count: 1,
-  });
-
-  // Day streaks - using day target
-  const dayStreaks = [5, 10, 20];
-  const dayStreakColors: AchievementBadgeColor[] = ['rage', 'ruby', 'magic'];
-  const dayStreakStyles: AchievementBadgeStyle[] = ['flame', 'fires', 'sparkles'];
-  dayStreaks.forEach((days, idx) => {
-    achievements.push({
-      id: nanoid(),
-      datasetId,
-      createdAt: Date.now(),
-      type: 'goal',
-      title: `${days}-Day Streak`,
-      description: `Maintain ${days} ${valenceTerm.toLowerCase()} days in a row`,
-      badge: createBadge(dayStreakStyles[idx], dayStreakColors[idx], 'flame'),
-      target: createTarget(metric, source, condition, periodTargets.day),
-      timePeriod: 'day',
-      count: days,
-      consecutive: true,
-    });
-  });
-
-  // Week/Month streaks - using respective targets
-  const periodStreaks = [2, 3, 4, 5, 6, 7];
-  const periodStreakColors: AchievementBadgeColor[] = [
-    'flame',
-    'intense_flame',
-    'raging_flame',
-    'infernal_flame',
-    'consuming_flame',
-    'legendary_flame',
-  ];
-  (['week', 'month'] as const).forEach((streakPeriod) => {
+  // Day/Week/Month streaks
+  const streakColors: AchievementBadgeColor[] = ['rage', 'flame', 'intense_flame', 'raging_flame', 'infernal_flame', 'consuming_flame', 'legendary_flame'];
+  const streakStyles: AchievementBadgeStyle[] = ['fire', 'flamed', 'heart_flame'];
+  const streaks = {
+    day: [2, 3, 4, 5, 10, 50, 100],
+    week: [2, 3, 4, 8, 12, 32, 52],
+    month: [2, 3, 4, 5, 6, 12, 24],
+  };
+  (['day', 'week', 'month'] as const).forEach((streakPeriod, idx, periods) => {
+    if (idx < periods.indexOf(streakPeriod)) return; // Skip periods before user's selected period
     const streakPeriodName = capitalize(streakPeriod);
-    const targetValue = periodTargets[streakPeriod];
-    
+    const periodStreaks = streaks[streakPeriod];
+    const style = streakStyles[idx];
+
     periodStreaks.forEach((count, idx) => {
-      const color = periodStreakColors[idx];
+      const color = streakColors[idx];
       achievements.push({
         id: nanoid(),
         datasetId,
@@ -507,41 +696,13 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
         type: 'goal',
         title: `${count}-${streakPeriodName} Streak`,
         description: `Maintain ${count} ${valenceTerm.toLowerCase()} ${streakPeriod}s in a row`,
-        badge: createBadge('fire', color, 'flame'),
-        target: createTarget(metric, source, condition, targetValue),
+        badge: createBadge(style, color, 'flame'),
+        target: createTarget(metric, source, condition, 0),
         timePeriod: streakPeriod,
         count,
         consecutive: true,
       });
     });
-  });
-
-  // Legend - 100 good periods using user's period
-  achievements.push({
-    id: nanoid(),
-    datasetId,
-    createdAt: Date.now(),
-    type: 'goal',
-    title: 'Legend',
-    description: `Complete 100 ${valenceTerm.toLowerCase()} ${period}s`,
-    badge: createBadge('laurel_trophy', 'magic', 'crown'),
-    target: createTarget(metric, source, condition, periodTargets[period]),
-    timePeriod: period,
-    count: 100,
-  });
-
-  // Active Month
-  achievements.push({
-    id: nanoid(),
-    datasetId,
-    createdAt: Date.now(),
-    type: 'goal',
-    title: 'Active Month',
-    description: `Record ${activityDays} entries in a month`,
-    badge: createBadge('star_formation', 'sapphire', 'calendar'),
-    target: createTarget('count', 'stats', 'above', activityDays),
-    timePeriod: 'month',
-    count: 1,
   });
 
   // TODO: Perfect Day/Week/Month achievements

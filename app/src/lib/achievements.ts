@@ -44,6 +44,7 @@ import {
   FaCrown,
   FaEye,
   FaFeatherPointed,
+  FaFlag,
   FaGear,
   FaGears,
   FaGift,
@@ -93,6 +94,7 @@ import {
   GiFlowerEmblem,
   GiFlyingFlag,
   GiGearHammer,
+  GiHeartburn,
   GiLaurelCrown as GiLaurel,
   GiLaurelCrown,
   GiLaurels,
@@ -142,6 +144,7 @@ import {
   GiVerticalBanner,
   GiVibratingShield,
   GiWildfires,
+  GiWingedEmblem,
   GiWingedShield
 } from 'react-icons/gi';
 import { ImShield } from 'react-icons/im';
@@ -198,14 +201,16 @@ export const achievementBadgeStyles = {
   checked_shield: GiCheckedShield,
   castle_shield: GiCrenulatedShield,
   sword_shield: GiSwordsEmblem,
-  chevron_shielf: ImShield,
+  chevron_shield: ImShield,
   medal: GiMedal,
   star_medal: GiStarMedal,
   sports_medal: GiSportMedal,
   award: FaAward,
   award_fill: BsAwardFill,
+  award_wings: GiWingedEmblem,
   ribbon: FaRibbon,
   torn_ribbon: GiRibbon,
+  achievement: GiAchievement,
   target: TargetIcon,
   archer_target: GiArcheryTarget,
   crosshairs: FaCrosshairs,
@@ -257,6 +262,7 @@ export const achievementBadgeStyles = {
   heart: FaHeart,
   hearts: BsHearts,
   heart_arrow: BsArrowThroughHeartFill,
+  heart_flame: GiHeartburn,
   circle_arrow: FaCircleArrowUp,
   feather: FaFeatherPointed,
   leaf: FaLeaf,
@@ -320,7 +326,7 @@ export const achievementBadgeIcons = {
   trend: TrendingUp,
   eye: FaEye,
   tags: Tags,
-  flag: GiFlyingFlag,
+  flag: FaFlag,
 };
 
 export type AchievementBadgeIcon = keyof typeof achievementBadgeIcons;
@@ -337,9 +343,9 @@ export type AchievementBadgeIcon = keyof typeof achievementBadgeIcons;
 export const achievementBadgeColors = {
   copper: {
     bg: '#d7ccc8',
-    accent: '#8d6e63',
+    accent: '#bc6c25',
     label: '#3e2723',
-    border: '#8d6e63',
+    border: '#bc6c25',
   },
   bronze: {
     bg: '#ffcc80',
@@ -395,19 +401,19 @@ export const achievementBadgeColors = {
     label: '#7f1d1d',
     border: '#c62828',
   },
-  turquoise: {
+  aquamarine: {
     bg: '#b2dfdb',
     accent: '#00796b',
     label: '#0d3734',
     border: '#00796b',
   },
-  pink: {
+  rose_quartz: {
     bg: '#f8bbd0',
     accent: '#c2185b',
-    label: '#4d1335',
+    label: '#4a122c',
     border: '#c2185b',
   },
-  cyan: {
+  turquoise: {
     bg: '#b2ebf2',
     accent: '#0097a7',
     label: '#0d3740',
@@ -451,9 +457,10 @@ export const achievementBadgeColors = {
   },
   magic: {
     bg: '#ce93d8',
-    accent: '#7e57c2',
+    // neon purple
+    accent: '#d500f9',
     label: '#311b92',
-    border: '#7e57c2',
+    border: '#d500f9',
   },
   honor: {
     bg: '#f0f4c3',
@@ -461,7 +468,7 @@ export const achievementBadgeColors = {
     label: '#4e5500',
     border: '#c0ca33',
   },
-  scifi: {
+  transcendence: {
     bg: '#81d4fa',
     accent: '#4fc3f7',
     label: '#015f7d',
@@ -537,7 +544,7 @@ export const achievementBadgeColors = {
     bg: '#1f2937',
     accent: '#ffcc80',
     label: '#a0826d',
-    border: '#8d6e63',
+    border: '#ffcc80',
   },
   bronze_medallion: {
     bg: '#1f2937',
@@ -555,7 +562,7 @@ export const achievementBadgeColors = {
     bg: '#1f2937',
     accent: '#ffecb3',
     label: '#fbbf24',
-    border: '#ffffff',
+    border: '#ffecb3',
   },
   platinum_medallion: {
     bg: '#1f2937',
@@ -582,7 +589,7 @@ export type AchievementBadgeColor = keyof typeof achievementBadgeColors;
 export const achievementBadgeSizes = {
   small: {
     container: 48,
-    icon: 16,
+    icon: 12,
     label: '0.95rem',
   },
   medium: {

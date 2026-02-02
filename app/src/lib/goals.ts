@@ -417,17 +417,6 @@ export function formatValue(num: number | undefined, { short = false, percent = 
   return `${formatted}${symbol}`;
 }
 
-export function getGoalCategory(goal: Goal) {
-  const { timePeriod, count, consecutive } = goal;
-  return count > 1
-    ? consecutive
-      ? 'streak'
-      : 'count'
-    : timePeriod === 'anytime'
-      ? 'milestone'
-      : 'target';
-}
-
 export function getSuggestedGoalContent(goal: Partial<Goal>) {
   const { target: metricGoal, timePeriod = 'anytime', count = 1, consecutive = false, type = 'goal' } = goal;
   const { condition, metric, source } = metricGoal ?? {};
