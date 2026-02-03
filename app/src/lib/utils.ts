@@ -116,5 +116,5 @@ export function randomValueOf<T extends object>(obj: T): T[keyof T] {
  */
 export function titleCase(str: string): string {
   // Split on delims like space, hyphen, underscore
-  return str.split(/[\s-_]+/).map(capitalize).join(' ');
+  return str.toLocaleLowerCase().trim().split(/[\s-_]+/).map(capitalize).join(' ');
 }
