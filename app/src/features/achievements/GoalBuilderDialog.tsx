@@ -893,7 +893,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
           )}
 
           {step === 'activity' && (
-            <div className="space-y-8 py-6 px-4">
+            <div className="space-y-8 py-6 px-4 animate-in fade-in duration-300">
               <div className="text-center space-y-2">
                 <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
                   <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -1003,7 +1003,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
           )}
 
           {step === 'preview' && isGenerating && (
-            <div className="flex flex-col items-center justify-center py-20 px-4 space-y-6">
+            <div className="flex flex-col items-center justify-center py-20 px-4 space-y-6 animate-in fade-in duration-300">
               <div className="relative">
                 {/* Animated circles */}
                 <div className="absolute inset-0 flex items-center justify-center">
@@ -1037,7 +1037,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
           )}
 
           {step === 'preview' && generatedGoals && (
-            <div className="space-y-6 py-4 px-4">
+            <div className="space-y-6 py-4 px-4 animate-in fade-in duration-300">
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 We've generated {generatedGoals.milestones.length + generatedGoals.targets.length + generatedGoals.achievements.length} personalized goals for you.
                 Select which ones you'd like to create.
