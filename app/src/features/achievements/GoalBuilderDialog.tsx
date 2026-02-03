@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown, Dices } from 'lucide-react';
 import { calculateBaselines, generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
 import { formatValue } from '@/lib/goals';
 import { AchievementBadge } from './AchievementBadge';
@@ -246,6 +247,33 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     } else if (step === 'preview') {
       setStep('activity');
     }
+  };
+
+  const handleRerollNames = () => {
+    // Regenerate goals to get new random names for milestones
+    if (!builderInput) return; // Type guard
+
+    // Get all indexes of selected goals
+    const selectedGoalIndexes = {
+      milestones: new Set<number>(),
+      targets: new Set<number>(),
+      achievements: new Set<number>(),
+    }
+    selectedGoals.forEach((goalId) => {
+      selectedGoalIndexes.milestones.add(generatedGoals?.milestones.findIndex((g) => g.id === goalId) ?? -1);
+      selectedGoalIndexes.targets.add(generatedGoals?.targets.findIndex((g) => g.id === goalId) ?? -1);
+      selectedGoalIndexes.achievements.add(generatedGoals?.achievements.findIndex((g) => g.id === goalId) ?? -1);
+    });
+
+    
+    const goals = generateGoals(builderInput);
+    setGeneratedGoals(goals);
+    // Update selected goals to match previous selection index
+    const allGoalIds = new Set<string>();
+    selectedGoalIndexes.milestones.forEach(idx => idx != -1 && allGoalIds.add(goals.milestones[idx].id));
+    selectedGoalIndexes.targets.forEach(idx => idx != -1 && allGoalIds.add(goals.targets[idx].id));
+    selectedGoalIndexes.achievements.forEach(idx => idx != -1 && allGoalIds.add(goals.achievements[idx].id));
+    setSelectedGoals(allGoalIds);
   };
 
   const handleCreate = async () => {
@@ -975,10 +1003,22 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                 {/* Milestones */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Flag className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                      <h3 className="font-semibold">Milestones ({generatedGoals.milestones.length})</h3>
+                      <h3 className="font-semibold">Milestones</h3>
+                      <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+                        {generatedGoals.milestones.filter((g) => selectedGoals.has(g.id)).length}
+                      </Badge>
                     </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRerollNames}
+                        title="Re-roll milestone names"
+                        className="hover:bg-purple-100 dark:hover:bg-purple-950/50 text-purple-600 dark:text-purple-400"
+                      >
+                        <Dices className="w-4 h-4" /> Re-roll Names
+                      </Button>
                     <Button
                       variant="ghost"
                       size="sm"
@@ -1007,7 +1047,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Target className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      <h3 className="font-semibold">Targets ({generatedGoals.targets.length})</h3>
+                      <h3 className="font-semibold">Targets</h3>
+                      <Badge variant="secondary" className="bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300">
+                        {generatedGoals.targets.filter((g) => selectedGoals.has(g.id)).length}
+                      </Badge>
                     </div>
                     <Button
                       variant="ghost"
@@ -1037,7 +1080,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Trophy className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
-                      <h3 className="font-semibold">Achievements ({generatedGoals.achievements.length})</h3>
+                      <h3 className="font-semibold">Achievements</h3>
+                      <Badge variant="secondary" className="bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-300">
+                        {generatedGoals.achievements.filter((g) => selectedGoals.has(g.id)).length}
+                      </Badge>
                     </div>
                     <Button
                       variant="ghost"
