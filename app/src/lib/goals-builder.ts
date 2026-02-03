@@ -519,7 +519,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     type: 'goal',
     title: 'First Entry',
     description: 'Record your first data point',
-    badge: createBadge('ribbon_medal', 'honor', 'trophy', '1ˢᵗ'),
+    badge: createBadge('ribbon_medal', 'jade', 'trophy', '1ˢᵗ'),
     target: createTarget('count', 'stats', 'above', 0),
     timePeriod: 'anytime',
     count: 1,
@@ -578,7 +578,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
 
   // Targets Completed
   const targetCounts = [5, 10, 20, 50, 100];
-  const targetColors: AchievementBadgeColor[] = ['emerald', 'sapphire', 'amethyst', 'synthwave', 'cyberpunk'];
+  const targetColors: AchievementBadgeColor[] = ['emerald', 'sapphire', 'amethyst', 'celestial', 'aether'];
   (['day', 'week', 'month'] as const).forEach((targetPeriod, idx, periods) => {
     if (idx < periods.indexOf(period)) return; // Skip periods before user's selected period
 

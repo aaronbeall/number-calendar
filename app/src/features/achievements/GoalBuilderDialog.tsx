@@ -16,7 +16,6 @@ import { cn } from '@/lib/utils';
 import { capitalize, adjectivize } from '@/lib/utils';
 import { getValueForValence, isBad } from '@/lib/valence';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
-import { is } from 'date-fns/locale';
 
 type GoalBuilderDialogProps = {
   open: boolean;

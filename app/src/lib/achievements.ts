@@ -419,13 +419,13 @@ export const achievementBadgeColors = {
     label: '#0d3740',
     border: '#0097a7',
   },
-  synthwave: {
+  celestial: { // synthwave
     bg: '#ff6ec4',
     accent: '#7873f5',
     label: '#3d1473',
     border: '#7873f5',
   },
-  cyberpunk: {
+  aether: { // cyberpunk neon
     bg: '#0ff',
     accent: '#f0f',
     label: '#730073',
@@ -449,7 +449,7 @@ export const achievementBadgeColors = {
     label: '#5f2124',
     border: '#fad0c4',
   },
-  dark: {
+  obsidian: {
     bg: '#b0bec5',
     accent: '#455a64',
     label: '#263238',
@@ -462,13 +462,13 @@ export const achievementBadgeColors = {
     label: '#311b92',
     border: '#d500f9',
   },
-  honor: {
+  jade: {
     bg: '#f0f4c3',
     accent: '#c0ca33',
     label: '#4e5500',
     border: '#c0ca33',
   },
-  transcendence: {
+  iridescent: {
     bg: '#81d4fa',
     accent: '#4fc3f7',
     label: '#015f7d',
