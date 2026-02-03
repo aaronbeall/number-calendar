@@ -851,7 +851,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                     )}
                                   >
-                                    days
+                                    <span className="hidden sm:inline">days</span>
+                                    <span className="sm:hidden">d</span>
                                   </button>
                                   <button
                                     type="button"
@@ -863,7 +864,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                     )}
                                   >
-                                    weeks
+                                    <span className="hidden sm:inline">weeks</span>
+                                    <span className="sm:hidden">w</span>
                                   </button>
                                   <button
                                     type="button"
@@ -875,7 +877,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                     )}
                                   >
-                                    months
+                                    <span className="hidden sm:inline">months</span>
+                                    <span className="sm:hidden">m</span>
                                   </button>
                                 </div>
                               </div>
