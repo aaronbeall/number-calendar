@@ -360,7 +360,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
                       )}
                     >
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 whitespace-nowrap">
                         <Info className="w-3 h-3" />
                         Recommended
                       </span>
