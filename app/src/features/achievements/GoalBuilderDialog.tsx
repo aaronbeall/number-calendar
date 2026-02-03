@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { capitalize, adjectivize } from '@/lib/utils';
 import { getValueForValence, isBad } from '@/lib/valence';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
+import { is } from 'date-fns/locale';
 
 type GoalBuilderDialogProps = {
   open: boolean;
@@ -1158,15 +1159,22 @@ function GoalPreviewItem({
   onToggle: () => void;
   desaturateUnselected?: boolean;
 }) {
+  const [isHovered, setIsHovered] = React.useState(false);
+
+  const active = isHovered && selected;
+
   return (
     <button
       type="button"
       onClick={onToggle}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        'relative text-left w-full h-full p-4 rounded-xl border transition-all',
-        'hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
+        'relative text-left w-full h-full p-4 rounded-xl border transition-all duration-300',
+        'hover:scale-125 hover:shadow-lg hover:-translate-y-1 hover:z-10 hover:bg-slate-50/90 dark:hover:bg-slate-900/90',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
         selected
-          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-blue-500/20'
           : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600',
         !selected && desaturateUnselected && 'saturate-0 opacity-70'
       )}
@@ -1177,7 +1185,13 @@ function GoalPreviewItem({
         </span>
       )}
       <div className="flex items-start gap-3">
-        <AchievementBadge badge={goal.badge} size="small" />
+        <AchievementBadge 
+          badge={goal.badge} 
+          size="small"
+          pulse={active}
+          floating={active}
+          shine={active}
+        />
         <div className="min-w-0">
           <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
             {goal.title}

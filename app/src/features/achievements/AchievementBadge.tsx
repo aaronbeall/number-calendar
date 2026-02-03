@@ -53,6 +53,7 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
   return (
     <>
       <style>{animationStyles}</style>
+      {/* Wobble animation effect */}
       <div
         className={cn('inline-flex items-center justify-center relative', className)}
         style={{
@@ -61,11 +62,13 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
           animation: floating ? 'achievement-float 3s ease-in-out infinite' : undefined,
         }}
       >
+        {/* Wobble animation effect */}
         <div
           style={{
           width: containerPx,
           height: containerPx,
           animation: floating ? 'achievement-wobble 3s ease-in-out infinite' : undefined,
+          animationDelay: floating ? '-2s' : undefined,
         }}
       >
         {/* Pulse ring effect */}
@@ -82,7 +85,7 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
 
         {/* Background shape with shine effect */}
         <span
-          className="absolute inset-0 flex items-center justify-center rounded-full overflow-hidden"
+          className="absolute inset-0 flex items-center justify-center rounded-full"
           style={{
             color: color.bg,
             backgroundImage: shine
