@@ -12,7 +12,7 @@ import type { Dataset, Goal } from '@/features/db/localdb';
 import { createGoal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { cn } from '@/lib/utils';
-import { capitalize, adjectivize } from '@/lib/utils';
+import { capitalize, adjectivize, convertPeriodValueWithRounding } from '@/lib/utils';
 import { getValueForValence, isBad } from '@/lib/valence';
 
 type GoalBuilderDialogProps = {
@@ -78,7 +78,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     return '';
   }, [targetDays, timePeriodUnit]);
   
-  const handleTimePeriodDisplayChange = (value: string) => {
+  const handleHowLongInputChange = (value: string) => {
     const numValue = parseFloat(value);
     if (!numValue || isNaN(numValue)) {
       setTargetDays('');
@@ -132,10 +132,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     : activityDisplayValue;
 
   const handlePeriodSelect = (value: 'day' | 'week' | 'month') => {
+    if (period && period !== value && goodValue.trim() && !valueType.startsWith('alltime')) {
+      const convertedValue = convertPeriodValueWithRounding(goodValue, period, value);
+      if (convertedValue !== null) setGoodValue(convertedValue);
+    }
     setPeriod(value);
     // Reset defaults when period changes
-    setValueType('');
-    setActivePeriods(value === 'day' ? '5' : value === 'week' ? '3' : '10');
+    // setValueType('');
+    setActivePeriods(value === 'day' ? '5' : value === 'week' ? '4' : '12');
     
     // Set time period unit and default targetDays to match period
     if (value === 'day') {
@@ -156,6 +160,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     } else if (step === 'activity') {
       // Generate goals
       if (!period || !valueType) return; // Type guard
+      const parsedTargetDays = targetDays && parseFloat(targetDays) > 0 ? parseFloat(targetDays) : 90;
       
       const input: GoalBuilderInput = {
         datasetId: dataset.id,
@@ -166,7 +171,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
         valueType,
         activePeriods: parseFloat(activePeriods) || 1,
         startingValue: startingValue.trim() ? parseFloat(startingValue) || currentValue : currentValue,
-        targetDays: targetDays ? parseFloat(targetDays) : undefined,
+        targetDays: parsedTargetDays,
       };
       const goals = generateGoals(input);
       setGeneratedGoals(goals);
@@ -257,20 +262,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     // Calculate valence-adjusted value
     const isAllTime = valueType === 'alltime-total' || valueType === 'alltime-target';
     
-    // For alltime goals, require targetDays
-    if (isAllTime && (!targetDays || parseFloat(targetDays) <= 0)) {
-      const feedbackMessage = (
-        <div className="flex-1 px-4 animate-in fade-in duration-300">
-          <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              Please specify how long you want to reach this goal ⏱️
-            </p>
-          </div>
-        </div>
-      );
-      return { canProceed: false, feedbackMessage };
-    }
-    
     const valenceValue = isAllTime ? numValue - allTimePriorValue : numValue;
     const isWrongSign = isBad(valenceValue, dataset.valence);
     const isValid = !isWrongSign;
@@ -355,7 +346,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       What time period are you focused on?
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Choose how often you'll track your progress
+                      Choose how often you'd like to track your progress
                     </p>
                   </div>
 
@@ -369,8 +360,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
                       )}
                     >
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 whitespace-nowrap">
+                        <Info className="w-3 h-3" />
+                        Recommended
+                      </span>
                       <AchievementBadge
-                        badge={{ style: 'circle', color: 'sapphire', icon: 'calendar', label: '' }}
+                        badge={{ style: 'star_formation', color: 'sapphire', icon: 'calendar', label: '' }}
                         size="small"
                       />
                       <div className="text-center space-y-1">
@@ -391,7 +386,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       )}
                     >
                       <AchievementBadge
-                        badge={{ style: 'ribbon', color: 'emerald', icon: 'calendar', label: '' }}
+                        badge={{ style: 'star_stack', color: 'emerald', icon: 'calendar', label: '' }}
                         size="small"
                       />
                       <div className="text-center space-y-1">
@@ -436,7 +431,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <div className="flex items-center justify-center gap-2">
                     <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900/50">
                     <button
-                      onClick={() => setPeriod('day')}
+                      onClick={() => handlePeriodSelect('day')}
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
                         period === 'day'
@@ -448,7 +443,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       Daily
                     </button>
                     <button
-                      onClick={() => setPeriod('week')}
+                      onClick={() => handlePeriodSelect('week')}
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
                         period === 'week'
@@ -460,7 +455,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       Weekly
                     </button>
                     <button
-                      onClick={() => setPeriod('month')}
+                      onClick={() => handlePeriodSelect('month')}
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
                         period === 'month'
@@ -517,10 +512,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                               <div className="flex items-center gap-2">
                                 <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 <span className="font-bold text-slate-900 dark:text-slate-50">{capitalize(adjectivize(period))} Total</span>
-                                <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                                  <Info className="w-3 h-3" />
-                                  Typical
-                                </span>
                               </div>
                               <p className="text-xs text-slate-600 dark:text-slate-400">
                                 Set targets for total value each {period}
@@ -559,10 +550,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                               <div className="flex items-center gap-2">
                                 <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 <span className="font-bold text-slate-900 dark:text-slate-50">{capitalize(adjectivize(period))} Change</span>
-                                <span className="ml-auto px-2 py-0.5 text-xs rounded-full bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                                  <Info className="w-3 h-3" />
-                                  Typical
-                                </span>
                               </div>
                               <p className="text-xs text-slate-600 dark:text-slate-400">
                                 Target improvement each {period}
@@ -748,7 +735,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                   How long?
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  Time to reach goal
+                                  Time to reach goal (optional)
                                 </p>
                               </div>
 
@@ -757,7 +744,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                   id="timePeriod"
                                   type="number"
                                   value={timePeriodDisplayValue}
-                                  onChange={(e) => handleTimePeriodDisplayChange(e.target.value)}
+                                  onChange={(e) => handleHowLongInputChange(e.target.value)}
                                   placeholder="e.g., 12"
                                   className="text-center !text-base font-medium h-10 flex-1 !rounded-r-none border-r-0"
                                 />

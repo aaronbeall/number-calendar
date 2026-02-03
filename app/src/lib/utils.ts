@@ -118,3 +118,24 @@ export function titleCase(str: string): string {
   // Split on delims like space, hyphen, underscore
   return str.split(/[\s-_]+/).map(capitalize).join(' ');
 }
+
+export type PeriodUnit = 'day' | 'week' | 'month';
+
+export function convertPeriodValueWithRounding(value: string, from: PeriodUnit, to: PeriodUnit): string | null {
+  const parsed = parseFloat(value);
+  if (!Number.isFinite(parsed)) return null;
+
+  const decimalMatch = value.match(/\.(\d+)/);
+  const currentDecimals = decimalMatch ? decimalMatch[1].length : 0;
+  const periodDays: Record<PeriodUnit, number> = { day: 1, week: 7, month: 30 };
+  const convertedValue = parsed * (periodDays[from] / periodDays[to]);
+  const goingToSmallerPeriod = periodDays[from] > periodDays[to];
+  const goingToLargerPeriod = periodDays[from] < periodDays[to];
+  const targetDecimals = goingToSmallerPeriod
+    ? Math.max(0, currentDecimals - 1)
+    : goingToLargerPeriod
+      ? currentDecimals + 1
+      : currentDecimals;
+
+  return String(Number(convertedValue.toFixed(targetDecimals)));
+}
