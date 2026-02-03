@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown, Dices } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown, Dices, Cog } from 'lucide-react';
 import { calculateBaselines, generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
 import { formatValue } from '@/lib/goals';
 import { AchievementBadge } from './AchievementBadge';
@@ -38,6 +38,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const [activityDraft, setActivityDraft] = useState<number | null>(null);
   const [generatedGoals, setGeneratedGoals] = useState<GeneratedGoals | null>(null);
   const [selectedGoals, setSelectedGoals] = useState<Set<string>>(new Set());
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // Load all days to calculate current total/last value
   const { data: allDays = [] } = useAllDays(dataset.id);
@@ -225,19 +226,26 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     if (step === 'period') {
       setStep('activity');
     } else if (step === 'activity') {
-      // Generate goals
-      if (!builderInput) return; // Type guard
-      
-      const goals = generateGoals(builderInput);
-      setGeneratedGoals(goals);
-      // Select all goals by default
-      const allGoalIds = new Set([
-        ...goals.milestones.map((g) => g.id),
-        ...goals.targets.map((g) => g.id),
-        ...goals.achievements.map((g) => g.id),
-      ]);
-      setSelectedGoals(allGoalIds);
+      // Show loading animation first
       setStep('preview');
+      setIsGenerating(true);
+      setGeneratedGoals(null);
+      
+      // Generate goals after a delay for loading animation
+      setTimeout(() => {
+        if (!builderInput) return; // Type guard
+        
+        const goals = generateGoals(builderInput);
+        setGeneratedGoals(goals);
+        // Select all goals by default
+        const allGoalIds = new Set([
+          ...goals.milestones.map((g) => g.id),
+          ...goals.targets.map((g) => g.id),
+          ...goals.achievements.map((g) => g.id),
+        ]);
+        setSelectedGoals(allGoalIds);
+        setIsGenerating(false);
+      }, 2500); // 2.5 second delay
     }
   };
 
@@ -303,6 +311,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     setActivePeriods('');
     setGeneratedGoals(null);
     setSelectedGoals(new Set());
+    setIsGenerating(false);
   };
 
   const toggleGoal = (goalId: string) => {
@@ -993,6 +1002,40 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
             </div>
           )}
 
+          {step === 'preview' && isGenerating && (
+            <div className="flex flex-col items-center justify-center py-20 px-4 space-y-6">
+              <div className="relative">
+                {/* Animated circles */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full border-4 border-purple-200 dark:border-purple-900 animate-ping" />
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full border-4 border-blue-200 dark:border-blue-900 animate-pulse" />
+                </div>
+                {/* Center icon */}
+                <div className="relative flex items-center justify-center w-24 h-24">
+                  <Cog className="w-12 h-12 text-purple-600 dark:text-purple-400 animate-spin" style={{ animationDuration: '3s' }} />
+                </div>
+              </div>
+              
+              <div className="text-center space-y-2">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 animate-pulse">
+                  Generating Your Personalized Goals
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 max-w-md">
+                  Analyzing your targets and creating customized milestones, targets, and achievements...
+                </p>
+              </div>
+              
+              {/* Progress dots */}
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-purple-600 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 rounded-full bg-green-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          )}
+
           {step === 'preview' && generatedGoals && (
             <div className="space-y-6 py-4 px-4">
               <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -1037,6 +1080,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         selected={selectedGoals.has(goal.id)}
                         onToggle={() => toggleGoal(goal.id)}
                         desaturateUnselected
+                        animateIn
                       />
                     ))}
                   </div>
@@ -1152,11 +1196,13 @@ function GoalPreviewItem({
   selected,
   onToggle,
   desaturateUnselected = false,
+  animateIn = false
 }: {
   goal: Goal;
   selected: boolean;
   onToggle: () => void;
   desaturateUnselected?: boolean;
+  animateIn?: boolean;
 }) {
   const [isHovered, setIsHovered] = React.useState(false);
 
@@ -1175,8 +1221,14 @@ function GoalPreviewItem({
         selected
           ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-blue-500/20'
           : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600',
-        !selected && desaturateUnselected && 'saturate-0 opacity-70'
+        !selected && desaturateUnselected && 'saturate-0 opacity-70',
+        animateIn && 'animate-in fade-in zoom-in duration-300 fill-mode-forwards'
       )}
+      style={ 
+        animateIn ? { 
+          animationDuration: `${200 + Math.random() * 300}ms`,
+        } : undefined
+      }
     >
       {selected && (
         <span className="absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white">
