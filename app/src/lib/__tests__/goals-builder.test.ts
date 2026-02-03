@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateGoals, type GoalBuilderInput } from '../goals-builder';
+import { generateGoals, calculateBaselines, type GoalBuilderInput } from '../goals-builder';
 
 describe('goals-builder: Series Tracking', () => {
   const baseInput: Omit<GoalBuilderInput, 'period' | 'valueType' | 'targetDays' | 'startingValue'> = {
@@ -272,6 +272,330 @@ describe('goals-builder: Series Tracking', () => {
       expect(monthTarget?.target.metric).toBe('total');
       expect(monthTarget?.target.source).toBe('stats');
       expect(monthTarget?.target.condition).toBe('above');
+    });
+  });
+});
+
+describe('calculateBaselines', () => {
+  describe('all-time goals', () => {
+    it('calculates baseline values for all-time total goals', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 1000,
+        valueType: 'alltime-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.baselineMilestone).toBe(1000);
+      expect(result.dayTarget).toBeCloseTo(11, 1); // 1000 / 90 days
+      expect(result.weekTarget).toBeCloseTo(78, 1); // ~11 * 7
+      expect(result.monthTarget).toBe(330); // 333 rounded to 2 sig figs
+    });
+
+    it('calculates baseline values for all-time target goals with non-zero starting value', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'trend',
+        valence: 'positive',
+        period: 'week',
+        value: 200,
+        valueType: 'alltime-target',
+        activePeriods: 3,
+        startingValue: 50,
+        targetDays: 180,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.baselineMilestone).toBe(200);
+      const range = 200 - 50; // 150
+      const dailyRate = range / 180; // ~0.83
+      expect(result.dayTarget).toBeCloseTo(dailyRate, 0);
+    });
+
+    it('throws error when targetDays is missing or invalid', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 100,
+        valueType: 'alltime-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 0,
+      };
+
+      expect(() => calculateBaselines(input)).toThrow();
+    });
+  });
+
+  describe('period-based goals', () => {
+    it('calculates baseline values for daily period goals', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 50,
+        valueType: 'period-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(50); // Same as input
+      expect(result.weekTarget).toBe(250); // 50 * 5 days per week
+      expect(result.monthTarget).toBeGreaterThan(1000); // ~250 * 4.3 weeks
+    });
+
+    it('calculates baseline values for weekly period goals', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'week',
+        value: 100,
+        valueType: 'period-total',
+        activePeriods: 4,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.weekTarget).toBe(100); // Same as input
+      expect(result.dayTarget).toBe(14); // 14.3 rounded to 2 sig figs
+      expect(result.monthTarget).toBe(400); // 100 * 4 weeks per month
+    });
+
+    it('calculates baseline values for monthly period goals', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'month',
+        value: 300,
+        valueType: 'period-total',
+        activePeriods: 12,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.monthTarget).toBe(300); // Same as input
+      expect(result.dayTarget).toBeCloseTo(300 / 30, 1); // 10
+      expect(result.weekTarget).toBeCloseTo(300 / 4.3, 0); // ~70
+    });
+
+    it('respects starting value in milestone calculation', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 50,
+        valueType: 'period-total',
+        activePeriods: 5,
+        startingValue: 1000,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.baselineMilestone).toBeGreaterThan(1000); // Should include starting value
+    });
+  });
+
+  describe('significant figure rounding', () => {
+    it('rounds targets with intelligent precision based on input value', () => {
+      // Input value 25 has 2 significant digits
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 25,
+        valueType: 'period-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      // dayTarget should match input precision
+      expect(result.dayTarget).toBe(25);
+      // weekTarget is scaled (5x), should have +1 sig digit flexibility
+      expect(result.weekTarget).toBe(125);
+    });
+
+    it('handles single significant digit input', () => {
+      // Input value 5 has 1 significant digit
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 5,
+        valueType: 'period-total',
+        activePeriods: 3,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(5);
+      // weekTarget should be rounded intelligently
+      expect(Number.isFinite(result.weekTarget)).toBe(true);
+    });
+
+    it('handles decimal input with precision', () => {
+      // Input value 2.5 has 2 significant digits
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 2.5,
+        valueType: 'period-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(2.5);
+      expect(Number.isFinite(result.weekTarget)).toBe(true);
+    });
+  });
+
+  describe('different value types', () => {
+    it('handles period-change value type', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'trend',
+        valence: 'positive',
+        period: 'day',
+        value: 10,
+        valueType: 'period-change',
+        activePeriods: 5,
+        startingValue: 100,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(10);
+      expect(result.weekTarget).toBe(50);
+    });
+
+    it('handles period-total value type', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'week',
+        value: 200,
+        valueType: 'period-total',
+        activePeriods: 4,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.weekTarget).toBe(200);
+    });
+  });
+
+  describe('edge cases', () => {
+    it('handles negative valence correctly', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'trend',
+        valence: 'negative',
+        period: 'day',
+        value: -5,
+        valueType: 'period-change',
+        activePeriods: 5,
+        startingValue: 100,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(-5);
+      expect(result.weekTarget).toBe(-25);
+    });
+
+    it('handles neutral valence', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'neutral',
+        period: 'day',
+        value: 50,
+        valueType: 'period-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(50);
+    });
+
+    it('handles very large values', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 10000,
+        valueType: 'period-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(10000);
+      expect(result.weekTarget).toBe(50000);
+      expect(Number.isFinite(result.monthTarget)).toBe(true);
+    });
+
+    it('handles very small values', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 0.1,
+        valueType: 'period-total',
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(0.1);
+      expect(Number.isFinite(result.weekTarget)).toBe(true);
     });
   });
 });

@@ -143,7 +143,7 @@ export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
     }
 
     // Calculate baseline milestone as 3 months of monthTarget
-    const baselineMilestone = startingValue + roundToClean(monthTarget * 3, baseSigDigits + 1);
+    const baselineMilestone = roundToClean(startingValue + (monthTarget * 3), baseSigDigits + 1);
     
     return {
       baselineMilestone,
@@ -569,7 +569,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     createdAt: Date.now(),
     type: 'goal',
     title: `${valenceTerm} Year`,
-    description: `Have a ${valenceTerm.toLowerCase()} year`,
+    description: `Complete a ${valenceTerm.toLowerCase()} year`,
     badge: createBadge('angel', 'gold', 'crown'),
     target: createTarget(metric, source, condition, 0),
     timePeriod: 'year',

@@ -169,10 +169,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     const delta = valueType === 'period-change';
     if (period === 'day') {
       const parts = [
-        summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { delta })} / week` : null,
-        summaryBaselines.monthTarget ? `${formatValue(summaryBaselines.monthTarget, { delta })} / month` : null,
+        summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { delta })} weekly` : null,
+        summaryBaselines.monthTarget ? `${formatValue(summaryBaselines.monthTarget, { delta })} monthly` : null,
       ].filter(Boolean);
-      return parts.join(' • ');
+      return `(${parts.join(', ')})`;
     }
     if (period === 'week') {
       return summaryBaselines.monthTarget

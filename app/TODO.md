@@ -126,3 +126,4 @@ I'm liking this one.
 - [ ] Can't delete all data on a day anymore
 - [ ] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
 - [ ] Tracking=series and percents aren't very helpful, percents should be based on cumulative change
+- [ ] Adding data data to new month didn't update the monthly view show a new month summary
