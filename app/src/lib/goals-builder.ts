@@ -6,6 +6,7 @@ import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle
 import { adjectivize, capitalize, pluralize, randomValueOf } from './utils';
 import { formatValue } from './goals';
 import { getValueForValence } from './valence';
+import { roundToClean, countSignificantDigits } from './friendly-numbers';
 
 // User input for the goal builder
 export interface GoalBuilderInput {
@@ -25,25 +26,6 @@ export interface GeneratedGoals {
   milestones: Goal[];
   targets: Goal[];
   achievements: Goal[];
-}
-
-// Helper to create a clean rounded number
-function roundToClean(num: number, significantLeadingDigits: number = 2): number {
-  if (num === 0) return 0;
-  const sign = num < 0 ? -1 : 1;
-  const abs = Math.abs(num);
-  
-  // For numbers less than 1, round to 1 decimal place
-  if (abs < 1) return sign * (Math.round(abs * 10) / 10);
-  
-  // Find the magnitude (power of 10) of the number
-  const magnitude = Math.pow(10, Math.floor(Math.log10(abs)));
-  
-  // Calculate divisor based on magnitude and significant leading digits
-  // If we want N leading digits, we divide by magnitude / 10^(N-1)
-  const divisor = magnitude / Math.pow(10, significantLeadingDigits - 1);
-  
-  return sign * (Math.round(abs / divisor) * divisor);
 }
 
 // Helper to create a goal target
@@ -107,9 +89,12 @@ interface BaselineValues {
   monthTarget: number;
 }
 
-function calculateBaselines(input: GoalBuilderInput): BaselineValues {
+export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
   const { period, value: goodValue, valueType, activePeriods, startingValue, targetDays } = input;
   const isAllTime = valueType === 'alltime-total' || valueType === 'alltime-target';
+  
+  // Determine base significant digits from user input
+  const baseSigDigits = countSignificantDigits(goodValue);
   
   const WEEKS_PER_MONTH = 4.3;
   
@@ -127,9 +112,9 @@ function calculateBaselines(input: GoalBuilderInput): BaselineValues {
     
     return {
       baselineMilestone,
-      dayTarget: roundToClean(dailyRate),
-      weekTarget: roundToClean(dailyRate * 7),
-      monthTarget: roundToClean(dailyRate * 30),
+      dayTarget: roundToClean(dailyRate, baseSigDigits + 1),
+      weekTarget: roundToClean(dailyRate * 7, baseSigDigits + 1),
+      monthTarget: roundToClean(dailyRate * 30, baseSigDigits + 1),
     };
   } else {
     // For period-based goals
@@ -142,23 +127,23 @@ function calculateBaselines(input: GoalBuilderInput): BaselineValues {
     
     if (period === 'day') {
       // activePeriods = days per week
-      dayTarget = roundToClean(goodValue);
-      weekTarget = roundToClean(goodValue * activePeriods);
-      monthTarget = roundToClean(weekTarget * WEEKS_PER_MONTH);
+      dayTarget = roundToClean(goodValue, baseSigDigits);
+      weekTarget = roundToClean(goodValue * activePeriods, baseSigDigits + 1);
+      monthTarget = roundToClean(weekTarget * WEEKS_PER_MONTH, baseSigDigits + 1);
     } else if (period === 'week') {
       // activePeriods = weeks per month
-      dayTarget = roundToClean(goodValue / 7);
-      weekTarget = roundToClean(goodValue);
-      monthTarget = roundToClean(goodValue * activePeriods);
+      dayTarget = roundToClean(goodValue / 7, baseSigDigits + 1);
+      weekTarget = roundToClean(goodValue, baseSigDigits);
+      monthTarget = roundToClean(goodValue * activePeriods, baseSigDigits + 1);
     } else {
       // period === 'month', activePeriods = months per year
-      dayTarget = roundToClean(goodValue / 30);
-      weekTarget = roundToClean(goodValue / WEEKS_PER_MONTH);
-      monthTarget = roundToClean(goodValue);
+      dayTarget = roundToClean(goodValue / 30, baseSigDigits + 1);
+      weekTarget = roundToClean(goodValue / WEEKS_PER_MONTH, baseSigDigits + 1);
+      monthTarget = roundToClean(goodValue, baseSigDigits);
     }
 
     // Calculate baseline milestone as 3 months of monthTarget
-    const baselineMilestone = startingValue + roundToClean(monthTarget * 3);
+    const baselineMilestone = startingValue + roundToClean(monthTarget * 3, baseSigDigits + 1);
     
     return {
       baselineMilestone,

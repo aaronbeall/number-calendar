@@ -5,15 +5,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown } from 'lucide-react';
-import { generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
+import { calculateBaselines, generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
 import { formatValue } from '@/lib/goals';
 import { AchievementBadge } from './AchievementBadge';
 import type { Dataset, Goal } from '@/features/db/localdb';
 import { createGoal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { cn } from '@/lib/utils';
-import { capitalize, adjectivize, convertPeriodValueWithRounding } from '@/lib/utils';
+import { capitalize, adjectivize } from '@/lib/utils';
 import { getValueForValence, isBad } from '@/lib/valence';
+import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
 
 type GoalBuilderDialogProps = {
   open: boolean;
@@ -69,7 +70,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const allTimePriorValue = parsedStartingValue ?? currentValue;
   
   // Convert time period for display
-  const timePeriodDisplayValue = React.useMemo(() => {
+  const targetPeriodsDisplayValue = React.useMemo(() => {
     const days = parseFloat(targetDays);
     if (!days || isNaN(days)) return '';
     if (timePeriodUnit === 'days') return String(Math.round(days));
@@ -78,7 +79,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     return '';
   }, [targetDays, timePeriodUnit]);
   
-  const handleHowLongInputChange = (value: string) => {
+  const handleTargetPeriodsChange = (value: string) => {
     const numValue = parseFloat(value);
     if (!numValue || isNaN(numValue)) {
       setTargetDays('');
@@ -130,10 +131,75 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const activitySummaryValue = activePeriods
     ? Math.max(1, Math.min(activityMax, parseInt(activePeriods, 10) || activityDisplayValue))
     : activityDisplayValue;
+  const summaryDurationDays = targetDays && parseFloat(targetDays) > 0 ? parseFloat(targetDays) : 90;
+  const summaryTargetDate = React.useMemo(() => {
+    const now = new Date();
+    now.setDate(now.getDate() + summaryDurationDays);
+    return now.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }, [summaryDurationDays]);
+
+  const summaryDurationLabel =
+    timePeriodUnit === 'days'
+      ? `In ${Math.round(summaryDurationDays)} days (${summaryTargetDate})`
+      : timePeriodUnit === 'weeks'
+        ? `In ${Math.round(summaryDurationDays / 7)} weeks (${summaryTargetDate})`
+        : `In ${Math.round(summaryDurationDays / 30)} months (${summaryTargetDate})`;
+  const isPeriodTarget = valueType === 'period-total' || valueType === 'period-change';
+  const isAllTimeTarget = valueType === 'alltime-total' || valueType === 'alltime-target';
+  
+  // Consolidated GoalBuilderInput creation
+  const builderInput = React.useMemo<GoalBuilderInput | null>(() => {
+    if (!period || !valueType || !goodValue) return null;
+    return {
+      datasetId: dataset.id,
+      tracking: dataset.tracking,
+      valence: dataset.valence,
+      period: period as 'day' | 'week' | 'month',
+      value: parseFloat(goodValue) || 0,
+      valueType,
+      activePeriods: parseFloat(activePeriods) || 1,
+      startingValue: startingValue.trim() ? parseFloat(startingValue) || currentValue : currentValue,
+      targetDays: summaryDurationDays,
+    };
+  }, [dataset.id, dataset.tracking, dataset.valence, period, valueType, goodValue, activePeriods, startingValue, currentValue, summaryDurationDays]);
+  
+  const summaryBaselines = builderInput ? calculateBaselines(builderInput) : null;
+  const conversionLabel = (() => {
+    if (!summaryBaselines || !period || !isPeriodTarget) return '';
+    const delta = valueType === 'period-change';
+    if (period === 'day') {
+      const parts = [
+        summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { delta })} / week` : null,
+        summaryBaselines.monthTarget ? `${formatValue(summaryBaselines.monthTarget, { delta })} / month` : null,
+      ].filter(Boolean);
+      return parts.join(' • ');
+    }
+    if (period === 'week') {
+      return summaryBaselines.monthTarget
+        ? `${formatValue(summaryBaselines.monthTarget, { delta })} / month`
+        : '';
+    }
+    return '';
+  })();
+  const summary90DayTotal = (() => {
+    if (!summaryBaselines || !isPeriodTarget) return '';
+    const total = summaryBaselines.dayTarget * 90;
+    return formatValue(total, { delta: valueType === 'period-change' });
+  })();
+  const perPeriodLabel = (() => {
+    if (!summaryBaselines || !period || !isAllTimeTarget) return '';
+    const perPeriodValue =
+      period === 'day'
+        ? summaryBaselines.dayTarget
+        : period === 'week'
+          ? summaryBaselines.weekTarget
+          : summaryBaselines.monthTarget;
+    return formatValue(perPeriodValue);
+  })();
 
   const handlePeriodSelect = (value: 'day' | 'week' | 'month') => {
     if (period && period !== value && goodValue.trim() && !valueType.startsWith('alltime')) {
-      const convertedValue = convertPeriodValueWithRounding(goodValue, period, value);
+      const convertedValue = convertPeriodUnitWithRounding(goodValue, period, value);
       if (convertedValue !== null) setGoodValue(convertedValue);
     }
     setPeriod(value);
@@ -159,21 +225,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
       setStep('activity');
     } else if (step === 'activity') {
       // Generate goals
-      if (!period || !valueType) return; // Type guard
-      const parsedTargetDays = targetDays && parseFloat(targetDays) > 0 ? parseFloat(targetDays) : 90;
+      if (!builderInput) return; // Type guard
       
-      const input: GoalBuilderInput = {
-        datasetId: dataset.id,
-        tracking: dataset.tracking,
-        valence: dataset.valence,
-        period: period as 'day' | 'week' | 'month',
-        value: parseFloat(goodValue) || 0,
-        valueType,
-        activePeriods: parseFloat(activePeriods) || 1,
-        startingValue: startingValue.trim() ? parseFloat(startingValue) || currentValue : currentValue,
-        targetDays: parsedTargetDays,
-      };
-      const goals = generateGoals(input);
+      const goals = generateGoals(builderInput);
       setGeneratedGoals(goals);
       // Select all goals by default
       const allGoalIds = new Set([
@@ -743,8 +797,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                 <Input
                                   id="timePeriod"
                                   type="number"
-                                  value={timePeriodDisplayValue}
-                                  onChange={(e) => handleHowLongInputChange(e.target.value)}
+                                  value={targetPeriodsDisplayValue}
+                                  onChange={(e) => handleTargetPeriodsChange(e.target.value)}
                                   placeholder="e.g., 12"
                                   className="text-center !text-base font-medium h-10 flex-1 !rounded-r-none border-r-0"
                                 />
@@ -860,6 +914,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                     <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {capitalize(adjectivize(period))}
                     </div>
+                    {isAllTimeTarget && perPeriodLabel && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {perPeriodLabel} per {period}
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">
@@ -874,10 +933,19 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       {valueType === 'period-total' && `${capitalize(adjectivize(period))} total`}
-                      {valueType === 'alltime-total' && 'All-time total'}
                       {valueType === 'period-change' && `${capitalize(adjectivize(period))} change`}
-                      {valueType === 'alltime-target' && 'All-time target'}
+                      {isAllTimeTarget && summaryDurationLabel}
                     </div>
+                    {isPeriodTarget && conversionLabel && (
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {conversionLabel}
+                      </div>
+                    )}
+                    {isPeriodTarget && summary90DayTotal && (
+                      <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                        {summary90DayTotal} in 90 days
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">
