@@ -207,44 +207,6 @@ export function getStatsPercentChange(current: NumberStats, prior: NumberStats):
   return result;
 }
 
-// Returns the cumulative totals for each metric in NumberStats (priorCumulatives + current)
-export function getStatsCumulatives(current: NumberStats, priorCumulatives: Partial<NumberStats>): Partial<NumberStats> {
-  const result: Partial<NumberStats> = {};
-  for (const key of Object.keys(current) as (keyof NumberStats)[]) {
-    if (typeof current[key] === 'number') {
-      const priorCum = priorCumulatives[key] ?? 0;
-      result[key] = priorCum + (current[key] as number);
-    }
-  }
-  return result;
-}
-
-// WIP
-export type AllStats = Record<NumberSource, Partial<NumberStats>>;
-
-export function computeAllStats(numbers: number[], prior?: NumberStats, priorCumulatives?: Partial<NumberStats>): AllStats | null {
-  const stats = computeNumberStats(numbers);
-  if (!stats) return stats;
-  const deltas = prior ? getStatsDelta(stats, prior) : {};
-  const percents = prior ? getStatsPercentChange(stats, prior) : {};
-  const cumulatives = priorCumulatives ? getStatsCumulatives(stats, priorCumulatives) : {};
-  console.log(cumulatives)
-  return {
-    stats,
-    deltas,
-    percents,
-    // cumulatives,
-    // cumulativePercents
-  };
-}
-
-// export function getAllNumberSourceStats(data: Record<DayKey, number[]>, timePeriod: TimePeriod): Record<DateKey | 'all', AllStats> {
-//   const result: Record<DateKey | 'all', AllStats> = {};
-//   const allNumbers: number[] = [];
-
-  
-// }
-
 export const METRIC_DISPLAY_INFO: Record<NumberMetric, { label: string; description: string }> = {
   total: { label: 'Total', description: 'Sum of all values in the period' },
   mean: { label: 'Average', description: 'Mean of all values in the period' },
@@ -282,4 +244,20 @@ export function getMetricSourceDisplayName(source: NumberSource): string {
 
 export function getMetricSourceDescription(source: NumberSource): string {
   return METRIC_SOURCES_DISPLAY_INFO[source].description;
+}
+
+export function emptyStats(): NumberStats {
+  return {
+    count: 0,
+    total: 0,
+    mean: 0,
+    median: 0,
+    min: 0,
+    max: 0,
+    first: 0,
+    last: 0,
+    range: 0,
+    change: 0,
+    changePercent: 0,
+  };
 }

@@ -25,6 +25,50 @@ export function getYearDays(year: number): DayKey[] {
   return days;
 }
 
+export function getWeekDays(year: number, week: number): DayKey[] {
+  const days: DayKey[] = [];
+  const firstDayOfYear = new Date(year, 0, 1);
+  const daysOffset = (week - 1) * 7;
+  const firstDayOfWeek = new Date(firstDayOfYear.getTime());
+  firstDayOfWeek.setDate(firstDayOfYear.getDate() + daysOffset - (firstDayOfYear.getDay() === 0 ? 6 : firstDayOfYear.getDay() - 1));
+  for (let i = 0; i < 7; i++) {
+    const currentDay = new Date(firstDayOfWeek.getTime());
+    currentDay.setDate(firstDayOfWeek.getDate() + i);
+    days.push(toDayKey(currentDay.getFullYear(), currentDay.getMonth() + 1, currentDay.getDate()));
+  }
+  return days;
+}
+
+export function getYearMonths(year: number): MonthKey[] {
+  const months: MonthKey[] = [];
+  for (let m = 1; m <= 12; m++) {
+    months.push(toMonthKey(year, m));
+  }
+  return months;
+}
+
+export function getMonthWeeks(year: number, month: number): WeekKey[] {
+  const weeksSet = new Set<WeekKey>();
+  const days = getMonthDays(year, month);
+  for (const day of days) {
+    const date = parseISO(day);
+    const weekKey = dateToWeekKey(date);
+    weeksSet.add(weekKey);
+  }
+  return Array.from(weeksSet).sort() as WeekKey[];
+}
+
+export function getYearWeeks(year: number): WeekKey[] {
+  const weeksSet = new Set<WeekKey>();
+  const days = getYearDays(year);
+  for (const day of days) {
+    const date = parseISO(day);
+    const weekKey = dateToWeekKey(date);
+    weeksSet.add(weekKey);
+  }
+  return Array.from(weeksSet).sort() as WeekKey[];
+}
+
 /**
  * Aggregates calendar data for a given set of numbers, prior numbers, extremes, and tracking type.
  * This could be used for a day, week, month, year, or any arbitrary period.

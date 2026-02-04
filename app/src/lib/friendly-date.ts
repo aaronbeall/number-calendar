@@ -181,6 +181,11 @@ export function parseDateKey(key: DateKey): Date {
   throw new Error(`Invalid DateKey: ${key}`);
 }
 
+export function parseWeekKey(weekKey: WeekKey): { year: number; week: number } {
+  const [yearStr, weekStr] = weekKey.split('-W');
+  return { year: parseInt(yearStr, 10), week: parseInt(weekStr, 10) };
+}
+
 /**
  * Formats a Date as a DateKey of the specified type ('day', 'week', 'month', 'year').
  * The return type is inferred based on the type argument.
