@@ -40,7 +40,7 @@ type PeriodCache<P extends TimePeriod> = {
 
 // Helper type to represent a cache that has had certain properties computed, used for type safety in methods that compute derived data based on the presence of other computed data.
 type PartialComputedCache<D extends DateKeyType, K extends keyof PeriodCache<D>> = PeriodCache<D> & {
-  [P in K]?: NonNullable<PeriodCache<D>[P]>;
+  [P in K]: NonNullable<PeriodCache<D>[P]>;
 }
 
 /**
