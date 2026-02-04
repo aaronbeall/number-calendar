@@ -1,6 +1,6 @@
 
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
-import { endOfISOWeek, format, getWeek, isValid, parse, parseISO, startOfISOWeek } from 'date-fns';
+import { endOfISOWeek, format, getWeek, isValid, parse, parseISO, startOfISOWeek, startOfWeek } from 'date-fns';
 
 export type DateKeyType = 'day' | 'week' | 'month' | 'year';
 
@@ -37,7 +37,7 @@ export function dateToDayKey(date: Date): DayKey {
   return toDayKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 export function dateToWeekKey(date: Date): WeekKey {
-  return toWeekKey(date.getFullYear(), getWeek(date));
+  return toWeekKey(date.getFullYear(), getWeek(date, { weekStartsOn: 0 })); // Sunday as first day of week
 }
 export function dateToMonthKey(date: Date): MonthKey {
   return toMonthKey(date.getFullYear(), date.getMonth() + 1);
@@ -151,16 +151,16 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
  * Converts an ISO week string (YYYY-Www) to the corresponding date string (YYYY-MM-DD) of the Monday of that week.
  */
 function weekToISODate(week: WeekKey): string {
-  // Parse 'YYYY-Www' as ISO week and return the Monday of that week
+  // Parse 'YYYY-Www' as ISO week and return the Sunday of that week
   const date = parse(week, "YYYY-'W'ww", new Date(), { useAdditionalWeekYearTokens: true });
-  const monday = startOfISOWeek(date);
-  return format(monday, 'yyyy-MM-dd');
+  const first = startOfWeek(date, { weekStartsOn: 0 }); // Sunday as first day
+  return format(first, 'yyyy-MM-dd'); 
 }
 
 /**
  * Parses a DateKey (day, week, month, year) and returns a Date object representing the start of that period.
  * - DayKey: returns the parsed date
- * - WeekKey: returns the Monday of the ISO week
+ * - WeekKey: returns the Sunday of the calendar week
  * - MonthKey: returns the first day of the month
  * - YearKey: returns January 1st of the year
  */
@@ -169,7 +169,6 @@ export function parseDateKey(key: DateKey): Date {
     return parseISO(key);
   }
   if (isWeekKey(key)) {
-    // Use weekToISODate to get the Monday of the week
     return parseISO(weekToISODate(key));
   }
   if (isMonthKey(key)) {

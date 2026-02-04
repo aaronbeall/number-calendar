@@ -9,6 +9,7 @@ import React, { useMemo, useState } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { getRelativeSize } from '@/lib/charts';
 import { getValenceValueForNumber } from '@/lib/tracking';
+import { dateToWeekKey, convertDateKey, dateToDayKey, parseDateKey } from '@/lib/friendly-date';
 
 export interface DayCellProps {
   date: Date;
@@ -76,6 +77,12 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
     setEditMode(false);
   }
 
+  const weekKeyFromDate = dateToWeekKey(date);
+  const parsedBackFromWeek = parseDateKey(weekKeyFromDate);
+  const debugWeekInfo = `dateToWeekKey(date): ${weekKeyFromDate}
+  parseDateKey(${weekKeyFromDate}): ${parsedBackFromWeek.toISOString()}
+  convertDateKey(${dateToDayKey(date)}, 'week): ${convertDateKey(dateToDayKey(date), 'week')}`;
+
   return (
     <div className="relative h-full">
       <div
@@ -87,6 +94,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
         role="button"
         aria-label={`Edit day ${date.getDate()}`}
         aria-disabled={isFuture}
+        title={debugWeekInfo}
       >
         <div className="flex items-start mb-2">
           {showExtremesBadge && (
