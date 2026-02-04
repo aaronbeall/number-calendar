@@ -1,10 +1,10 @@
-import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
+import { BackToCalendarButton } from '@/components/BackToCalendarButton';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
-import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
+import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { BadgePreviews } from '@/features/achievements/BadgePreview';
 import { EmptyState } from '@/features/achievements/EmptyState';
+import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
 import type { Goal } from '@/features/db/localdb';
-import { BackToCalendarButton } from '@/components/BackToCalendarButton';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
 import { useGoals } from '@/features/db/useGoalsData';
@@ -12,7 +12,7 @@ import { getDaysMap } from '@/lib/calendar';
 import { processAchievements } from '@/lib/goals';
 import { Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 export default function Achievements() {
   const [dialogOpen, setDialogOpen] = useState(false);

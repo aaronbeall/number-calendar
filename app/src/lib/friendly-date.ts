@@ -4,8 +4,6 @@ import { endOfWeek, format, getWeek, isValid, parse, parseISO, startOfWeek } fro
 
 export type DateKeyType = 'day' | 'week' | 'month' | 'year';
 
-const weekOptions = { weekStartsOn: 0 }; // Sunday as first day of week for consistent week key generation across locales
-
 // Type guards for date keys
 export function isDayKey(key: DateKey): key is DayKey {
   return /^\d{4}-\d{2}-\d{2}$/.test(key); // YYYY-MM-DD
@@ -39,7 +37,7 @@ export function dateToDayKey(date: Date): DayKey {
   return toDayKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 export function dateToWeekKey(date: Date): WeekKey {
-  return toWeekKey(date.getFullYear(), getWeek(date, { weekStartsOn: 0 })); // Sunday as first day of week
+  return toWeekKey(date.getFullYear(), getWeek(date));
 }
 export function dateToMonthKey(date: Date): MonthKey {
   return toMonthKey(date.getFullYear(), date.getMonth() + 1);
@@ -78,8 +76,8 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
     // Week range: both are weeks
     if (isWeekKey(start) && isWeekKey(end)) {
       // Convert week keys to their start and end day keys, then use day range formatting
-      const startDate = startOfWeek(parseDateKey(start), weekOptions);
-      const endDate = endOfWeek(parseDateKey(end), weekOptions);
+      const startDate = startOfWeek(parseDateKey(start));
+      const endDate = endOfWeek(parseDateKey(end));
       const startDayKey = formatDateAsKey(startDate, 'day');
       const endDayKey = formatDateAsKey(endDate, 'day');
       return formatFriendlyDate(startDayKey, endDayKey);
