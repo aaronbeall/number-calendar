@@ -1,12 +1,12 @@
 import type { DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, YearKey } from "@/features/db/localdb";
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths, getYearWeeks } from "./calendar";
-import { convertDateKey, parseDateKey, parseWeekKey } from "./friendly-date";
+import { convertDateKey, parseDateKey, parseWeekKey, type DateKeyType } from "./friendly-date";
 import type { NumberStats, StatsExtremes } from "./stats";
 import { calculateExtremes, computeNumberStats, emptyStats, getStatsDelta, getStatsPercentChange } from "./stats";
 
 export type CalendarPeriodData<P extends TimePeriod> = {
   dateKey: {
-    'day': DayKey;
+    'day': DayKey | null; // Null signifies that day doesn't have any entries associated with it
     'week': WeekKey;
     'month': MonthKey;
     'year': YearKey;
@@ -38,8 +38,9 @@ type PeriodCache<P extends TimePeriod> = {
     : CalendarPeriodData<P>[K];
 };
 
-type WithNonNullKeys<T, K extends keyof T> = T & {
-  [P in K]-?: NonNullable<T[P]>;
+// Helper type to represent a cache that has had certain properties computed, used for type safety in methods that compute derived data based on the presence of other computed data.
+type PartialComputedCache<D extends DateKeyType, K extends keyof PeriodCache<D>> = PeriodCache<D> & {
+  [P in K]-?: NonNullable<PeriodCache<D>[P]>;
 }
 
 /**
@@ -55,6 +56,23 @@ export class CalendarData {
   private monthCache: Map<MonthKey, PeriodCache<'month'>> = new Map();
   private yearCache: Map<YearKey, PeriodCache<'year'>> = new Map();
   private alltimeCache: PeriodCache<'anytime'> | null = null;
+
+  /**
+   * In order to avoid stuffing every day with cache items (which can be thousands of entries across many years), 
+   * we use a single shared empty cache item for days that don't have any data.
+   */
+  private emptyDayCacheItem = {
+    dateKey: null,
+    period: 'day' as const,
+    numbers: [],
+    stats: emptyStats(),
+    deltas: emptyStats(),
+    percents: {},
+    extremes: undefined,
+    cumulatives: emptyStats(),
+    cumulativeDeltas: emptyStats(),
+    cumulativePercents: {},
+  };
 
   // Prior period maps for efficient lookups
   private priorDayMap: Map<DayKey, DayKey | null> = new Map();
@@ -161,35 +179,54 @@ export class CalendarData {
     }
   }
 
-  private computeDeltas<P extends TimePeriod, K extends CalendarPeriodData<P>['dateKey']>(
-    cache: WithNonNullKeys<PeriodCache<P>, 'stats'>,
+  // Helper to update a cache entry with only the changed props and return the new object
+  // Note: this assumes there is already a cache entry for the dateKey, which is true for all current usages since we always create a cache entry before computing any derived data
+  private updateCache<P extends DateKeyType>(
+    cacheMap: Map<CalendarPeriodData<P>['dateKey'], PeriodCache<P>>,
+    updates: Partial<PeriodCache<P>> & Pick<PeriodCache<P>, 'dateKey'>,
+  ): CalendarPeriodData<P> {
+    const existing = cacheMap.get(updates.dateKey);
+    const next = { ...existing, ...updates } as PeriodCache<P>;
+    cacheMap.set(next.dateKey, next);
+    return next as CalendarPeriodData<P>;
+  }
+
+  // Helper to compute deltas and percents based on the presence of stats and a prior period, returns updated cache with deltas and percents filled in
+  private computeDeltas<P extends DateKeyType, K extends CalendarPeriodData<P>['dateKey']>(
+    cacheMap: Map<K, PeriodCache<P>>,
+    cache: PartialComputedCache<P, 'stats' | 'numbers'>,
     getPriorKey: (key: K) => K | null,
     getPriorStats: (key: K) => NumberStats,
-  ): asserts cache is WithNonNullKeys<PeriodCache<P>, 'stats' | 'deltas' | 'percents'> {
-    if (cache.deltas !== null && cache.percents !== null) return;
+  ): PartialComputedCache<P, 'stats' | 'numbers' | 'deltas' | 'percents'> {
+    if (cache.deltas !== null && cache.percents !== null) return cache as PartialComputedCache<P, 'stats' | 'numbers' | 'deltas' | 'percents'>;
 
     const currentKey = cache.dateKey as K;
     const priorKey = getPriorKey(currentKey);
+    let deltas: NumberStats;
+    let percents: Partial<NumberStats>;
     if (priorKey) {
       const priorStats = getPriorStats(priorKey);
-      cache.deltas = getStatsDelta(cache.stats, priorStats);
-      cache.percents = getStatsPercentChange(cache.stats, priorStats);
+      deltas = getStatsDelta(cache.stats, priorStats);
+      percents = getStatsPercentChange(cache.stats, priorStats);
     } else {
-      cache.deltas = null;
-      cache.percents = null;
+      deltas = emptyStats();
+      percents = {};
     }
+    
+    return this.updateCache(cacheMap, { dateKey: currentKey, deltas, percents }) as PartialComputedCache<P, 'stats' | 'numbers' | 'deltas' | 'percents'>;
   }
 
-  private computeCumulatives<P extends TimePeriod, K extends CalendarPeriodData<P>['dateKey']>(
-    cache: WithNonNullKeys<PeriodCache<P>, 'stats'>,
-    getCache: (key: K) => WithNonNullKeys<PeriodCache<P>, 'stats'>,
+  // Helper to compute cumulatives, cumulative deltas, and cumulative percents based on the presence of stats and a chain of prior periods, returns updated cache with cumulatives filled in
+  private computeCumulatives<P extends DateKeyType, K extends CalendarPeriodData<P>['dateKey']>(
+    cacheMap: Map<K, PeriodCache<P>>,
+    cache: PartialComputedCache<P, 'stats' | 'numbers'>,
+    getCache: (key: K) => PartialComputedCache<P, 'stats' | 'numbers'>,
     getPriorKey: (key: K) => K | null,
-  ): asserts cache is WithNonNullKeys<PeriodCache<P>, 'stats' | 'cumulatives' | 'cumulativeDeltas' | 'cumulativePercents'> {
-    if (cache.cumulatives !== null) {
-      return;
-    }
+  ): PartialComputedCache<P, 'stats' | 'numbers' | 'cumulatives' | 'cumulativeDeltas' | 'cumulativePercents'> {
+    if (cache.cumulatives !== null) return cache as PartialComputedCache<P, 'stats' | 'numbers' | 'cumulatives' | 'cumulativeDeltas' | 'cumulativePercents'>;
 
     const currentKey = cache.dateKey as K;
+    // Build a chain of period keys walking backward until we hit a cached cumulative (or the start).
     const cacheChain: K[] = [];
 
     let current: K | null = currentKey;
@@ -197,15 +234,18 @@ export class CalendarData {
       const currentCache = getCache(current);
       cacheChain.push(current);
 
+      // If cumulatives have already been computed for this period, we can stop building the chain, this is the seed to start forward computations.
       if (currentCache.cumulatives !== null) {
         break;
       }
 
+      // Move to the prior period in the chain
       const prior = getPriorKey(current);
-      if (!prior) break;
+      if (!prior) break; // Reached the start of the chain
       current = prior;
     }
 
+    // Compute forward so each period can use the prior cumulative as its seed.
     cacheChain.reverse();
 
     let priorCumulatives: NumberStats | null = null;
@@ -213,29 +253,51 @@ export class CalendarData {
     for (const key of cacheChain) {
       const currentCache = getCache(key);
 
+      // If cumulatives have already been computed for this period (could be from a prior in the chain), use them as the seed for the next periods and skip to the next iteration.
       if (currentCache.cumulatives !== null) {
         priorCumulatives = currentCache.cumulatives;
         continue;
       }
 
+      // Compute cumulatives for the current period
       const stats = currentCache.stats;
+      let cumulatives: NumberStats;
+      let cumulativeDeltas: NumberStats;
+      let cumulativePercents: Partial<NumberStats>;
       if (priorCumulatives) {
+        // Seed the running total with the prior cumulative total, then add current numbers.
         const allNumbers: number[] = [priorCumulatives.total, ...(currentCache.numbers ?? [])];
-        currentCache.cumulatives = computeNumberStats(allNumbers) ?? stats;
-        currentCache.cumulativeDeltas = getStatsDelta(currentCache.cumulatives, priorCumulatives);
-        currentCache.cumulativePercents = getStatsPercentChange(currentCache.cumulatives, priorCumulatives);
+        cumulatives = computeNumberStats(allNumbers) ?? stats;
+        cumulativeDeltas = getStatsDelta(cumulatives, priorCumulatives);
+        cumulativePercents = getStatsPercentChange(cumulatives, priorCumulatives);
       } else {
-        currentCache.cumulatives = stats;
-        currentCache.cumulativeDeltas = stats;
-        currentCache.cumulativePercents = stats;
+        // First period in the chain: cumulative equals the period stats, no deltas or percents
+        cumulatives = stats;
+        cumulativeDeltas = emptyStats();
+        cumulativePercents = {};
       }
 
-      priorCumulatives = currentCache.cumulatives;
+      // Update the cache with the new cumulative values
+      const updatedCache = this.updateCache(cacheMap, {
+        dateKey: currentCache.dateKey as K,
+        cumulatives,
+        cumulativeDeltas,
+        cumulativePercents,
+      });
+
+      // Set the prior cumulatives for the next iteration
+      priorCumulatives = updatedCache.cumulatives;
     }
+
+    // Return the stored cache entry because the loop refreshes instances above
+    return cacheMap.get(cache.dateKey as K) as PartialComputedCache<P, 'stats' | 'numbers' | 'cumulatives' | 'cumulativeDeltas' | 'cumulativePercents'>;
   }
 
   // Internal method to get the day cache, computing numbers and stats if needed
-  private getDayCache(dayKey: DayKey): WithNonNullKeys<PeriodCache<'day'>, 'stats' | 'numbers'> {
+  private getDayCache(dayKey: DayKey): PartialComputedCache<'day', 'stats' | 'numbers'> {
+    const entry = this.dayEntries.get(dayKey);
+    if (!entry) return this.emptyDayCacheItem;
+
     let cache = this.dayCache.get(dayKey);
     if (!cache) {
       cache = {
@@ -253,18 +315,14 @@ export class CalendarData {
       this.dayCache.set(dayKey, cache);
     }
     
-    // Compute numbers
-    if (cache.numbers === null) {
-      const entry = this.dayEntries.get(dayKey);
-      cache.numbers = entry ? entry.numbers : [];
+    // Lazily compute numbers and stats
+    if (cache.numbers === null || cache.stats === null) {
+      const numbers = entry.numbers;
+      const stats = computeNumberStats(numbers ?? []) ?? emptyStats();
+      cache = this.updateCache(this.dayCache, { dateKey: cache.dateKey, numbers, stats });
     }
     
-    // Compute stats
-    if (cache.stats === null) {
-      cache.stats = computeNumberStats(cache.numbers) ?? emptyStats();
-    }
-    
-    return cache as WithNonNullKeys<PeriodCache<'day'>, 'stats' | 'numbers'>;
+    return cache as PartialComputedCache<'day', 'stats' | 'numbers'>;
   }
 
   /**
@@ -273,22 +331,27 @@ export class CalendarData {
   getDayData(dayKey: DayKey): CalendarPeriodData<'day'> {
     
     // Ensure numbers and stats are computed
-    const cache = this.getDayCache(dayKey);
-    
+    let cache = this.getDayCache(dayKey);
+
+    // If there's no data associated with this day, return the default empty cache with null dateKey to signify it's an empty day
+    if (cache.dateKey === null) return cache as CalendarPeriodData<'day'>;
+
     // Lazy compute deltas and percents
-    this.computeDeltas(cache, this.getPriorDay.bind(this), (key) => this.getDayCache(key).stats);
+    cache = this.computeDeltas(this.dayCache, cache, this.getPriorDay.bind(this), (key) => this.getDayCache(key).stats);
     
     // Lazy compute cumulatives
-    this.computeCumulatives(cache, (key) => this.getDayCache(key), this.getPriorDay.bind(this));
+    cache = this.computeCumulatives(this.dayCache, cache, (key) => this.getDayCache(key), this.getPriorDay.bind(this));
 
     // No extremes for day period
-    cache.extremes = undefined;
+    if (cache.extremes === null) {
+      cache = this.updateCache(this.dayCache, { dateKey: cache.dateKey, extremes: undefined });
+    }
     
     return cache as CalendarPeriodData<'day'>;
   }
 
   // Internal method to get the week cache, computing numbers and stats if needed
-  private getWeekCache(weekKey: WeekKey): WithNonNullKeys<PeriodCache<'week'>, 'stats' | 'numbers'> {
+  private getWeekCache(weekKey: WeekKey): PartialComputedCache<'week', 'stats' | 'numbers'> {
     let cache = this.weekCache.get(weekKey);
     
     if (!cache) {
@@ -312,46 +375,43 @@ export class CalendarData {
       this.weekCache.set(weekKey, cache);
     }
     
-    const days = cache.days ?? [];
-    
-    // Compute numbers
-    if (cache.numbers === null) {
-      cache.numbers = [];
+    // Lazily compute numbers and stats
+    if (cache.numbers === null || cache.stats === null) {
+      const days = cache.days ?? [];
+      const numbers: number[] = [];
       for (const dayKey of days) {
-        cache.numbers.push(...this.dayEntries.get(dayKey)?.numbers ?? []);
+        numbers.push(...this.dayEntries.get(dayKey)?.numbers ?? []);
       }
+      const stats = computeNumberStats(numbers ?? []) ?? emptyStats();
+      cache = this.updateCache(this.weekCache, { dateKey: cache.dateKey, numbers, stats });
     }
     
-    // Compute stats
-    if (cache.stats === null) {
-      cache.stats = computeNumberStats(cache.numbers) ?? emptyStats();
-    }
-    
-    return cache as WithNonNullKeys<PeriodCache<'week'>, 'stats' | 'numbers'>;
+    return cache as PartialComputedCache<'week', 'stats' | 'numbers'>;
   }
 
   getWeekData(weekKey: WeekKey): CalendarPeriodData<'week'> {
     // Ensure cache, stats, and derived data are computed
-    const cache = this.getWeekCache(weekKey);
+    let cache = this.getWeekCache(weekKey);
     const days = cache.days ?? [];
 
     // Lazy compute deltas and percents
-    this.computeDeltas(cache, this.getPriorWeek.bind(this), (key) => this.getWeekCache(key).stats);
+    cache = this.computeDeltas(this.weekCache, cache, this.getPriorWeek.bind(this), (key) => this.getWeekCache(key).stats);
     
     // Lazy compute cumulatives
-    this.computeCumulatives(cache, (key) => this.getWeekCache(key), this.getPriorWeek.bind(this));
+    cache = this.computeCumulatives(this.weekCache, cache, (key) => this.getWeekCache(key), this.getPriorWeek.bind(this));
     
     // Lazy compute extremes
     if (cache.extremes === null) {
       const dayStats = days.map(d => this.getDayCache(d).stats);
-      cache.extremes = calculateExtremes(dayStats);
+      const extremes = calculateExtremes(dayStats);
+      cache = this.updateCache(this.weekCache, { dateKey: cache.dateKey, extremes });
     }
     
     return cache as CalendarPeriodData<'week'>;
   }
 
   // Internal method to get the month cache, computing numbers and stats if needed
-  private getMonthCache(monthKey: MonthKey): WithNonNullKeys<PeriodCache<'month'>, 'stats' | 'numbers'> {
+  private getMonthCache(monthKey: MonthKey): PartialComputedCache<'month', 'stats' | 'numbers'> {
     let cache = this.monthCache.get(monthKey);
     
     if (!cache) {
@@ -379,46 +439,43 @@ export class CalendarData {
       this.monthCache.set(monthKey, cache);
     }
     
-    const days = cache.days ?? [];
-    
-    // Compute numbers
-    if (cache.numbers === null) {
-      cache.numbers = [];
+    // Lazily compute numbers and stats
+    if (cache.numbers === null || cache.stats === null) {
+      const days = cache.days ?? [];
+      const numbers: number[] = [];
       for (const dayKey of days) {
-        cache.numbers.push(...this.dayEntries.get(dayKey)?.numbers ?? []);
+        numbers.push(...this.dayEntries.get(dayKey)?.numbers ?? []);
       }
+      const stats = computeNumberStats(numbers ?? []) ?? emptyStats();
+      cache = this.updateCache(this.monthCache, { dateKey: cache.dateKey, numbers, stats });
     }
     
-    // Compute stats
-    if (cache.stats === null) {
-      cache.stats = computeNumberStats(cache.numbers) ?? emptyStats();
-    }
-    
-    return cache as WithNonNullKeys<PeriodCache<'month'>, 'stats' | 'numbers'>;
+    return cache as PartialComputedCache<'month', 'stats' | 'numbers'>;
   }
 
   getMonthData(monthKey: MonthKey): CalendarPeriodData<'month'> {
     // Ensure cache, stats, and derived data are computed
-    const cache = this.getMonthCache(monthKey);
+    let cache = this.getMonthCache(monthKey);
     const days = cache.days ?? [];
 
     // Lazy compute deltas and percents
-    this.computeDeltas(cache, this.getPriorMonth.bind(this), (key) => this.getMonthCache(key).stats);
+    cache = this.computeDeltas(this.monthCache, cache, this.getPriorMonth.bind(this), (key) => this.getMonthCache(key).stats);
     
     // Lazy compute cumulatives
-    this.computeCumulatives(cache, (key) => this.getMonthCache(key), this.getPriorMonth.bind(this));
+    cache = this.computeCumulatives(this.monthCache, cache, (key) => this.getMonthCache(key), this.getPriorMonth.bind(this));
     
     // Lazy compute extremes
     if (cache.extremes === null) {
       const dayStats = days.map(d => this.getDayCache(d).stats);
-      cache.extremes = calculateExtremes(dayStats);
+      const extremes = calculateExtremes(dayStats);
+      cache = this.updateCache(this.monthCache, { dateKey: cache.dateKey, extremes });
     }
     
     return cache as CalendarPeriodData<'month'>;
   }
 
   // Internal method to get the year cache, computing numbers and stats if needed
-  private getYearCache(yearKey: YearKey): WithNonNullKeys<PeriodCache<'year'>, 'stats' | 'numbers'> {
+  private getYearCache(yearKey: YearKey): PartialComputedCache<'year', 'stats' | 'numbers'> {
     let cache = this.yearCache.get(yearKey);
     
     if (!cache) {
@@ -450,39 +507,36 @@ export class CalendarData {
       this.yearCache.set(yearKey, cache);
     }
     
-    const days = cache.days ?? [];
-    
-    // Compute numbers
-    if (cache.numbers === null) {
-      cache.numbers = [];
+    // Lazily compute numbers and stats
+    if (cache.numbers === null || cache.stats === null) {
+      const days = cache.days ?? [];
+      const numbers: number[] = [];
       for (const dayKey of days) {
-        cache.numbers.push(...this.dayEntries.get(dayKey)?.numbers ?? []);
+        numbers.push(...this.dayEntries.get(dayKey)?.numbers ?? []);
       }
+      const stats = computeNumberStats(numbers ?? []) ?? emptyStats();
+      cache = this.updateCache(this.yearCache, { dateKey: cache.dateKey, numbers, stats });
     }
     
-    // Compute stats
-    if (cache.stats === null) {
-      cache.stats = computeNumberStats(cache.numbers) ?? emptyStats();
-    }
-    
-    return cache as WithNonNullKeys<PeriodCache<'year'>, 'stats' | 'numbers'>;
+    return cache as PartialComputedCache<'year', 'stats' | 'numbers'>;
   }
 
   getYearData(yearKey: YearKey): CalendarPeriodData<'year'> {
     // Ensure cache, stats, and derived data are computed
-    const cache = this.getYearCache(yearKey);
-    const days = cache.days ?? [];
-
+    let cache = this.getYearCache(yearKey);
+    
     // Lazy compute deltas and percents
-    this.computeDeltas(cache, this.getPriorYear.bind(this), (key) => this.getYearCache(key).stats);
+    cache = this.computeDeltas(this.yearCache, cache, this.getPriorYear.bind(this), (key) => this.getYearCache(key).stats);
     
     // Lazy compute cumulatives
-    this.computeCumulatives(cache, (key) => this.getYearCache(key), this.getPriorYear.bind(this));
+    cache = this.computeCumulatives(this.yearCache, cache, (key) => this.getYearCache(key), this.getPriorYear.bind(this));
     
     // Lazy compute extremes
     if (cache.extremes === null) {
+      const days = cache.days ?? [];
       const dayStats = days.map(d => this.getDayCache(d).stats);
-      cache.extremes = calculateExtremes(dayStats);
+      const extremes = calculateExtremes(dayStats);
+      cache = this.updateCache(this.yearCache, { dateKey: cache.dateKey, extremes });
     }
     
     return cache as CalendarPeriodData<'year'>;
@@ -504,36 +558,41 @@ export class CalendarData {
       };
     }
     
-    const cache = this.alltimeCache;
+    let cache = this.alltimeCache;
     
-    // Lazy compute numbers
-    if (cache.numbers === null) {
-      cache.numbers = [];
+    // Lazy compute numbers and stats
+    if (cache.numbers === null || cache.stats === null) {
+      const numbers: number[] = [];
       for (const entry of this.dayEntries.values()) {
-        cache.numbers.push(...entry.numbers);
+        numbers.push(...entry.numbers);
       }
+      const stats = computeNumberStats(numbers) ?? emptyStats();
+      cache = { ...cache, numbers, stats, cumulatives: stats };
     }
     
-    // Lazy compute stats
-    if (cache.stats === null) {
-      cache.stats = computeNumberStats(cache.numbers) ?? emptyStats();
+    // Alltime doesn't have deltas or percents (no prior period)
+    if (cache.deltas === null) {
+      cache = {
+        ...cache,
+        deltas: emptyStats(),
+        percents: {},
+        cumulativeDeltas: emptyStats(),
+        cumulativePercents: {},
+      };
     }
-    
-    // Alltime doesn't have deltas, percents, or cumulatives (no prior period)
-    cache.deltas = emptyStats();
-    cache.percents = emptyStats();
-    cache.cumulatives = cache.stats;
-    cache.cumulativeDeltas = emptyStats();
-    cache.cumulativePercents = emptyStats();
     
     // Lazy compute extremes
     if (cache.extremes === null) {
       const allDays = Array.from(this.dayEntries.keys()).sort();
       const dayStats = allDays.map(d => this.getDayCache(d).stats);
-      cache.extremes = calculateExtremes(dayStats);
+      const extremes = calculateExtremes(dayStats);
+      cache = { ...cache, extremes };
     }
+
+    // Fresh cache object if anything changed
+    this.alltimeCache = cache;
     
-    return cache as CalendarPeriodData<'anytime'>;
+    return this.alltimeCache as CalendarPeriodData<'anytime'>;
   }
 
   // Build prior period maps from current data
