@@ -69,25 +69,18 @@ export function EmptyState({ type, onAddClick, onGoalBuilderClick }: EmptyStateP
 
         {/* Action Buttons */}
         <div className="space-y-3 pt-4">
-          <button
-            onClick={onAddClick}
-            className="w-full px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg"
-            style={{
-              background:
-                type === 'goal'
-                  ? 'linear-gradient(135deg, #eab308 0%, #facc15 100%)'
-                  : type === 'target'
-                    ? 'linear-gradient(135deg, #22c55e 0%, #4ade80 100%)'
-                    : 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)',
-            }}
-          >
-            Add your first {label.title.toLowerCase().slice(0, -1)}
-          </button>
-
-          <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-lg p-4 space-y-2 border border-slate-200 dark:border-slate-600">
+          <div className="bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl p-4 space-y-2 border border-slate-200 dark:border-slate-600">
             <button
               onClick={onGoalBuilderClick}
-              className="w-full px-6 py-3 rounded-lg font-semibold text-slate-900 dark:text-slate-50 bg-white dark:bg-slate-800 transition-all duration-200 transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm hover:shadow-md"
+              className="w-full px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+              style={{
+                background:
+                  type === 'goal'
+                    ? 'linear-gradient(135deg, #eab308 0%, #facc15 100%)'
+                    : type === 'target'
+                      ? 'linear-gradient(135deg, #22c55e 0%, #4ade80 100%)'
+                      : 'linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)',
+              }}
             >
               <Zap className="w-4 h-4" />
               Use Goal Builder
@@ -113,6 +106,13 @@ export function EmptyState({ type, onAddClick, onGoalBuilderClick }: EmptyStateP
               <span>all at once</span>
             </p>
           </div>
+
+          <button
+            onClick={onAddClick}
+            className="w-full px-6 py-3 rounded-lg font-semibold text-slate-700 dark:text-slate-200 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"
+          >
+            Add your first {label.title.toLowerCase().slice(0, -1)}
+          </button>
         </div>
       </div>
     </div>
