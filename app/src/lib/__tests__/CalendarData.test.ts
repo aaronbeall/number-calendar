@@ -10,8 +10,7 @@ import { emptyStats } from '../stats';
  * 2023-10-16,36
  * 2023-10-17,
  */
-function generateMockCalendarDataFromCSV(csv: string): CalendarData {
-  const calendarData = new CalendarData();
+function generateMockDayEntriesFromCSV(csv: string): DayEntry[] {
   const allDays: DayEntry[] = [];
   const lines = csv.trim().split('\n');
   for (const line of lines) {
@@ -23,11 +22,86 @@ function generateMockCalendarDataFromCSV(csv: string): CalendarData {
       numbers: values,
     });
   }
-  calendarData.setDays(allDays);
+  return allDays;
+}
+
+function generateMockCalendarDataFromCSV(csv: string): CalendarData {
+  const calendarData = new CalendarData();
+  calendarData.setDays(generateMockDayEntriesFromCSV(csv));
   return calendarData;
 }
 
 describe('CalendarData', () => {
+  describe('setDays', () => {
+    test('should no-op when day references are unchanged', () => {
+      const days = generateMockDayEntriesFromCSV(`
+        2025-01-01,10,20
+        2025-01-02,30
+      `);
+
+      const calendarData = new CalendarData();
+      calendarData.setDays(days);
+
+      const first = calendarData.getDayData('2025-01-01');
+
+      calendarData.setDays(days);
+
+      const second = calendarData.getDayData('2025-01-01');
+      expect(second).toBe(first);
+    });
+
+    test('should rebuild priors when a new day is added', () => {
+      const initialDays = generateMockDayEntriesFromCSV(`
+        2025-01-02,20
+      `);
+      const calendarData = new CalendarData();
+      calendarData.setDays(initialDays);
+
+      const day2Before = calendarData.getDayData('2025-01-02');
+      expect(day2Before.deltas?.total).toBe(0);
+
+      const nextDays = generateMockDayEntriesFromCSV(`
+        2025-01-01,10
+        2025-01-02,20
+      `);
+
+      calendarData.setDays(nextDays);
+
+      const day2After = calendarData.getDayData('2025-01-02');
+      expect(day2After.deltas?.total).toBe(10);
+    });
+
+    test('should invalidate following ranges after updates', () => {
+      const initialDays = generateMockDayEntriesFromCSV(`
+        2025-01-01,10
+        2025-01-02,20
+        2025-01-03,30
+        2025-01-04,40
+      `);
+      const calendarData = new CalendarData();
+      calendarData.setDays(initialDays);
+
+      const day1Before = calendarData.getDayData('2025-01-01');
+      const day4Before = calendarData.getDayData('2025-01-04');
+
+      const nextDays: DayEntry[] = [
+        initialDays[0],
+        initialDays[1],
+        { ...initialDays[2], numbers: [300] },
+        initialDays[3],
+      ];
+
+      calendarData.setDays(nextDays);
+
+      const day1After = calendarData.getDayData('2025-01-01');
+      const day4After = calendarData.getDayData('2025-01-04');
+
+      expect(day1After).toBe(day1Before);
+      expect(day4After).not.toBe(day4Before);
+      expect(day4After.cumulatives.total).toBe(370); // 10 + 20 + 300 + 40
+    });
+  });
+  
   describe('getDayData', () => {
     test('should return expected day data', () => {
       const calendarData = generateMockCalendarDataFromCSV(`

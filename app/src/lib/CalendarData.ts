@@ -87,28 +87,77 @@ export class CalendarData {
   private priorYearMap: Map<YearKey, YearKey | null> = new Map();
 
   setDays(allDays: DayEntry[]) {
-    
-    // Clear all caches
-    this.dayCache.clear();
-    this.weekCache.clear();
-    this.monthCache.clear();
-    this.yearCache.clear();
-    this.alltimeCache = null;
-    
-    // Clear prior maps
-    this.priorDayMap.clear();
-    this.priorWeekMap.clear();
-    this.priorMonthMap.clear();
-    this.priorYearMap.clear();
-    
-    // Store day entries
-    this.dayEntries.clear();
+    // If there's no existing data, just set everything and build prior maps
+    if (this.dayEntries.size === 0) {
+      this.dayEntries.clear();
+      for (const day of allDays) {
+        this.dayEntries.set(day.date, day);
+      }
+      this.buildPriorMaps();
+      return;
+    }
+
+    // Determine changed days
+    const changedDays: DayEntry[] = [];
+    let hasAdditions = false;
     for (const day of allDays) {
+      const current = this.dayEntries.get(day.date);
+      if (current === day) continue;
+      if (!current) hasAdditions = true;
+      changedDays.push(day);
+    }
+
+    // No changes, nothing to do
+    if (changedDays.length === 0) return;
+
+    // If only a single day changed, use the optimized single day path
+    if (changedDays.length === 1) {
+      this.setDay(changedDays[0]);
+      return;
+    }
+
+    // Multiple changes: invalidate affected caches
+    let earliestDayKey = changedDays[0].date;
+    for (const day of changedDays) {
+      if (day.date < earliestDayKey) earliestDayKey = day.date; // Track earliest changed day
+      const dayKey = day.date;
+      const weekKey = convertDateKey(dayKey, 'week');
+      const monthKey = convertDateKey(dayKey, 'month');
+      const yearKey = convertDateKey(dayKey, 'year');
+
+      // Invalidate this day, week, month, and year of each changed day
+      this.invalidate(this.dayCache, dayKey);
+      this.invalidate(this.weekCache, weekKey);
+      this.invalidate(this.monthCache, monthKey);
+      this.invalidate(this.yearCache, yearKey);
+    }
+
+    // Invalidate all aggregates following the earliest changed day
+    const earliestWeekKey = convertDateKey(earliestDayKey, 'week');
+    const earliestMonthKey = convertDateKey(earliestDayKey, 'month');
+    const earliestYearKey = convertDateKey(earliestDayKey, 'year');
+
+    this.dayCache.forEach((cache, key) => key > earliestDayKey && this.invalidateAggregates(this.dayCache, cache));
+    this.weekCache.forEach((cache, key) => key > earliestWeekKey && this.invalidateAggregates(this.weekCache, cache));
+    this.monthCache.forEach((cache, key) => key > earliestMonthKey && this.invalidateAggregates(this.monthCache, cache));
+    this.yearCache.forEach((cache, key) => key > earliestYearKey && this.invalidateAggregates(this.yearCache, cache));
+
+    // Apply changes
+    for (const day of changedDays) {
       this.dayEntries.set(day.date, day);
     }
-    
-    // Build prior period maps
-    this.buildPriorMaps();
+
+    // If there were any additions, we need to rebuild prior maps
+    if (hasAdditions) {
+      this.priorDayMap.clear();
+      this.priorWeekMap.clear();
+      this.priorMonthMap.clear();
+      this.priorYearMap.clear();
+      this.buildPriorMaps();
+    }
+
+    // Invalidate alltime cache
+    this.alltimeCache = null;
   }
 
   setDay(day: DayEntry) {
@@ -135,55 +184,62 @@ export class CalendarData {
     const yearKey = convertDateKey(dayKey, 'year');
     
     // Invalidate this day
-    this.invalidate(this.dayCache.get(dayKey));
+    this.invalidate(this.dayCache, dayKey);
     
     // Invalidate this week
-    this.invalidate(this.weekCache.get(weekKey));
+    this.invalidate(this.weekCache, weekKey);
     
     // Invalidate this month
-    this.invalidate(this.monthCache.get(monthKey));
+    this.invalidate(this.monthCache, monthKey);
     
     // Invalidate this year
-    this.invalidate(this.yearCache.get(yearKey));
+    this.invalidate(this.yearCache, yearKey);
     
     // Invalidate all following days (for cumulatives)
-    this.dayCache.forEach((cache, key) => key > dayKey && this.invalidateAggregates(cache));
+    this.dayCache.forEach((cache, key) => key > dayKey && this.invalidateAggregates(this.dayCache, cache));
     
     // Invalidate all following weeks
-    this.weekCache.forEach((cache, key) => key > weekKey && this.invalidateAggregates(cache));
+    this.weekCache.forEach((cache, key) => key > weekKey && this.invalidateAggregates(this.weekCache, cache));
     
     // Invalidate all following months
-    this.monthCache.forEach((cache, key) => key > monthKey && this.invalidateAggregates(cache));
+    this.monthCache.forEach((cache, key) => key > monthKey && this.invalidateAggregates(this.monthCache, cache));
     
     // Invalidate all following years
-    this.yearCache.forEach((cache, key) => key > yearKey && this.invalidateAggregates(cache));
+    this.yearCache.forEach((cache, key) => key > yearKey && this.invalidateAggregates(this.yearCache, cache));
     
     // Invalidate alltime
     this.alltimeCache = null;
   }
 
   // Completely invalidates a period cache calculations (numbers, stats, aggregates, etc)
-  private invalidate(cache: PeriodCache<any> | undefined) {
+  private invalidate<K extends DateKeyType, P extends CalendarPeriodData<K>['dateKey']>(cacheMap: Map<P, PeriodCache<K>>, key: P) {
+    const cache = cacheMap.get(key);
     if (cache) {
-      cache.numbers = null;
-      cache.stats = null;
-      cache.deltas = null;
-      cache.percents = null;
-      cache.extremes = null;
-      cache.cumulatives = null;
-      cache.cumulativeDeltas = null;
-      cache.cumulativePercents = null;
+      this.updateCache(cacheMap, {
+        dateKey: key,
+        numbers: null,
+        stats: null,
+        deltas: null,
+        percents: null,
+        extremes: null,
+        cumulatives: null,
+        cumulativeDeltas: null,
+        cumulativePercents: null,
+      });
     }
   }
 
   // Invalidates only the aggregate calculations (deltas, percents, cumulatives) but keeps numbers and stats intact
-  private invalidateAggregates(cache: PeriodCache<any> | undefined) {
+  private invalidateAggregates<K extends DateKeyType, P extends CalendarPeriodData<K>['dateKey']>(cacheMap: Map<P, PeriodCache<K>>, cache: PeriodCache<K> | undefined) {
     if (cache) {
-      cache.deltas = null;
-      cache.percents = null;
-      cache.cumulatives = null;
-      cache.cumulativeDeltas = null;
-      cache.cumulativePercents = null;
+      this.updateCache(cacheMap, {
+        dateKey: cache.dateKey,
+        deltas: null,
+        percents: null,
+        cumulatives: null,
+        cumulativeDeltas: null,
+        cumulativePercents: null,
+      });
     }
   }
 
