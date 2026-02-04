@@ -44,7 +44,13 @@ type PartialComputedCache<D extends DateKeyType, K extends keyof PeriodCache<D>>
 }
 
 /**
- * A cached, lazy computed, and surgically invalidated data manager for all calendar related calculations
+ * A cached, lazy computed, and surgically invalidated data manager for all calendar related calculations.
+ * 
+ * Key features:
+ * - Raw day entries are stored in-memory and transformed into period caches on demand.
+ * - Each period cache lazily computes numbers, stats, and aggregates (deltas, percents, cumulatives, extremes).
+ * - Prior-period maps provide O(1) lookups to compute deltas/cumulatives efficiently.
+ * - Updates invalidate only affected caches so unchanged periods keep stable references.
  */
 export class CalendarData {
   // Raw data storage
@@ -111,7 +117,9 @@ export class CalendarData {
     this.dayEntries.set(day.date, day);
     
     // If numbers haven't changed, no need to invalidate
-    if (oldDay && JSON.stringify(oldDay.numbers) === JSON.stringify(day.numbers)) {
+    if (oldDay && oldDay.numbers.length === day.numbers.length && 
+      (oldDay.numbers === day.numbers || oldDay.numbers.every((num, idx) => num === day.numbers[idx]))
+    ) {
       return;
     }
     
