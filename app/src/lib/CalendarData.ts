@@ -201,7 +201,13 @@ export class CalendarData {
     if (cache.deltas !== null && cache.percents !== null) return cache as PartialComputedCache<P, 'stats' | 'numbers' | 'deltas' | 'percents'>;
 
     const currentKey = cache.dateKey as K;
-    const priorKey = getPriorKey(currentKey);
+    let priorKey = getPriorKey(currentKey);
+    while (priorKey) {
+      const priorStats = getPriorStats(priorKey);
+      if (priorStats.count > 0) break;
+      priorKey = getPriorKey(priorKey);
+    }
+
     let deltas: NumberStats;
     let percents: Partial<NumberStats>;
     if (priorKey) {

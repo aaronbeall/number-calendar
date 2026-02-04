@@ -1,6 +1,6 @@
 import type { DayEntry, DayKey, MonthKey, Tracking, WeekKey } from "@/features/db/localdb";
 import { getWeek, parseISO } from "date-fns";
-import { dateToWeekKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
+import { dateToWeekKey, parseDateKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import { computeNumberStats, getStatsDelta, getStatsPercentChange, type StatsExtremes } from "./stats";
 import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceMetricFromData, getValenceSource } from "./tracking";
 
@@ -27,13 +27,11 @@ export function getYearDays(year: number): DayKey[] {
 
 export function getWeekDays(year: number, week: number): DayKey[] {
   const days: DayKey[] = [];
-  const firstDayOfYear = new Date(year, 0, 1);
-  const daysOffset = (week - 1) * 7;
-  const firstDayOfWeek = new Date(firstDayOfYear.getTime());
-  firstDayOfWeek.setDate(firstDayOfYear.getDate() + daysOffset - (firstDayOfYear.getDay() === 0 ? 6 : firstDayOfYear.getDay() - 1));
+  const weekKey = toWeekKey(year, week);
+  const start = parseDateKey(weekKey); // Sunday of the requested week
   for (let i = 0; i < 7; i++) {
-    const currentDay = new Date(firstDayOfWeek.getTime());
-    currentDay.setDate(firstDayOfWeek.getDate() + i);
+    const currentDay = new Date(start.getTime());
+    currentDay.setDate(start.getDate() + i);
     days.push(toDayKey(currentDay.getFullYear(), currentDay.getMonth() + 1, currentDay.getDate()));
   }
   return days;
