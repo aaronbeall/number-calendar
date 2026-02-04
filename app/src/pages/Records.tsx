@@ -2,6 +2,7 @@ import type { DateKey, Valence } from '@/features/db/localdb';
 import { Award, CalendarDays, Flame, Skull, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { BackToCalendarButton } from '@/components/BackToCalendarButton';
 import { useAllDays } from '../features/db/useCalendarData';
 import { useDatasets } from '../features/db/useDatasetData';
 import { formatFriendlyDate, parseDateKey } from '../lib/friendly-date';
@@ -95,11 +96,7 @@ export function Records({ datasetId }: { datasetId: string }) {
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8">
-      <nav className="mb-4 text-xs text-slate-500 flex items-center gap-2">
-        <Link to={"/dataset/" + dataset.id} className="hover:underline text-blue-600">{dataset.name}</Link>
-        <span className="mx-1">/</span>
-        <span className="font-semibold text-slate-700 dark:text-slate-200">Records</span>
-      </nav>
+      <BackToCalendarButton datasetId={dataset.id} />
       <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
         <Award className="w-7 h-7 md:w-8 md:h-8 text-yellow-400" /> Records
       </h2>
