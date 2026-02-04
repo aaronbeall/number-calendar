@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatDateAsKey,
+  formatFriendlyDate,
   parseDateKey,
   isDayKey,
   isWeekKey,
@@ -105,6 +106,38 @@ describe('formatDateAsKey', () => {
         expect(result).toMatch(/^\d{4}-W\d{2}$/);
       });
     });
+  });
+});
+
+describe('formatFriendlyDate', () => {
+  it('should format day, month, and year keys', () => {
+    expect(formatFriendlyDate('2025-11-15')).toBe('November 15, 2025');
+    expect(formatFriendlyDate('2025-11')).toBe('November 2025');
+    expect(formatFriendlyDate('2025')).toBe('2025');
+  });
+
+  it('should format day ranges with shared month', () => {
+    expect(formatFriendlyDate('2025-11-12', '2025-11-13')).toBe('November 12-13, 2025');
+  });
+
+  it('should format day ranges across months and years', () => {
+    expect(formatFriendlyDate('2025-11-20', '2025-12-02')).toBe('November 20 – December 2, 2025');
+    expect(formatFriendlyDate('2024-11-20', '2025-12-02')).toBe('November 20, 2024 – December 2, 2025');
+  });
+
+  it('should format month ranges', () => {
+    expect(formatFriendlyDate('2025-11', '2025-12')).toBe('November – December 2025');
+    expect(formatFriendlyDate('2024-11', '2025-12')).toBe('November 2024 – December 2025');
+  });
+
+  it('should format week keys as day ranges', () => {
+    const weekKey = '2025-W46';
+    const weekStart = formatDateAsKey(parseDateKey(weekKey), 'day');
+    const weekEndDate = parseDateKey(weekKey);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const expectedEnd = formatDateAsKey(weekEndDate, 'day');
+
+    expect(formatFriendlyDate(weekKey)).toBe(formatFriendlyDate(weekStart, expectedEnd));
   });
 });
 

@@ -1,8 +1,10 @@
 
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
-import { endOfISOWeek, format, getWeek, isValid, parse, parseISO, startOfISOWeek, startOfWeek } from 'date-fns';
+import { endOfWeek, format, getWeek, isValid, parse, parseISO, startOfWeek } from 'date-fns';
 
 export type DateKeyType = 'day' | 'week' | 'month' | 'year';
+
+const weekOptions = { weekStartsOn: 0 }; // Sunday as first day of week for consistent week key generation across locales
 
 // Type guards for date keys
 export function isDayKey(key: DateKey): key is DayKey {
@@ -76,8 +78,8 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
     // Week range: both are weeks
     if (isWeekKey(start) && isWeekKey(end)) {
       // Convert week keys to their start and end day keys, then use day range formatting
-      const startDate = startOfISOWeek(parseDateKey(start));
-      const endDate = endOfISOWeek(parseDateKey(end));
+      const startDate = startOfWeek(parseDateKey(start), weekOptions);
+      const endDate = endOfWeek(parseDateKey(end), weekOptions);
       const startDayKey = formatDateAsKey(startDate, 'day');
       const endDayKey = formatDateAsKey(endDate, 'day');
       return formatFriendlyDate(startDayKey, endDayKey);
@@ -122,8 +124,8 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
   }
   // Single week: 'YYYY-Www'
   if (isWeekKey(start)) {
-    const weekStart = startOfISOWeek(parseDateKey(start));
-    const weekEnd = endOfISOWeek(parseDateKey(start));
+    const weekStart = startOfWeek(parseDateKey(start));
+    const weekEnd = endOfWeek(parseDateKey(start));
     const startDayKey = formatDateAsKey(weekStart, 'day');
     const endDayKey = formatDateAsKey(weekEnd, 'day');
     return formatFriendlyDate(startDayKey, endDayKey);
@@ -153,7 +155,7 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
 function weekToISODate(week: WeekKey): string {
   // Parse 'YYYY-Www' as ISO week and return the Sunday of that week
   const date = parse(week, "YYYY-'W'ww", new Date(), { useAdditionalWeekYearTokens: true });
-  const first = startOfWeek(date, { weekStartsOn: 0 }); // Sunday as first day
+  const first = startOfWeek(date);
   return format(first, 'yyyy-MM-dd'); 
 }
 
