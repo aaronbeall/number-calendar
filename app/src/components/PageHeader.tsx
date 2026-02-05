@@ -109,7 +109,7 @@ export function PageHeader({
               )}
             </div>
           </div>
-          {completedSummary && (
+          {completedSummary && completedSummary.total > 0 && (
             <div className="sm:ml-auto">
               <div className="rounded-xl border border-slate-200/70 dark:border-slate-700 bg-white/80 dark:bg-slate-900/70 px-4 py-2 text-xs text-slate-600 dark:text-slate-400 shadow-sm">
                 <div className="flex items-center gap-3">
