@@ -1,7 +1,9 @@
 import type { DateKey, GoalBadge, GoalType } from '@/features/db/localdb';
 import { formatFriendlyDate } from '@/lib/friendly-date';
 import { cn } from '@/lib/utils';
+import { achievementBadgeColors } from '@/lib/achievements';
 import { CheckCircle, Lock, Unlock } from 'lucide-react';
+import { useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 
 
@@ -37,6 +39,7 @@ export function AchievementCard({
   goalType,
   repeatable
 }: AchievementCardProps & { timePeriod?: string }) {
+  const [isHovered, setIsHovered] = useState(false);
   let status: 'completed' | 'in-progress' | 'locked' = 'locked';
   if (completedAt) status = 'completed';
   else if (startedAt || progress) status = 'in-progress';
@@ -59,17 +62,41 @@ export function AchievementCard({
     completedLabelColor = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700';
   }
 
+  const badgeColor = achievementBadgeColors[badge.color] ?? achievementBadgeColors.gold;
+  const reflectionStyle = {
+    backgroundImage: `linear-gradient(135deg, ${badgeColor.bg}66, ${badgeColor.accent}33 45%, transparent 72%)`,
+  };
+  const glowStyle = {
+    backgroundImage: `radial-gradient(circle at 20% 0%, ${badgeColor.accent}3d, transparent 62%)`,
+  };
+
+  const isBadgedAnimated = isHovered && status === 'completed'
+
   return (
     <div
       className={cn(
         backgroundColor,
-        'rounded-xl border dark:bg-slate-900/80 shadow-sm p-4 flex flex-col gap-2 h-full transition-all items-center relative',
+        'group rounded-xl border dark:bg-slate-900/80 shadow-sm p-4 flex flex-col gap-2 h-full transition-all duration-300 ease-out items-center relative hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70 dark:hover:shadow-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
         borderColor,
         status === 'locked' && 'opacity-60 grayscale',
         (status === 'locked' || status === 'in-progress') && 'border-slate-200 dark:border-slate-700',
         status === 'in-progress' && 'opacity-60'
       )}
+      style={isHovered ? { borderColor: badgeColor.border } : undefined}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsHovered(true)}
+      onBlur={() => setIsHovered(false)}
+      tabIndex={0}
     >
+      <span
+        className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 dark:group-hover:opacity-50"
+        style={reflectionStyle}
+      />
+      <span
+        className="pointer-events-none absolute -inset-12 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100 dark:group-hover:opacity-40"
+        style={glowStyle}
+      />
       {/* Count notification bubble */}
       {status === 'completed' && completedCount && repeatable && (
         <span className="absolute top-2 right-2 z-10 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold shadow-md border-2 border-white dark:border-slate-900 select-none pointer-events-none">
@@ -78,9 +105,10 @@ export function AchievementCard({
       )}
       <div className={cn(
         "flex flex-col items-center w-full mb-2",
+        status === "completed" && "transition-transform duration-300 ease-out group-hover:scale-140",
         status === "in-progress" && "opacity-60 grayscale"
       )}>
-        <AchievementBadge badge={badge} size="medium" />
+        <AchievementBadge badge={badge} size="medium" floating={isBadgedAnimated} shine={isBadgedAnimated} pulse={isBadgedAnimated} />
       </div>
       <span className="font-bold text-lg text-center w-full">{title}</span>
       {description && <div className="text-xs text-slate-500 mb-1 text-center w-full">{description}</div>}

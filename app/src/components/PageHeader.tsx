@@ -49,9 +49,9 @@ const variantStyles: Record<PageHeaderVariant, {
     primaryButton: 'bg-blue-600 hover:bg-blue-700',
   },
   records: {
-    gradient: 'from-slate-600 to-slate-400',
-    iconBg: 'bg-slate-100 dark:bg-slate-900/40 border-slate-200 dark:border-slate-800',
-    iconColor: 'text-slate-500',
+    gradient: 'from-blue-600 to-purple-600',
+    iconBg: 'bg-slate-50 dark:bg-slate-900/60 border-slate-300/70 dark:border-slate-700',
+    iconColor: 'text-slate-600 dark:text-slate-300',
     primaryButton: 'bg-slate-700 hover:bg-slate-800',
   },
 };
