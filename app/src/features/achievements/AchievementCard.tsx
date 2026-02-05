@@ -98,7 +98,7 @@ export function AchievementCard({
         style={glowStyle}
       />
       {/* Count notification bubble */}
-      {status === 'completed' && completedCount && repeatable && (
+      {status === 'completed' && completedCount && completedCount > 1 && repeatable && (
         <span className="absolute -top-2 -right-2 z-10 pointer-events-none">
           {completedCount > 1 && (
             <>
