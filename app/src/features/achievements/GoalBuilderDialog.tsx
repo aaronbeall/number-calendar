@@ -11,11 +11,12 @@ import { formatValue } from '@/lib/goals';
 import { AchievementBadge } from './AchievementBadge';
 import type { Dataset, Goal } from '@/features/db/localdb';
 import { createGoal } from '@/features/db/localdb';
-import { useAllDays } from '@/features/db/useCalendarData';
+import { useAllDays, useSaveDay } from '@/features/db/useCalendarData';
 import { cn } from '@/lib/utils';
 import { capitalize, adjectivize } from '@/lib/utils';
 import { getValueForValence, isBad } from '@/lib/valence';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
+import { toDayKey } from '@/lib/friendly-date';
 
 type GoalBuilderDialogProps = {
   open: boolean;
@@ -24,7 +25,7 @@ type GoalBuilderDialogProps = {
   onComplete: () => void;
 };
 
-type Step = 'period' | 'activity' | 'preview';
+type Step = 'period' | 'activity' | 'preview' | 'starting-point';
 
 export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: GoalBuilderDialogProps) {
   const [step, setStep] = useState<Step>('period');
@@ -39,9 +40,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const [generatedGoals, setGeneratedGoals] = useState<GeneratedGoals | null>(null);
   const [selectedGoals, setSelectedGoals] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   // Load all days to calculate current total/last value
   const { data: allDays = [] } = useAllDays(dataset.id);
+  const saveDay = useSaveDay();
   
   // Calculate current value based on tracking type
   const currentValue = React.useMemo(() => {
@@ -70,6 +73,13 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const exampleChangeLabel = formatValue(exampleChange, { delta: true });
   const parsedStartingValue = Number.isFinite(parseFloat(startingValue)) ? parseFloat(startingValue) : undefined;
   const allTimePriorValue = parsedStartingValue ?? currentValue;
+  const isAllTimeValueType = valueType === 'alltime-total' || valueType === 'alltime-target';
+  const hasNonZeroStartingValue = typeof parsedStartingValue === 'number' && parsedStartingValue !== 0;
+  const shouldPromptInitialData = isAllTimeValueType && hasNonZeroStartingValue && currentValue === 0;
+  const todayLabel = React.useMemo(() => {
+    const now = new Date();
+    return now.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+  }, []);
   
   // Convert time period for display
   const targetPeriodsDisplayValue = React.useMemo(() => {
@@ -254,6 +264,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
       setStep('period');
     } else if (step === 'preview') {
       setStep('activity');
+    } else if (step === 'starting-point') {
+      setStep('preview');
     }
   };
 
@@ -284,20 +296,43 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     setSelectedGoals(allGoalIds);
   };
 
-  const handleCreate = async () => {
+  const createSelectedGoals = async () => {
     if (!generatedGoals) return;
 
     const allGoals = [...generatedGoals.milestones, ...generatedGoals.targets, ...generatedGoals.achievements];
     const goalsToCreate = allGoals.filter((g) => selectedGoals.has(g.id));
 
-    // Create all selected goals
     for (const goal of goalsToCreate) {
       await createGoal(goal);
     }
+  };
 
-    onComplete();
-    onOpenChange(false);
-    resetState();
+  const handleCreate = async (includeInitialData: boolean) => {
+    if (isCreating) return;
+    setIsCreating(true);
+
+    try {
+      if (includeInitialData && typeof parsedStartingValue === 'number') {
+        const now = new Date();
+        const dateKey = toDayKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        await saveDay.mutateAsync({ datasetId: dataset.id, date: dateKey, numbers: [parsedStartingValue] });
+      }
+
+      await createSelectedGoals();
+      onComplete();
+      onOpenChange(false);
+      resetState();
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleCreateClick = () => {
+    if (shouldPromptInitialData) {
+      setStep('starting-point');
+      return;
+    }
+    void handleCreate(false);
   };
 
   const resetState = () => {
@@ -312,6 +347,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     setGeneratedGoals(null);
     setSelectedGoals(new Set());
     setIsGenerating(false);
+    setIsCreating(false);
   };
 
   const toggleGoal = (goalId: string) => {
@@ -424,7 +460,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div key={step} className="flex-1 overflow-y-auto px-6 py-4">
             {step === 'period' && (
             <div className="space-y-8 py-6 px-4">
               {/* Step 1: Period Selection */}
@@ -1156,6 +1192,54 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                 </div>
               </div>
           )}
+          {step === 'starting-point' && (
+            <div className="space-y-6 py-6 px-4 animate-in fade-in duration-300">
+              <div className="text-center space-y-2">
+                <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
+                  <Flag className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  Add a starting point?
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Your all-time goal starts from {formatValue(parsedStartingValue ?? 0)}. Want us to add that as your first data point?
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200/70 dark:border-slate-700/70 bg-white/60 dark:bg-slate-900/40 backdrop-blur px-4 py-4 max-w-xl mx-auto">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Starting value</h4>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      We will add it to your dataset for today
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
+                    {todayLabel}
+                  </Badge>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <Hash className="w-3.5 h-3.5" />
+                      Initial value
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {formatValue(parsedStartingValue ?? 0)}
+                    </div>
+                  </div>
+                  <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Date
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                      {todayLabel}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Footer */}
@@ -1169,12 +1253,21 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
             {step === 'period' && goodValue && getPeriodStepValidation().feedbackMessage}
 
             <div className="flex items-center gap-2">
-              {step === 'preview' ? (
+              {step === 'starting-point' ? (
+                <>
+                  <Button variant="ghost" onClick={() => handleCreate(false)} disabled={isCreating}>
+                    Skip for now
+                  </Button>
+                  <Button onClick={() => handleCreate(true)} disabled={isCreating}>
+                    Add starting value
+                  </Button>
+                </>
+              ) : step === 'preview' ? (
                 <>
                   <span className="text-sm text-slate-600 dark:text-slate-400">
                     {selectedGoals.size} selected
                   </span>
-                  <Button onClick={handleCreate} disabled={selectedGoals.size === 0}>
+                  <Button onClick={handleCreateClick} disabled={selectedGoals.size === 0}>
                     <Check className="w-4 h-4 mr-2" />
                     Create Goals
                   </Button>
