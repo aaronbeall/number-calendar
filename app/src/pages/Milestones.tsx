@@ -74,6 +74,9 @@ export default function Milestones() {
     data: allData,
     datasetId: datasetId ?? '',
   });
+  const unlockedMilestones = achievementResults.filter(result => result.completedCount > 0).length;
+  const totalCompletions = achievementResults.reduce((sum, result) => sum + result.completedCount, 0);
+  const totalMilestones = achievementResults.length;
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8">
@@ -84,6 +87,11 @@ export default function Milestones() {
         icon={Flag}
         variant="milestones"
         actions={headerActions}
+        completedSummary={{
+          unlocked: unlockedMilestones,
+          completions: totalCompletions,
+          total: totalMilestones,
+        }}
       />
       { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} /> }
       { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }

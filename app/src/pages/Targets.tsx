@@ -104,6 +104,9 @@ export default function Targets() {
     data: allData,
     datasetId: datasetId ?? '',
   });
+  const unlockedTargets = achievementResults.filter(result => result.completedCount > 0).length;
+  const totalCompletions = achievementResults.reduce((sum, result) => sum + result.completedCount, 0);
+  const totalTargets = achievementResults.length;
   const hasTargets = targets.length > 0;
   const headerActions = hasTargets
     ? [
@@ -121,6 +124,11 @@ export default function Targets() {
         icon={Target}
         variant="targets"
         actions={headerActions}
+        completedSummary={{
+          unlocked: unlockedTargets,
+          completions: totalCompletions,
+          total: totalTargets,
+        }}
       />
       { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset} /> }
       { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }

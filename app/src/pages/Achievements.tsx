@@ -168,6 +168,10 @@ export default function Achievements() {
     datasetId: datasetId ?? '',
   });
 
+  const unlockedGoals = achievementResults.filter(result => result.completedCount > 0).length;
+  const totalCompletions = achievementResults.reduce((sum, result) => sum + result.completedCount, 0);
+  const totalGoals = achievementResults.length;
+
   const hasAchievements = achievementResults.length > 0;
   const headerActions = hasAchievements
     ? [
@@ -185,6 +189,11 @@ export default function Achievements() {
         icon={Trophy}
         variant="achievements"
         actions={headerActions}
+        completedSummary={{
+          unlocked: unlockedGoals,
+          completions: totalCompletions,
+          total: totalGoals,
+        }}
       />
       { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} /> }
       { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }

@@ -22,6 +22,12 @@ type PageHeaderProps = {
   icon: LucideIcon;
   variant: PageHeaderVariant;
   actions?: HeaderAction[];
+  completedSummary?: {
+    unlocked: number;
+    completions: number;
+    total: number;
+    label?: string;
+  };
 };
 
 const variantStyles: Record<PageHeaderVariant, {
@@ -64,6 +70,7 @@ export function PageHeader({
   icon: Icon,
   variant,
   actions = [],
+  completedSummary,
 }: PageHeaderProps) {
   const styles = variantStyles[variant];
 
@@ -86,20 +93,47 @@ export function PageHeader({
             </div>
           )}
         </div>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className={`h-12 w-12 rounded-xl border flex items-center justify-center ${styles.iconBg}`}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className={`h-12 w-12 rounded-xl border flex items-center justify-center ${styles.iconBg}`}>
             <Icon className={`h-6 w-6 ${styles.iconColor}`} aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className={`text-2xl md:text-3xl font-bold bg-gradient-to-r ${styles.gradient} bg-clip-text text-transparent`}>
+                {title}
+              </h2>
+              {description && (
+                <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+                  {description}
+                </p>
+              )}
+            </div>
           </div>
-          <div>
-            <h2 className={`text-2xl md:text-3xl font-bold bg-gradient-to-r ${styles.gradient} bg-clip-text text-transparent`}>
-              {title}
-            </h2>
-            {description && (
-              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
-                {description}
-              </p>
-            )}
-          </div>
+          {completedSummary && (
+            <div className="sm:ml-auto">
+              <div className="rounded-xl border border-slate-200/70 dark:border-slate-700 bg-white/80 dark:bg-slate-900/70 px-4 py-2 text-xs text-slate-600 dark:text-slate-400 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {completedSummary.unlocked}
+                    </span>
+                    {` unlocked of ${completedSummary.total}`}
+                  </span>
+                  {completedSummary.completions > 0 && (
+                    <>
+                      <span className="h-3 w-px bg-slate-200 dark:bg-slate-700" aria-hidden="true" />
+                      <span>
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
+                          {completedSummary.completions}
+                        </span>
+                        {' total completions'}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
