@@ -45,20 +45,20 @@ export function AchievementCard({
   else if (startedAt || progress) status = 'in-progress';
 
   // Determine border/theme color by goal type
-  let borderColor = '';
+  let borderColor = 'border-slate-200 dark:border-slate-700';
   let completedLabelColor = '';
   let backgroundColor = '';
   if (goalType === 'target') {
     backgroundColor = 'bg-green-50/50 dark:bg-green-900/50';
-    borderColor = 'border-green-400 dark:border-green-700';
+    // borderColor = 'border-green-400 dark:border-green-700';
     completedLabelColor = 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700';
   } else if (goalType === 'milestone') {
     backgroundColor = 'bg-blue-50/50 dark:bg-blue-900/50';
-    borderColor = 'border-blue-300 dark:border-blue-700';
+    // borderColor = 'border-blue-300 dark:border-blue-700';
     completedLabelColor = 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700';
   } else {
     backgroundColor = 'bg-yellow-50/50 dark:bg-yellow-900/50';
-    borderColor = 'border-yellow-300 dark:border-yellow-700'; // achievement (default)
+    // borderColor = 'border-yellow-300 dark:border-yellow-700';
     completedLabelColor = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700';
   }
 
@@ -105,7 +105,7 @@ export function AchievementCard({
       )}
       <div className={cn(
         "flex flex-col items-center w-full mb-2",
-        status === "completed" && "transition-transform duration-300 ease-out group-hover:scale-140",
+        status === "completed" && "transition-transform duration-300 ease-out group-hover:scale-160",
         status === "in-progress" && "opacity-60 grayscale"
       )}>
         <AchievementBadge badge={badge} size="medium" floating={isBadgedAnimated} shine={isBadgedAnimated} pulse={isBadgedAnimated} />
