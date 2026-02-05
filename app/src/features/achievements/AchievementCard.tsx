@@ -103,11 +103,11 @@ export function AchievementCard({
           {completedCount > 1 && (
             <>
               {completedCount > 2 && (
-                <span className="absolute -top-2 -right-2 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-red-300/60 dark:bg-red-700/40 border-2 border-white/70 dark:border-slate-900/70 shadow-sm text-[11px] font-bold text-transparent">
+                <span className="absolute -top-1.5 -right-2 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-red-300/60 dark:bg-red-700/40 border-2 border-white/70 dark:border-slate-900/70 shadow-sm text-[11px] font-bold text-transparent">
                   {completedCount}
                 </span>
               )}
-              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-red-400/70 dark:bg-red-600/45 border-2 border-white/80 dark:border-slate-900/80 shadow text-[11px] font-bold text-transparent">
+              <span className="absolute -top-0.5 -right-1 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-red-400/70 dark:bg-red-600/45 border-2 border-white/80 dark:border-slate-900/80 shadow text-[11px] font-bold text-transparent">
                 {completedCount}
               </span>
             </>
