@@ -159,6 +159,8 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   const { datasetId, valueType, valence, tracking, startingValue } = input;
   const { metric, source } = getMetricAndSource(valueType, 'milestone');
   const condition = getCondition(valence);
+  let createdAt = Date.now();
+  const nextCreatedAt = () => createdAt++;
 
   const milestones: Goal[] = [];
   const metricName = tracking == 'trend' ? '' : ` ${getMetricDisplayName(metric).toLowerCase()}`;
@@ -417,7 +419,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     milestones.push({
       id: nanoid(),
       datasetId,
-      createdAt: Date.now(),
+      createdAt: nextCreatedAt(),
       type: 'milestone',
       title: name,
       description: `Reach ${formatValue(value, { delta: source === 'deltas' })}${metricName}`,
@@ -442,7 +444,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
       uniqueMilestones.push({
         id: nanoid(),
         datasetId,
-        createdAt: Date.now(),
+        createdAt: nextCreatedAt(),
         type: 'milestone',
         title: 'Zero Point',
         description: `Reach zero${metricName}`,
@@ -464,6 +466,8 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
   const { datasetId, valueType, valence } = input;
   const { metric, source } = getMetricAndSource(valueType, 'target');
   const condition = getCondition(valence);
+  let createdAt = Date.now();
+  const nextCreatedAt = () => createdAt++;
   
   const targets: Goal[] = [];
   const periods: Array<{ period: 'day' | 'week' | 'month'; value: number; color: AchievementBadgeColor }> = [
@@ -479,7 +483,7 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
     targets.push({
       id: nanoid(),
       datasetId,
-      createdAt: Date.now(),
+      createdAt: nextCreatedAt(),
       type: 'target',
       title: `${adjectiveName} Target`,
       description: `Reach ${formatValue(value, { delta: source === 'deltas' })} in a ${period}`,
@@ -498,6 +502,8 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   const { datasetId, period, valueType, valence } = input;
   const { metric, source } = getMetricAndSource(valueType, 'target');
   const condition = getCondition(valence);
+  let createdAt = Date.now();
+  const nextCreatedAt = () => createdAt++;
 
   const achievements: Goal[] = [];
   const valenceTerm = (valueType === 'period-change' || valueType === 'alltime-target')
@@ -515,7 +521,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   achievements.push({
     id: nanoid(),
     datasetId,
-    createdAt: Date.now(),
+    createdAt: nextCreatedAt(),
     type: 'goal',
     title: 'First Entry',
     description: 'Record your first data point',
@@ -529,7 +535,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   achievements.push({
     id: nanoid(),
     datasetId,
-    createdAt: Date.now(),
+    createdAt: nextCreatedAt(),
     type: 'goal',
     title: 'First Win',
     description: `Record your first ${valenceTerm.toLowerCase()} entry`,
@@ -550,7 +556,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
       achievements.push({
         id: nanoid(),
         datasetId,
-        createdAt: Date.now(),
+        createdAt: nextCreatedAt(),
         type: 'goal',
         title: `${count > 1 ? `${count} ` : ''} ${valenceTerm} ${pluralize(periodName, count)}`,
         description: `Complete ${count == 1 ? 'a' : count} ${valenceTerm.toLowerCase()} ${pluralize(p, count)}`,
@@ -566,7 +572,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   achievements.push({
     id: nanoid(),
     datasetId,
-    createdAt: Date.now(),
+    createdAt: nextCreatedAt(),
     type: 'goal',
     title: `${valenceTerm} Year`,
     description: `Complete a ${valenceTerm.toLowerCase()} year`,
@@ -590,7 +596,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
       achievements.push({
         id: nanoid(),
         datasetId,
-        createdAt: Date.now(),
+        createdAt: nextCreatedAt(),
         type: 'goal',
         title: `${count} ${adjectiveName} Targets`,
         description: `Complete ${count} ${adjectivize(targetPeriod)} targets`,
@@ -646,7 +652,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
       achievements.push({
         id: nanoid(),
         datasetId,
-        createdAt: Date.now(),
+        createdAt: nextCreatedAt(),
         type: 'goal',
         title: `${multipleNames[idx]} ${targetPeriodName}`,
         description: `Reach ${formatValue(multipleValue, { delta: source === 'deltas' })} in a ${targetPeriod}`,
@@ -677,7 +683,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
       achievements.push({
         id: nanoid(),
         datasetId,
-        createdAt: Date.now(),
+        createdAt: nextCreatedAt(),
         type: 'goal',
         title: `${count}-${streakPeriodName} Streak`,
         description: `Maintain ${count} ${valenceTerm.toLowerCase()} ${streakPeriod}s in a row`,

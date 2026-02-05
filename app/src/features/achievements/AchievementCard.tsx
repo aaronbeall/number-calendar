@@ -15,6 +15,7 @@ export interface AchievementCardProps {
   progress?: number;
   goalCount?: number;
   completedCount?: number;
+  firstStartedAt?: DateKey;
   firstCompletedAt?: DateKey;
   goalType?: GoalType;
   locked?: boolean;
@@ -31,6 +32,7 @@ export function AchievementCard({
   progress,
   goalCount,
   completedCount,
+  firstStartedAt,
   firstCompletedAt,
   goalType,
   repeatable
@@ -87,7 +89,7 @@ export function AchievementCard({
           {status === 'completed' && completedAt && firstCompletedAt && firstCompletedAt !== completedAt && (
             <span className="ml-2 text-xs text-slate-400 italic flex items-center gap-1">
               <Unlock className="w-4 h-4 text-slate-400" />
-              {formatFriendlyDate(firstCompletedAt)}
+              {firstStartedAt ? formatFriendlyDate(firstStartedAt, firstCompletedAt) : formatFriendlyDate(firstCompletedAt)}
             </span>
           )}
           {status === 'completed' && completedAt && (
@@ -96,7 +98,7 @@ export function AchievementCard({
               completedLabelColor
             )}>
               <CheckCircle className={cn("w-4 h-4 text-green-500", completedLabelColor)} />
-              {formatFriendlyDate(completedAt)}
+              {startedAt ? formatFriendlyDate(startedAt, completedAt) : formatFriendlyDate(completedAt)}
             </span>
           )}
           {status === 'locked' && (

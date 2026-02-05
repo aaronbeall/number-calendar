@@ -13,11 +13,13 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
   // Flatten to a single achievement per goal for grid (show the most relevant achievement)
   const gridItems = results.map((result): AchievementCardProps => {
     const ach = result.achievements.slice(-1)[0] ?? {};
+    let firstStartedAt = undefined;
     let firstCompletedAt = undefined;
     let lastCompletedAt = undefined;
     if (result.achievements && result.achievements.length > 0) {
       const completed = result.achievements.filter(a => a.completedAt);
       if (completed.length > 0) {
+        firstStartedAt = completed[0].startedAt;
         firstCompletedAt = completed[0].completedAt;
         lastCompletedAt = completed[completed.length - 1].completedAt;
       }
@@ -33,6 +35,7 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
       goalCount: result.goal.count,
       completedCount: result.completedCount,
       locked: !ach.completedAt && !ach.startedAt && !ach.progress,
+      firstStartedAt,
       firstCompletedAt,
       goalType: result.goal.type,
       createdAt: result.goal.createdAt,
@@ -149,9 +152,9 @@ function sortAchievements(a: AchievementCardProps, b: AchievementCardProps) {
   if ((a.goalType && b.goalType) && typeOrder[a.goalType] !== typeOrder[b.goalType]) {
     return typeOrder[a.goalType] - typeOrder[b.goalType];
   }
-  // 4. createdAt (desc)
+  // 4. createdAt (asc)
   if (a.createdAt && b.createdAt && a.createdAt !== b.createdAt) {
-    return b.createdAt - a.createdAt;
+    return a.createdAt - b.createdAt;
   }
   return 0;
 }
