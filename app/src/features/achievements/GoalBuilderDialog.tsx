@@ -1312,7 +1312,10 @@ function GoalPreviewItem({
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
         'relative text-left w-full h-full p-4 rounded-xl border transition-all duration-300',
-        'hover:scale-125 hover:shadow-lg hover:-translate-y-1 hover:z-10 hover:bg-slate-50/90 dark:hover:bg-slate-900/90',
+        selected
+          ? 'hover:scale-125 hover:shadow-lg hover:-translate-y-1 hover:z-10'
+          : 'hover:scale-105 hover:shadow-md hover:-translate-y-0.5',
+        'hover:bg-slate-50/90 dark:hover:bg-slate-900/90',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
         selected
           ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20 shadow-blue-500/20'

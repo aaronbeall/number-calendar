@@ -439,7 +439,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   if (tracking === 'trend') {
     const approachingZeroDown = condition === 'below' && (startingValue ?? 0) > 0;
     const approachingZeroUp = condition === 'above' && (startingValue ?? 0) < 0;
-    
+
     if (approachingZeroDown || approachingZeroUp) {
       uniqueMilestones.push({
         id: nanoid(),
@@ -453,9 +453,11 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
         timePeriod: 'anytime',
         count: 1,
       });
+
+      return uniqueMilestones.filter(m => approachingZeroDown ? m.target.value! >= 0 : m.target.value! <= 0);
     }
 
-    return uniqueMilestones.filter(m => approachingZeroDown ? m.target.value! >= 0 : m.target.value! <= 0);
+    return uniqueMilestones;
   }
 
   return uniqueMilestones;
