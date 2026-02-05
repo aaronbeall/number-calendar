@@ -82,16 +82,20 @@ export function Records({ datasetId }: { datasetId: string }) {
     let monthKey = '';
     try {
       const d = parseDateKey(dateKey);
-      monthKey = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : 'Unknown';
+      monthKey = d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` : 'Never';
     } catch {
-      monthKey = 'Unknown';
+      monthKey = 'Never';
     }
     if (!recordsByMonth[monthKey]) recordsByMonth[monthKey] = [];
     recordsByMonth[monthKey].push(rec);
   });
 
   // Sort months descending (most recent first)
-  const sortedMonthKeys = Object.keys(recordsByMonth).sort((a, b) => b.localeCompare(a));
+  const sortedMonthKeys = Object.keys(recordsByMonth).sort((a, b) => {
+    if (a === 'Never') return 1;
+    if (b === 'Never') return -1;
+    return b.localeCompare(a);
+  });
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8">
@@ -106,10 +110,10 @@ export function Records({ datasetId }: { datasetId: string }) {
         {sortedMonthKeys.map((monthKey) => {
           const group = recordsByMonth[monthKey];
           // Format header as 'MMMM yyyy' using the first record's date
-          let header = 'Unknown';
+          let header = 'Never';
           try {
             const d = parseDateKey(group[0].type === 'streak' ? group[0].end : group[0].date);
-            header = d ? d.toLocaleString('default', { month: 'long', year: 'numeric' }) : 'Unknown';
+            header = d ? d.toLocaleString('default', { month: 'long', year: 'numeric' }) : 'Never';
           } catch {}
           return (
             <div key={monthKey}>
