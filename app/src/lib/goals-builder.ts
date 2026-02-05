@@ -172,7 +172,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   // Create milestone series using interpolation from start to baseline,
   // then extend past baseline using the same direction.
   const preBaselineFractions = [0.25, 0.5, 0.75];
-  const extendedMultipliers = [2, 4, 10, 20, 50, 100];
+  let extendedMultipliers = [2, 4, 10, 20, 50, 100];
   const spiritualNames = [
     // Start milestones
     'First Steps',
@@ -390,6 +390,13 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     'laurel_crown',
   ];
 
+  const approachingZeroDown = tracking === 'trend' && condition === 'below' && (startingValue ?? 0) > 0;
+  const approachingZeroUp = tracking === 'trend' && condition === 'above' && (startingValue ?? 0) < 0;
+
+  if (approachingZeroDown || approachingZeroUp) {
+    extendedMultipliers = [1.25, 1.5, 1.75, 2, 2.5, 3];
+  }
+
   const milestonesValues = [
     roundToClean(startValue + baselines.dayTarget, 2),
     roundToClean(startValue + baselines.weekTarget, 2),
@@ -435,29 +442,23 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
       return milestones.find(m => m.target.value === value);
   }).filter(Boolean) as Goal[];
 
-  // Special case: if trending towards zero, add a "Zero" milestone and remove milestones past zero
-  if (tracking === 'trend') {
-    const approachingZeroDown = condition === 'below' && (startingValue ?? 0) > 0;
-    const approachingZeroUp = condition === 'above' && (startingValue ?? 0) < 0;
+  // Special case: if trending towards zero remove milestones past zero
+  if (tracking === 'trend' && (approachingZeroDown || approachingZeroUp)) {
 
-    if (approachingZeroDown || approachingZeroUp) {
-      uniqueMilestones.push({
-        id: nanoid(),
-        datasetId,
-        createdAt: nextCreatedAt(),
-        type: 'milestone',
-        title: 'Zero Point',
-        description: `Reach zero${metricName}`,
-        badge: createBadge('laurel_trophy', 'gold', 'flag'),
-        target: createTarget(metric, source, condition, 0),
-        timePeriod: 'anytime',
-        count: 1,
-      });
+    // uniqueMilestones.push({
+    //   id: nanoid(),
+    //   datasetId,
+    //   createdAt: nextCreatedAt(),
+    //   type: 'milestone',
+    //   title: 'Zero Point',
+    //   description: `Reach zero${metricName}`,
+    //   badge: createBadge('laurel_trophy', 'gold', 'flag'),
+    //   target: createTarget(metric, source, condition, 0),
+    //   timePeriod: 'anytime',
+    //   count: 1,
+    // });
 
-      return uniqueMilestones.filter(m => approachingZeroDown ? m.target.value! >= 0 : m.target.value! <= 0);
-    }
-
-    return uniqueMilestones;
+    return uniqueMilestones.filter(m => approachingZeroDown ? m.target.value! >= 0 : m.target.value! <= 0);
   }
 
   return uniqueMilestones;
