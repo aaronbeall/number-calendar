@@ -1,4 +1,4 @@
-import { BackToCalendarButton } from '@/components/BackToCalendarButton';
+import { PageHeader } from '@/components/PageHeader';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
@@ -9,7 +9,7 @@ import { useDataset } from '@/features/db/useDatasetData';
 import { useGoals } from '@/features/db/useGoalsData';
 import { getDaysMap } from '@/lib/calendar';
 import { processAchievements } from '@/lib/goals';
-import { Target } from 'lucide-react';
+import { Plus, Sparkles, Target } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
@@ -105,20 +105,23 @@ export default function Targets() {
     datasetId: datasetId ?? '',
   });
   const hasTargets = targets.length > 0;
+  const headerActions = hasTargets
+    ? [
+        { label: 'Add Target', onClick: () => setDialogOpen(true), icon: Plus },
+        { label: 'Goal Builder', onClick: () => setBuilderOpen(true), variant: 'secondary' as const, icon: Sparkles, iconOnly: true, tooltip: 'Goal Builder' },
+      ]
+    : [];
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8">
-      <BackToCalendarButton datasetId={dataset?.id ?? datasetId} />
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
-        <Target className="w-7 h-7 md:w-8 md:h-8 text-green-400" /> Targets
-      </h2>
-      {hasTargets && (
-        <div className="mb-6 flex justify-end">
-          <button className="px-4 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700" onClick={() => setDialogOpen(true)}>
-            Add Target
-          </button>
-        </div>
-      )}
+      <PageHeader
+        title="Targets"
+        description="Set focused goals for specific time periods and stay on track."
+        backTo={`/dataset/${dataset?.id ?? datasetId ?? ''}`}
+        icon={Target}
+        variant="targets"
+        actions={headerActions}
+      />
       { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset} /> }
       { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }
       {!hasTargets ? (

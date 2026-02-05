@@ -1,4 +1,4 @@
-import { BackToCalendarButton } from '@/components/BackToCalendarButton';
+import { PageHeader } from '@/components/PageHeader';
 import type { DateKey, Valence } from '@/features/db/localdb';
 import { Award, CalendarDays, Flame, Skull, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
@@ -95,10 +95,13 @@ export function Records({ datasetId }: { datasetId: string }) {
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8">
-      <BackToCalendarButton datasetId={dataset.id} />
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
-        <Award className="w-7 h-7 md:w-8 md:h-8 text-yellow-400" /> Records
-      </h2>
+      <PageHeader
+        title="Records"
+        description="See your strongest streaks, best periods, and standout moments."
+        backTo={`/dataset/${dataset.id}`}
+        icon={Award}
+        variant="records"
+      />
       <div className="space-y-8">
         {sortedMonthKeys.map((monthKey) => {
           const group = recordsByMonth[monthKey];

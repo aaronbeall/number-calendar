@@ -1,4 +1,4 @@
-import { BackToCalendarButton } from '@/components/BackToCalendarButton';
+import { PageHeader } from '@/components/PageHeader';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
@@ -9,7 +9,7 @@ import { useDataset } from '@/features/db/useDatasetData';
 import { useGoals } from '@/features/db/useGoalsData';
 import { getDaysMap } from '@/lib/calendar';
 import { processAchievements } from '@/lib/goals';
-import { Flag } from 'lucide-react';
+import { Flag, Plus, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
@@ -60,6 +60,12 @@ export default function Milestones() {
   // Filter goals by type 'milestone', combine demo and real data
   const milestones = isPreview ? demoMilestones : (allGoals.filter(g => g.type === 'milestone') as Goal[]);
   const hasMilestones = milestones.length > 0;
+  const headerActions = hasMilestones
+    ? [
+        { label: 'Add Milestone', onClick: () => setDialogOpen(true), icon: Plus },
+        { label: 'Goal Builder', onClick: () => setBuilderOpen(true), variant: 'secondary' as const, icon: Sparkles, iconOnly: true, tooltip: 'Goal Builder' },
+      ]
+    : [];
 
   // Compute achievement results from goals
   const achievementResults = processAchievements({
@@ -71,17 +77,14 @@ export default function Milestones() {
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-8">
-      <BackToCalendarButton datasetId={dataset?.id ?? datasetId} />
-      <h2 className="text-2xl md:text-3xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
-        <Flag className="w-7 h-7 md:w-8 md:h-8 text-blue-400" /> Milestones
-      </h2>
-      {hasMilestones && (
-        <div className="mb-6 flex justify-end">
-          <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700" onClick={() => setDialogOpen(true)}>
-            Add Milestone
-          </button>
-        </div>
-      )}
+      <PageHeader
+        title="Milestones"
+        description="Celebrate major achievements and long-term progress."
+        backTo={`/dataset/${dataset?.id ?? datasetId ?? ''}`}
+        icon={Flag}
+        variant="milestones"
+        actions={headerActions}
+      />
       { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} /> }
       { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }
       {!hasMilestones ? (
