@@ -2,14 +2,13 @@
 import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
+import { getRelativeSize } from '@/lib/charts';
 import { type StatsExtremes } from '@/lib/stats';
+import { getValenceValueForNumber } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { Skull, TrendingDown, TrendingUp, TrendingUpDown, Trophy } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
-import { getRelativeSize } from '@/lib/charts';
-import { getValenceValueForNumber } from '@/lib/tracking';
-import { dateToWeekKey, convertDateKey, dateToDayKey, parseDateKey } from '@/lib/friendly-date';
 
 export interface DayCellProps {
   date: Date;
