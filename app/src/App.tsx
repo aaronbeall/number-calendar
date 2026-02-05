@@ -17,6 +17,7 @@ import {
   BrowserRouter as Router,
   Routes,
   useMatch,
+  useLocation,
   useNavigate,
   useParams,
 } from 'react-router-dom';
@@ -248,6 +249,7 @@ function AppHeader({
   onOpenExport: (dateRange?: { startDate: string; endDate: string }) => void;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { getDefaultExportDateRange } = useCalendarContext();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   const [showAIInsights, setShowAIInsights] = useState(false);
@@ -255,6 +257,15 @@ function AppHeader({
   // Check if currently on the calendar view (index route of dataset)
   const calendarMatch = useMatch(`/dataset/${currentDataset.id}`);
   const isOnCalendar = calendarMatch !== null;
+
+  const getDatasetPath = (datasetId: string) => {
+    const basePath = `/dataset/${currentDataset.id}`;
+    const subPath = location.pathname.startsWith(basePath)
+      ? location.pathname.slice(basePath.length)
+      : '';
+    const normalizedSubPath = subPath === '/' ? '' : subPath;
+    return `/dataset/${datasetId}${normalizedSubPath}${location.search}${location.hash}`;
+  };
   
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
@@ -339,7 +350,7 @@ function AppHeader({
                   const Icon = getDatasetIcon(ds.icon);
                   const { bg: dsBg, text: dsText } = getSeededColorTheme(ds.id);
                   return (
-                    <DropdownMenuItem key={ds.id} onClick={() => navigate(`/dataset/${ds.id}`)} className="gap-2">
+                    <DropdownMenuItem key={ds.id} onClick={() => navigate(getDatasetPath(ds.id))} className="gap-2">
                       <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-opacity-60 dark:bg-opacity-50 ${dsBg}`}>
                         <Icon className={`h-3 w-3 opacity-60 ${dsText}`} />
                       </div>
