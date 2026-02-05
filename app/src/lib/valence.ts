@@ -42,6 +42,18 @@ export function isNeutral(value: boolean | number, valence: Valence): boolean {
   return value === 0;
 }
 
+export type ValueForNumber<T> = {
+  positive: T;
+  negative: T;
+  zero: T;
+}
+
+export function getValueForSign<T>(value: number, values: ValueForNumber<T>): T {
+  if (value > 0) return values.positive;
+  if (value < 0) return values.negative;
+  return values.zero;
+}
+
 /**
  * Returns one of the provided good/bad/neutral values based on the evaluation of the input value and valence.
  * 
@@ -55,8 +67,53 @@ export function isNeutral(value: boolean | number, valence: Valence): boolean {
  * ) // returns { text: 'green', background: 'lightgreen' }
  * ```
  */
-export function getValueForValence<T>(value: number | boolean | null | undefined, valence: Valence, { good, bad, neutral }: { good: T; bad: T; neutral: T; positive?: T; negative?: T }): T {
+export function getValueForValence<T>(value: number | boolean | null | undefined, valence: Valence, { good, bad, neutral }: { good: T; bad: T; neutral: T; }): T {
   if (isGood(value ?? 0, valence)) return good;
   if (isBad(value ?? 0, valence)) return bad;
+  return neutral;
+}
+
+/**
+ * Returns a value for whatever is a "good" outcome based on the valence.
+ * 
+ * Example:
+ * ```
+ * const goodDirection = getValueForGood('positive', { positive: 'up', negative: 'down', neutral: 'flat' }) // returns 'up'
+ * const goodColor = getValueForGood('negative', { positive: 'green', negative: 'red', neutral: 'gray' }) // returns 'red'
+ * ```
+ */
+export function getValueForGood<T>(valence: Valence, { positive, negative, neutral }: { positive: T; negative: T; neutral: T }): T {
+  if (isGood(1, valence)) return positive;
+  if (isGood(-1, valence)) return negative;
+  return neutral;
+}
+
+/**
+ * Returns a value for whatever is a "bad" outcome based on the valence.
+ * 
+ * Example:
+ * ```
+ * const badDirection = getValueForBad('positive', { positive: 'gain', negative: 'loss', neutral: 'flat' }) // returns 'gain'
+ * const badColor = getValueForBad('negative', { positive: 'red', negative: 'green', neutral: 'gray' }) // returns 'green'
+ * ```
+ */
+export function getValueForBad<T>(valence: Valence, { positive, negative, neutral }: { positive: T; negative: T; neutral: T }): T {
+  if (isBad(1, valence)) return positive;
+  if (isBad(-1, valence)) return negative;
+  return neutral;
+}
+
+/**
+ * Returns a value for whatever is a "neutral" outcome based on the valence.
+ * 
+ * Example:
+ * ```
+ * const neutralDirection = getValueForNeutral('positive', { positive: 'flat', negative: 'breakeven', neutral: 'steady' }) // returns 'flat'
+ * const neutralColor = getValueForNeutral('negative', { positive: 'gray', negative: 'white', neutral: 'blue' }) // returns 'gray'
+ * ```
+ */
+export function getValueForNeutral<T>(valence: Valence, { positive, negative, neutral }: { positive: T; negative: T; neutral: T }): T {
+  if (isNeutral(1, valence)) return positive;
+  if (isNeutral(-1, valence)) return negative;
   return neutral;
 }

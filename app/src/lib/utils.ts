@@ -118,3 +118,12 @@ export function titleCase(str: string): string {
   // Split on delims like space, hyphen, underscore
   return str.toLocaleLowerCase().trim().split(/[\s-_]+/).map(capitalize).join(' ');
 }
+
+/**
+ * Generate a sequence of unique numbers starting from the current timestamp.
+ * Useful to ensure an iterated list of created items will be sorted in the same order they were created.
+ */
+export function sequenceFromNow() {
+  let now = Date.now();
+  return () => now++;
+}

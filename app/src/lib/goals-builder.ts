@@ -1,12 +1,12 @@
-import { nanoid } from 'nanoid';
 import type { Goal, GoalTarget, Tracking, Valence } from '@/features/db/localdb';
+import { nanoid } from 'nanoid';
+import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
+import { countSignificantDigits, roundToClean } from './friendly-numbers';
+import { formatValue } from './goals';
 import type { NumberMetric } from './stats';
 import { getMetricDisplayName } from './stats';
-import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
-import { adjectivize, capitalize, pluralize, randomValueOf } from './utils';
-import { formatValue } from './goals';
-import { getValueForValence } from './valence';
-import { roundToClean, countSignificantDigits } from './friendly-numbers';
+import { adjectivize, capitalize, pluralize, randomValueOf, sequenceFromNow } from './utils';
+import { getValueForGood } from './valence';
 
 // User input for the goal builder
 export interface GoalBuilderInput {
@@ -50,25 +50,33 @@ function getMetricAndSource(
 ): { metric: NumberMetric; source: 'stats' | 'deltas' } {
   const isTrend = valueType === 'period-change' || valueType === 'alltime-target';
   
-  if (isTrend) {
-    // For Trend tracking, use 'last' metric
-    // Milestones use 'stats' source, targets use 'deltas' source
-    return {
-      metric: 'last',
-      source: goalType === 'milestone' ? 'stats' : 'deltas',
-    };
-  }
-  
-  // For Series tracking (period-total and alltime-total), use total
-  return {
-    metric: 'total',
-    source: 'stats',
-  };
+  return isTrend
+    ? {
+        // For Trend tracking, use 'last' metric
+        // Milestones use 'stats' source, targets use 'deltas' source
+        metric: 'last',
+        source: goalType === 'milestone' ? 'stats' : 'deltas',
+      }
+    : {
+        // For Series tracking (period-total and alltime-total), use total
+        metric: 'total',
+        source: 'stats',
+      };
 }
 
 // Helper to get condition based on valence
-function getCondition(valence: Valence): 'above' | 'below' {
+function getCondition(valence: Valence, target: number): 'above' | 'below' {
+  if (valence === 'neutral') {
+    return target >= 0 ? 'above' : 'below';
+  }
   return valence === 'negative' ? 'below' : 'above';
+}
+
+// Helper to get the term for valence
+function getValenceTerm(valueType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target', valence: Valence): string {
+  return (valueType === 'period-change' || valueType === 'alltime-target')
+    ? getValueForGood(valence, { positive: 'Uptrend', negative: 'Downtrend', neutral: 'Target' })
+    : getValueForGood(valence, { positive: 'Positive', negative: 'Negative', neutral: 'Target' });
 }
 
 // Helper to create badge
@@ -89,6 +97,7 @@ interface BaselineValues {
   monthTarget: number;
 }
 
+// Calculate baseline values based on user input
 export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
   const { period, value: goodValue, valueType, activePeriods, startingValue, targetDays } = input;
   const isAllTime = valueType === 'alltime-total' || valueType === 'alltime-target';
@@ -158,9 +167,8 @@ export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
 function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
   const { datasetId, valueType, valence, tracking, startingValue } = input;
   const { metric, source } = getMetricAndSource(valueType, 'milestone');
-  const condition = getCondition(valence);
-  let createdAt = Date.now();
-  const nextCreatedAt = () => createdAt++;
+  const condition = getCondition(valence, baselines.baselineMilestone - startingValue);
+  const nextCreatedAt = sequenceFromNow();
 
   const milestones: Goal[] = [];
   const metricName = tracking == 'trend' ? '' : ` ${getMetricDisplayName(metric).toLowerCase()}`;
@@ -173,6 +181,27 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   // then extend past baseline using the same direction.
   const preBaselineFractions = [0.25, 0.5, 0.75];
   let extendedMultipliers = [2, 4, 10, 20, 50, 100];
+
+  const approachingZeroDown = tracking === 'trend' && condition === 'below' && (startingValue ?? 0) > 0;
+  const approachingZeroUp = tracking === 'trend' && condition === 'above' && (startingValue ?? 0) < 0;
+
+  // Special case: if trending towards zero, adjust extended multipliers to just overshoot the target a bit,
+  // otherwise the default milestone multipliers will likely create too many milestones past zero. For example
+  // on a weight loss trend going from 200 to 150, having milestones at -100, -400, etc. doesn't make sense.
+  if (approachingZeroDown || approachingZeroUp) {
+    extendedMultipliers = [1.25, 1.5, 1.75, 2, 2.5, 3];
+  }
+
+  // Generate full range of milestones: firsts, pre-baseline, baseline, extended
+  const milestonesValues = [
+    roundToClean(startValue + baselines.dayTarget, 2),
+    roundToClean(startValue + baselines.weekTarget, 2),
+    ...preBaselineFractions.map((fraction) => roundToClean(startValue + delta * fraction, 2)),
+    baseValue,
+    ...extendedMultipliers.map((multiplier) => roundToClean(startValue + delta * multiplier, 1)),
+  ];
+
+  // Fun names! 😎
   const spiritualNames = [
     // Start milestones
     'First Steps',
@@ -389,23 +418,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     'laurel_crown',
     'laurel_crown',
   ];
-
-  const approachingZeroDown = tracking === 'trend' && condition === 'below' && (startingValue ?? 0) > 0;
-  const approachingZeroUp = tracking === 'trend' && condition === 'above' && (startingValue ?? 0) < 0;
-
-  if (approachingZeroDown || approachingZeroUp) {
-    extendedMultipliers = [1.25, 1.5, 1.75, 2, 2.5, 3];
-  }
-
-  const milestonesValues = [
-    roundToClean(startValue + baselines.dayTarget, 2),
-    roundToClean(startValue + baselines.weekTarget, 2),
-    ...preBaselineFractions.map((fraction) => roundToClean(startValue + delta * fraction, 2)),
-    baseValue,
-    ...extendedMultipliers.map((multiplier) => roundToClean(startValue + delta * multiplier, 1)),
-  ];
-
-  const funNames = randomValueOf({
+  const milestoneNames = randomValueOf({
     spiritualNames,
     cosmicNames,
     tieredNames,
@@ -418,8 +431,9 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     classicNames,
   });
 
+  // Generate milestones
   milestonesValues.forEach((value, idx) => {
-    const name = funNames[idx];
+    const name = milestoneNames[idx];
     const color = colors[idx];
     const style = styles[idx];
 
@@ -443,21 +457,7 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
   }).filter(Boolean) as Goal[];
 
   // Special case: if trending towards zero remove milestones past zero
-  if (tracking === 'trend' && (approachingZeroDown || approachingZeroUp)) {
-
-    // uniqueMilestones.push({
-    //   id: nanoid(),
-    //   datasetId,
-    //   createdAt: nextCreatedAt(),
-    //   type: 'milestone',
-    //   title: 'Zero Point',
-    //   description: `Reach zero${metricName}`,
-    //   badge: createBadge('laurel_trophy', 'gold', 'flag'),
-    //   target: createTarget(metric, source, condition, 0),
-    //   timePeriod: 'anytime',
-    //   count: 1,
-    // });
-
+  if (approachingZeroDown || approachingZeroUp) {
     return uniqueMilestones.filter(m => approachingZeroDown ? m.target.value! >= 0 : m.target.value! <= 0);
   }
 
@@ -468,9 +468,8 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
 function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
   const { datasetId, valueType, valence } = input;
   const { metric, source } = getMetricAndSource(valueType, 'target');
-  const condition = getCondition(valence);
-  let createdAt = Date.now();
-  const nextCreatedAt = () => createdAt++;
+  const condition = getCondition(valence, baselines.baselineMilestone - input.startingValue);
+  const nextCreatedAt = sequenceFromNow();
   
   const targets: Goal[] = [];
   const periods: Array<{ period: 'day' | 'week' | 'month'; value: number; color: AchievementBadgeColor }> = [
@@ -504,14 +503,11 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
 function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
   const { datasetId, period, valueType, valence } = input;
   const { metric, source } = getMetricAndSource(valueType, 'target');
-  const condition = getCondition(valence);
-  let createdAt = Date.now();
-  const nextCreatedAt = () => createdAt++;
+  const condition = getCondition(valence, baselines.baselineMilestone - input.startingValue);
+  const nextCreatedAt = sequenceFromNow();
 
   const achievements: Goal[] = [];
-  const valenceTerm = (valueType === 'period-change' || valueType === 'alltime-target')
-    ? getValueForValence(1, valence, { good: 'Uptrend', bad: 'Downtrend', neutral: 'Steady' })
-    : getValueForValence(1, valence, { good: 'Positive', bad: 'Negative', neutral: 'Consistent' });
+  const valenceTerm = getValenceTerm(valueType, valence);
 
   // Use baseline targets for achievement calculations
   const periodTargets = {
@@ -671,9 +667,9 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   const streakColors: AchievementBadgeColor[] = ['rage', 'flame', 'intense_flame', 'raging_flame', 'infernal_flame', 'consuming_flame', 'legendary_flame'];
   const streakStyles: AchievementBadgeStyle[] = ['fire', 'flamed', 'heart_flame'];
   const streaks = {
-    day: [2, 3, 4, 5, 10, 50, 100],
-    week: [2, 3, 4, 8, 12, 32, 52],
-    month: [2, 3, 4, 5, 6, 12, 24],
+    day: [2, 3, 4, 5, 10, 20, 50],
+    week: [2, 3, 4, 5, 6, 9, 12],
+    month: [2, 3, 4, 5, 6, 9, 12],
   };
   (['day', 'week', 'month'] as const).forEach((streakPeriod, idx, periods) => {
     if (idx < periods.indexOf(streakPeriod)) return; // Skip periods before user's selected period
@@ -699,7 +695,25 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     });
   });
 
-  // TODO: Perfect Day/Week/Month achievements
+  // Perfect day/week/month (min entry in a day/week/month is good)
+  const perfectStyles: AchievementBadgeStyle[] = ['ribbon_shield', 'chevron_shield', 'castle_shield'];
+  const perfectColors: AchievementBadgeColor[] = ['gold_medallion', 'diamond_medallion', 'magic_medallion'];
+  (['day', 'week', 'month'] as const).forEach((perfectPeriod, idx, periods) => {
+    if (idx < periods.indexOf(perfectPeriod)) return; // Skip periods before user's selected period
+
+    achievements.push({
+      id: nanoid(),
+      datasetId,
+      createdAt: nextCreatedAt(),
+      type: 'goal',
+      title: `Perfect ${capitalize(perfectPeriod)}`,
+      description: `All entries in a ${perfectPeriod} are ${valenceTerm.toLowerCase()}`,
+      badge: createBadge(perfectStyles[idx], perfectColors[idx], 'sparkles'),
+      target: createTarget("min", source, condition, 0),
+      timePeriod: perfectPeriod,
+      count: 1,
+    });
+  });
 
   return achievements;
 }

@@ -1,22 +1,21 @@
-import { useState } from 'react';
-import * as React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ArrowRight, Sparkles, Target, Flag, Trophy, Check, Calendar, TrendingUp, Hash, Info, ArrowUp, ArrowDown, Dices, Cog } from 'lucide-react';
-import { calculateBaselines, generateGoals, type GoalBuilderInput, type GeneratedGoals } from '@/lib/goals-builder';
-import { formatValue } from '@/lib/goals';
-import { AchievementBadge } from './AchievementBadge';
 import type { Dataset, Goal } from '@/features/db/localdb';
 import { createGoal } from '@/features/db/localdb';
 import { useAllDays, useSaveDay } from '@/features/db/useCalendarData';
-import { cn } from '@/lib/utils';
-import { capitalize, adjectivize } from '@/lib/utils';
-import { getValueForValence, isBad } from '@/lib/valence';
-import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
 import { toDayKey } from '@/lib/friendly-date';
+import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
+import { formatValue } from '@/lib/goals';
+import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput } from '@/lib/goals-builder';
+import { adjectivize, capitalize, cn } from '@/lib/utils';
+import { getValueForGood, isBad } from '@/lib/valence';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
+import * as React from 'react';
+import { useState } from 'react';
+import { AchievementBadge } from './AchievementBadge';
 
 type GoalBuilderDialogProps = {
   open: boolean;
@@ -59,14 +58,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     }
   }, [allDays, dataset.tracking]);
 
-  const exampleAmount = getValueForValence(1, dataset.valence, {
-    good: 100,
-    bad: -100,
+  const exampleAmount = getValueForGood(dataset.valence, {
+    positive: 100,
+    negative: -100,
     neutral: 100,
   });
-  const exampleChange = getValueForValence(1, dataset.valence, {
-    good: 10,
-    bad: -10,
+  const exampleChange = getValueForGood(dataset.valence, {
+    positive: 10,
+    negative: -10,
     neutral: 10,
   });
   const exampleAmountLabel = formatValue(exampleAmount);
@@ -397,9 +396,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     let feedbackMessage: React.ReactNode = null;
     
     if (isWrongSign) {
-      const expectation = getValueForValence(1, dataset.valence, {
-        good: valueType.startsWith('alltime') ? 'a higher number than the starting point (higher is better)' : 'positive numbers (higher is better)',
-        bad: valueType.startsWith('alltime') ? 'a lower number than the starting point (lower is better)' : 'negative numbers (lower is better)',
+      const expectation = getValueForGood(dataset.valence, {
+        positive: valueType.startsWith('alltime') ? 'a higher number than the starting point (higher is better)' : 'positive numbers (higher is better)',
+        negative: valueType.startsWith('alltime') ? 'a lower number than the starting point (lower is better)' : 'negative numbers (lower is better)',
         neutral: 'steady numbers',
       });
       
@@ -802,9 +801,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       />
                       {(valueType === 'period-change' || valueType === 'alltime-target') && (
                         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                          {getValueForValence(1, dataset.valence, {
-                            good: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
-                            bad: <ArrowDown className="w-6 h-6 text-green-600 dark:text-green-400" />,
+                          {getValueForGood(dataset.valence, {
+                            positive: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
+                            negative: <ArrowDown className="w-6 h-6 text-green-600 dark:text-green-400" />,
                             neutral: null,
                           })}
                         </div>
