@@ -107,6 +107,12 @@ export function EmptyState({ type, onAddClick, onGoalBuilderClick }: EmptyStateP
             </p>
           </div>
 
+          <div className="flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+            <span>or</span>
+            <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+          </div>
+
           <button
             onClick={onAddClick}
             className="w-full px-6 py-3 rounded-lg font-semibold text-slate-700 dark:text-slate-200 transition-all duration-200 transform hover:scale-105 active:scale-95 border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 shadow-sm"
