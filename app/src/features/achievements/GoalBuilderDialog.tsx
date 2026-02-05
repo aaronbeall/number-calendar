@@ -170,7 +170,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
       value: parseFloat(goodValue) || 0,
       valueType,
       activePeriods: parseFloat(activePeriods) || 1,
-      startingValue: startingValue.trim() ? parseFloat(startingValue) || currentValue : currentValue,
+      startingValue: startingValue.trim() ? parseFloat(startingValue) : currentValue,
       targetDays: summaryDurationDays,
     };
   }, [dataset.id, dataset.tracking, dataset.valence, period, valueType, goodValue, activePeriods, startingValue, currentValue, summaryDurationDays]);
