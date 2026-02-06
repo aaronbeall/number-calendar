@@ -2,6 +2,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -11,11 +21,13 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import type { Achievement, Goal } from '@/features/db/localdb';
+import { useArchiveGoal } from '@/features/db/useGoalsData';
 import { formatFriendlyDate } from '@/lib/friendly-date';
 import { formatValue, isRangeCondition, type GoalResults } from '@/lib/goals';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
+import { useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 
 interface AchievementDetailsDrawerProps {
@@ -45,6 +57,8 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
   if (!result) return null;
 
   const { goal, achievements, completedCount, currentProgress, lastCompletedAt, firstCompletedAt } = result;
+  const archiveGoalMutation = useArchiveGoal();
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const badge = goal.badge;
   const inProgress = achievements.find((achievement) => !!achievement.startedAt && !achievement.completedAt);
   const completedAchievements = achievements
@@ -68,6 +82,14 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
   const completionsLabel = completedCount.toString();
   const showProgress = currentProgress > 0 && goal.count > 1;
   const progressPct = showProgress ? Math.min(100, Math.round((currentProgress / goal.count) * 100)) : 0;
+  const handleArchive = () => {
+    archiveGoalMutation.mutate(goal, {
+      onSuccess: () => {
+        setDeleteOpen(false);
+        onOpenChange(false);
+      },
+    });
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
@@ -105,7 +127,11 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
                       Edit Badge
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-red-600 focus:text-red-700 dark:text-red-400 dark:focus:text-red-300">
+                    <DropdownMenuItem
+                      className="text-red-600 focus:text-red-700 dark:text-red-400 dark:focus:text-red-300"
+                      onClick={() => setDeleteOpen(true)}
+                      disabled={archiveGoalMutation.isPending}
+                    >
                       <Trash2 className="h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
@@ -258,6 +284,32 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
             )}
           </div>
         </ScrollArea>
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {goal.title}?</AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-600 dark:text-slate-400">
+                {hasCompletions ? (
+                  <span className="text-red-600 dark:text-red-400 font-semibold">
+                    This will permanently remove the goal and all {completedCount} recorded completions. This cannot be undone.
+                  </span>
+                ) : (
+                  'This will remove the goal from your lists. You can recreate it later if needed.'
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={archiveGoalMutation.isPending}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleArchive}
+                className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                disabled={archiveGoalMutation.isPending}
+              >
+                {archiveGoalMutation.isPending ? 'Deleting…' : 'Delete'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SheetContent>
     </Sheet>
   );

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  archiveGoal,
   createAchievement,
   createGoal,
   listAchievements,
@@ -36,6 +37,18 @@ export function useUpdateGoal() {
     onSuccess: (_, updated) => {
       if (updated?.datasetId) {
         queryClient.invalidateQueries({ queryKey: ['goals', updated.datasetId] });
+      }
+    },
+  });
+}
+
+export function useArchiveGoal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: archiveGoal,
+    onSuccess: (_, archived) => {
+      if (archived?.datasetId) {
+        queryClient.invalidateQueries({ queryKey: ['goals', archived.datasetId] });
       }
     },
   });

@@ -99,6 +99,7 @@ export type Goal = {
   description?: string;
   badge: GoalBadge;
   type: GoalType;
+  archived?: boolean;
 
   target: GoalTarget;
   targetDate?: DayKey;
@@ -340,7 +341,8 @@ export async function listDatasets(): Promise<Dataset[]> {
 // Goal CRUD
 export async function listGoals(datasetId: string): Promise<Goal[]> {
   const db = await getDb();
-  return await db.getAllFromIndex('goals', 'datasetId', datasetId);
+  const goals = await db.getAllFromIndex('goals', 'datasetId', datasetId);
+  return goals.filter(goal => !goal.archived);
 }
 
 export async function createGoal(goal: Goal): Promise<void> {
@@ -351,6 +353,11 @@ export async function createGoal(goal: Goal): Promise<void> {
 export async function updateGoal(goal: Goal): Promise<void> {
   const db = await getDb();
   await db.put('goals', goal);
+}
+
+export async function archiveGoal(goal: Goal): Promise<void> {
+  const db = await getDb();
+  await db.put('goals', { ...goal, archived: true });
 }
 
 // Achievement CRUD

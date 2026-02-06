@@ -4,17 +4,25 @@ import { Input } from '@/components/ui/input';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { cn, keysOf, titleCase } from '@/lib/utils';
 import { Dices } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { GoalBadge } from '../db/localdb';
 import AchievementBadge from './AchievementBadge';
 
 // BadgeEditDialog: for editing badge label, icon, style, color
-export function BadgeEditDialog({ open, onOpenChange, badge, onChange }: {
+export function BadgeEditDialog({ open, onOpenChange, badge, onSave }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   badge: GoalBadge;
-  onChange(v: GoalBadge): void;
+  onSave(v: GoalBadge): void;
 }) {
+  const [draftBadge, setDraftBadge] = useState<GoalBadge>(badge);
+
+  useEffect(() => {
+    if (open) {
+      setDraftBadge(badge);
+    }
+  }, [open, badge]);
+
   // Dice icon from lucide-react
   // Import at top: import { Dice5 } from 'lucide-react';
   // Randomize function
@@ -22,18 +30,28 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onChange }: {
     return arr[Math.floor(Math.random() * arr.length)];
   }
   function handleRandomize() {
-    onChange({
-      ...badge,
+    setDraftBadge({
+      ...draftBadge,
       color: randomItem(keysOf(achievementBadgeColors)),
       icon: randomItem(keysOf(achievementBadgeIcons)),
       style: randomItem(keysOf(achievementBadgeStyles)),
     });
   }
   function handleUpdateBadgeField<K extends keyof GoalBadge>(field: K, value: GoalBadge[K]) {
-    onChange({
-      ...badge,
+    setDraftBadge({
+      ...draftBadge,
       [field]: value,
     });
+  }
+
+  function handleSave() {
+    onSave(draftBadge);
+    onOpenChange(false);
+  }
+
+  function handleCancel() {
+    setDraftBadge(badge);
+    onOpenChange(false);
   }
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -45,7 +63,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onChange }: {
         <div className="flex flex-row gap-6 py-2">
           {/* Badge Preview (left) */}
           <div className="flex flex-col items-center gap-2 min-w-[140px]">
-            <AchievementBadge badge={badge} size="large" />
+            <AchievementBadge badge={draftBadge} size="large" />
             <div className="text-xs text-slate-500">Preview</div>
             <button
               type="button"
@@ -60,14 +78,14 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onChange }: {
           <div className="flex-1 grid grid-cols-1 gap-4 min-w-0">
             <div>
               <label className="block text-sm font-medium mb-1">Label</label>
-              <Input value={badge.label} onChange={e => handleUpdateBadgeField('label', e.target.value)} maxLength={32} />
+              <Input value={draftBadge.label} onChange={e => handleUpdateBadgeField('label', e.target.value)} maxLength={32} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">Color</label>
               <div className="flex gap-2 mt-1 flex-wrap">
                 {keysOf(achievementBadgeColors).map(color => {
                   const colors = achievementBadgeColors[color];
-                  const isSelected = badge.color === color;
+                  const isSelected = draftBadge.color === color;
                   return (
                     <button
                       key={color}
@@ -96,20 +114,21 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onChange }: {
             </div>
             <IconSelector
               options={achievementBadgeIcons}
-              value={badge.icon}
+              value={draftBadge.icon}
               onChange={val => handleUpdateBadgeField('icon', val)}
               label="Icon"
             />
             <IconSelector
               options={achievementBadgeStyles}
-              value={badge.style}
+              value={draftBadge.style}
               onChange={val => handleUpdateBadgeField('style', val)}
               label="Graphic"
             />
           </div>
         </div>
         <DialogFooter>
-          <Button type="button" className="w-full" onClick={() => onOpenChange(false)}>Done</Button>
+          <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>
+          <Button type="button" onClick={handleSave}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
