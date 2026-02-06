@@ -130,6 +130,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
   const lastConfirmedCompletedAt = confirmedCompletions[0]?.completedAt;
   const hasCompletions = completedCount > 0;
   const confirmedCompletedCount = confirmedCompletions.length;
+  const showNewBadge = hasProvisional && completedCount === 1;
   const showUnlocked = confirmedCompletedCount > 1 && firstCompletedAt;
   const completedLabel = completedCount > 1 ? 'Last completed' : 'Completed';
   const completedDateLabel = lastCompletedAt ? formatFriendlyDate(lastCompletedAt) : '';
@@ -250,7 +251,12 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                 </div>
               )}
               <div className="flex flex-col items-center gap-3 text-center">
-                <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 p-4 shadow-inner">
+                <div className="relative rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 p-4 shadow-inner">
+                  {showNewBadge && (
+                    <span className="absolute -top-2 -right-2 z-10 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-red-500 text-white text-[10px] font-bold uppercase tracking-wide shadow-md border-2 border-white dark:border-slate-900">
+                      New
+                    </span>
+                  )}
                   <AchievementBadge
                     badge={badge}
                     size="large"
@@ -306,7 +312,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                       )}
                       {showUnlocked && (
                         <BadgeLabel
-                          variant={hasProvisional ? 'neutral' : 'success'}
+                          variant="neutral"
                           icon={<Unlock className="h-3.5 w-3.5" />}
                         >
                           Unlocked {formatFriendlyDate(firstCompletedAt)}
@@ -314,7 +320,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                       )}
                       {(!hasProvisional || lastConfirmedCompletedAt) && (
                         <BadgeLabel
-                          variant={completedCount > 1 || hasProvisional ? 'neutral' : 'warning'}
+                          variant="success"
                           icon={
                             hasProvisional || completedCount > 1
                               ? <CalendarCheck2 className="h-3.5 w-3.5" />
@@ -327,12 +333,12 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                             : completedDateLabel}
                         </BadgeLabel>
                       )}
-                      {completedCount > 1 && (
+                      {confirmedCompletedCount > 1 && (
                         <BadgeLabel
                           variant="warning"
                           icon={<Trophy className="h-3.5 w-3.5" />}
                         >
-                          {formatValue(completedCount)} completions
+                          {formatValue(confirmedCompletedCount)} {hasProvisional ? 'past' : ''} completions
                         </BadgeLabel>
                       )}
                       </div>
