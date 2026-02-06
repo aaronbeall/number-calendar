@@ -113,7 +113,14 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
               </div>
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 p-4 shadow-inner">
-                  <AchievementBadge badge={badge} size="large" shine={hasCompletions} pulse={hasCompletions} floating={hasCompletions} />
+                  <AchievementBadge
+                    badge={badge}
+                    size="large"
+                    shine={hasCompletions}
+                    pulse={hasCompletions}
+                    floating={hasCompletions}
+                    grayscale={!hasCompletions}
+                  />
                 </div>
                 <div>
                   <div className="text-lg font-semibold text-slate-900 dark:text-slate-50">{goal.title}</div>
@@ -196,7 +203,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
               <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 p-4">
                 <CollapsibleTrigger asChild>
                   <button className="group flex w-full items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Goal Requirements
+                    Requirements
                     <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" />
                   </button>
                 </CollapsibleTrigger>

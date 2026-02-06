@@ -10,6 +10,7 @@ type AchievementBadgeProps = {
   floating?: boolean;
   shine?: boolean;
   pulse?: boolean;
+  grayscale?: boolean;
 };
 
 
@@ -42,7 +43,7 @@ const animationStyles = `
   }
 `;
 
-export function AchievementBadge({ badge, size = 'medium', className, floating, shine, pulse }: AchievementBadgeProps) {
+export function AchievementBadge({ badge, size = 'medium', className, floating, shine, pulse, grayscale }: AchievementBadgeProps) {
   const color = colorPresets[badge.color];
   const sizePreset = sizePresets[size];
   const containerPx = sizePreset.container;
@@ -55,7 +56,11 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
       <style>{animationStyles}</style>
       {/* Wobble animation effect */}
       <div
-        className={cn('inline-flex items-center justify-center relative', className)}
+        className={cn(
+          'inline-flex items-center justify-center relative',
+          grayscale && 'opacity-60 grayscale',
+          className
+        )}
         style={{
           width: containerPx,
           height: containerPx,
