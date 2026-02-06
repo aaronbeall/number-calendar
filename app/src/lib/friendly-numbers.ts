@@ -119,14 +119,9 @@ export function formatValue(num: number | undefined, { short = false, percent = 
 export function formatRange(range: [number, number] | undefined, { short, percent, delta }: FormatValueOptions = {}): string {
   if (!range) return '';
   const [min, max] = range;
-  // For deltas use `→` to avoid confusion with sign, 
-  // for percents, use ` to ` if there are negatives (ex `-5% to 10%`), 
-  // otherwise if there are negatives use `→` to avoid confusion with the negative sign,
-  // otherwise en dash (ex `5–10%`)
-  let separator = '–';
-  if (delta) separator = '→';
-  else if (percent && (min < 0 || max < 0)) separator = ' to ';
-  else if (min < 0 || max < 0) separator = '→';
+  // For deltas or ranges with negatives use `→` to avoid confusion with minus sign, 
+  // otherwise en dash (e.g. `5–10`)
+  const separator = delta || (min < 0 || max < 0) ? '→' : '–';
   // For percents, omit the leading % symbol if using en dash, for brevity (e.g. `5–10%` instead of `5%–10%`))
   const options = { short, percent, delta };
   const minOptions = percent && separator === '–' ? { short, delta } : options;

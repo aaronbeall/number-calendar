@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { convertPeriodUnitWithRounding, countSignificantDigits, roundToClean } from '../friendly-numbers';
+import { convertPeriodUnitWithRounding, countSignificantDigits, formatRange, formatValue, roundToClean } from '../friendly-numbers';
 
 describe('convertPeriodValueWithRounding', () => {
   it('rounds to fewer decimals when converting to smaller periods', () => {
@@ -135,5 +135,58 @@ describe('roundToClean', () => {
   it('handles edge cases with significant figures', () => {
     expect(roundToClean(99.99, 2)).toBe(100);
     expect(roundToClean(0.9999, 2)).toBe(1);
+  });
+});
+
+describe('formatValue', () => {
+  it('returns empty string for invalid input', () => {
+    expect(formatValue(undefined)).toBe('');
+    expect(formatValue(NaN)).toBe('');
+  });
+
+  it('formats plain numbers', () => {
+    expect(formatValue(1234)).toBe('1,234');
+    expect(formatValue(-45.6)).toBe('-45.6');
+  });
+
+  it('formats short values with compact notation', () => {
+    expect(formatValue(1500, { short: true })).toBe('1.5K');
+  });
+
+  it('formats percent values', () => {
+    expect(formatValue(12.5, { percent: true })).toBe('12.5%');
+    expect(formatValue(-5, { percent: true })).toBe('-5%');
+  });
+
+  it('formats deltas with sign display', () => {
+    expect(formatValue(10, { delta: true })).toBe('+10');
+    expect(formatValue(-10, { delta: true })).toBe('-10');
+    expect(formatValue(0, { delta: true })).toBe('0');
+  });
+});
+
+describe('formatRange', () => {
+  it('returns empty string for missing range', () => {
+    expect(formatRange(undefined)).toBe('');
+  });
+
+  it('uses en dash for simple ranges', () => {
+    expect(formatRange([5, 10])).toBe('5–10');
+  });
+
+  it('uses arrow for delta ranges', () => {
+    expect(formatRange([1, 3], { delta: true })).toBe('+1→+3');
+  });
+
+  it('uses arrow for percent ranges with negatives', () => {
+    expect(formatRange([-5, 10], { percent: true })).toBe('-5%→10%');
+  });
+
+  it('omits the leading percent on the min value when using en dash', () => {
+    expect(formatRange([5, 10], { percent: true })).toBe('5–10%');
+  });
+
+  it('uses arrow for negative non-percent ranges', () => {
+    expect(formatRange([-5, 10])).toBe('-5→10');
   });
 });
