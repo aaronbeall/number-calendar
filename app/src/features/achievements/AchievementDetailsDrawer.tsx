@@ -120,7 +120,11 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
 
       const file = new File([blob], `achievement-${goal.id}.png`, { type: blob.type || 'image/png' });
       const shareTitle = `Numbers Achievement: ${goal.title}`;
-      const shareText = `I just accomplished a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`;
+      const shareText = hasCompletions
+        ? `I just accomplished a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`
+        : inProgress || currentProgress > 0
+          ? `I'm working on a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`
+          : `I just set a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`;
       const shareUrl = 'https://numbers.metamodernmonkey.com';
 
       if (navigator.canShare?.({ files: [file] })) {
