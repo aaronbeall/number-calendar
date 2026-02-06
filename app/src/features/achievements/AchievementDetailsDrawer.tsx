@@ -15,7 +15,7 @@ import { formatFriendlyDate } from '@/lib/friendly-date';
 import { formatValue, isRangeCondition, type GoalResults } from '@/lib/goals';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
-import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Sliders, Trash2, Trophy, Unlock } from 'lucide-react';
+import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
 import AchievementBadge from './AchievementBadge';
 
 interface AchievementDetailsDrawerProps {
