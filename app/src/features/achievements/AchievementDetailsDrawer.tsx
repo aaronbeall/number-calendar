@@ -330,7 +330,7 @@ function buildSummaryTags(goal: Goal) {
 
   const tags = [
     { label: 'Period', value: periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod)) },
-    { label: 'Count', value: goal.count.toString() },
+    goal.timePeriod !== 'anytime' ? { label: 'Count', value: goal.count.toString() } : null,
     goal.consecutive ? { label: 'Consecutive', value: 'Yes' } : null,
     { label: 'Metric', value: getMetricDisplayName(goal.target.metric) },
     { label: 'Source', value: getMetricSourceDisplayName(goal.target.source) },
