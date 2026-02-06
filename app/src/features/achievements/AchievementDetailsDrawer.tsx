@@ -64,6 +64,34 @@ const periodLabelMap: Record<Goal['timePeriod'], string> = {
   year: 'Yearly',
 };
 
+type BadgeLabelVariant = 'success' | 'neutral' | 'warning' | 'provisional';
+
+const badgeLabelStyles: Record<BadgeLabelVariant, string> = {
+  success: 'border-emerald-200 bg-emerald-50/70 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200',
+  neutral: 'border-slate-200 bg-white/80 text-slate-600 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-300',
+  warning: 'border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-200',
+  provisional: 'border-amber-200 bg-amber-50 text-amber-600 dark:border-yellow-400 dark:bg-yellow-900/70 dark:text-yellow-400',
+};
+
+function BadgeLabel({
+  variant,
+  icon,
+  children,
+  className,
+}: {
+  variant: BadgeLabelVariant;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <Badge variant="outline" className={cn('gap-2', badgeLabelStyles[variant], className)}>
+      {icon}
+      {children}
+    </Badge>
+  );
+}
+
 export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoal }: AchievementDetailsDrawerProps) {
   if (!result) return null;
 
@@ -88,15 +116,23 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
     createdAt: goal.createdAt,
   });
 
+  const periodTitle = capitalize(goal.timePeriod);
   const periodLabel = periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod));
   const summaryTags = buildSummaryTags(goal);
   const provisionalAchievements = achievements.filter((achievement) => achievement.provisional);
   const hasProvisional = provisionalAchievements.length > 0;
+  const provisionalDate = hasProvisional
+    ? formatFriendlyDate(provisionalAchievements[0]?.completedAt!, provisionalAchievements[0]?.startedAt!)
+    : '';
+  const confirmedCompletions = achievements
+    .filter((achievement) => achievement.completedAt && !achievement.provisional)
+    .sort((a, b) => (b.completedAt ?? '').localeCompare(a.completedAt ?? ''));
+  const lastConfirmedCompletedAt = confirmedCompletions[0]?.completedAt;
   const hasCompletions = completedCount > 0;
-  const showUnlocked = completedCount > 1 && firstCompletedAt;
+  const confirmedCompletedCount = confirmedCompletions.length;
+  const showUnlocked = confirmedCompletedCount > 1 && firstCompletedAt;
   const completedLabel = completedCount > 1 ? 'Last completed' : 'Completed';
   const completedDateLabel = lastCompletedAt ? formatFriendlyDate(lastCompletedAt) : '';
-  const completionsLabel = completedCount.toString();
   const showProgress = currentProgress > 0 && goal.count > 1;
   const progressPct = showProgress ? Math.min(100, Math.round((currentProgress / goal.count) * 100)) : 0;
   const handleArchive = () => {
@@ -252,41 +288,54 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 w-full">
-                    <div className="flex flex-wrap justify-center gap-2">
-                      {showUnlocked && (
-                        <Badge variant="outline" className="gap-2 border-emerald-200 bg-emerald-50/70 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-200">
-                          <Unlock className="h-3.5 w-3.5" />
-                          Unlocked {formatFriendlyDate(firstCompletedAt)}
-                        </Badge>
-                      )}
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          'gap-2',
-                          completedCount > 1
-                            ? 'border-slate-200 bg-white/80 text-slate-600 dark:border-slate-800 dark:bg-slate-950/70 dark:text-slate-300'
-                            : 'border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-200'
-                        )}
-                      >
-                        {completedCount > 1 ? (
-                          <CalendarCheck2 className="h-3.5 w-3.5" />
-                        ) : (
-                          <Trophy className="h-3.5 w-3.5" />
-                        )}
-                        {completedLabel} {completedDateLabel}
-                      </Badge>
-                      {completedCount > 1 && (
-                        <Badge variant="outline" className="gap-2 border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
-                          <Trophy className="h-3.5 w-3.5" />
-                          {completionsLabel} completions
-                        </Badge>
-                      )}
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex flex-wrap justify-center gap-2">
                       {hasProvisional && (
-                        <Badge variant="outline" className="gap-2 border-amber-200 bg-amber-50 text-amber-600 dark:border-yellow-400 dark:bg-yellow-900/70 dark:text-yellow-400">
-                          <Clock className="h-3.5 w-3.5" />
-                          Active
-                        </Badge>
+                        <BadgeLabel
+                          variant="provisional"
+                          icon={<Clock className="h-3.5 w-3.5" />}
+                        >
+                          Active This {periodTitle}
+                        </BadgeLabel>
                       )}
+                      {provisionalDate && (
+                        <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                          <CalendarCheck2 className="h-3.5 w-3.5" />
+                          {provisionalDate}
+                        </div>
+                      )}
+                      {showUnlocked && (
+                        <BadgeLabel
+                          variant={hasProvisional ? 'neutral' : 'success'}
+                          icon={<Unlock className="h-3.5 w-3.5" />}
+                        >
+                          Unlocked {formatFriendlyDate(firstCompletedAt)}
+                        </BadgeLabel>
+                      )}
+                      {(!hasProvisional || lastConfirmedCompletedAt) && (
+                        <BadgeLabel
+                          variant={completedCount > 1 || hasProvisional ? 'neutral' : 'warning'}
+                          icon={
+                            hasProvisional || completedCount > 1
+                              ? <CalendarCheck2 className="h-3.5 w-3.5" />
+                              : <Trophy className="h-3.5 w-3.5" />
+                          }
+                        >
+                          {completedLabel}{' '}
+                          {hasProvisional && lastConfirmedCompletedAt
+                            ? formatFriendlyDate(lastConfirmedCompletedAt)
+                            : completedDateLabel}
+                        </BadgeLabel>
+                      )}
+                      {completedCount > 1 && (
+                        <BadgeLabel
+                          variant="warning"
+                          icon={<Trophy className="h-3.5 w-3.5" />}
+                        >
+                          {formatValue(completedCount)} completions
+                        </BadgeLabel>
+                      )}
+                      </div>
                     </div>
                     {showProgress && (
                       <div className="w-full max-w-xs">
@@ -576,7 +625,7 @@ function buildSummaryTags(goal: Goal) {
 
   const tags = [
     { label: 'Period', value: periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod)) },
-    goal.timePeriod !== 'anytime' ? { label: 'Count', value: goal.count.toString() } : null,
+    goal.timePeriod !== 'anytime' ? { label: 'Count', value: formatValue(goal.count) } : null,
     goal.consecutive ? { label: 'Consecutive', value: 'Yes' } : null,
     { label: 'Metric', value: getMetricDisplayName(goal.target.metric) },
     { label: 'Source', value: getMetricSourceDisplayName(goal.target.source) },

@@ -8,7 +8,7 @@ import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles }
 import { getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { capitalize, randomKeyOf } from '@/lib/utils';
-import { AlertTriangle, Award, Dices, Palette } from 'lucide-react';
+import { AlertTriangle, Award, Dices, Palette, Undo2 } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 import { BadgeEditDialog } from './BadgeEditDialog';
@@ -291,17 +291,20 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
           {showCompletionNotice && requirementsChanged && (
             <div className="px-6 pb-3">
               <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800 shadow-sm dark:border-red-900/70 dark:bg-red-950/60 dark:text-red-200">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span>Warning: changing requirements can alter or remove existing completions. Proceed with care.</span>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-500">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                  </span>
+                  <span className="flex-1">
+                    Changing goal conditions can alter or remove existing completions. Proceed only if you are confident. We recommend creating new goals instead.
+                  </span>
                   <button
                     type="button"
                     onClick={handleRevertRequirements}
-                    className="text-xs font-semibold text-red-700 underline decoration-red-300 underline-offset-2 hover:text-red-800 dark:text-red-200 dark:decoration-red-500 dark:hover:text-red-100"
+                    className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-red-200 bg-white/70 px-2.5 py-1 text-[11px] font-semibold leading-none text-red-700 shadow-sm hover:border-red-300 hover:bg-white hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-100 dark:hover:border-red-700 dark:hover:bg-red-950/60 dark:focus-visible:ring-red-900/70"
                   >
-                    Revert conditions
+                    <Undo2 className="h-3.5 w-3.5" />
+                    Undo
                   </button>
                 </div>
               </div>

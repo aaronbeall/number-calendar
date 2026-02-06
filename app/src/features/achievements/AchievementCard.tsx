@@ -77,6 +77,7 @@ export function AchievementCard({
 
   const isActive = isHovered || isFocused;
   const isBadgedAnimated = isActive && status === 'completed'
+  const showNewBadge = status === 'completed' && provisional && completedCount === 1;
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!onSelect) return;
@@ -116,6 +117,11 @@ export function AchievementCard({
         className="pointer-events-none absolute -inset-12 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100 dark:group-hover:opacity-40"
         style={glowStyle}
       />
+      {showNewBadge && (
+        <span className="absolute -top-2 -right-2 z-10 inline-flex items-center justify-center min-w-6 h-6 px-2 rounded-lg bg-red-500 text-white text-[10px] font-bold uppercase tracking-wide shadow-md border-2 border-white dark:border-slate-900">
+          New
+        </span>
+      )}
       {/* Count notification bubble */}
       {status === 'completed' && completedCount && completedCount > 1 && repeatable && !provisional && (
         <span className="absolute -top-2 -right-2 z-10 pointer-events-none">
@@ -147,13 +153,13 @@ export function AchievementCard({
       {description && <div className="text-xs text-slate-500 mb-1 text-center w-full">{description}</div>}
       <div className="flex flex-col items-center gap-1 mt-auto w-full">
         <div className="flex flex-row items-center gap-2 flex-wrap justify-center w-full">
-          {status === 'completed' && completedAt && firstCompletedAt && firstCompletedAt !== completedAt && (
+          {status === 'completed' && completedAt && firstCompletedAt && firstCompletedAt !== completedAt && !provisional && (
             <span className="ml-2 text-xs text-slate-400 italic flex items-center gap-1">
               <Unlock className="w-4 h-4 text-slate-400" />
               {firstStartedAt ? formatFriendlyDate(firstStartedAt, firstCompletedAt) : formatFriendlyDate(firstCompletedAt)}
             </span>
           )}
-          {status === 'completed' && completedAt && (
+          {status === 'completed' && completedAt && !provisional && (
             <span className={cn(
               'inline-block px-2 py-0.5 rounded-full text-xs font-semibold border flex items-center gap-1',
               completedLabelColor
