@@ -8,6 +8,7 @@
     "typecheck": "tsc -b --noEmit",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "deploy_deprecated": "gh-pages -d dist",
     "test": "vitest --run",
