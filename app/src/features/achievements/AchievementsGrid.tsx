@@ -1,6 +1,6 @@
 import type { Dataset } from '@/features/db/localdb';
 import type { GoalResults } from '@/lib/goals';
-import { Loader2 } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 import { Fragment, useMemo, useState } from 'react';
 import { AchievementCard, type AchievementCardProps } from './AchievementCard';
 import { AchievementDetailsDrawer } from './AchievementDetailsDrawer';
@@ -19,50 +19,68 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
   const [editOpen, setEditOpen] = useState(false);
 
   // Flatten to a single achievement per goal for grid (show the most relevant achievement)
-  const gridItems = results.map((result): AchievementCardProps => {
-    const ach = result.achievements.slice(-1)[0] ?? {};
-    let firstStartedAt = undefined;
-    let firstCompletedAt = undefined;
-    let lastCompletedAt = undefined;
-    if (result.achievements && result.achievements.length > 0) {
-      const completed = result.achievements.filter(a => a.completedAt);
-      if (completed.length > 0) {
-        firstStartedAt = completed[0].startedAt;
-        firstCompletedAt = completed[0].completedAt;
-        lastCompletedAt = completed[completed.length - 1].completedAt;
+  const gridItems = useMemo(() => {
+    return results.map((result): AchievementCardProps => {
+      const ach = result.achievements.slice(-1)[0] ?? {};
+      let firstStartedAt = undefined;
+      let firstCompletedAt = undefined;
+      let lastCompletedAt = undefined;
+      if (result.achievements && result.achievements.length > 0) {
+        const completed = result.achievements.filter(a => a.completedAt);
+        if (completed.length > 0) {
+          firstStartedAt = completed[0].startedAt;
+          firstCompletedAt = completed[0].completedAt;
+          lastCompletedAt = completed[completed.length - 1].completedAt;
+        }
       }
-    }
-    return {
-      id: result.goal.id,
-      title: result.goal.title,
-      description: result.goal.description,
-      badge: result.goal.badge,
-      completedAt: lastCompletedAt,
-      startedAt: ach.startedAt,
-      progress: ach.progress,
-      goalCount: result.goal.count,
-      completedCount: result.completedCount,
-      locked: !ach.completedAt && !ach.startedAt && !ach.progress,
-      firstStartedAt,
-      firstCompletedAt,
-      goalType: result.goal.type,
-      createdAt: result.goal.createdAt,
-      repeatable: result.goal.timePeriod !== 'anytime',
-    };
-  });
+      return {
+        id: result.goal.id,
+        title: result.goal.title,
+        description: result.goal.description,
+        badge: result.goal.badge,
+        completedAt: lastCompletedAt,
+        startedAt: ach.startedAt,
+        progress: ach.progress,
+        goalCount: result.goal.count,
+        completedCount: result.completedCount,
+        locked: !ach.completedAt && !ach.startedAt && !ach.progress,
+        firstStartedAt,
+        firstCompletedAt,
+        goalType: result.goal.type,
+        createdAt: result.goal.createdAt,
+        repeatable: result.goal.timePeriod !== 'anytime',
+        provisional: ach.provisional,
+      };
+    });
+  }, [results]);
 
   // Grouping
-  const unlocked: AchievementCardProps[] = [];
-  const inProgress: AchievementCardProps[] = [];
-  const locked: AchievementCardProps[] = [];
-  for (const item of gridItems) {
-    if (item.completedAt) unlocked.push(item);
-    else if (item.startedAt || item.progress) inProgress.push(item);
-    else locked.push(item);
-  }
-  unlocked.sort(sortAchievements);
-  inProgress.sort(sortAchievements);
-  locked.sort(sortAchievements);
+  const { unlocked, inProgress, locked, provisional } = useMemo(() => {
+    const unlocked: AchievementCardProps[] = [];
+    const inProgress: AchievementCardProps[] = [];
+    const locked: AchievementCardProps[] = [];
+    const provisional: AchievementCardProps[] = [];
+    for (const item of gridItems) {
+      if (item.provisional) provisional.push(item);
+      if (item.completedAt) { 
+        const completedCount = item.completedCount ?? 0;
+        const nonProvisionalCount = item.provisional ? completedCount - 1 : completedCount;
+        if (nonProvisionalCount > 0){
+          unlocked.push({ 
+            ...item, 
+            provisional: false, 
+            completedCount: nonProvisionalCount
+          });
+        }
+      } else if (item.startedAt || item.progress) inProgress.push(item);
+      else locked.push(item);
+    }
+    unlocked.sort(sortAchievements);
+    inProgress.sort(sortAchievements);
+    locked.sort(sortAchievements);
+    provisional.sort(sortAchievements);
+    return { unlocked, inProgress, locked, provisional };
+  }, [gridItems]);
 
   if (loading) {
     return (
@@ -70,10 +88,6 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
         <Loader2 className="animate-spin w-8 h-8 text-slate-400" />
       </div>
     );
-  }
-
-  if (!gridItems.length) {
-    return <div className="text-center text-slate-400 py-16">No achievements yet.</div>;
   }
 
   const activeResult = useMemo(
@@ -90,6 +104,27 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
 
   return (
     <div className="space-y-8">
+      {provisional.length > 0 && (
+        <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-4 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/40">
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-200 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Active
+              <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100/80 text-slate-600 dark:bg-slate-800/70 dark:text-slate-200 text-[10px] font-semibold align-middle border border-slate-200/80 dark:border-slate-700/70 ml-1">
+                {provisional.length}
+              </span>
+            </span>
+            <span className="flex-1"><span className="block h-[1px] w-full bg-slate-200/80 dark:bg-slate-800/70" /></span>
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {provisional.map((item, i) => (
+              <li key={`provisional-${item.id}-${i}`}>
+                <AchievementCard {...item} onSelect={() => setActiveGoalId(item.id)} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {/* Completed */}
       {unlocked.length > 0 && (
         <Fragment>

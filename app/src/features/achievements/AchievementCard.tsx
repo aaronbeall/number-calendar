@@ -24,6 +24,7 @@ export interface AchievementCardProps {
   repeatable?: boolean;
   createdAt?: number;
   onSelect?: () => void;
+  provisional?: boolean;
 }
 
 export function AchievementCard({
@@ -39,8 +40,9 @@ export function AchievementCard({
   firstCompletedAt,
   goalType,
   repeatable,
-  onSelect
-}: AchievementCardProps & { timePeriod?: string }) {
+  onSelect,
+  provisional
+}: AchievementCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   let status: 'completed' | 'in-progress' | 'locked' = 'locked';
@@ -115,7 +117,7 @@ export function AchievementCard({
         style={glowStyle}
       />
       {/* Count notification bubble */}
-      {status === 'completed' && completedCount && completedCount > 1 && repeatable && (
+      {status === 'completed' && completedCount && completedCount > 1 && repeatable && !provisional && (
         <span className="absolute -top-2 -right-2 z-10 pointer-events-none">
           {completedCount > 1 && (
             <>

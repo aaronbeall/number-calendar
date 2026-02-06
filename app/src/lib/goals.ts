@@ -1,6 +1,6 @@
 import { type Achievement, type DateKey, type DayKey, type Goal, type GoalRequirements, type GoalType, type GoalTarget, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
-import { convertDateKey, isDayKey, type DateKeyType } from './friendly-date';
+import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './friendly-date';
 import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
 import { keysOf, capitalize, pluralize, adjectivize } from './utils';
 
@@ -116,9 +116,11 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
   return { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getAnytimeStats };
 }
 
+export type GoalAchievement = Achievement & { provisional?: boolean };
+
 export interface GoalResults {
   goal: Goal;
-  achievements: Achievement[];
+  achievements: GoalAchievement[];
   completedCount: number;
   currentProgress: number;
   lastCompletedAt?: DateKey;
@@ -185,7 +187,10 @@ export function processAchievements({
     let currentProgress = 0;
     let lastCompletedAt: DateKey | undefined = undefined;
     let firstCompletedAt: DateKey | undefined = undefined;
-    let newAchievements: Achievement[] = [];
+    let newAchievements: GoalAchievement[] = [];
+    const currentPeriodKey = goal.timePeriod === 'anytime'
+      ? null
+      : formatDateAsKey(new Date(), goal.timePeriod);
     const goalSource = goal.target.source ?? 'stats';
     const getMetricValue = (
       stats: NumberStats | null | undefined,
@@ -196,6 +201,13 @@ export function processAchievements({
       if (goalSource === 'deltas') return deltas?.[goal.target.metric];
       if (goalSource === 'percents') return percents?.[goal.target.metric];
       return undefined;
+    };
+
+    const markProvisional = (achievement: Achievement): GoalAchievement => {
+      if (currentPeriodKey && achievement.completedAt === currentPeriodKey) {
+        return { ...achievement, provisional: true };
+      }
+      return achievement;
     };
 
     // ANYTIME: Only one achievement, only update if not already completed
@@ -264,7 +276,7 @@ export function processAchievements({
           let ach = periodAchievements[period];
           if (ach && ach.completedAt) {
             // Already completed, nothing to do
-            newAchievements.push(ach);
+            newAchievements.push(markProvisional(ach));
             completedCount++;
             lastCompletedAt = ach.completedAt;
             continue;
@@ -283,7 +295,7 @@ export function processAchievements({
               completedCount++;
               lastCompletedAt = period;
             }
-            newAchievements.push(ach);
+            newAchievements.push(markProvisional(ach));
           }
         }
         currentProgress = completedCount;
@@ -299,7 +311,7 @@ export function processAchievements({
             if (startIdx !== -1 && endIdx !== -1) {
               for (let i = startIdx; i <= endIdx; i++) usedPeriods.add(periods[i]);
             }
-            newAchievements.push(ach);
+            newAchievements.push(markProvisional(ach));
             completedCount++;
             lastCompletedAt = ach.completedAt;
           }
@@ -322,7 +334,7 @@ export function processAchievements({
             if (streak.length === goal.count) {
               // Completed a new achievement
               const ach: Achievement = { id: nanoid(), goalId: goal.id, datasetId, progress: goal.count, startedAt: streakStart, completedAt: streakEnd };
-              newAchievements.push(ach);
+              newAchievements.push(markProvisional(ach));
               completedCount++;
               lastCompletedAt = streakEnd;
               // Mark these periods as used

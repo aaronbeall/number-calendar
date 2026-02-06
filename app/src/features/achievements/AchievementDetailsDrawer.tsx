@@ -20,10 +20,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { Achievement, DateKey, Goal } from '@/features/db/localdb';
+import type { DateKey, Goal } from '@/features/db/localdb';
 import { useArchiveGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
-import { formatValue, isRangeCondition, type GoalResults } from '@/lib/goals';
+import { formatValue, isRangeCondition, type GoalAchievement, type GoalResults } from '@/lib/goals';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
@@ -53,7 +53,7 @@ type TimelineItem =
       subtitle?: string;
       meta?: string;
       icon: React.ReactNode;
-      tone: 'neutral' | 'success' | 'progress';
+      tone: 'neutral' | 'success' | 'progress' | 'provisional';
     };
 
 const periodLabelMap: Record<Goal['timePeriod'], string> = {
@@ -90,6 +90,8 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
 
   const periodLabel = periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod));
   const summaryTags = buildSummaryTags(goal);
+  const provisionalAchievements = achievements.filter((achievement) => achievement.provisional);
+  const hasProvisional = provisionalAchievements.length > 0;
   const hasCompletions = completedCount > 0;
   const showUnlocked = completedCount > 1 && firstCompletedAt;
   const completedLabel = completedCount > 1 ? 'Last completed' : 'Completed';
@@ -279,6 +281,12 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                           {completionsLabel} completions
                         </Badge>
                       )}
+                      {hasProvisional && (
+                        <Badge variant="outline" className="gap-2 border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+                          <Clock className="h-3.5 w-3.5" />
+                          Active
+                        </Badge>
+                      )}
                     </div>
                     {showProgress && (
                       <div className="w-full max-w-xs">
@@ -345,7 +353,8 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                             'mt-1 flex h-6 w-6 items-center justify-center rounded-full border',
                             item.tone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/60',
                             item.tone === 'progress' && 'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950/60',
-                            item.tone === 'neutral' && 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-950'
+                            item.tone === 'neutral' && 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-950',
+                            item.tone === 'provisional' && 'border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-900 dark:bg-amber-950/60'
                           )}
                         >
                           {item.icon}
@@ -415,8 +424,8 @@ function buildTimelineItems({
   currentProgress,
   createdAt,
 }: {
-  inProgress?: Achievement;
-  completedAchievements: Achievement[];
+  inProgress?: GoalAchievement;
+  completedAchievements: GoalAchievement[];
   goal: Goal;
   currentProgress: number;
   createdAt: number;
@@ -493,14 +502,16 @@ function buildTimelineItems({
     const rangeMeta = goal.count > 1
       ? `Completed ${goal.count} ${goal.timePeriod === 'anytime' ? 'periods' : pluralize(goal.timePeriod, goal.count)}`
       : undefined;
+    const provisionalMeta = achievement.provisional ? `Provisional until this ${goal.timePeriod} ends` : undefined;
+    const meta = [rangeMeta, provisionalMeta].filter(Boolean).join(' · ') || undefined;
     items.push({
       kind: 'event',
       id: achievement.id,
       title: 'Completed',
       subtitle: dateLabel,
-      meta: rangeMeta,
+      meta,
       icon: <CheckCircle className="h-3.5 w-3.5" />,
-      tone: 'success',
+      tone: achievement.provisional ? 'provisional' : 'success',
     });
   }
 
@@ -532,7 +543,7 @@ function formatTimelineHeading(date: Date, timePeriod: Goal['timePeriod']): stri
   return null;
 }
 
-function buildAchievementDateLabel(achievement: Achievement): string {
+function buildAchievementDateLabel(achievement: GoalAchievement): string {
   if (achievement.startedAt && achievement.completedAt) {
     return formatFriendlyDate(achievement.startedAt, achievement.completedAt);
   }
