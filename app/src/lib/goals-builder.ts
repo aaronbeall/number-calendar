@@ -623,15 +623,18 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     'Centuple',
   ];
   const multipleColors: AchievementBadgeColor[] = [
-    'copper',
-    'bronze',
-    'silver',
-    'gold',
-    'platinum',
-    'diamond',
-    'magic',
-    'cosmic',
+    // 'copper_medallion',
+    // 'bronze_medallion',
+    // 'silver_medallion',
+    'gold_medallion',
+    'platinum_medallion',
+    'diamond_medallion',
+    'magic_medallion',
+    'rose_quartz',
     'mystic',
+    'warmth',
+    'aquamarine',
+    'iridescent',
     'passion',
   ];
   const multipleStyles: AchievementBadgeStyle[] = [
