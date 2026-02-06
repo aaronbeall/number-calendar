@@ -184,7 +184,7 @@ export function getLowForMetric(metric: keyof NumberStats, extremes: StatsExtrem
 }
 
 // Returns the delta (current - prior) for each metric in NumberStats
-export function getStatsDelta(current: NumberStats, prior: NumberStats | null): Record<keyof NumberStats, number> {
+export function getStatsDelta(current: NumberStats, prior: NumberStats | null): NumberStats {
   const baseline = prior ?? computeNumberStats([current.first]) ?? current;
   const result = {} as Record<keyof NumberStats, number>;
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
