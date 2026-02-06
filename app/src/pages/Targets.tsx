@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/PageHeader';
+import { ErrorState, LoadingState } from '@/components/PageStates';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
@@ -18,7 +19,7 @@ export default function Targets() {
   const [builderOpen, setBuilderOpen] = useState(false);
 
   const { datasetId } = useParams();
-  const { data: dataset } = useDataset(datasetId ?? '');
+  const { data: dataset, isLoading: datasetLoading } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
   const { data: allGoals = [], refetch: refetchGoals } = useGoals(datasetId ?? '');
   const [searchParams] = useSearchParams();
@@ -27,6 +28,23 @@ export default function Targets() {
   const handleBuilderComplete = () => {
     refetchGoals();
   };
+
+  if (datasetLoading) {
+    return <LoadingState title="Loading targets" />;
+  }
+
+  if (!dataset) {
+    return (
+      <ErrorState
+        title="Dataset not found"
+        message="This dataset could not be loaded. It may have been removed or the link is outdated."
+        details={datasetId ? `Requested dataset id: ${datasetId}` : undefined}
+        actions={[
+          { label: 'Back to home', to: '/' },
+        ]}
+      />
+    );
+  }
 
   const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
   
@@ -130,12 +148,12 @@ export default function Targets() {
           total: totalTargets,
         }}
       />
-      { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset} /> }
-      { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }
+      <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="target" dataset={dataset} />
+      <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} />
       {!hasTargets ? (
         <EmptyState type="target" onAddClick={() => setDialogOpen(true)} onGoalBuilderClick={() => setBuilderOpen(true)} />
       ) : (
-        <AchievementsGrid results={achievementResults} />
+        <AchievementsGrid results={achievementResults} dataset={dataset} />
       )}
     </div>
   );

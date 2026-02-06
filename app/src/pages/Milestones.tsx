@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/PageHeader';
+import { ErrorState, LoadingState } from '@/components/PageStates';
 import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
@@ -17,7 +18,7 @@ export default function Milestones() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [builderOpen, setBuilderOpen] = useState(false);
   const { datasetId } = useParams();
-  const { data: dataset } = useDataset(datasetId ?? '');
+  const { data: dataset, isLoading: datasetLoading } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
   const { data: allGoals = [], refetch: refetchGoals } = useGoals(datasetId ?? '');
   const [searchParams] = useSearchParams();
@@ -26,6 +27,23 @@ export default function Milestones() {
   const handleBuilderComplete = () => {
     refetchGoals();
   };
+
+  if (datasetLoading) {
+    return <LoadingState title="Loading milestones" />;
+  }
+
+  if (!dataset) {
+    return (
+      <ErrorState
+        title="Dataset not found"
+        message="This dataset could not be loaded. It may have been removed or the link is outdated."
+        details={datasetId ? `Requested dataset id: ${datasetId}` : undefined}
+        actions={[
+          { label: 'Back to home', to: '/' },
+        ]}
+      />
+    );
+  }
 
   const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
@@ -93,12 +111,12 @@ export default function Milestones() {
           total: totalMilestones,
         }}
       />
-      { dataset && <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} /> }
-      { dataset && <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} /> }
+      <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} />
+      <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} />
       {!hasMilestones ? (
         <EmptyState type="milestone" onAddClick={() => setDialogOpen(true)} onGoalBuilderClick={() => setBuilderOpen(true)} />
       ) : (
-        <AchievementsGrid results={achievementResults} />
+        <AchievementsGrid results={achievementResults} dataset={dataset} />
       )}
     </div>
   );

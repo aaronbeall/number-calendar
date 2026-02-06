@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Award, Bell, Download, Flag, Info, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User, CalendarIcon } from 'lucide-react';
+import { Award, Bell, CalendarIcon, Download, Flag, Info, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User } from 'lucide-react';
 import { useState } from 'react';
 import {
   Link,
@@ -16,11 +16,12 @@ import {
   Route,
   BrowserRouter as Router,
   Routes,
-  useMatch,
   useLocation,
+  useMatch,
   useNavigate,
   useParams,
 } from 'react-router-dom';
+import { ErrorState } from './components/PageStates';
 import { useTheme } from './components/ThemeProvider';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
@@ -34,12 +35,12 @@ import { useDataset, useDatasets } from './features/db/useDatasetData';
 import { usePreference } from './hooks/usePreference';
 import { getSeededColorTheme } from './lib/colors';
 import { getDatasetIcon } from './lib/dataset-icons';
+import Achievements from './pages/Achievements';
 import { Calendar } from './pages/Calendar';
 import { Landing } from './pages/Landing';
-import Records from './pages/Records';
 import Milestones from './pages/Milestones';
+import Records from './pages/Records';
 import Targets from './pages/Targets';
-import Achievements from './pages/Achievements';
 
 
 function App() {
@@ -203,7 +204,14 @@ function DatasetLayout({
       </div>
     );
   } else if (!dataset) {
-    return <Navigate to="/" replace />;
+    return (
+      <ErrorState
+        title="Dataset not found"
+        message="This dataset could not be loaded. It may have been removed or the link is outdated."
+        details={datasetId ? `Requested dataset id: ${datasetId}` : undefined}
+        actions={[{ label: 'Back to home', to: '/' }]}
+      />
+    );
   }
   
   return (

@@ -2,14 +2,14 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { type Dataset, type GoalBadge, type GoalRequirements, type GoalType } from '@/features/db/localdb';
-import { useCreateGoal } from '@/features/db/useGoalsData';
+import { type Dataset, type Goal, type GoalBadge, type GoalRequirements, type GoalType } from '@/features/db/localdb';
+import { useCreateGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { capitalize, randomKeyOf } from '@/lib/utils';
-import { Dices, Palette } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import { AlertTriangle, Award, Dices, Palette } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 import { BadgeEditDialog } from './BadgeEditDialog';
 import { GoalBuilder } from './GoalBuilder';
@@ -20,6 +20,8 @@ interface AchievementDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData?: AchievementDialogData;
+  initialGoal?: Goal;
+  completionCount?: number;
   type: GoalType;
   dataset: Dataset;
 }
@@ -31,11 +33,13 @@ export interface AchievementDialogData {
   goal: GoalRequirements;
 }
 
-export function AchievementDialog({ open, onOpenChange, initialData, type, dataset }: AchievementDialogProps) {
-  const [title, setTitle] = useState(initialData?.title || '');
-  const [description, setDescription] = useState(initialData?.description || '');
-  const [badge, setBadge] = useState<GoalBadge>(initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
+export function AchievementDialog({ open, onOpenChange, initialData, initialGoal, completionCount = 0, type, dataset }: AchievementDialogProps) {
+  const isEditMode = !!initialGoal;
+  const [title, setTitle] = useState(initialGoal?.title ?? initialData?.title ?? '');
+  const [description, setDescription] = useState(initialGoal?.description ?? initialData?.description ?? '');
+  const [badge, setBadge] = useState<GoalBadge>(initialGoal?.badge ?? initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
   const createGoalMutation = useCreateGoal();
+  const updateGoalMutation = useUpdateGoal();
   const datasetId = dataset.id;
 
   const {tracking, valence} = dataset;
@@ -82,8 +86,39 @@ export function AchievementDialog({ open, onOpenChange, initialData, type, datas
     }
   };
   
-  const [goal, setGoal] = useState<Partial<GoalRequirements>>(initialData?.goal ?? getDefaultGoal());
+  const [goal, setGoal] = useState<Partial<GoalRequirements>>(
+    initialGoal
+      ? {
+          target: initialGoal.target,
+          targetDate: initialGoal.targetDate,
+          timePeriod: initialGoal.timePeriod,
+          count: initialGoal.count,
+          consecutive: initialGoal.consecutive,
+        }
+      : (initialData?.goal ?? getDefaultGoal())
+  );
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialGoal) {
+      setTitle(initialGoal.title ?? '');
+      setDescription(initialGoal.description ?? '');
+      setBadge(initialGoal.badge);
+      setGoal({
+        target: initialGoal.target,
+        targetDate: initialGoal.targetDate,
+        timePeriod: initialGoal.timePeriod,
+        count: initialGoal.count,
+        consecutive: initialGoal.consecutive,
+      });
+      return;
+    }
+    setTitle(initialData?.title ?? '');
+    setDescription(initialData?.description ?? '');
+    setBadge(initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
+    setGoal(initialData?.goal ?? getDefaultGoal());
+  }, [open, initialGoal, initialData, type, tracking, valence]);
 
   const sugggested = getSuggestedGoalContent({ type, title, description, badge, ...goal });
 
@@ -92,18 +127,71 @@ export function AchievementDialog({ open, onOpenChange, initialData, type, datas
     label: badge.label ?? sugggested.label,
   }), [badge, sugggested.label]);
 
+  const requirementsChanged = useMemo(() => {
+    if (!isEditMode || !initialGoal) return false;
+    const initialKey = JSON.stringify({
+      target: initialGoal.target,
+      targetDate: initialGoal.targetDate ?? null,
+      timePeriod: initialGoal.timePeriod,
+      count: initialGoal.count,
+      consecutive: initialGoal.consecutive ?? false,
+    });
+    const currentKey = JSON.stringify({
+      target: goal.target,
+      targetDate: goal.targetDate ?? null,
+      timePeriod: goal.timePeriod,
+      count: goal.count,
+      consecutive: goal.consecutive ?? false,
+    });
+    return initialKey !== currentKey;
+  }, [goal, initialGoal, isEditMode]);
+
+  const handleRevertRequirements = () => {
+    if (!initialGoal) return;
+    setGoal({
+      target: initialGoal.target,
+      targetDate: initialGoal.targetDate,
+      timePeriod: initialGoal.timePeriod,
+      count: initialGoal.count,
+      consecutive: initialGoal.consecutive,
+    });
+  };
+
+  const hasChanges = useMemo(() => {
+    if (!isEditMode || !initialGoal) return true;
+    const titleChanged = (title || '') !== (initialGoal.title || '');
+    const descriptionChanged = (description || '') !== (initialGoal.description || '');
+    const badgeChanged = JSON.stringify(badge) !== JSON.stringify(initialGoal.badge);
+    return titleChanged || descriptionChanged || badgeChanged || requirementsChanged;
+  }, [badge, description, initialGoal, isEditMode, requirementsChanged, title]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValidGoalAttributes(goal)) return;
 
+    const normalizedBadge = {
+      ...badge,
+      label: badge.label ?? sugggested.label,
+    };
+
+    if (isEditMode && initialGoal) {
+      updateGoalMutation.mutate({
+        ...initialGoal,
+        title: title || sugggested.title,
+        description: description || sugggested.description,
+        badge: normalizedBadge,
+        ...goal,
+      }, {
+        onSuccess: () => onOpenChange(false),
+      });
+      return;
+    }
+
     // Create Goal in DB
     createGoalMutation.mutate({ 
-      title: title || sugggested.title, 
-      description: description || sugggested.description, 
-      badge: {
-        ...badge,
-        label: badge.label ?? sugggested.label,
-      }, 
+      title: title || sugggested.title,
+      description: description || sugggested.description,
+      badge: normalizedBadge,
       type,
       datasetId,
       createdAt: Date.now(),
@@ -124,14 +212,17 @@ export function AchievementDialog({ open, onOpenChange, initialData, type, datas
   }
 
   const isValid = isValidGoalAttributes(goal);
+  const showCompletionNotice = isEditMode && completionCount > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] p-0 gap-0 w-full sm:max-w-2xl flex flex-col">
         <DialogHeader className="flex-shrink-0 px-6 pt-6">
-          <DialogTitle>{`Add ${capitalize(type)}`}</DialogTitle>
+          <DialogTitle>{isEditMode ? `Edit ${capitalize(type)}` : `Add ${capitalize(type)}`}</DialogTitle>
           <DialogDescription>
-            {`Create a new ${type} by defining its conditions, badge, title, and description.`}
+            {isEditMode
+              ? `Edit this ${type} by updating its conditions, badge, title, and description.`
+              : `Create a new ${type} by defining its conditions, badge, title, and description.`}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 max-h-[90vh]">
@@ -182,16 +273,50 @@ export function AchievementDialog({ open, onOpenChange, initialData, type, datas
                     open={badgeEditOpen}
                     onOpenChange={setBadgeEditOpen}
                     badge={previewBadge}
-                    onChange={setBadge}
+                    onSave={setBadge}
                   />
+                  {showCompletionNotice && (
+                    <div className="mt-1 flex items-center justify-center">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50/80 px-3 py-1 text-xs font-semibold text-amber-900 shadow-sm dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+                        <Award className="h-3.5 w-3.5" />
+                        {completionCount} completions recorded
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
+          {showCompletionNotice && requirementsChanged && (
+            <div className="px-6 pb-3">
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800 shadow-sm dark:border-red-900/70 dark:bg-red-950/60 dark:text-red-200">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span>Warning: changing requirements can alter or remove existing completions. Proceed with care.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRevertRequirements}
+                    className="text-xs font-semibold text-red-700 underline decoration-red-300 underline-offset-2 hover:text-red-800 dark:text-red-200 dark:decoration-red-500 dark:hover:text-red-100"
+                  >
+                    Revert conditions
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
           {/* Footer always visible */}
           <DialogFooter className="flex-shrink-0 px-6 pb-6 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-            <Button type="submit" disabled={!isValid}>Create {capitalize(type)}</Button>
+            <Button
+              type="submit"
+              disabled={!isValid || !hasChanges || createGoalMutation.isPending || updateGoalMutation.isPending}
+            >
+              {isEditMode
+                ? (updateGoalMutation.isPending ? 'Updating…' : 'Update')
+                : (createGoalMutation.isPending ? 'Creating…' : `Create ${capitalize(type)}`)}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

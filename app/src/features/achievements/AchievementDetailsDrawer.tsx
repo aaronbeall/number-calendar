@@ -34,6 +34,7 @@ interface AchievementDetailsDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   result: GoalResults | null;
+  onEditGoal?: (result: GoalResults) => void;
 }
 
 type TimelineItem = {
@@ -53,7 +54,7 @@ const periodLabelMap: Record<Goal['timePeriod'], string> = {
   year: 'Yearly',
 };
 
-export function AchievementDetailsDrawer({ open, onOpenChange, result }: AchievementDetailsDrawerProps) {
+export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoal }: AchievementDetailsDrawerProps) {
   if (!result) return null;
 
   const { goal, achievements, completedCount, currentProgress, lastCompletedAt, firstCompletedAt } = result;
@@ -118,7 +119,10 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
                       Share
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => onEditGoal?.(result)}
+                      disabled={!onEditGoal}
+                    >
                       <Pencil className="h-4 w-4" />
                       Edit {capitalize(goal.type)}
                     </DropdownMenuItem>

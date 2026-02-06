@@ -1,17 +1,22 @@
+import type { Dataset } from '@/features/db/localdb';
 import type { GoalResults } from '@/lib/goals';
 import { Loader2 } from 'lucide-react';
 import { Fragment, useMemo, useState } from 'react';
 import { AchievementCard, type AchievementCardProps } from './AchievementCard';
 import { AchievementDetailsDrawer } from './AchievementDetailsDrawer';
+import { AchievementDialog } from './AchievementDialog';
 
 
 interface AchievementsGridProps {
   results: GoalResults[];
   loading?: boolean;
+  dataset?: Dataset;
 }
 
-export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
+export function AchievementsGrid({ results, loading, dataset }: AchievementsGridProps) {
   const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
+  const [editResult, setEditResult] = useState<GoalResults | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Flatten to a single achievement per goal for grid (show the most relevant achievement)
   const gridItems = results.map((result): AchievementCardProps => {
@@ -75,6 +80,13 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
     () => results.find((result) => result.goal.id === activeGoalId) ?? null,
     [results, activeGoalId]
   );
+
+  const handleEditGoal = (result: GoalResults) => {
+    if (!dataset) return;
+    setEditResult(result);
+    setEditOpen(true);
+    setActiveGoalId(null);
+  };
 
   return (
     <div className="space-y-8">
@@ -147,7 +159,21 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
           if (!open) setActiveGoalId(null);
         }}
         result={activeResult}
+        onEditGoal={dataset ? handleEditGoal : undefined}
       />
+      {dataset && editResult && (
+        <AchievementDialog
+          open={editOpen}
+          onOpenChange={(open) => {
+            setEditOpen(open);
+            if (!open) setEditResult(null);
+          }}
+          initialGoal={editResult.goal}
+          completionCount={editResult.completedCount}
+          type={editResult.goal.type}
+          dataset={dataset}
+        />
+      )}
     </div>
   );
 }
