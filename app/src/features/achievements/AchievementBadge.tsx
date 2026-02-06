@@ -68,7 +68,13 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
         }}
       >
         <span
-          className="absolute inset-1 rounded-full bg-slate-900/90 shadow-inner dark:hidden"
+          className="absolute -inset-2 rounded-full bg-slate-900/30 shadow-inner"
+          // style={{background: `${color.label}66`}}
+          aria-hidden="true"
+        />
+        <span
+          className="absolute -inset-1 rounded-full shadow-inner dark:hidden"
+          style={{background: `${color.label}ee`}}
           aria-hidden="true"
         />
         {/* Wobble animation effect */}
@@ -92,6 +98,18 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
           />
         )}
 
+        {/* Soft aura glow */}
+        <span
+          className="absolute -inset-2 rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${color.accent}33 0%, transparent 70%)`,
+            filter: 'blur(6px)',
+            opacity: grayscale ? 0.15 : 0.35,
+            pointerEvents: 'none',
+          }}
+          aria-hidden="true"
+        />
+
         {/* Background shape with shine effect */}
         <span
           className="absolute inset-0 flex items-center justify-center rounded-full"
@@ -106,6 +124,27 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
         >
           <ShapeIcon size={containerPx} color={color.bg} />
         </span>
+
+        {/* Subtle material texture */}
+        <span
+          className="absolute inset-0 rounded-full"
+          style={{
+            backgroundImage: `repeating-linear-gradient(135deg, ${color.border}1c 0 2px, transparent 2px 4px)`
+          }}
+          aria-hidden="true"
+        />
+
+        {/* Specular glint */}
+        <span
+          className="absolute left-2 top-2 h-1/3 w-1/3 rounded-full"
+          style={{
+            background: `radial-gradient(circle, ${color.label}aa 0%, transparent 70%)`,
+            transform: 'rotate(-12deg)',
+            opacity: grayscale ? 0.25 : 0.55,
+            pointerEvents: 'none',
+          }}
+          aria-hidden="true"
+        />
 
         {/* Border overlay for flat look */}
         <span
