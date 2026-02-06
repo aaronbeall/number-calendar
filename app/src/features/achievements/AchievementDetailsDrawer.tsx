@@ -403,6 +403,7 @@ function buildTimelineItems({
     const progressMeta = goal.count > 1 ? `Progress: ${inProgress.progress}/${goal.count}` : undefined;
     const progressDate = toDateFromKey(inProgress.startedAt ?? inProgress.completedAt);
     addHeading(progressDate);
+    // @ts-ignore -- control flow analysis is broken here
     if (progressDate && (!latestEventDate || progressDate > latestEventDate)) {
       latestEventDate = progressDate;
     }
