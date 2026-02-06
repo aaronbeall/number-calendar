@@ -56,6 +56,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result }: Achieve
     completedAchievements,
     goal,
     currentProgress,
+    createdAt: goal.createdAt,
   });
 
   const periodLabel = periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod));
@@ -267,11 +268,13 @@ function buildTimelineItems({
   completedAchievements,
   goal,
   currentProgress,
+  createdAt,
 }: {
   inProgress?: Achievement;
   completedAchievements: Achievement[];
   goal: Goal;
   currentProgress: number;
+  createdAt: number;
 }): TimelineItem[] {
   const items: TimelineItem[] = [];
 
@@ -311,6 +314,14 @@ function buildTimelineItems({
     });
   }
 
+  items.push({
+    id: `created-${goal.id}`,
+    title: 'Created',
+    subtitle: formatCreatedAt(createdAt),
+    icon: <CalendarCheck2 className="h-3.5 w-3.5" />,
+    tone: 'neutral',
+  });
+
   return items;
 }
 
@@ -325,6 +336,14 @@ function buildAchievementDateLabel(achievement: Achievement): string {
     return formatFriendlyDate(achievement.startedAt);
   }
   return 'Unknown date';
+}
+
+function formatCreatedAt(createdAt: number): string {
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(createdAt));
 }
 
 function buildSummaryTags(goal: Goal) {
