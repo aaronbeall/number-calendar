@@ -282,7 +282,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                         </Badge>
                       )}
                       {hasProvisional && (
-                        <Badge variant="outline" className="gap-2 border-amber-200 bg-amber-50/70 text-amber-700 dark:border-amber-900 dark:bg-amber-950/60 dark:text-amber-200">
+                        <Badge variant="outline" className="gap-2 border-amber-200 bg-amber-50 text-amber-600 dark:border-yellow-400 dark:bg-yellow-900/70 dark:text-yellow-400">
                           <Clock className="h-3.5 w-3.5" />
                           Active
                         </Badge>
@@ -354,7 +354,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                             item.tone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/60',
                             item.tone === 'progress' && 'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950/60',
                             item.tone === 'neutral' && 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-950',
-                            item.tone === 'provisional' && 'border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-900 dark:bg-amber-950/60'
+                            item.tone === 'provisional' && 'border-amber-200 bg-amber-50 text-amber-600 dark:border-yellow-400 dark:bg-yellow-900/70 dark:text-yellow-400'
                           )}
                         >
                           {item.icon}
@@ -504,13 +504,15 @@ function buildTimelineItems({
       : undefined;
     const provisionalMeta = achievement.provisional ? `Provisional until this ${goal.timePeriod} ends` : undefined;
     const meta = [rangeMeta, provisionalMeta].filter(Boolean).join(' · ') || undefined;
+    const title = achievement.provisional ? 'Achieved' : 'Completed';
+    const icon = achievement.provisional ? <Trophy className="h-3.5 w-3.5" /> : <CheckCircle className="h-3.5 w-3.5" />;
     items.push({
       kind: 'event',
       id: achievement.id,
-      title: 'Completed',
+      title,
       subtitle: dateLabel,
       meta,
-      icon: <CheckCircle className="h-3.5 w-3.5" />,
+      icon,
       tone: achievement.provisional ? 'provisional' : 'success',
     });
   }

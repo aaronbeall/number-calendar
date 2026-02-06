@@ -335,7 +335,7 @@ export type AchievementBadgeIcon = keyof typeof achievementBadgeIcons;
 /**
  * {
  *  bg // Background shape color
- *  accent // Center icon and label accent color
+ *  accent // Center icon and label accent color -- text color is also based on this
  *  label // Label/banner/ribbon background color
  *  border // Border overlay color
  * }
