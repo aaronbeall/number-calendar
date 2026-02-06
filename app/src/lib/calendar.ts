@@ -81,7 +81,7 @@ export function getCalendarData(numbers: number[], priorNumbers: number[] | unde
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
   const primaryMetricDelta = deltas && deltas[getPrimaryMetric(tracking)];
   const primaryMetricPercent = percents && percents[getPrimaryMetric(tracking)];
-  const primaryValenceMetric = (stats && getValenceMetricFromData({ stats, deltas }, tracking)) ?? stats?.change; // Use change (last - first) as fallback
+  const primaryValenceMetric = (stats && getValenceMetricFromData({ stats, deltas }, tracking));
   const hasData = numbers.length > 0;
   return {
     stats,

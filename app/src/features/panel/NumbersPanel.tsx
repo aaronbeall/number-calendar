@@ -306,8 +306,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     )}
                   </div>
                 )}
-                {/* If no deltas and trend mode, show stats.change and stats.changePercent */}
-                {!deltas && tracking === 'trend' && stats && (
+                {/* If no deltas and trend mode, show stats.change and stats.changePercent -- OBSOLETE now that deltas have built in fallback behavior */}
+                {/* {!deltas && tracking === 'trend' && stats && (
                   <div className="flex items-center gap-1 mt-1">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                       <NumberText
@@ -324,7 +324,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       </span>
                     )}
                   </div>
-                )}
+                )} */}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {[
