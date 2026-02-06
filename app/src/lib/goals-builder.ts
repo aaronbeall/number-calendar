@@ -477,6 +477,7 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
     { period: 'week', value: baselines.weekTarget, color: 'sapphire' },
     { period: 'month', value: baselines.monthTarget, color: 'amethyst' },
   ];
+  const completeTerm = source === 'deltas' ? 'Achieve' : 'Reach';
 
   periods.forEach(({ period, value, color }, idx) => {
     const adjectiveName = capitalize(adjectivize(period));
@@ -488,7 +489,7 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
       createdAt: nextCreatedAt(),
       type: 'target',
       title: `${adjectiveName} Target`,
-      description: `Reach ${formatValue(value, { delta: source === 'deltas' })} in a ${period}`,
+      description: `${completeTerm} ${formatValue(value, { delta: source === 'deltas' })} in a ${period}`,
       badge: createBadge(style, color, 'target', formatValue(value, { short: true, delta: source === 'deltas' })),
       target: createTarget(metric, source, condition, value),
       timePeriod: period,
@@ -638,6 +639,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     'star_stack',
     'staryu',
   ];
+  const targetTerm = source === 'deltas' ? 'Achieve' : 'Reach';
   (['day', 'week', 'month'] as const).forEach((targetPeriod, idx, periods) => {
     if (idx < periods.indexOf(period)) return; // Skip periods before user's selected period
     const targetPeriodName = capitalize(targetPeriod);
@@ -654,7 +656,8 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
         createdAt: nextCreatedAt(),
         type: 'goal',
         title: `${multipleNames[idx]} ${targetPeriodName}`,
-        description: `Reach ${formatValue(multipleValue, { delta: source === 'deltas' })} in a ${targetPeriod}`,
+        // description: `${targetTerm} ${formatValue(multipleValue, { delta: source === 'deltas' })} in a ${targetPeriod}`,
+        description: `${targetTerm} ${formatValue(multiple)}× ${adjectivize(targetPeriod)} target (${formatValue(multipleValue, { delta: source === 'deltas' })})`,
         badge: createBadge(style, color, 'trophy', `${multiple}×`),
         target: createTarget(metric, source, condition, multipleValue),
         timePeriod: targetPeriod,
