@@ -9,11 +9,12 @@ import type { GoalBadge } from '../db/localdb';
 import AchievementBadge from './AchievementBadge';
 
 // BadgeEditDialog: for editing badge label, icon, style, color
-export function BadgeEditDialog({ open, onOpenChange, badge, onSave }: {
+export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel = 'Save' }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   badge: GoalBadge;
   onSave(v: GoalBadge): void;
+  saveLabel?: string;
 }) {
   const [draftBadge, setDraftBadge] = useState<GoalBadge>(badge);
 
@@ -128,7 +129,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave }: {
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>
-          <Button type="button" onClick={handleSave}>Save</Button>
+          <Button type="button" onClick={handleSave}>{saveLabel}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

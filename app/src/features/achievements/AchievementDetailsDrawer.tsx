@@ -21,7 +21,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import type { Achievement, Goal } from '@/features/db/localdb';
-import { useArchiveGoal } from '@/features/db/useGoalsData';
+import { useArchiveGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { formatFriendlyDate } from '@/lib/friendly-date';
 import { formatValue, isRangeCondition, type GoalResults } from '@/lib/goals';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
@@ -29,6 +29,7 @@ import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
 import { useState } from 'react';
 import AchievementBadge from './AchievementBadge';
+import { BadgeEditDialog } from './BadgeEditDialog';
 
 interface AchievementDetailsDrawerProps {
   open: boolean;
@@ -59,7 +60,9 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
 
   const { goal, achievements, completedCount, currentProgress, lastCompletedAt, firstCompletedAt } = result;
   const archiveGoalMutation = useArchiveGoal();
+  const updateGoalMutation = useUpdateGoal();
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [badgeEditOpen, setBadgeEditOpen] = useState(false);
   const badge = goal.badge;
   const inProgress = achievements.find((achievement) => !!achievement.startedAt && !achievement.completedAt);
   const completedAchievements = achievements
@@ -126,7 +129,10 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                       <Pencil className="h-4 w-4" />
                       Edit {capitalize(goal.type)}
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => setBadgeEditOpen(true)}
+                      disabled={updateGoalMutation.isPending}
+                    >
                       <Award className="h-4 w-4" />
                       Edit Badge
                     </DropdownMenuItem>
@@ -288,6 +294,18 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
             )}
           </div>
         </ScrollArea>
+        <BadgeEditDialog
+          open={badgeEditOpen}
+          onOpenChange={setBadgeEditOpen}
+          badge={goal.badge}
+          saveLabel="Update"
+          onSave={(updatedBadge) => {
+            updateGoalMutation.mutate({
+              ...goal,
+              badge: updatedBadge,
+            });
+          }}
+        />
         <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>

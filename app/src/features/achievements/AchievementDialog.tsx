@@ -274,6 +274,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
                     onOpenChange={setBadgeEditOpen}
                     badge={previewBadge}
                     onSave={setBadge}
+                    saveLabel="Done"
                   />
                   {showCompletionNotice && (
                     <div className="mt-1 flex items-center justify-center">
