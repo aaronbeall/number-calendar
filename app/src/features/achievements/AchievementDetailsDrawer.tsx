@@ -20,9 +20,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { Achievement, Goal } from '@/features/db/localdb';
+import type { Achievement, DateKey, Goal } from '@/features/db/localdb';
 import { useArchiveGoal, useUpdateGoal } from '@/features/db/useGoalsData';
-import { formatFriendlyDate } from '@/lib/friendly-date';
+import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatValue, isRangeCondition, type GoalResults } from '@/lib/goals';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
@@ -38,14 +38,22 @@ interface AchievementDetailsDrawerProps {
   onEditGoal?: (result: GoalResults) => void;
 }
 
-type TimelineItem = {
-  id: string;
-  title: string;
-  subtitle?: string;
-  meta?: string;
-  icon: React.ReactNode;
-  tone: 'neutral' | 'success' | 'progress';
-};
+type TimelineItem =
+  | {
+      kind: 'heading';
+      id: string;
+      title?: string;
+      variant?: 'divider';
+    }
+  | {
+      kind?: 'event';
+      id: string;
+      title: string;
+      subtitle?: string;
+      meta?: string;
+      icon: React.ReactNode;
+      tone: 'neutral' | 'success' | 'progress';
+    };
 
 const periodLabelMap: Record<Goal['timePeriod'], string> = {
   anytime: 'One-time',
@@ -267,23 +275,33 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                 <div className="relative flex flex-col gap-4">
                   <div className="absolute left-3 top-1 bottom-1 w-px bg-slate-200 dark:bg-slate-800" />
                   {timelineItems.map((item) => (
-                    <div key={item.id} className="relative flex gap-3">
-                      <div
-                        className={cn(
-                          'mt-1 flex h-6 w-6 items-center justify-center rounded-full border',
-                          item.tone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/60',
-                          item.tone === 'progress' && 'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950/60',
-                          item.tone === 'neutral' && 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-950'
+                    item.kind === 'heading' ? (
+                      <div key={item.id} className="pl-8 pr-2 text-center text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                        {item.variant === 'divider' || !item.title ? (
+                          <span className="mx-auto block h-px w-10 bg-slate-200 dark:bg-slate-800" aria-hidden="true" />
+                        ) : (
+                          <span className="block">{item.title}</span>
                         )}
-                      >
-                        {item.icon}
                       </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{item.title}</div>
-                        {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
-                        {item.meta && <div className="text-[11px] text-slate-400 mt-1">{item.meta}</div>}
+                    ) : (
+                      <div key={item.id} className="relative flex gap-3">
+                        <div
+                          className={cn(
+                            'mt-1 flex h-6 w-6 items-center justify-center rounded-full border',
+                            item.tone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/60',
+                            item.tone === 'progress' && 'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950/60',
+                            item.tone === 'neutral' && 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-950'
+                          )}
+                        >
+                          {item.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{item.title}</div>
+                          {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
+                          {item.meta && <div className="text-[11px] text-slate-400 mt-1">{item.meta}</div>}
+                        </div>
                       </div>
-                    </div>
+                    )
                   ))}
                 </div>
               ) : (
@@ -349,10 +367,47 @@ function buildTimelineItems({
   createdAt: number;
 }): TimelineItem[] {
   const items: TimelineItem[] = [];
+  let currentHeading: string | null = null;
+  let latestEventDate: Date | null = null;
+
+  const addHeading = (date: Date | null) => {
+    if (!date) return;
+    const heading = formatTimelineHeading(date, goal.timePeriod);
+    if (!heading || heading === currentHeading) return;
+    currentHeading = heading;
+    items.push({
+      kind: 'heading',
+      id: `heading-${heading}-${items.length}`,
+      title: heading,
+    });
+  };
+
+  const addDividerHeading = () => {
+    items.push({
+      kind: 'heading',
+      id: `heading-divider-${items.length}`,
+      variant: 'divider',
+    });
+  };
+
+  const toDateFromKey = (key?: DateKey) => {
+    if (!key) return null;
+    try {
+      return parseDateKey(key);
+    } catch {
+      return null;
+    }
+  };
 
   if (inProgress) {
     const progressMeta = goal.count > 1 ? `Progress: ${inProgress.progress}/${goal.count}` : undefined;
+    const progressDate = toDateFromKey(inProgress.startedAt ?? inProgress.completedAt);
+    addHeading(progressDate);
+    if (progressDate && (!latestEventDate || progressDate > latestEventDate)) {
+      latestEventDate = progressDate;
+    }
     items.push({
+      kind: 'event',
       id: inProgress.id,
       title: 'In progress',
       subtitle: inProgress.startedAt ? formatFriendlyDate(inProgress.startedAt) : 'Started',
@@ -362,6 +417,7 @@ function buildTimelineItems({
     });
   } else if (currentProgress > 0 && goal.count > 1) {
     items.push({
+      kind: 'event',
       id: 'progress',
       title: 'In progress',
       subtitle: 'Currently active',
@@ -372,11 +428,17 @@ function buildTimelineItems({
   }
 
   for (const achievement of completedAchievements) {
+    const completedDate = toDateFromKey(achievement.completedAt ?? achievement.startedAt);
+    addHeading(completedDate);
+    if (completedDate && (!latestEventDate || completedDate > latestEventDate)) {
+      latestEventDate = completedDate;
+    }
     const dateLabel = buildAchievementDateLabel(achievement);
     const rangeMeta = goal.count > 1
       ? `Completed ${goal.count} ${goal.timePeriod === 'anytime' ? 'periods' : pluralize(goal.timePeriod, goal.count)}`
       : undefined;
     items.push({
+      kind: 'event',
       id: achievement.id,
       title: 'Completed',
       subtitle: dateLabel,
@@ -386,7 +448,14 @@ function buildTimelineItems({
     });
   }
 
+  const createdDate = new Date(createdAt);
+  if (latestEventDate && createdDate > latestEventDate) {
+    addDividerHeading();
+  } else {
+    addHeading(createdDate);
+  }
   items.push({
+    kind: 'event',
     id: `created-${goal.id}`,
     title: 'Created',
     subtitle: formatCreatedAt(createdAt),
@@ -395,6 +464,16 @@ function buildTimelineItems({
   });
 
   return items;
+}
+
+function formatTimelineHeading(date: Date, timePeriod: Goal['timePeriod']): string | null {
+  if (timePeriod === 'day' || timePeriod === 'week') {
+    return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(date);
+  }
+  if (timePeriod === 'month') {
+    return new Intl.DateTimeFormat(undefined, { year: 'numeric' }).format(date);
+  }
+  return null;
 }
 
 function buildAchievementDateLabel(achievement: Achievement): string {
