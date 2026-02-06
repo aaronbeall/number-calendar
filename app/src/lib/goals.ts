@@ -77,7 +77,7 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
     let priorStats: NumberStats | null = null;
     for (const period of periods) {
       const stats = statsByPeriod[period];
-      if (stats && priorStats) {
+      if (stats) {
         deltas[period] = getStatsDelta(stats, priorStats);
       } else {
         deltas[period] = null;
@@ -96,7 +96,7 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
     let priorStats: NumberStats | null = null;
     for (const period of periods) {
       const stats = statsByPeriod[period];
-      if (stats && priorStats) {
+      if (stats) {
         percents[period] = getStatsPercentChange(stats, priorStats);
       } else {
         percents[period] = null;

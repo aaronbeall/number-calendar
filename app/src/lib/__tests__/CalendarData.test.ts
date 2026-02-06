@@ -144,9 +144,9 @@ describe('CalendarData', () => {
       const day1 = calendarData.getDayData('2025-01-01');
       const day2 = calendarData.getDayData('2025-01-02');
       
-      // Day 1 has no prior
-      expect(day1.deltas).toEqual(emptyStats());
-      expect(day1.percents).toEqual({});
+      // Day 1 has no prior, baseline uses the first value
+      expect(day1.deltas?.total).toBe(20); // 30 - 10
+      expect(day1.percents?.total).toBe(200); // (30 - 10) / 10 * 100
       
       // Day 2 has day 1 as prior
       expect(day2.deltas?.total).toBe(60); // 90 - 30
@@ -235,8 +235,8 @@ describe('CalendarData', () => {
         change: 20,
         changePercent: 200,
       });
-      expect(weekData.deltas).toEqual(emptyStats());
-      expect(weekData.percents).toEqual({});
+      expect(weekData.deltas?.total).toBe(50); // 60 - 10
+      expect(weekData.percents?.total).toBe(500); // (60 - 10) / 10 * 100
       expect(weekData.cumulatives.total).toBe(60);
       expect(weekData.extremes).toBeDefined();
     });
@@ -352,8 +352,8 @@ describe('CalendarData', () => {
         change: 20,
         changePercent: 200,
       });
-      expect(monthData.deltas).toEqual(emptyStats());
-      expect(monthData.percents).toEqual({});
+      expect(monthData.deltas?.total).toBe(50); // 60 - 10
+      expect(monthData.percents?.total).toBe(500); // (60 - 10) / 10 * 100
       expect(monthData.cumulatives.total).toBe(60);
       expect(monthData.extremes).toBeDefined();
     });
@@ -478,8 +478,8 @@ describe('CalendarData', () => {
         change: 20,
         changePercent: 200,
       });
-      expect(yearData.deltas).toEqual(emptyStats());
-      expect(yearData.percents).toEqual({});
+      expect(yearData.deltas?.total).toBe(50); // 60 - 10
+      expect(yearData.percents?.total).toBe(500); // (60 - 10) / 10 * 100
       expect(yearData.cumulatives.total).toBe(60);
       expect(yearData.extremes).toBeDefined();
     });

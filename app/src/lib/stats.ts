@@ -184,22 +184,24 @@ export function getLowForMetric(metric: keyof NumberStats, extremes: StatsExtrem
 }
 
 // Returns the delta (current - prior) for each metric in NumberStats
-export function getStatsDelta(current: NumberStats, prior: NumberStats): Record<keyof NumberStats, number> {
+export function getStatsDelta(current: NumberStats, prior: NumberStats | null): Record<keyof NumberStats, number> {
+  const baseline = prior ?? computeNumberStats([current.first]) ?? current;
   const result = {} as Record<keyof NumberStats, number>;
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
-    if (typeof current[key] === 'number' && typeof prior[key] === 'number') {
-      result[key] = (current[key] as number) - (prior[key] as number);
+    if (typeof current[key] === 'number' && typeof baseline[key] === 'number') {
+      result[key] = (current[key] as number) - (baseline[key] as number);
     }
   }
   return result;
 }
 
 // Returns the percent change (delta/prior) for each metric in NumberStats
-export function getStatsPercentChange(current: NumberStats, prior: NumberStats): Partial<NumberStats> {
+export function getStatsPercentChange(current: NumberStats, prior: NumberStats | null): Partial<NumberStats> {
+  const baseline = prior ?? computeNumberStats([current.first]) ?? current;
   const result: Partial<NumberStats> = {};
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
-    if (typeof current[key] === 'number' && typeof prior[key] === 'number' && prior[key] !== 0) {
-      result[key] = ((current[key] as number) - (prior[key] as number)) / Math.abs(prior[key] as number) * 100;
+    if (typeof current[key] === 'number' && typeof baseline[key] === 'number' && baseline[key] !== 0) {
+      result[key] = ((current[key] as number) - (baseline[key] as number)) / Math.abs(baseline[key] as number) * 100;
     } else {
       result[key] = undefined;
     }

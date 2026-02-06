@@ -279,8 +279,8 @@ export class CalendarData {
       deltas = getStatsDelta(cache.stats, priorStats);
       percents = getStatsPercentChange(cache.stats, priorStats);
     } else {
-      deltas = emptyStats();
-      percents = {};
+      deltas = getStatsDelta(cache.stats, null);
+      percents = getStatsPercentChange(cache.stats, null);
     }
     
     return this.updateCache(cacheMap, { dateKey: currentKey, deltas, percents }) as PartialComputedCache<P, 'stats' | 'numbers' | 'deltas' | 'percents'>;
