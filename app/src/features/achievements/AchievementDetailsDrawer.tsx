@@ -27,7 +27,8 @@ import { formatValue, isRangeCondition, type GoalResults } from '@/lib/goals';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { toBlob } from 'html-to-image';
 import AchievementBadge from './AchievementBadge';
 import { BadgeEditDialog } from './BadgeEditDialog';
 
@@ -71,6 +72,8 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
   const updateGoalMutation = useUpdateGoal();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const shareRef = useRef<HTMLDivElement | null>(null);
   const badge = goal.badge;
   const inProgress = achievements.find((achievement) => !!achievement.startedAt && !achievement.completedAt);
   const completedAchievements = achievements
@@ -103,6 +106,46 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
     });
   };
 
+  const handleShare = async () => {
+    if (typeof navigator === 'undefined' || typeof navigator.share !== 'function') return;
+    const target = shareRef.current;
+    if (!target || isSharing) return;
+
+    setIsSharing(true);
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+
+    try {
+      const blob = await toBlob(target, { cacheBust: true, pixelRatio: 2 });
+      if (!blob) throw new Error('Failed to generate image');
+
+      const file = new File([blob], `achievement-${goal.id}.png`, { type: blob.type || 'image/png' });
+      const shareTitle = `Numbers Achievement: ${goal.title}`;
+      const shareText = `I just accomplished a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`;
+      const shareUrl = 'https://numbers.metamodernmonkey.com';
+
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+          files: [file],
+        });
+      } else {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+      }
+    } catch (err) {
+      if ((err as Error).name !== 'AbortError') {
+        console.error('Share failed:', err);
+      }
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange} modal={false}>
       <SheetContent className="w-full max-w-md flex flex-col">
@@ -116,19 +159,26 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
         <ScrollArea className="flex-1 mt-4">
           <div className="flex flex-col gap-5 pb-6">
             {/* Achievement Badge and Title */}
-            <div className="relative rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 shadow-sm">
-              <div className="absolute top-3 right-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Achievement settings">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>
-                      <Share2 className="h-4 w-4" />
-                      Share
-                    </DropdownMenuItem>
+            <div
+              ref={shareRef}
+              className="relative rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4 shadow-sm"
+            >
+              {!isSharing && (
+                <div className="absolute top-3 right-3">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" aria-label="Achievement settings">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={handleShare}
+                        disabled={isSharing || typeof navigator === 'undefined' || typeof navigator.share !== 'function'}
+                      >
+                        <Share2 className="h-4 w-4" />
+                        Share
+                      </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => onEditGoal?.(result)}
@@ -153,9 +203,10 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                       <Trash2 className="h-4 w-4" />
                       Delete
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
               <div className="flex flex-col items-center gap-3 text-center">
                 <div className="rounded-2xl bg-gradient-to-br from-slate-50 via-white to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 p-4 shadow-inner">
                   <AchievementBadge
@@ -163,7 +214,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                     size="large"
                     shine={hasCompletions}
                     pulse={hasCompletions}
-                    floating={hasCompletions}
+                    floating={hasCompletions && !isSharing}
                     grayscale={!hasCompletions}
                   />
                 </div>
