@@ -23,6 +23,7 @@ export interface AchievementCardProps {
   locked?: boolean;
   repeatable?: boolean;
   createdAt?: number;
+  onSelect?: () => void;
 }
 
 export function AchievementCard({
@@ -37,9 +38,11 @@ export function AchievementCard({
   firstStartedAt,
   firstCompletedAt,
   goalType,
-  repeatable
+  repeatable,
+  onSelect
 }: AchievementCardProps & { timePeriod?: string }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   let status: 'completed' | 'in-progress' | 'locked' = 'locked';
   if (completedAt) status = 'completed';
   else if (startedAt || progress) status = 'in-progress';
@@ -70,23 +73,37 @@ export function AchievementCard({
     backgroundImage: `radial-gradient(circle at 20% 0%, ${badgeColor.accent}3d, transparent 62%)`,
   };
 
-  const isBadgedAnimated = isHovered && status === 'completed'
+  const isActive = isHovered || isFocused;
+  const isBadgedAnimated = isActive && status === 'completed'
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onSelect) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onSelect();
+    }
+  };
 
   return (
     <div
       className={cn(
         backgroundColor,
         'group rounded-xl border dark:bg-slate-900/80 shadow-sm p-4 flex flex-col gap-2 h-full transition-all duration-300 ease-out items-center relative hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70 dark:hover:shadow-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
+        onSelect && 'cursor-pointer',
         borderColor,
         status === 'locked' && 'opacity-60 grayscale',
         (status === 'locked' || status === 'in-progress') && 'border-slate-200 dark:border-slate-700',
         status === 'in-progress' && 'opacity-60'
       )}
-      style={isHovered ? { borderColor: badgeColor.border } : undefined}
-      onMouseEnter={() => setIsHovered(true)}
+      style={isActive ? { borderColor: badgeColor.border } : undefined}
+      role={onSelect ? 'button' : undefined}
+      aria-label={onSelect ? `View details for ${title}` : undefined}
+      onMouseOver={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onFocus={() => setIsHovered(true)}
-      onBlur={() => setIsHovered(false)}
+      onFocus={() => setIsFocused(true)}
+      onBlur={() => setIsFocused(false)}
+      onClick={onSelect}
+      onKeyDown={handleKeyDown}
       tabIndex={0}
     >
       <span

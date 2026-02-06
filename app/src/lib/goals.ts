@@ -409,7 +409,7 @@ export function formatValue(num: number | undefined, { short = false, percent = 
     options = { ...options, style: 'percent', maximumFractionDigits: 2 };
     value = num / 100;
   }
-  if (delta) {
+  if (delta && num !== 0) {
     options = { ...options, signDisplay: 'always' };
     // symbol = 'Δ'
   }

@@ -62,6 +62,10 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
           animation: floating ? 'achievement-float 3s ease-in-out infinite' : undefined,
         }}
       >
+        <span
+          className="absolute inset-1 rounded-full bg-slate-900/90 shadow-inner dark:hidden"
+          aria-hidden="true"
+        />
         {/* Wobble animation effect */}
         <div
           style={{

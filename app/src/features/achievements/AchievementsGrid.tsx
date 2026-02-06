@@ -1,7 +1,8 @@
 import type { GoalResults } from '@/lib/goals';
 import { Loader2 } from 'lucide-react';
-import { Fragment } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { AchievementCard, type AchievementCardProps } from './AchievementCard';
+import { AchievementDetailsDrawer } from './AchievementDetailsDrawer';
 
 
 interface AchievementsGridProps {
@@ -10,6 +11,8 @@ interface AchievementsGridProps {
 }
 
 export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
+  const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
+
   // Flatten to a single achievement per goal for grid (show the most relevant achievement)
   const gridItems = results.map((result): AchievementCardProps => {
     const ach = result.achievements.slice(-1)[0] ?? {};
@@ -68,6 +71,11 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
     return <div className="text-center text-slate-400 py-16">No achievements yet.</div>;
   }
 
+  const activeResult = useMemo(
+    () => results.find((result) => result.goal.id === activeGoalId) ?? null,
+    [results, activeGoalId]
+  );
+
   return (
     <div className="space-y-8">
       {/* Completed */}
@@ -85,7 +93,7 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {unlocked.map((item, i) => (
               <li key={item.id || i}>
-                <AchievementCard {...item} />
+                <AchievementCard {...item} onSelect={() => setActiveGoalId(item.id)} />
               </li>
             ))}
           </ul>
@@ -106,7 +114,7 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {inProgress.map((item, i) => (
               <li key={item.id || i}>
-                <AchievementCard {...item} />
+                <AchievementCard {...item} onSelect={() => setActiveGoalId(item.id)} />
               </li>
             ))}
           </ul>
@@ -127,12 +135,19 @@ export function AchievementsGrid({ results, loading }: AchievementsGridProps) {
           <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {locked.map((item, i) => (
               <li key={item.id || i}>
-                <AchievementCard {...item} />
+                <AchievementCard {...item} onSelect={() => setActiveGoalId(item.id)} />
               </li>
             ))}
           </ul>
         </Fragment>
       )}
+      <AchievementDetailsDrawer
+        open={!!activeResult}
+        onOpenChange={(open) => {
+          if (!open) setActiveGoalId(null);
+        }}
+        result={activeResult}
+      />
     </div>
   );
 }
