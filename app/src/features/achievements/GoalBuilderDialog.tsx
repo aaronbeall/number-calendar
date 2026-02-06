@@ -8,7 +8,7 @@ import { createGoal } from '@/features/db/localdb';
 import { useAllDays, useSaveDay } from '@/features/db/useCalendarData';
 import { toDayKey } from '@/lib/friendly-date';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
-import { formatValue } from '@/lib/goals';
+import { formatValue } from '@/lib/friendly-numbers';
 import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput } from '@/lib/goals-builder';
 import { adjectivize, capitalize, cn } from '@/lib/utils';
 import { getValueForGood, isBad } from '@/lib/valence';

@@ -57,6 +57,19 @@ export function countSignificantDigits(num: number | string): number {
 
 export type PeriodUnit = 'day' | 'week' | 'month';
 
+/**
+ * Convert a value between different period units (day, week, month),
+ * adjusting decimal places based on whether converting to a larger or smaller period.
+ * - When converting to a smaller period (e.g., month → week), reduce decimal places by 1
+ * - When converting to a larger period (e.g., day → week), increase decimal places by 1
+ * - When converting between same-sized periods, keep the same number of decimal places
+ *
+ * E.g.,
+ *   convertPeriodUnitWithRounding("4.5", "week", "day") -> "0.6" (4.5 weeks = 31.5 days, rounded to 0.6 days with 1 less decimal)
+ *   convertPeriodUnitWithRounding("10", "day", "week") -> "1.4" (10 days = 1.42857 weeks, rounded to 1.4 weeks with 1 more decimal)
+ *
+ * Returns null for invalid input.
+ */
 export function convertPeriodUnitWithRounding(value: string, from: PeriodUnit, to: PeriodUnit): string | null {
   const parsed = parseFloat(value);
   if (!Number.isFinite(parsed)) return null;
@@ -75,3 +88,50 @@ export function convertPeriodUnitWithRounding(value: string, from: PeriodUnit, t
 
   return String(Number(convertedValue.toFixed(targetDecimals)));
 }
+
+
+export type FormatValueOptions = { short?: boolean; percent?: boolean; delta?: boolean; };
+
+/**
+ * Helper to format values for display in goal titles and descriptions,
+ * with options for shortening, percent formatting, and delta formatting (with signs)
+ */
+export function formatValue(num: number | undefined, { short = false, percent = false, delta = false }: FormatValueOptions = {}): string {
+  if (num === undefined || isNaN(num)) return '';
+  let options: Intl.NumberFormatOptions = {};
+  let value = num;
+  if (short) {
+    options = { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 };
+  }
+  if (percent) {
+    options = { ...options, style: 'percent', maximumFractionDigits: 2 };
+    value = num / 100;
+  }
+  if (delta && num !== 0) {
+    options = { ...options, signDisplay: 'always' };
+  }
+  return new Intl.NumberFormat('en-US', options).format(value);
+}
+
+/**
+ * Helper to format ranges for display, using formatValue for each number and handling percent/delta formatting
+ */
+export function formatRange(range: [number, number] | undefined, { short, percent, delta }: FormatValueOptions = {}): string {
+  if (!range) return '';
+  const [min, max] = range;
+  // For deltas use `→` to avoid confusion with sign, 
+  // for percents, use ` to ` if there are negatives (ex `-5% to 10%`), 
+  // otherwise if there are negatives use `→` to avoid confusion with the negative sign,
+  // otherwise en dash (ex `5–10%`)
+  let separator = '–';
+  if (delta) separator = '→';
+  else if (percent && (min < 0 || max < 0)) separator = ' to ';
+  else if (min < 0 || max < 0) separator = '→';
+  // For percents, omit the leading % symbol if using en dash, for brevity (e.g. `5–10%` instead of `5%–10%`))
+  const options = { short, percent, delta };
+  const minOptions = percent && separator === '–' ? { short, delta } : options;
+  const minStr = formatValue(min, minOptions);
+  const maxStr = formatValue(max, options);
+  return `${minStr}${separator}${maxStr}`;
+}
+

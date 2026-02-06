@@ -23,7 +23,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import type { DateKey, Goal } from '@/features/db/localdb';
 import { useArchiveGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
-import { formatValue, isRangeCondition, type GoalAchievement, type GoalResults } from '@/lib/goals';
+import { formatGoalTargetValue, isRangeCondition, type GoalAchievement, type GoalResults } from '@/lib/goals';
+import { formatValue } from '@/lib/friendly-numbers';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
@@ -295,7 +296,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
                 ) : (
                   <div className="flex flex-col items-center gap-3 w-full">
                     <div className="flex flex-col items-center gap-2">
-                      <div className="flex flex-wrap justify-center gap-2">
+                      <div className="flex flex-col items-center gap-2">
                       {hasProvisional && (
                         <BadgeLabel
                           variant="provisional"
@@ -622,12 +623,8 @@ function formatCreatedAt(createdAt: number): string {
 }
 
 function buildSummaryTags(goal: Goal) {
-  const delta = goal.target.source === 'deltas';
-  const percent = goal.target.source === 'percents';
   const isRange = isRangeCondition(goal.target.condition);
-  const valueLabel = isRange
-    ? `${formatValue(goal.target.range?.[0], { short: true })}-${formatValue(goal.target.range?.[1], { short: true, delta, percent })}`
-    : formatValue(goal.target.value, { short: true, delta, percent });
+  const valueLabel =  formatGoalTargetValue(goal.target)
 
   const tags = [
     { label: 'Period', value: periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod)) },

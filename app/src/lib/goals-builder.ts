@@ -2,7 +2,7 @@ import type { Goal, GoalTarget, Tracking, Valence } from '@/features/db/localdb'
 import { nanoid } from 'nanoid';
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
 import { countSignificantDigits, roundToClean } from './friendly-numbers';
-import { formatValue } from './goals';
+import { formatValue } from './friendly-numbers';
 import type { NumberMetric } from './stats';
 import { getMetricDisplayName } from './stats';
 import { adjectivize, capitalize, pluralize, randomValueOf, sequenceFromNow } from './utils';

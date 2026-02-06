@@ -1,8 +1,9 @@
-import { type Achievement, type DateKey, type DayKey, type Goal, type GoalRequirements, type GoalType, type GoalTarget, type TimePeriod } from '@/features/db/localdb';
+import { type Achievement, type DateKey, type DayKey, type Goal, type GoalRequirements, type GoalTarget, type GoalType, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './friendly-date';
 import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
-import { keysOf, capitalize, pluralize, adjectivize } from './utils';
+import { adjectivize, capitalize, keysOf, pluralize } from './utils';
+import { type FormatValueOptions, formatRange, formatValue } from './friendly-numbers';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
 function evalCondition(cond: GoalTarget, value: number): boolean {
@@ -408,32 +409,35 @@ export function isValidGoalAttributes(goal: Partial<GoalRequirements>): goal is 
   return true;
 }
 
-// Helper to shorten numbers (e.g., 1000 -> 1k)
-export function formatValue(num: number | undefined, { short = false, percent = false, delta = false }: { short?: boolean; percent?: boolean; delta?: boolean;  } = {}): string {
-  if (num === undefined || isNaN(num)) return '';
-  let options: Intl.NumberFormatOptions = {};
-  let symbol = '';
-  let value = num;
-  if (short) {
-    options = { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 };
+/**
+ * Helper to format a goal target value, either a single value or a range, 
+ * with options for shortening, percent formatting, and delta formatting (with signs)
+ */
+export function formatGoalTargetValue({ value, range, source }: GoalTarget, { short }: { short?: boolean; } = {}): string {
+  const options: FormatValueOptions = { short, percent: source === 'percents', delta: source === 'deltas' };
+  if (range) {
+    return formatRange(range, options);
   }
-  if (percent) {
-    options = { ...options, style: 'percent', maximumFractionDigits: 2 };
-    value = num / 100;
+  if (value === undefined) return '';
+  return formatValue(value, options);
+}
+
+/**
+ * Helper to format a partial goal target value, which may be missing value or range,
+ */
+function formatTargetValue({ value, range, source }: Partial<Pick<GoalTarget, 'value' | 'range' | 'source'>>, { short }: { short?: boolean; } = {}): string {
+  const options: FormatValueOptions = { short, percent: source === 'percents', delta: source === 'deltas' };
+  if (range) {
+    return formatRange(range, options);
   }
-  if (delta && num !== 0) {
-    options = { ...options, signDisplay: 'always' };
-    // symbol = 'Δ'
-  }
-  const formatted = new Intl.NumberFormat('en-US', options).format(value);
-  return `${formatted}${symbol}`;
+  return formatValue(value, options);
 }
 
 export function getSuggestedGoalContent(goal: Partial<Goal>) {
   const { target: metricGoal, timePeriod = 'anytime', count = 1, consecutive = false, type = 'goal' } = goal;
   const { condition, metric, source } = metricGoal ?? {};
   const value = metricGoal?.value;
-  const range = metricGoal?.range ?? [];
+  const range = metricGoal?.range;
 
   // Type suggestion
   let suggestedType: GoalType = 'goal';
@@ -479,7 +483,7 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
     }
     if (!valueStr) valueStr = formatValue(value, { short: true, delta, percent });
   } else {
-    valueStr = `${formatValue(range[0], { short: true })}-${formatValue(range[1], { short: true, delta, percent })}`
+    valueStr = formatRange(range, { short: true, delta, percent });
   }
 
   let metricStr = '';
@@ -548,8 +552,7 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
   // Badge label
   let label = '';
   if (count && count > 1) label = formatValue(count, { short: true });
-  else if (!isRange) label = formatValue(value, { short: true, delta, percent });
-  else if (range) label = `${formatValue(range[0], { short: true })}-${formatValue(range[1], { short: true, delta, percent })}`;
+  else label = formatTargetValue({ value, range, source });
   // else label = title.slice(0, 4);
 
   // For now, icon is undefined
