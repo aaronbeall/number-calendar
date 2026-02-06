@@ -259,39 +259,37 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
               </div>
             </Collapsible>
 
-            {hasCompletions && (
-              <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timeline</div>
-                </div>
-                {timelineItems.length > 0 ? (
-                  <div className="relative flex flex-col gap-4">
-                    <div className="absolute left-3 top-1 bottom-1 w-px bg-slate-200 dark:bg-slate-800" />
-                    {timelineItems.map((item) => (
-                      <div key={item.id} className="relative flex gap-3">
-                        <div
-                          className={cn(
-                            'mt-1 flex h-6 w-6 items-center justify-center rounded-full border',
-                            item.tone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/60',
-                            item.tone === 'progress' && 'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950/60',
-                            item.tone === 'neutral' && 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-950'
-                          )}
-                        >
-                          {item.icon}
-                        </div>
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{item.title}</div>
-                          {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
-                          {item.meta && <div className="text-[11px] text-slate-400 mt-1">{item.meta}</div>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-slate-400">No progress tracked yet.</div>
-                )}
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Timeline</div>
               </div>
-            )}
+              {timelineItems.length > 0 ? (
+                <div className="relative flex flex-col gap-4">
+                  <div className="absolute left-3 top-1 bottom-1 w-px bg-slate-200 dark:bg-slate-800" />
+                  {timelineItems.map((item) => (
+                    <div key={item.id} className="relative flex gap-3">
+                      <div
+                        className={cn(
+                          'mt-1 flex h-6 w-6 items-center justify-center rounded-full border',
+                          item.tone === 'success' && 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900 dark:bg-emerald-950/60',
+                          item.tone === 'progress' && 'border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-900 dark:bg-blue-950/60',
+                          item.tone === 'neutral' && 'border-slate-200 bg-white text-slate-400 dark:border-slate-800 dark:bg-slate-950'
+                        )}
+                      >
+                        {item.icon}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-semibold text-slate-800 dark:text-slate-100">{item.title}</div>
+                        {item.subtitle && <div className="text-xs text-slate-500">{item.subtitle}</div>}
+                        {item.meta && <div className="text-[11px] text-slate-400 mt-1">{item.meta}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-slate-400">No progress tracked yet.</div>
+              )}
+            </div>
           </div>
         </ScrollArea>
         <BadgeEditDialog
