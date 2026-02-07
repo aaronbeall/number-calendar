@@ -395,7 +395,7 @@ function AppHeader({
               className="w-7 h-7 transition-transform group-hover:scale-105"
             />
             <div className="hidden sm:flex flex-col">
-              <h1 className="text-sm font-bold text-emerald-700 dark:text-emerald-300 tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+              <h1 className="text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
                 Numbers Go Up
               </h1>
             </div>

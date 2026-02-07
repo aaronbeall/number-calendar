@@ -219,7 +219,7 @@ function DatasetsLanding({
                 className="w-10 h-10 transition-transform hover:scale-105"
               />
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight hover:underline cursor-pointer text-emerald-700 dark:text-emerald-300" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+                <h1 className="text-2xl font-semibold tracking-tight hover:underline cursor-pointer text-blue-700 dark:text-blue-300" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
                   Numbers Go Up
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
