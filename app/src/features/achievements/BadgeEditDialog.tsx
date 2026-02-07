@@ -17,6 +17,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
   saveLabel?: string;
 }) {
   const [draftBadge, setDraftBadge] = useState<GoalBadge>(badge);
+  const [animatePreview, setAnimatePreview] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -54,6 +55,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
     setDraftBadge(badge);
     onOpenChange(false);
   }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
@@ -64,7 +66,13 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
         <div className="flex flex-row gap-6 py-2">
           {/* Badge Preview (left) */}
           <div className="flex flex-col items-center gap-2 min-w-[140px]">
-            <AchievementBadge badge={draftBadge} size="large" />
+            <div 
+              onMouseEnter={() => setAnimatePreview(true)} 
+              onMouseLeave={() => setAnimatePreview(false)}
+              onTouchEnd={() => setAnimatePreview(animated => !animated)}
+            >
+              <AchievementBadge badge={draftBadge} size="large" floating={animatePreview} shine={animatePreview} pulse={animatePreview} />
+            </div>
             <div className="text-xs text-slate-500">Preview</div>
             <button
               type="button"

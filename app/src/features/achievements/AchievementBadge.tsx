@@ -116,7 +116,7 @@ export function AchievementBadge({ badge, size = 'medium', className, floating, 
           style={{
             color: color.bg,
             backgroundImage: shine
-              ? `linear-gradient(90deg, transparent, ${color.bg}40, transparent)`
+              ? `linear-gradient(90deg, ${color.accent}00, ${color.bg}40, ${color.border}00)`
               : undefined,
             backgroundSize: shine ? '200% 100%' : undefined,
             animation: shine ? 'achievement-shine 3s ease-in-out infinite' : undefined,

@@ -631,10 +631,10 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     'diamond_medallion',
     'magic_medallion',
     'rose_quartz',
-    'mystic',
-    'warmth',
-    'aquamarine',
+    'angelic',
     'iridescent',
+    'obsidian',
+    'mystic',
     'passion',
   ];
   const multipleStyles: AchievementBadgeStyle[] = [
@@ -670,7 +670,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   });
 
   // Day/Week/Month streaks
-  const streakColors: AchievementBadgeColor[] = ['rage', 'flame', 'intense_flame', 'raging_flame', 'infernal_flame', 'consuming_flame', 'legendary_flame'];
+  const streakColors: AchievementBadgeColor[] = ['hellfire', 'flame', 'intense_flame', 'raging_flame', 'infernal_flame', 'consuming_flame', 'legendary_flame'];
   const streakStyles: AchievementBadgeStyle[] = ['fire', 'flamed', 'heart_flame'];
   const streaks = {
     day: [2, 3, 4, 5, 10, 20, 50],

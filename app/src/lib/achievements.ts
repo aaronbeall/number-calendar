@@ -401,11 +401,11 @@ export const achievementBadgeColors = {
     label: '#4d001c',
     border: '#c41e3a',
   },
-  aquamarine: {
+  turquoise: {
     bg: '#7fffd4',
-    accent: '#00a884',
-    label: '#004d3d',
-    border: '#1fcfa1',
+    accent: '#40e0d0',
+    label: '#004d4d',
+    border: '#20c9c9',
   },
   rose_quartz: {
     bg: '#f66d9b',
@@ -413,11 +413,29 @@ export const achievementBadgeColors = {
     label: '#5e0825',
     border: '#e05780',
   },
-  turquoise: {
-    bg: '#40e0d0',
-    accent: '#00ced1',
-    label: '#004d4d',
-    border: '#20c9c9',
+  jade: {
+    bg: '#d4e157',
+    accent: '#9ccc65',
+    label: '#33691e',
+    border: '#aed581',
+  },
+  topaz: {
+    bg: '#fb923c',
+    accent: '#ffea00',
+    label: '#78350f',
+    border: '#f97316',
+  },
+  obsidian: {
+    bg: '#607d8b',
+    accent: '#263238',
+    label: '#000000',
+    border: '#455a64',
+  },
+  angelic: {
+    bg: '#ffc4e1',
+    accent: '#ff69b4',
+    label: '#ffffff',
+    border: '#ffd1dc',
   },
   celestial: { // synthwave
     bg: '#ff1493',
@@ -431,13 +449,13 @@ export const achievementBadgeColors = {
     label: '#4d004d',
     border: '#ff1aff',
   },
-  rage: {
+  hellfire: {
     bg: '#ff2400',
     accent: '#ffea00',
     label: '#4d1900',
     border: '#ffd700',
   },
-  tranquil: {
+  tranquility: {
     bg: '#5cb3ff',
     accent: '#66cdaa',
     label: '#0d2d3f',
@@ -449,29 +467,17 @@ export const achievementBadgeColors = {
     label: '#4d0d1f',
     border: '#ff85a8',
   },
-  obsidian: {
-    bg: '#607d8b',
-    accent: '#263238',
-    label: '#000000',
-    border: '#455a64',
-  },
   magic: {
     bg: '#d946ef',
     accent: '#8b00ff',
     label: '#2d0066',
     border: '#a855f7',
   },
-  jade: {
-    bg: '#d4e157',
-    accent: '#9ccc65',
-    label: '#33691e',
-    border: '#aed581',
-  },
   iridescent: {
     bg: '#4dd0e1',
-    accent: '#00bcd4',
-    label: '#004d5a',
-    border: '#26c6da',
+    accent: '#ff4081',
+    label: '#1a2730',
+    border: '#651fff',
   },
   regal: {
     bg: '#2f3b8f',
@@ -532,12 +538,6 @@ export const achievementBadgeColors = {
     accent: '#ffe599',
     label: '#7f1d1d',
     border: '#dc2626',
-  },
-  warmth: {
-    bg: '#fb923c',
-    accent: '#ffea00',
-    label: '#78350f',
-    border: '#f97316',
   },
   // copper_medallion: {
   //   bg: '#3a2a1f',
