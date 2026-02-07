@@ -92,21 +92,23 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
                       key={color}
                       type="button"
                       className={cn(
-                        'w-9 h-9 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-105',
-                        isSelected ? 'ring-2 ring-offset-2 ring-slate-400 dark:ring-slate-600 scale-110' : 'border-transparent',
+                        'w-9 h-9 rounded-full border-2 flex items-center justify-center transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-500 dark:focus-visible:ring-slate-400',
+                        isSelected
+                          ? 'ring-2 ring-offset-2 ring-slate-900 dark:ring-slate-100 ring-offset-white dark:ring-offset-slate-950 shadow-md scale-110'
+                          : 'border-transparent',
                       )}
                       style={{
                         background: colors.bg,
                         borderColor: colors.border,
-                        boxShadow: isSelected ? `0 0 0 2px ${colors.accent}` : undefined,
                       }}
                       aria-label={color}
+                      aria-pressed={isSelected}
                       onClick={() => handleUpdateBadgeField('color', color)}
                       title={titleCase(color)}
                     >
                       <div
                         className="w-4 h-2 rounded-full"
-                        style={{ background: colors.accent }}
+                        style={{ background: colors.bg == colors.accent ? colors.label : colors.accent }}
                       />
                     </button>
                   );
