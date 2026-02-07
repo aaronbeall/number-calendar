@@ -1,5 +1,5 @@
 import { AppFooter, UserMenu, SettingsMenu, ThemeToggle } from '@/App';
-import LogoIcon from '@/assets/icon.svg?react';
+import LogoIcon from '@/assets/logo.png';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
@@ -64,7 +64,11 @@ function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingData: bool
       <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 relative z-10">
         <div className="relative mb-8 group">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full blur-2xl opacity-30 group-hover:opacity-50 transition-opacity" />
-          <LogoIcon className="w-32 h-32 relative transform group-hover:scale-110 transition-all duration-500" aria-label="Numbers Go Up" />
+          <img
+            src={LogoIcon}
+            alt="Numbers Go Up"
+            className="w-32 h-32 relative transform group-hover:scale-110 transition-all duration-500"
+          />
         </div>
         <h1 className="text-6xl md:text-7xl font-black text-center mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
           Numbers Go Up
@@ -209,9 +213,13 @@ function DatasetsLanding({
           <div className="flex items-center justify-between">
             {/* Logo and Brand */}
             <div className="flex items-center gap-3">
-              <LogoIcon className="w-10 h-10 transition-transform hover:scale-105" aria-label="Numbers Go Up" />
+              <img
+                src={LogoIcon}
+                alt="Numbers Go Up"
+                className="w-10 h-10 transition-transform hover:scale-105"
+              />
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight hover:underline cursor-pointer" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+                <h1 className="text-2xl font-semibold tracking-tight hover:underline cursor-pointer text-emerald-700 dark:text-emerald-300" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
                   Numbers Go Up
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">

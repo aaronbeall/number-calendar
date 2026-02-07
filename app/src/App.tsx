@@ -1,5 +1,5 @@
 import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
-import LogoIcon from '@/assets/icon.svg?react';
+import LogoIcon from '@/assets/logo.png';
 import PatreonIcon from '@/assets/patreon.svg?react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -389,9 +389,13 @@ function AppHeader({
 
           {/* Center: Logo/Branding */}
           <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group flex-shrink-0">
-            <LogoIcon className="w-7 h-7 transition-transform group-hover:scale-105" aria-label="Numbers Go Up" />
+            <img
+              src={LogoIcon}
+              alt="Numbers Go Up"
+              className="w-7 h-7 transition-transform group-hover:scale-105"
+            />
             <div className="hidden sm:flex flex-col">
-              <h1 className="text-sm font-bold bg-gradient-to-r from-emerald-600 via-blue-600 to-purple-600 bg-clip-text text-transparent tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+              <h1 className="text-sm font-bold text-emerald-700 dark:text-emerald-300 tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
                 Numbers Go Up
               </h1>
             </div>
@@ -637,7 +641,11 @@ export function UserMenu() {
           <DialogHeader>
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-3">
-                <LogoIcon className="h-6 w-6" aria-label="Numbers Go Up" />
+                <img
+                  src={LogoIcon}
+                  alt="Numbers Go Up"
+                  className="h-6 w-6"
+                />
                 <DialogTitle>About Numbers Go Up</DialogTitle>
               </div>
               {/* <div className="text-xs text-slate-500 dark:text-slate-400">
