@@ -6,11 +6,11 @@ import { calculateExtremes, computeNumberStats, emptyStats, getStatsDelta, getSt
 
 export type CalendarPeriodData<P extends TimePeriod> = {
   dateKey: {
-    'day': DayKey | null; // Null signifies that day doesn't have any entries associated with it
+    'day': DayKey | null; // Null signifies a day with no recoreded data, which returns an empty cache item -- UIs should use its own date key instead of relying on the item data key for rendering purposes
     'week': WeekKey;
     'month': MonthKey;
     'year': YearKey;
-    'anytime': null;
+    'anytime': null; // Alltime doesn't have a date key, it's a special catch-all period that includes all data, so we can set this to null since it won't be used for lookups or display
   }[P];
   period: P;
 
@@ -50,7 +50,7 @@ type PartialComputedCache<D extends DateKeyType, K extends keyof PeriodCache<D>>
  * - Raw day entries are stored in-memory and transformed into period caches on demand.
  * - Each period cache lazily computes numbers, stats, and aggregates (deltas, percents, cumulatives, extremes).
  * - Prior-period maps provide O(1) lookups to compute deltas/cumulatives efficiently.
- * - Updates invalidate only affected caches so unchanged periods keep stable references.
+ * - Updates invalidate only affected period caches so unchanged periods keep stable references.
  */
 export class CalendarData {
   // Raw data storage
@@ -64,12 +64,13 @@ export class CalendarData {
   private alltimeCache: PeriodCache<'anytime'> | null = null;
 
   /**
-   * In order to avoid stuffing every day with cache items (which can be thousands of entries across many years), 
-   * we use a single shared empty cache item for days that don't have any data.
+   * In order to avoid stuffing every requested period with new cache items (which can be thousands of allocated 
+   * entries across many years), we use a single shared empty cache item for days that don't have any data.
+   * Weeks, months, and years are less numerous and less likely to be empty, so we don't optimize them this way.
    */
-  private emptyDayCacheItem = {
+  private emptyDayCacheItem: PeriodCache<'day'> = {
     dateKey: null,
-    period: 'day' as const,
+    period: 'day',
     numbers: [],
     stats: emptyStats(),
     deltas: emptyStats(),
