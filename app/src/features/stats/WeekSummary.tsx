@@ -1,5 +1,5 @@
 import { ChartContainer } from '@/components/ui/chart';
-import { NumberText } from '@/components/ui/number-text';
+import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
@@ -154,11 +154,11 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
           <div className="hidden sm:flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mean</div>
-              <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={{ maximumFractionDigits: 1 }} />
+              <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={shortNumberFormat} />
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Median</div>
-              <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={{ maximumFractionDigits: 1 }} />
+              <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={shortNumberFormat} />
             </div>
           </div>
 
@@ -168,11 +168,11 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
           <div className="hidden md:flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Min</div>
-              <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" />
+              <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" formatOptions={shortNumberFormat} />
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Max</div>
-              <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" />
+              <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" formatOptions={shortNumberFormat} />
             </div>
           </div>
 

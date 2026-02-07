@@ -1,4 +1,4 @@
-import { NumberText } from '@/components/ui/number-text';
+import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
@@ -73,7 +73,7 @@ export function YearSummary({ numbers, yearName, isCurrentYear, valence, trackin
                 valenceValue={primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-lg font-bold"
-                formatOptions={{ maximumFractionDigits: 1 }}
+                formatOptions={shortNumberFormat}
               />
             </div>
             <div className="text-right">
@@ -83,7 +83,7 @@ export function YearSummary({ numbers, yearName, isCurrentYear, valence, trackin
                 valenceValue={primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-lg font-bold"
-                formatOptions={{ maximumFractionDigits: 1 }}
+                formatOptions={shortNumberFormat}
               />
             </div>
           </div>
@@ -94,11 +94,23 @@ export function YearSummary({ numbers, yearName, isCurrentYear, valence, trackin
           <div className="hidden md:flex items-center gap-4">
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
-              <NumberText value={stats.min} valenceValue={primaryValenceMetric} valence={valence} className="font-mono text-base font-bold" />
+              <NumberText
+                value={stats.min}
+                valenceValue={primaryValenceMetric}
+                valence={valence}
+                className="font-mono text-base font-bold"
+                formatOptions={shortNumberFormat}
+              />
             </div>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
-              <NumberText value={stats.max} valenceValue={primaryValenceMetric} valence={valence} className="font-mono text-base font-bold" />
+              <NumberText
+                value={stats.max}
+                valenceValue={primaryValenceMetric}
+                valence={valence}
+                className="font-mono text-base font-bold"
+                formatOptions={shortNumberFormat}
+              />
             </div>
           </div>
 

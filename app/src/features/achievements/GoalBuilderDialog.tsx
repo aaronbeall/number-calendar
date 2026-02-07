@@ -776,7 +776,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                       <p className="text-sm text-slate-600 dark:text-slate-400">
                         {valueType === 'period-total' && `Enter the target total for each ${period}`}
                         {valueType === 'alltime-total' && 'Enter a milestone total you want to achieve'}
-                        {valueType === 'period-change' && `Enter the ${period}ly improvement that would make you proud`}
+                        {valueType === 'period-change' && `Enter the ${adjectivize(period)} improvement that would make you proud`}
                         {valueType === 'alltime-target' && 'Enter the overall target value'}
                       </p>
                     </div>

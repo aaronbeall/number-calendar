@@ -301,7 +301,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     </span>
                     {percents[getPrimaryMetric(tracking)] !== undefined && !isNaN(percents[getPrimaryMetric(tracking)] as number) && (
                       <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
-                        {new Intl.NumberFormat(undefined, { signDisplay: 'always', maximumFractionDigits: 1 }).format(percents[getPrimaryMetric(tracking)]!)}%
+                        {new Intl.NumberFormat(undefined, { style: 'percent', signDisplay: 'always', maximumFractionDigits: 0 }).format(percents[getPrimaryMetric(tracking)]! / 100)}
                       </span>
                     )}
                   </div>
@@ -356,7 +356,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                         </span>
                         {percent !== undefined && !isNaN(percent as number) && (
                           <span className="text-[11px] text-slate-400 font-mono font-medium">
-                            {new Intl.NumberFormat(undefined, { signDisplay: 'always', maximumFractionDigits: 1 }).format(percent!)}%
+                            {new Intl.NumberFormat(undefined, { style: 'percent', signDisplay: 'always', maximumFractionDigits: 0 }).format(percent! / 100)}
                           </span>
                         )}
                       </div>

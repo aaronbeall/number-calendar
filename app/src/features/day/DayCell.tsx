@@ -1,5 +1,5 @@
 
-import { NumberText } from '@/components/ui/number-text';
+import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import { getRelativeSize } from '@/lib/charts';
@@ -161,6 +161,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
                 isLowest={!!isLowestPrimary}
                 valence={valence}
                 className="font-mono font-bold text-lg"
+                formatOptions={shortNumberFormat}
               />
             </div>
 

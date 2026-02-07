@@ -1,4 +1,4 @@
-import { NumberText } from '@/components/ui/number-text';
+import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { type StatsExtremes } from '@/lib/stats';
 import { getValueForValence } from '@/lib/valence';
@@ -90,7 +90,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, priorNumber
             </div>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
-              <NumberText value={stats.median} valenceValue={valenceStats?.median ?? primaryValenceMetric} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} valence={valence} className="font-mono text-sm sm:text-base font-bold" />
+              <NumberText value={stats.median} valenceValue={valenceStats?.median ?? primaryValenceMetric} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} valence={valence} className="font-mono text-sm sm:text-base font-bold" formatOptions={shortNumberFormat} />
             </div>
           </div>
 
@@ -100,11 +100,11 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, priorNumber
           <div className="hidden md:flex items-center gap-4">
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
-              <NumberText value={stats.min} valenceValue={valenceStats?.min ?? primaryValenceMetric} isHighest={!!isHighestMin} isLowest={!!isLowestMin} valence={valence} className="font-mono text-base font-bold" />
+              <NumberText value={stats.min} valenceValue={valenceStats?.min ?? primaryValenceMetric} isHighest={!!isHighestMin} isLowest={!!isLowestMin} valence={valence} className="font-mono text-base font-bold" formatOptions={shortNumberFormat} />
             </div>
             <div className="text-right">
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
-              <NumberText value={stats.max} valenceValue={valenceStats?.max ?? primaryValenceMetric} isHighest={!!isHighestMax} isLowest={!!isLowestMax} valence={valence} className="font-mono text-base font-bold" />
+              <NumberText value={stats.max} valenceValue={valenceStats?.max ?? primaryValenceMetric} isHighest={!!isHighestMax} isLowest={!!isLowestMax} valence={valence} className="font-mono text-base font-bold" formatOptions={shortNumberFormat} />
             </div>
           </div>
 

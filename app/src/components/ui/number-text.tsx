@@ -4,6 +4,20 @@ import { cn } from '@/lib/utils';
 import type { Valence } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
 
+// Compact number formatting, e.g., 1.2K, 3.4M
+export const shortNumberFormat: Intl.NumberFormatOptions = {
+  notation: 'compact',
+  compactDisplay: 'short',
+  maximumFractionDigits: 1,
+};
+
+// Default formatting: thousands separators, 0-2 fractional digits.
+const defaultNumberFormat: Intl.NumberFormatOptions = {
+  useGrouping: true,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+};
+
 export interface NumberTextProps {
   value: number | null | undefined;
   valenceValue?: number | null | undefined;
@@ -32,13 +46,6 @@ export const NumberText: React.FC<NumberTextProps> = ({
   formatOptions,
 }) => {
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
-  // Default formatting: thousands separators, 0-2 fractional digits.
-  const defaultNumberFormat: Intl.NumberFormatOptions = {
-    useGrouping: true,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  };
-
 
   const signClass = getValueForValence(
     valenceValue ?? 0,
@@ -51,13 +58,15 @@ export const NumberText: React.FC<NumberTextProps> = ({
   );
   let formatted: React.ReactNode;
   if (isFiniteNumber) {
+    // If the abslute value is over 0, round to integer
+    const roundedValue = Math.abs(value) > 0 ? Math.round(value) : value;
     const merged = formatOptions ? { ...defaultNumberFormat, ...formatOptions } : defaultNumberFormat;
-    formatted = new Intl.NumberFormat(undefined, merged).format(value);
+    formatted = new Intl.NumberFormat(undefined, merged).format(roundedValue);
   } else {
     formatted = placeholder;
   }
 
-  const textEl = (
+  const text = (
     <span className={cn(signClass, className)}>
       {formatted}
     </span>
@@ -89,13 +98,13 @@ export const NumberText: React.FC<NumberTextProps> = ({
 
     return (
       <span className={cn('inline-flex items-center gap-1 px-2 py-0.5 rounded border', wrapperClasses)}>
-        {textEl}
+        {text}
         {icon}
       </span>
     );
   }
 
-  return textEl;
+  return text;
 };
 
 export default NumberText;
