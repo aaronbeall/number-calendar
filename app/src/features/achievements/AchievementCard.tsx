@@ -147,7 +147,7 @@ export function AchievementCard({
         status === "completed" && "transition-transform duration-300 ease-out group-hover:scale-160",
         status === "in-progress" && "opacity-60 grayscale"
       )}>
-        <AchievementBadge badge={badge} size="medium" floating={isBadgedAnimated} shine={isBadgedAnimated} pulse={isBadgedAnimated} />
+        <AchievementBadge badge={badge} size="medium" animate={isBadgedAnimated} />
       </div>
       <span className="font-bold text-lg text-center w-full">{title}</span>
       {description && <div className="text-xs text-slate-500 mb-1 text-center w-full">{description}</div>}

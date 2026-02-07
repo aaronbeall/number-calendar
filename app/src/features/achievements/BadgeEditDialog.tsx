@@ -71,7 +71,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
               onMouseLeave={() => setAnimatePreview(false)}
               onTouchEnd={() => setAnimatePreview(animated => !animated)}
             >
-              <AchievementBadge badge={draftBadge} size="large" floating={animatePreview} shine={animatePreview} pulse={animatePreview} />
+              <AchievementBadge badge={draftBadge} size="large" animate={animatePreview} />
             </div>
             <div className="text-xs text-slate-500">Preview</div>
             <button

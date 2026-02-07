@@ -533,7 +533,7 @@ export const achievementBadgeColors = {
     label: '#0d2d3f',
     border: '#7ec8e3',
   },
-  fusion: {
+  eros: {
     bg: '#ff6b9d',
     accent: '#ffb6c1',
     label: '#4d0d1f',
@@ -600,12 +600,12 @@ export const achievementBadgeColors = {
     border: '#d946ef',
   },
   cosmic: {
-    bg: '#0a0f1e',
-    accent: '#9333ea',
-    label: '#e9d5ff',
-    border: '#a855f7',
+    bg: '#1a237e',
+    accent: '#ff4081',
+    label: '#e1bee7',
+    border: '#651fff',
   },
-  passion: {
+  fanatic: {
     bg: '#ef4444',
     accent: '#ffe599',
     label: '#7f1d1d',

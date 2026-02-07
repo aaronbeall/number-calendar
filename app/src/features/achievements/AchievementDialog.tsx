@@ -38,6 +38,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
   const [title, setTitle] = useState(initialGoal?.title ?? initialData?.title ?? '');
   const [description, setDescription] = useState(initialGoal?.description ?? initialData?.description ?? '');
   const [badge, setBadge] = useState<GoalBadge>(initialGoal?.badge ?? initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
+  const [animateBadge, setAnimateBadge] = useState(false);
   const createGoalMutation = useCreateGoal();
   const updateGoalMutation = useUpdateGoal();
   const datasetId = dataset.id;
@@ -253,7 +254,13 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
                       <Dices className="w-4 h-4" />
                     </Button>
                   </div>
-                  <AchievementBadge badge={previewBadge} size="large" />
+                  <div 
+                    onMouseEnter={() => setAnimateBadge(true)} 
+                    onMouseLeave={() => setAnimateBadge(false)}
+                    onTouchEnd={() => setAnimateBadge(animated => !animated)}
+                  >
+                    <AchievementBadge badge={previewBadge} size="large" animate={animateBadge} />
+                  </div>
                   <Input 
                     value={title} 
                     placeholder={sugggested.title} 

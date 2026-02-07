@@ -159,9 +159,9 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
       if (!blob) throw new Error('Failed to generate image');
 
       const file = new File([blob], `achievement-${goal.id}.png`, { type: blob.type || 'image/png' });
-      const shareTitle = `Numbers Achievement: ${goal.title}`;
+      const shareTitle = `Numbers Go Up Achievement: ${goal.title}`;
       const shareText = hasCompletions
-        ? `I just accomplished a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`
+        ? `I just achieved a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`
         : inProgress || currentProgress > 0
           ? `I'm working on a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`
           : `I just set a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`;

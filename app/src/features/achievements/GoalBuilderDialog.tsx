@@ -1337,9 +1337,7 @@ function GoalPreviewItem({
         <AchievementBadge 
           badge={goal.badge} 
           size="small"
-          pulse={active}
-          floating={active}
-          shine={active}
+          animate={active}
         />
         <div className="min-w-0">
           <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">

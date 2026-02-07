@@ -635,7 +635,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     'iridescent',
     'obsidian',
     'mystic',
-    'passion',
+    'fanatic',
   ];
   const multipleStyles: AchievementBadgeStyle[] = [
     'star_formation',

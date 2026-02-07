@@ -7,6 +7,7 @@ type AchievementBadgeProps = {
   badge: GoalBadge;
   size?: AchievementBadgeSize;
   className?: string;
+  animate?: boolean; // Enable all animations, unless individually overridden
   floating?: boolean;
   shine?: boolean;
   pulse?: boolean;
@@ -43,7 +44,7 @@ const animationStyles = `
   }
 `;
 
-export function AchievementBadge({ badge, size = 'medium', className, floating, shine, pulse, grayscale }: AchievementBadgeProps) {
+export function AchievementBadge({ badge, size = 'medium', className, animate, floating = animate, shine = animate, pulse = animate, grayscale }: AchievementBadgeProps) {
   const color = colorPresets[badge.color];
   const sizePreset = sizePresets[size];
   const containerPx = sizePreset.container;
