@@ -473,11 +473,11 @@ export const achievementBadgeColors = {
     label: '#004d5a',
     border: '#26c6da',
   },
-  grounded: {
-    bg: '#a67c52',
-    accent: '#5d4037',
-    label: '#1f0f08',
-    border: '#795548',
+  regal: {
+    bg: '#2f3b8f',
+    accent: '#f6c453',
+    label: '#1b1f4b',
+    border: '#5160c4',
   },
   flame: {
     bg: '#ff9500',
