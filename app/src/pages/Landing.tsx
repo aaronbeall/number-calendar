@@ -1,11 +1,11 @@
-import { AppFooter, UserMenu, SettingsMenu, ThemeToggle } from '@/App';
+import { AppFooter, SettingsMenu, ThemeToggle, UserMenu } from '@/App';
 import LogoIcon from '@/assets/logo.png';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
-import { ArrowRight, BarChart as BarChartIcon, Info, Plus, Search, Sparkles, Target, TrendingUp } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { usePreference } from '@/hooks/usePreference';
+import { ArrowRight, BarChart as BarChartIcon, Home, Plus, Search, Sparkles, Target, TrendingUp } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
 export function Landing({ 
@@ -235,7 +235,7 @@ function DatasetsLanding({
                 className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
                 aria-label="View intro"
               >
-                <Info className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+                <Home className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
               </Link>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
