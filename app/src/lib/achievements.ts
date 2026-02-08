@@ -503,6 +503,12 @@ export const achievementBadgeColors = {
     label: '#000000',
     border: '#455a64',
   },
+  magic: {
+    bg: '#d946ef',
+    accent: '#8b00ff',
+    label: '#2d0066',
+    border: '#a855f7',
+  },
   angelic: {
     bg: '#ffc4e1',
     accent: '#ff69b4',
@@ -533,17 +539,11 @@ export const achievementBadgeColors = {
     label: '#0d2d3f',
     border: '#7ec8e3',
   },
-  eros: {
+  eros: { // aka "fusion"
     bg: '#ff6b9d',
     accent: '#ffb6c1',
     label: '#4d0d1f',
     border: '#ff85a8',
-  },
-  magic: {
-    bg: '#d946ef',
-    accent: '#8b00ff',
-    label: '#2d0066',
-    border: '#a855f7',
   },
   iridescent: {
     bg: '#4dd0e1',
@@ -601,58 +601,16 @@ export const achievementBadgeColors = {
   },
   cosmic: {
     bg: '#1a237e',
-    accent: '#ff4081',
+    accent: '#d20f9e',
     label: '#e1bee7',
     border: '#651fff',
   },
-  fanatic: {
+  fanatic: { // aka "passion"
     bg: '#ef4444',
     accent: '#ffe599',
     label: '#7f1d1d',
     border: '#dc2626',
   },
-  // copper_medallion: {
-  //   bg: '#3a2a1f',
-  //   accent: '#d4a574',
-  //   label: '#f0d9c3',
-  //   border: '#ffcf9a',
-  // },
-  // bronze_medallion: {
-  //   bg: '#4a2a00',
-  //   accent: '#ffb347',
-  //   label: '#ffe3c2',
-  //   border: '#ff9c2a',
-  // },
-  // silver_medallion: {
-  //   bg: '#2f3338',
-  //   accent: '#c0c0c0',
-  //   label: '#e8e8e8',
-  //   border: '#9aa3ad',
-  // },
-  // gold_medallion: {
-  //   bg: '#4d3b00',
-  //   accent: '#ffd700',
-  //   label: '#fff3bf',
-  //   border: '#ffde66',
-  // },
-  // platinum_medallion: {
-  //   bg: '#1b1e26',
-  //   accent: '#cbd5e1',
-  //   label: '#f8fafc',
-  //   border: '#94a3b8',
-  // },
-  // diamond_medallion: {
-  //   bg: '#0b1220',
-  //   accent: '#00d4ff',
-  //   label: '#e0f2fe',
-  //   border: '#38bdf8',
-  // },
-  // magic_medallion: {
-  //   bg: '#2a1038',
-  //   accent: '#d946ef',
-  //   label: '#f5d0fe',
-  //   border: '#c084fc',
-  // },
   copper_medallion: {
     bg: '#e4a766',
     accent: '#e4a766',
