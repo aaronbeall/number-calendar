@@ -22,7 +22,7 @@ type GoalBuilderDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dataset: Dataset;
-  onComplete: () => void;
+  onComplete?: () => void;
 };
 
 type Step = 'period' | 'activity' | 'preview' | 'starting-point';
@@ -319,7 +319,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
       }
 
       await createSelectedGoals();
-      onComplete();
+      onComplete?.();
       onOpenChange(false);
       resetState();
     } finally {

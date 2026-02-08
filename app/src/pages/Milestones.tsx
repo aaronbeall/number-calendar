@@ -4,7 +4,6 @@ import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
 import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
-import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
 import { useGoals } from '@/features/db/useGoalsData';
@@ -13,7 +12,7 @@ import { getDaysMap } from '@/lib/calendar';
 import { processAchievements } from '@/lib/goals';
 import { Flag, Plus, Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 
 export default function Milestones() {
   const [dialogOpen, setDialogOpen] = useSearchParamState('add', false);
@@ -21,15 +20,11 @@ export default function Milestones() {
   const { datasetId } = useParams();
   const { data: dataset, isLoading: datasetLoading } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
-  const { data: allGoals = [], refetch: refetchGoals } = useGoals(datasetId ?? '');
-  const [searchParams] = useSearchParams();
-  const isPreview = searchParams.has('preview');
+  const { data: allGoals = [], isLoading: isGoalsLoading } = useGoals(datasetId ?? '');
 
-  const handleBuilderComplete = () => {
-    refetchGoals();
-  };
+  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
-  if (datasetLoading) {
+  if (datasetLoading || isGoalsLoading) {
     return <LoadingState title="Loading milestones" />;
   }
 
@@ -45,39 +40,9 @@ export default function Milestones() {
       />
     );
   }
-
-  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
-
-  // Dummy milestones (only in preview mode)
-  const demoMilestones: Goal[] = isPreview ? [
-    {
-      id: 'm1',
-      datasetId: datasetId ?? '',
-      createdAt: Date.now(),
-      title: 'First 10k',
-      description: 'Reach 10,000 total',
-      badge: { style: 'medal', icon: 'star', color: 'gold', label: '10k' },
-      target: { condition: 'above', metric: 'total', source: 'stats', value: 10000 },
-      type: 'milestone',
-      timePeriod: 'anytime',
-      count: 1,
-    },
-    {
-      id: 'm2',
-      datasetId: datasetId ?? '',
-      createdAt: Date.now(),
-      title: 'First 50k',
-      description: 'Reach 50,000 total',
-      badge: { style: 'trophy', icon: 'trophy', color: 'amethyst', label: '50k' },
-      target: { condition: 'above', metric: 'total', source: 'stats', value: 50000 },
-      type: 'milestone',
-      timePeriod: 'anytime',
-      count: 1,
-    },
-  ] : [];
   
-  // Filter goals by type 'milestone', combine demo and real data
-  const milestones = isPreview ? demoMilestones : (allGoals.filter(g => g.type === 'milestone') as Goal[]);
+  // Filter goals by type 'milestone'
+  const milestones = allGoals.filter(g => g.type === 'milestone');
   const hasMilestones = milestones.length > 0;
   const headerActions = hasMilestones
     ? [
@@ -113,7 +78,7 @@ export default function Milestones() {
         }}
       />
       <AchievementDialog key={`add-${dialogOpen}`} open={!!dialogOpen} onOpenChange={setDialogOpen} type="milestone" dataset={dataset} />
-      <GoalBuilderDialog key={`builder-${builderOpen}`} open={!!builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} />
+      <GoalBuilderDialog key={`builder-${builderOpen}`} open={!!builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} />
       {!hasMilestones ? (
         <EmptyState type="milestone" onAddClick={() => setDialogOpen(true)} onGoalBuilderClick={() => setBuilderOpen(true)} />
       ) : (

@@ -1,7 +1,7 @@
 import type { Dataset } from '@/features/db/localdb';
 import type { GoalResults } from '@/lib/goals';
 import { Clock, Loader2 } from 'lucide-react';
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AchievementCard, type AchievementCardProps } from './AchievementCard';
 import { AchievementDetailsDrawer } from './AchievementDetailsDrawer';
 import { AchievementDialog } from './AchievementDialog';
@@ -127,7 +127,7 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
       )}
       {/* Completed */}
       {unlocked.length > 0 && (
-        <Fragment>
+        <>
           <div className="flex items-center gap-2 mb-4 mt-8">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               Completed
@@ -144,11 +144,11 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
               </li>
             ))}
           </ul>
-        </Fragment>
+        </>
       )}
       {/* In Progress */}
       {inProgress.length > 0 && (
-        <Fragment>
+        <>
           <div className="flex items-center gap-2 mb-4 mt-8">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               In Progress
@@ -165,11 +165,11 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
               </li>
             ))}
           </ul>
-        </Fragment>
+        </>
       )}
       {/* Locked */}
       {locked.length > 0 && (
-        <Fragment>
+        <>
           <div className="flex items-center gap-2 mb-4 mt-8">
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               Locked
@@ -186,7 +186,7 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
               </li>
             ))}
           </ul>
-        </Fragment>
+        </>
       )}
       <AchievementDetailsDrawer
         open={!!activeResult}
