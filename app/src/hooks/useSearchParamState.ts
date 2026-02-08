@@ -11,6 +11,26 @@ type SearchParamState<T> = readonly [T | null | boolean, (next: T | null | boole
  * A hook to manage a single URL search param as state. It handles deserialization of common types (boolean, number, JSON) and updates the URL accordingly.
  * The value can be of type T (deserialized from the URL), null (if the param is not present), or true (if the param is present but has no value).
  * Setting the value to null or false will remove the param from the URL.
+ * 
+ * Example:
+ * 
+ * ```
+ * // Boolean flag state
+ * const [showDetails, setShowDetails] = useSearchParamState("details", false);
+ * setShowDetails(true); // URL will have ?details
+ * setShowDetails(false); // URL will remove details param
+ * 
+ * // String state
+ * const [filter, setFilter] = useSearchParamState<string>("filter", "all");
+ * setFilter("active"); // URL will have ?filter=active
+ * setFilter(null); // URL will remove filter param
+ * 
+ * // Object lookup state
+ * const [datasetId, setDatasetId] = useSearchParamState("dataset", "");
+ * const dataset = datasets.find(d => d.id === datasetId);
+ * setDatasetId("123"); // URL will have ?dataset=123, dataset will be the one with id "123"
+ * setDatasetId(null); // URL will remove dataset param, dataset will be null
+ * ```
  */
 export function useSearchParamState<T>(key: string, defaultValue: T | null | boolean): SearchParamState<T> {
   const [searchParams, setSearchParams] = useSearchParams();
