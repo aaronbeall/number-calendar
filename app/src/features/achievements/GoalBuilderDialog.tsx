@@ -1339,7 +1339,7 @@ function GoalPreviewItem({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        'relative text-left w-full h-full p-4 rounded-xl border transition-all duration-300',
+        'relative text-left w-full h-full p-4 rounded-xl border transition-all duration-300 group',
         selected
           ? 'hover:scale-125 hover:shadow-lg hover:-translate-y-1 hover:z-10'
           : 'hover:scale-105 hover:shadow-md hover:-translate-y-0.5',
@@ -1363,11 +1363,13 @@ function GoalPreviewItem({
         </span>
       )}
       <div className="flex items-start gap-3">
-        <AchievementBadge 
-          badge={goal.badge} 
-          size="small"
-          animate={active}
-        />
+        <div className="group-hover:scale-145 group-hover:-translate-x-1 transition-transform duration-300">
+          <AchievementBadge 
+            badge={goal.badge} 
+            size="small"
+            animate={active}
+          />
+        </div>
         <div className="min-w-0">
           <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
             {goal.title}
