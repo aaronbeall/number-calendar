@@ -9,15 +9,16 @@ import type { Goal } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
 import { useGoals } from '@/features/db/useGoalsData';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { getDaysMap } from '@/lib/calendar';
 import { processAchievements } from '@/lib/goals';
 import { Plus, Sparkles, Trophy } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 export default function Achievements() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [builderOpen, setBuilderOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useSearchParamState('add', false);
+  const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', false);
   const { datasetId } = useParams();
   const { data: dataset, isLoading: datasetLoading } = useDataset(datasetId ?? '');
   const { data: allDays } = useAllDays(datasetId ?? '');
@@ -213,8 +214,8 @@ export default function Achievements() {
           total: totalGoals,
         }}
       />
-      <AchievementDialog key={`add-${dialogOpen}`} open={dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} />
-      <GoalBuilderDialog key={`builder-${builderOpen}`} open={builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} />
+      <AchievementDialog key={`add-${dialogOpen}`} open={!!dialogOpen} onOpenChange={setDialogOpen} type="goal" dataset={dataset} />
+      <GoalBuilderDialog key={`builder-${builderOpen}`} open={!!builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} onComplete={handleBuilderComplete} />
 
       {isPreview && <BadgePreviews />}
 
