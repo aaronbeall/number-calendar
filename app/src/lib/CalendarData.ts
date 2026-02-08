@@ -1,10 +1,10 @@
-import type { DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, YearKey } from "@/features/db/localdb";
+import type { DateKey, DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, YearKey } from "@/features/db/localdb";
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths, getYearWeeks } from "./calendar";
-import { convertDateKey, parseDateKey, parseWeekKey, type DateKeyType } from "./friendly-date";
+import { convertDateKey, getDateKeyType, parseDateKey, parseWeekKey, type DateKeyType } from "./friendly-date";
 import type { NumberStats, StatsExtremes } from "./stats";
 import { calculateExtremes, computeNumberStats, emptyStats, getStatsDelta, getStatsPercentChange } from "./stats";
 
-export type CalendarPeriodData<P extends TimePeriod> = {
+export type PeriodData<P extends TimePeriod> = {
   dateKey: {
     'day': DayKey | null; // Null signifies a day with no recoreded data, which returns an empty cache item -- UIs should use its own date key instead of relying on the item data key for rendering purposes
     'week': WeekKey;
@@ -30,12 +30,25 @@ export type CalendarPeriodData<P extends TimePeriod> = {
   months?: MonthKey[]; // For year periods
 };
 
+export type DayData = Omit<PeriodData<'day'>, 'days' | 'weeks' | 'months' | 'extremes'>;
+export type WeekData = Omit<PeriodData<'week'>, 'weeks' | 'months'> & Pick<Required<PeriodData<'week'>>, 'extremes' | 'days'>;
+export type MonthData = Omit<PeriodData<'month'>, 'months'> & Pick<Required<PeriodData<'month'>>, 'extremes' | 'days' | 'weeks'>;
+export type YearData = Omit<PeriodData<'year'>, 'months'> & Pick<Required<PeriodData<'year'>>, 'extremes' | 'days' | 'weeks' | 'months'>;
+export type AlltimeData = Required<PeriodData<'anytime'>>;
+
+export type DateKeyPeriodData<T extends DateKey> = 
+  T extends DayKey ? DayData 
+  : T extends WeekKey ? WeekData 
+  : T extends MonthKey ? MonthData 
+  : T extends YearKey ? YearData 
+  : PeriodData<DateKeyType>
+
 // Internal cache structure for a period, computed properties are lazily evaluated, 
 // null indicates they have not been evaluated yet
 type PeriodCache<P extends TimePeriod> = {
-  [K in keyof CalendarPeriodData<P>]: K extends 'numbers' | 'stats' | 'deltas' | 'percents' | 'extremes' | 'cumulatives' | 'cumulativeDeltas' | 'cumulativePercents'
-    ? CalendarPeriodData<P>[K] | null
-    : CalendarPeriodData<P>[K];
+  [K in keyof PeriodData<P>]: K extends 'numbers' | 'stats' | 'deltas' | 'percents' | 'extremes' | 'cumulatives' | 'cumulativeDeltas' | 'cumulativePercents'
+    ? PeriodData<P>[K] | null
+    : PeriodData<P>[K];
 };
 
 // Helper type to represent a cache that has had certain properties computed, used for type safety in methods that compute derived data based on the presence of other computed data.
@@ -68,7 +81,7 @@ export class CalendarData {
    * entries across many years), we use a single shared empty cache item for days that don't have any data.
    * Weeks, months, and years are less numerous and less likely to be empty, so we don't optimize them this way.
    */
-  private emptyDayCacheItem: PeriodCache<'day'> = {
+  private emptyDayCacheItem: PeriodData<'day'> = {
     dateKey: null,
     period: 'day',
     numbers: [],
@@ -213,7 +226,7 @@ export class CalendarData {
   }
 
   // Completely invalidates a period cache calculations (numbers, stats, aggregates, etc)
-  private invalidate<K extends DateKeyType, P extends CalendarPeriodData<K>['dateKey']>(cacheMap: Map<P, PeriodCache<K>>, key: P) {
+  private invalidate<K extends DateKeyType, P extends PeriodData<K>['dateKey']>(cacheMap: Map<P, PeriodCache<K>>, key: P) {
     const cache = cacheMap.get(key);
     if (cache) {
       this.updateCache(cacheMap, {
@@ -231,7 +244,7 @@ export class CalendarData {
   }
 
   // Invalidates only the aggregate calculations (deltas, percents, cumulatives) but keeps numbers and stats intact
-  private invalidateAggregates<K extends DateKeyType, P extends CalendarPeriodData<K>['dateKey']>(cacheMap: Map<P, PeriodCache<K>>, cache: PeriodCache<K> | undefined) {
+  private invalidateAggregates<K extends DateKeyType, P extends PeriodData<K>['dateKey']>(cacheMap: Map<P, PeriodCache<K>>, cache: PeriodCache<K> | undefined) {
     if (cache) {
       this.updateCache(cacheMap, {
         dateKey: cache.dateKey,
@@ -247,17 +260,17 @@ export class CalendarData {
   // Helper to update a cache entry with only the changed props and return the new object
   // Note: this assumes there is already a cache entry for the dateKey, which is true for all current usages since we always create a cache entry before computing any derived data
   private updateCache<P extends DateKeyType>(
-    cacheMap: Map<CalendarPeriodData<P>['dateKey'], PeriodCache<P>>,
+    cacheMap: Map<PeriodData<P>['dateKey'], PeriodCache<P>>,
     updates: Partial<PeriodCache<P>> & Pick<PeriodCache<P>, 'dateKey'>,
-  ): CalendarPeriodData<P> {
+  ): PeriodData<P> {
     const existing = cacheMap.get(updates.dateKey);
     const next = { ...existing, ...updates } as PeriodCache<P>;
     cacheMap.set(next.dateKey, next);
-    return next as CalendarPeriodData<P>;
+    return next as PeriodData<P>;
   }
 
   // Helper to compute deltas and percents based on the presence of stats and a prior period, returns updated cache with deltas and percents filled in
-  private computeDeltas<P extends DateKeyType, K extends CalendarPeriodData<P>['dateKey']>(
+  private computeDeltas<P extends DateKeyType, K extends PeriodData<P>['dateKey']>(
     cacheMap: Map<K, PeriodCache<P>>,
     cache: PartialComputedCache<P, 'stats' | 'numbers'>,
     getPriorKey: (key: K) => K | null,
@@ -288,7 +301,7 @@ export class CalendarData {
   }
 
   // Helper to compute cumulatives, cumulative deltas, and cumulative percents based on the presence of stats and a chain of prior periods, returns updated cache with cumulatives filled in
-  private computeCumulatives<P extends DateKeyType, K extends CalendarPeriodData<P>['dateKey']>(
+  private computeCumulatives<P extends DateKeyType, K extends PeriodData<P>['dateKey']>(
     cacheMap: Map<K, PeriodCache<P>>,
     cache: PartialComputedCache<P, 'stats' | 'numbers'>,
     getCache: (key: K) => PartialComputedCache<P, 'stats' | 'numbers'>,
@@ -399,13 +412,13 @@ export class CalendarData {
   /**
    * Get data for a specific day
    */
-  getDayData(dayKey: DayKey): CalendarPeriodData<'day'> {
+  getDayData(dayKey: DayKey): DayData {
     
     // Ensure numbers and stats are computed
     let cache = this.getDayCache(dayKey);
 
     // If there's no data associated with this day, return the default empty cache with null dateKey to signify it's an empty day
-    if (cache.dateKey === null) return cache as CalendarPeriodData<'day'>;
+    if (cache.dateKey === null) return cache as DayData;
 
     // Lazy compute deltas and percents
     cache = this.computeDeltas(this.dayCache, cache, this.getPriorDay.bind(this), (key) => this.getDayCache(key).stats);
@@ -418,7 +431,7 @@ export class CalendarData {
       cache = this.updateCache(this.dayCache, { dateKey: cache.dateKey, extremes: undefined });
     }
     
-    return cache as CalendarPeriodData<'day'>;
+    return cache as DayData;
   }
 
   // Internal method to get the week cache, computing numbers and stats if needed
@@ -460,7 +473,7 @@ export class CalendarData {
     return cache as PartialComputedCache<'week', 'stats' | 'numbers'>;
   }
 
-  getWeekData(weekKey: WeekKey): CalendarPeriodData<'week'> {
+  getWeekData(weekKey: WeekKey): WeekData {
     // Ensure cache, stats, and derived data are computed
     let cache = this.getWeekCache(weekKey);
     const days = cache.days ?? [];
@@ -478,7 +491,7 @@ export class CalendarData {
       cache = this.updateCache(this.weekCache, { dateKey: cache.dateKey, extremes });
     }
     
-    return cache as CalendarPeriodData<'week'>;
+    return cache as WeekData;
   }
 
   // Internal method to get the month cache, computing numbers and stats if needed
@@ -524,7 +537,7 @@ export class CalendarData {
     return cache as PartialComputedCache<'month', 'stats' | 'numbers'>;
   }
 
-  getMonthData(monthKey: MonthKey): CalendarPeriodData<'month'> {
+  getMonthData(monthKey: MonthKey): MonthData {
     // Ensure cache, stats, and derived data are computed
     let cache = this.getMonthCache(monthKey);
     const days = cache.days ?? [];
@@ -542,7 +555,7 @@ export class CalendarData {
       cache = this.updateCache(this.monthCache, { dateKey: cache.dateKey, extremes });
     }
     
-    return cache as CalendarPeriodData<'month'>;
+    return cache as MonthData;
   }
 
   // Internal method to get the year cache, computing numbers and stats if needed
@@ -592,7 +605,7 @@ export class CalendarData {
     return cache as PartialComputedCache<'year', 'stats' | 'numbers'>;
   }
 
-  getYearData(yearKey: YearKey): CalendarPeriodData<'year'> {
+  getYearData(yearKey: YearKey): YearData {
     // Ensure cache, stats, and derived data are computed
     let cache = this.getYearCache(yearKey);
     
@@ -610,10 +623,10 @@ export class CalendarData {
       cache = this.updateCache(this.yearCache, { dateKey: cache.dateKey, extremes });
     }
     
-    return cache as CalendarPeriodData<'year'>;
+    return cache as YearData;
   }
 
-  getAlltimeData(): CalendarPeriodData<'anytime'> {
+  getAlltimeData(): AlltimeData {
     if (!this.alltimeCache) {
       this.alltimeCache = {
         dateKey: null,
@@ -663,7 +676,45 @@ export class CalendarData {
     // Fresh cache object if anything changed
     this.alltimeCache = cache;
     
-    return this.alltimeCache as CalendarPeriodData<'anytime'>;
+    return this.alltimeCache as AlltimeData;
+  }
+
+  getPeriodData<T extends DateKey>(dateKey: T): DateKeyPeriodData<T> {
+    switch (getDateKeyType(dateKey)) {
+      case 'day':
+        return this.getDayData(dateKey as DayKey) as DateKeyPeriodData<T>;
+      case 'week':
+        return this.getWeekData(dateKey as WeekKey) as DateKeyPeriodData<T>;
+      case 'month':
+        return this.getMonthData(dateKey as MonthKey) as DateKeyPeriodData<T>;
+      case 'year':
+        return this.getYearData(dateKey as YearKey) as DateKeyPeriodData<T>;
+      default:
+        throw new Error(`Unsupported period: ${getDateKeyType(dateKey)}`);
+    }
+  }
+
+  getPriorPeriodData<T extends DateKey>(dateKey: T): DateKeyPeriodData<T> | null {
+    const periodType = getDateKeyType(dateKey);
+    let priorKey: DateKey | null = null;
+    switch (periodType) {
+      case 'day':
+        priorKey = this.getPriorDay(dateKey as DayKey);
+        break;
+      case 'week':
+        priorKey = this.getPriorWeek(dateKey as WeekKey);
+        break;
+      case 'month':
+        priorKey = this.getPriorMonth(dateKey as MonthKey);
+        break;
+      case 'year':
+        priorKey = this.getPriorYear(dateKey as YearKey);
+        break;
+      default:
+        throw new Error(`Unsupported period: ${periodType}`);
+    }
+    if (priorKey === null) return null;
+    return this.getPeriodData(priorKey as T);
   }
 
   // Build prior period maps from current data

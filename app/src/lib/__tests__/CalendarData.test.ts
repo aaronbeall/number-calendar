@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from 'vitest';
-import { CalendarData, type CalendarPeriodData } from '../CalendarData';
+import { CalendarData, type PeriodData } from '../CalendarData';
 import type { DayEntry, DayKey } from '@/features/db/localdb';
+import { convertDateKey } from '../friendly-date';
 import { emptyStats } from '../stats';
 
 /**
@@ -620,6 +621,63 @@ describe('CalendarData', () => {
     });
   });
 
+  describe('getPeriodData', () => {
+    test('should delegate to the correct period getter', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-01,10
+        2025-01-02,20
+        2025-01-15,30
+        2025-02-01,40
+        2024-12-31,50
+      `);
+
+      const day = calendarData.getDayData('2025-01-02');
+      const week = calendarData.getWeekData('2025-W01');
+      const month = calendarData.getMonthData('2025-01');
+      const year = calendarData.getYearData('2025');
+
+      expect(calendarData.getPeriodData('2025-01-02')).toBe(day);
+      expect(calendarData.getPeriodData('2025-W01')).toBe(week);
+      expect(calendarData.getPeriodData('2025-01')).toBe(month);
+      expect(calendarData.getPeriodData('2025')).toBe(year);
+    });
+  });
+
+  describe('getPriorPeriodData', () => {
+    test('should return null when no prior period exists', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-01,10
+      `);
+
+      expect(calendarData.getPriorPeriodData('2025-01-01')).toBeNull();
+    });
+
+    test('should return prior period data for day, week, month, and year', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-01,10
+        2025-01-02,20
+        2025-02-01,40
+        2025-06-08,50
+        2025-06-15,60
+        2026-01-01,70
+      `);
+
+      const priorDay = calendarData.getPriorPeriodData('2025-01-02');
+      expect(priorDay?.dateKey).toBe('2025-01-01');
+
+      const weekKey = convertDateKey('2025-06-15', 'week');
+      const priorWeekKey = convertDateKey('2025-06-08', 'week');
+      const priorWeek = calendarData.getPriorPeriodData(weekKey);
+      expect(priorWeek?.dateKey).toBe(priorWeekKey);
+
+      const priorMonth = calendarData.getPriorPeriodData('2025-02');
+      expect(priorMonth?.dateKey).toBe('2025-01');
+
+      const priorYear = calendarData.getPriorPeriodData('2026');
+      expect(priorYear?.dateKey).toBe('2025');
+    });
+  });
+
   describe('cache invalidation', () => {
     test('should maintain stable cache references for unchanged prior days', () => {
       const calendarData = generateMockCalendarDataFromCSV(`
@@ -900,17 +958,17 @@ describe('CalendarData', () => {
 
     describe('should update caches correctly when a day is modified', () => {
 
-      let priorDayBefore: CalendarPeriodData<'day'>;
-      let targetDayBefore: CalendarPeriodData<'day'>;
-      let nextDayBefore: CalendarPeriodData<'day'>;
+      let priorDayBefore: PeriodData<'day'>;
+      let targetDayBefore: PeriodData<'day'>;
+      let nextDayBefore: PeriodData<'day'>;
 
-      let priorWeekBefore: CalendarPeriodData<'week'>;
-      let targetWeekBefore: CalendarPeriodData<'week'>;
-      let nextWeekBefore: CalendarPeriodData<'week'>;
+      let priorWeekBefore: PeriodData<'week'>;
+      let targetWeekBefore: PeriodData<'week'>;
+      let nextWeekBefore: PeriodData<'week'>;
 
-      let priorYearBefore: CalendarPeriodData<'year'>;
-      let targetYearBefore: CalendarPeriodData<'year'>;
-      let nextYearBefore: CalendarPeriodData<'year'>;
+      let priorYearBefore: PeriodData<'year'>;
+      let targetYearBefore: PeriodData<'year'>;
+      let nextYearBefore: PeriodData<'year'>;
 
       beforeEach(() => {
         priorDayBefore = calendarData.getDayData('2024-06-02');
