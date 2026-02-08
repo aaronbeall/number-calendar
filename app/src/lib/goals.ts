@@ -574,3 +574,25 @@ export function isRangeGoal(goal: GoalTarget): boolean {
 export function isRangeCondition(condition: GoalTarget['condition'] | undefined): condition is 'inside' | 'outside' {
   return !!condition && (condition === 'inside' || condition === 'outside');
 }
+
+export function getGoalCategory(goal: Goal) {
+  if (goal.type === 'milestone') return 'Milestones';
+  if (goal.type === 'target') return 'Targets';
+  const isMultiPeriod = !!goal.count && goal.count > 1;
+  const isStreak = isMultiPeriod && !!goal.consecutive;
+  if (goal.timePeriod === 'anytime') return 'One-time';
+  const period = capitalize(goal.timePeriod);
+  const periodly = ({
+    day: 'Daily',
+    week: 'Weekly',
+    month: 'Monthly',
+    year: 'Yearly',
+    anytime: 'All-Time',
+  } as const)[goal.timePeriod];
+  if (isStreak) return `${periodly} Streaks` as const;
+  if ((goal.target.metric === 'min' || goal.target.metric === 'max') && goal.target.value === 0) return `Perfect` as const;
+  if (goal.target.value === 0) return `${periodly} Trend` as const;
+  if (goal.badge.label?.match(/[0-9]×/)) return `${periodly} Tuples` as const;
+  if (isMultiPeriod) return `Multi-${period} Goals` as const;
+  return `${periodly} Goals` as const;
+}

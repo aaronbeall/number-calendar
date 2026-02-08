@@ -10,6 +10,7 @@ import { toDayKey } from '@/lib/friendly-date';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
 import { formatValue } from '@/lib/friendly-numbers';
 import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput } from '@/lib/goals-builder';
+import { getGoalCategory } from '@/lib/goals';
 import { adjectivize, capitalize, cn } from '@/lib/utils';
 import { getValueForGood, isBad } from '@/lib/valence';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
@@ -1110,6 +1111,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         : 'Select All'}
                     </Button>
                   </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Big, all-time achievements that celebrate major progress.
+                  </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {generatedGoals.milestones.map((goal) => (
                       <GoalPreviewItem
@@ -1144,6 +1148,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         : 'Select All'}
                     </Button>
                   </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Repeatable period goals to keep you on pace.
+                  </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {generatedGoals.targets.map((goal) => (
                       <GoalPreviewItem
@@ -1177,16 +1184,38 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         : 'Select All'}
                     </Button>
                   </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Winning moments and streaks that highlight consistency.
+                  </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {generatedGoals.achievements.map((goal) => (
-                      <GoalPreviewItem
-                        key={goal.id}
-                        goal={goal}
-                        selected={selectedGoals.has(goal.id)}
-                        onToggle={() => toggleGoal(goal.id)}
-                        desaturateUnselected
-                      />
-                    ))}
+                    {(() => {
+                      let lastCategory: string | null = null;
+                      return generatedGoals.achievements.map((goal) => {
+                        const category = getGoalCategory(goal);
+                        const showHeading = category !== lastCategory;
+                        lastCategory = category;
+
+                        return (
+                          <React.Fragment key={goal.id}>
+                            {showHeading && (
+                              <div className="col-span-full flex items-center gap-3 pt-2">
+                                <div className="h-px flex-1 bg-slate-200/80 dark:bg-slate-700/70" />
+                                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                  {category}
+                                </span>
+                                <div className="h-px flex-1 bg-slate-200/80 dark:bg-slate-700/70" />
+                              </div>
+                            )}
+                            <GoalPreviewItem
+                              goal={goal}
+                              selected={selectedGoals.has(goal.id)}
+                              onToggle={() => toggleGoal(goal.id)}
+                              desaturateUnselected
+                            />
+                          </React.Fragment>
+                        );
+                      });
+                    })()}
                   </div>
                 </div>
               </div>
