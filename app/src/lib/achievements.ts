@@ -47,7 +47,6 @@ import {
   Tags,
   Target,
   TargetIcon,
-  ThumbsDown,
   ThumbsUp,
   TrendingDown,
   TrendingUp,
@@ -57,7 +56,7 @@ import {
   XCircle,
   Zap
 } from 'lucide-react';
-import { BiSolidCrown } from 'react-icons/bi';
+import { BiSolidChevronDownCircle, BiSolidChevronsDown, BiSolidChevronsUp, BiSolidChevronUpCircle, BiSolidCrown } from 'react-icons/bi';
 import { BsArrowThroughHeartFill, BsAwardFill, BsBroadcast, BsFillDiamondFill, BsHearts, BsHeptagonFill, BsLightningFill, BsOctagonFill, BsPentagonFill, BsXDiamondFill } from 'react-icons/bs';
 import {
   FaAward,
@@ -76,6 +75,7 @@ import {
   FaGlobe,
   FaHandsHolding,
   FaHeart,
+  FaJetFighter,
   FaLeaf,
   FaMap,
   FaMapLocationDot,
@@ -95,6 +95,7 @@ import {
   GiAmericanShield,
   GiAngelWings,
   GiArcheryTarget,
+  GiArmorUpgrade,
   GiBigDiamondRing,
   GiBoltShield,
   GiBurningEmbers,
@@ -111,6 +112,7 @@ import {
   GiCrystalBall,
   GiCutDiamond,
   GiDiamondTrophy,
+  GiEruption,
   GiFalloutShelter,
   GiFinishLine,
   GiFist,
@@ -125,6 +127,7 @@ import {
   GiLaurels,
   GiLaurelsTrophy,
   GiMedal,
+  GiMuscleUp,
   GiPartyPopper,
   GiPlainCircle,
   GiPodiumWinner,
@@ -142,6 +145,7 @@ import {
   GiRoad,
   GiRollingBomb,
   GiRoundStar,
+  GiRupee,
   GiSevenPointedStar,
   GiShield,
   GiShieldEchoes,
@@ -165,9 +169,11 @@ import {
   GiTreasureMap,
   GiTribalShield,
   GiTrophyCup,
+  GiUpCard,
   GiUpgrade,
   GiVerticalBanner,
   GiVibratingShield,
+  GiWeightLiftingUp,
   GiWildfires,
   GiWingedEmblem,
   GiWingedShield
@@ -176,7 +182,7 @@ import { ImShield } from 'react-icons/im';
 import { IoMdPin } from 'react-icons/io';
 import { PiFlagCheckered, PiSunHorizonFill } from 'react-icons/pi';
 import { RiVipDiamondFill } from 'react-icons/ri';
-import { TbBadgeFilled } from 'react-icons/tb';
+import { TbBadgeFilled, TbSquareRoundedChevronsDownFilled, TbSquareRoundedChevronsUpFilled } from 'react-icons/tb';
 
 // Map style to shape icon (background container)
 export const achievementBadgeStyles = {
@@ -227,6 +233,7 @@ export const achievementBadgeStyles = {
   castle_shield: GiCrenulatedShield,
   sword_shield: GiSwordsEmblem,
   chevron_shield: ImShield,
+  upgrade_shield: GiArmorUpgrade,
   medal: GiMedal,
   star_medal: GiStarMedal,
   sports_medal: GiSportMedal,
@@ -248,6 +255,7 @@ export const achievementBadgeStyles = {
   solid_diamond: RiVipDiamondFill,
   x_diamond: BsXDiamondFill,
   filled_diamond: BsFillDiamondFill,
+  rupee: GiRupee,
   broadcast: BsBroadcast,
   angel: GiAngelWings,
   wings: GiSteelwingEmblem,
@@ -301,6 +309,15 @@ export const achievementBadgeStyles = {
   fallout: GiFalloutShelter,
   rocket: FaRocket,
   tag: FaTags,
+  muscle_up: GiMuscleUp,
+  up_card: GiUpCard,
+  eruption: GiEruption,
+  upgrade: GiUpgrade,
+  weight_lifting: GiWeightLiftingUp,
+  chevron_up: BiSolidChevronsUp,
+  chevron_down: BiSolidChevronsDown,
+  chevron_badge_up: TbSquareRoundedChevronsUpFilled,
+  chevron_badge_down: TbSquareRoundedChevronsDownFilled,
 };
 
 export type AchievementBadgeStyle = keyof typeof achievementBadgeStyles;
@@ -344,14 +361,13 @@ export const achievementBadgeIcons = {
   heart_crack: HeartCrack,
   heart_off: HeartOff,
   skull: Skull,
-  thumbs_down: ThumbsDown,
-  trending_down: TrendingDown,
   x: X,
   x_circle: XCircle,
   flame: Flame,
   crown: Crown,
   rocket: Rocket,
-  trending: TrendingUp,
+  trending_up: TrendingUp,
+  trending_down: TrendingDown,
   heart: Heart,
   smile: Smile,
   sun: Sun,
@@ -399,6 +415,13 @@ export const achievementBadgeIcons = {
   eye: FaEye,
   tags: Tags,
   flag: FaFlag,
+  fighter_jet: FaJetFighter,
+  muscle_up: GiMuscleUp,
+  weight_lifting: GiWeightLiftingUp,
+  chevron_up: BiSolidChevronsUp,
+  chevron_down: BiSolidChevronsDown,
+  chevron_circle_up: BiSolidChevronUpCircle,
+  chevron_circle_down: BiSolidChevronDownCircle,
 };
 
 export type AchievementBadgeIcon = keyof typeof achievementBadgeIcons;
@@ -601,8 +624,8 @@ export const achievementBadgeColors = {
   },
   cosmic: {
     bg: '#1a237e',
-    accent: '#d20f9e',
-    label: '#e1bee7',
+    accent: '#e1bee7',
+    label: '#d20f9e',
     border: '#651fff',
   },
   fanatic: { // aka "passion"

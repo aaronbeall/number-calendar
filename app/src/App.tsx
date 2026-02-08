@@ -300,9 +300,9 @@ function AppHeader({
                   </>
                 )}
                 <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
-                    <Trophy className="h-4 w-4" />
-                    Achievements
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
+                    <Flag className="h-4 w-4" />
+                    Milestones
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2" asChild>
@@ -312,9 +312,9 @@ function AppHeader({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
-                    <Flag className="h-4 w-4" />
-                    Milestones
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
+                    <Trophy className="h-4 w-4" />
+                    Achievements
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2" asChild>

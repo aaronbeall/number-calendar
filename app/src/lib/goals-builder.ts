@@ -660,7 +660,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
         type: 'goal',
         title: `${multipleNames[idx]} ${targetPeriodName}`,
         // description: `${targetTerm} ${formatValue(multipleValue, { delta: source === 'deltas' })} in a ${targetPeriod}`,
-        description: `${targetTerm} ${formatValue(multiple)}× ${adjectivize(targetPeriod)} target (${formatValue(multipleValue, { delta: source === 'deltas' })})`,
+        description: `${targetTerm} ${formatValue(multiple)}× ${adjectivize(targetPeriod)} target`, // (${formatValue(multipleValue, { delta: source === 'deltas' })})
         badge: createBadge(style, color, 'trophy', `${multiple}×`),
         target: createTarget(metric, source, condition, multipleValue),
         timePeriod: targetPeriod,
