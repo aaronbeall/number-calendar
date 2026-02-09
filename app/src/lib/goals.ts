@@ -2,7 +2,7 @@ import { type Achievement, type DateKey, type DayKey, type Goal, type GoalRequir
 import { nanoid } from 'nanoid';
 import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './friendly-date';
 import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
-import { adjectivize, capitalize, keysOf, pluralize } from './utils';
+import { adjectivize, capitalize, entriesOf, keysOf, pluralize } from './utils';
 import { type FormatValueOptions, formatRange, formatValue } from './friendly-numbers';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
@@ -131,12 +131,12 @@ export interface GoalResults {
 /**
  * Updates and computes the progress and completion state of all goals for a dataset, returning a summary for each goal.
  * 
- * This function processes a list of goals, existing achievements, and the current dataset's data to:
+ * This function processes a list of goals, prior achievement results, and the current dataset's data to:
  * - Determine which goals have been completed, are in progress, or are locked.
  * - Create or update achievement records for each goal, including handling streaks, multi-period counts, and one-time goals.
  * - For 'anytime' goals, finds the exact day the goal was achieved and sets completedAt accordingly.
  * - For periodic goals (day/week/month/year), tracks completed and in-progress achievements, including streaks and multi-period counts.
- * - Ensures completed achievements are always preserved, but in-progress achievements are only preserved if they remain valid with the current data.
+ * - Achievements are recomputed from the data every run; existing achievements are only used to preserve stable ids when unchanged.
  * - Returns a summary for each goal, including the list of achievements, completed count, current progress, and completion dates.
  * 
  * TODO: 
@@ -149,41 +149,43 @@ export interface GoalResults {
  *
  * @param {Object} params
  * @param {Goal[]} params.goals - The list of goals to evaluate.
- * @param {Achievement[]} params.achievements - The list of existing achievement records for the dataset.
+ * @param {AchievementResult[]} params.priorResults - The list of prior achievement results for the dataset.
  * @param {Record<DayKey, number[]>} params.data - The dataset's data, keyed by day.
  * @param {string} params.datasetId - The dataset ID.
  * @returns {GoalResults[]} An array of results, one per goal, with computed achievements, progress, and completion info.
  *
  * Notes:
  * - For non-repeating (anytime) goals, only one achievement is tracked and completedAt is set to the exact day the goal was achieved.
- * - For repeating goals, completed achievements are always preserved, but in-progress achievements are only preserved if the streak/progress is still valid.
+ * - Repeating goals are recomputed from data each run; stable ids are reused when the computed achievement is unchanged.
  * - Handles both consecutive and non-consecutive count goals, as well as streaks and multi-period goals.
  * - Designed to be idempotent and safe to call repeatedly as data or achievements change.
  */
 export function processAchievements({
   goals,
-  achievements,
+  priorResults,
   data,
   datasetId,
 }: {
   goals: Goal[];
-  achievements: Achievement[];
+  priorResults: AchievementResult[];
   data: Record<DayKey, number[]>;
   datasetId: string;
 }): GoalResults[] {
 
   const { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getAnytimeStats } = createPeriodCache(data);
 
-  const achievementsByGoalId: Record<string, Achievement[]> = achievements.reduce((acc, ach) => {
-    if (!acc[ach.goalId]) acc[ach.goalId] = [];
-    acc[ach.goalId].push(ach);
+  const achievementKey = (goalId: string, startedAt?: DateKey): string => (
+    `${goalId}|${startedAt ?? ''}`
+  );
+
+  const priorByKey = priorResults.reduce((acc, ach) => {
+    acc[achievementKey(ach.goalId, ach.startedAt)] = ach;
     return acc;
-  }, {} as Record<string, Achievement[]>);
+  }, {} as Record<string, AchievementResult>);
 
   const result: GoalResults[] = [];
 
   for (const goal of goals) {
-    const goalAchievements = achievementsByGoalId[goal.id] ?? [];
     let completedCount = 0;
     let currentProgress = 0;
     let lastCompletedAt: DateKey | undefined = undefined;
@@ -204,64 +206,61 @@ export function processAchievements({
       return undefined;
     };
 
-    const markProvisional = (achievement: Achievement): AchievementResult => {
-      if (currentPeriodKey && achievement.completedAt === currentPeriodKey) {
-        return { ...achievement, provisional: true };
-      }
-      return achievement;
+    const updateAchievement = (achievement: AchievementResult, updates: Partial<AchievementResult>): AchievementResult => {
+      const hasChanges = entriesOf(updates).some(([k, v]) => achievement[k] !== v);
+      if (!hasChanges) return achievement;
+      return { ...achievement, ...updates };
+
     };
 
-    const updateAchievement = (achievement: Achievement, updates: Partial<Achievement>): Achievement => ({
-      ...achievement,
-      ...updates,
-    });
+    const markProvisional = (achievement: AchievementResult): AchievementResult => {
+      const shouldBeProvisional = !!(currentPeriodKey && achievement.completedAt === currentPeriodKey);
+      return updateAchievement(achievement, { provisional: shouldBeProvisional || undefined });
+    };
 
-    // ANYTIME: Only one achievement, only update if not already completed
+    const getBaseAchievement = (goalId: string, startedAt?: DateKey): AchievementResult => {
+      const prior = priorByKey[achievementKey(goalId, startedAt)];
+      if (prior) return prior;
+      return { id: nanoid(), goalId, datasetId, progress: 0, startedAt } as AchievementResult;
+    };
+
+    // ANYTIME: Only one achievement, recomputed each run
     if (goal.timePeriod === 'anytime') {
-      let ach = goalAchievements[0] ?? { id: nanoid(), goalId: goal.id, datasetId, progress: 0 };
-      if (ach.completedAt) {
-        // Already completed, nothing to do
-        results.push(ach);
-        completedCount = 1;
-        lastCompletedAt = ach.completedAt;
-        currentProgress = 1;
+      let ach: AchievementResult = getBaseAchievement(goal.id);
+      if (goalSource !== 'stats') {
+        // Deltas/percents are not supported for anytime goals yet.
+        ach = updateAchievement(ach, { progress: 0 });
       } else {
-        if (goalSource !== 'stats') {
-          // Deltas/percents are not supported for anytime goals yet.
-          const updated = updateAchievement(ach, { progress: 0 });
-          results.push(updated);
-          currentProgress = updated.progress;
-        } else {
-          const stat = getAnytimeStats();
-          const value = getMetricValue(stat, undefined, undefined);
-          const met = typeof value === 'number' && evalCondition(goal.target, value);
-          if (met) {
-            // Find the exact day when the goal was met
-            // TODO: Thie would be partially mitigated by a `repeatable` flag, so you can designate `day` time period 
-            //   and `repeatable=false` to get an exact first-day a goal is achieved. Anytime goals would still be ambiguous.
-            let completedAt: DateKey | undefined = undefined;
-            const days = getPeriods('day');
-            const acc: number[] = [];
-            for (const day of days) {
-              if (completedAt) break;
-              const numbers = data[day] ?? [];
-              acc.push(...numbers);
-              const stats = computeNumberStats(acc);
-              const dayValue = getMetricValue(stats, undefined, undefined);
-              if (typeof dayValue === 'number' && evalCondition(goal.target, dayValue)) {
-                completedAt = day;
-              }
+        const stat = getAnytimeStats();
+        const value = getMetricValue(stat, undefined, undefined);
+        const met = typeof value === 'number' && evalCondition(goal.target, value);
+        if (met) {
+          // Find the exact day when the goal was met
+          // TODO: Thie would be partially mitigated by a `repeatable` flag, so you can designate `day` time period 
+          //   and `repeatable=false` to get an exact first-day a goal is achieved. Anytime goals would still be ambiguous.
+          let completedAt: DateKey | undefined = undefined;
+          const days = getPeriods('day');
+          const acc: number[] = [];
+          for (const day of days) {
+            if (completedAt) break;
+            const numbers = data[day] ?? [];
+            acc.push(...numbers);
+            const stats = computeNumberStats(acc);
+            const dayValue = getMetricValue(stats, undefined, undefined);
+            if (typeof dayValue === 'number' && evalCondition(goal.target, dayValue)) {
+              completedAt = day;
             }
-            ach = updateAchievement(ach, { progress: 1, completedAt });
-            completedCount = 1;
-            lastCompletedAt = ach.completedAt;
-          } else {
-            ach = updateAchievement(ach, { progress: 0 });
           }
-          results.push(ach);
-          currentProgress = ach.progress;
+          ach = updateAchievement(ach, { progress: 1, completedAt });
+          completedCount = 1;
+          lastCompletedAt = ach.completedAt;
+        } else {
+          ach = updateAchievement(ach, { progress: 0, completedAt: undefined });
         }
       }
+      const marked = markProvisional(ach);
+      results.push(marked);
+      currentProgress = marked.progress;
     } else {
       // PERIODIC: day/week/month/year
       const periods = getPeriods(goal.timePeriod);
@@ -269,62 +268,30 @@ export function processAchievements({
       const periodDeltas = getPeriodDeltas(goal.timePeriod);
       const periodPercents = getPeriodPercents(goal.timePeriod);
       const periodData = getPeriodData(goal.timePeriod);
-      const periodAchievements = goalAchievements.reduce((acc, ach) => {
-        if (ach.startedAt) {
-          acc[ach.startedAt] = ach;
-        }
-        return acc;
-      }, {} as Record<DateKey, Achievement>);
       // For count=1, just check each period
       if (goal.count === 1) {
         for (const period of periods) {
-          let ach = periodAchievements[period];
-          if (ach && ach.completedAt) {
-            // Already completed, nothing to do
-            results.push(markProvisional(ach));
-            completedCount++;
-            lastCompletedAt = ach.completedAt;
-            continue;
-          }
           const stat = periodStats[period];
           const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
           const met = typeof value === 'number' && evalCondition(goal.target, value);
           if (met) {
-            if (!ach) {
-              ach = { id: nanoid(), goalId: goal.id, datasetId, progress: 1, startedAt: period, completedAt: period };
-            } else {
-              ach = updateAchievement(ach, { progress: 1, completedAt: period });
-            }
+            let ach: AchievementResult = getBaseAchievement(goal.id, period);
+            ach = updateAchievement(ach, { progress: 1, completedAt: period });
+            const finalized = markProvisional(ach);
             completedCount++;
             lastCompletedAt = period;
-            results.push(markProvisional(ach));
+            results.push(finalized);
           }
         }
         currentProgress = completedCount;
       } else {
         // count > 1: streaks and multi-period counts
-        // Build a set of periods already covered by completed achievements
-        const usedPeriods = new Set<DateKey>();
-        for (const ach of goalAchievements) {
-          if (ach.completedAt && ach.startedAt) {
-            // Mark all periods in this achievement as used
-            const startIdx = periods.indexOf(ach.startedAt);
-            const endIdx = periods.indexOf(ach.completedAt);
-            if (startIdx !== -1 && endIdx !== -1) {
-              for (let i = startIdx; i <= endIdx; i++) usedPeriods.add(periods[i]);
-            }
-            results.push(markProvisional(ach));
-            completedCount++;
-            lastCompletedAt = ach.completedAt;
-          }
-        }
-        // Now walk through periods, skipping used, and try to build new streaks
+        // Walk through periods and try to build new streaks
         let streak: DateKey[] = [];
         let streakStart: DateKey | undefined = undefined;
         let streakEnd: DateKey | undefined = undefined;
         for (let i = 0; i < periods.length; i++) {
           const period = periods[i];
-          if (usedPeriods.has(period)) continue;
           const stat = periodStats[period];
           const numbers = periodData[period] || [];
           const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
@@ -335,12 +302,12 @@ export function processAchievements({
             streakEnd = period;
             if (streak.length === goal.count) {
               // Completed a new achievement
-              const ach: Achievement = { id: nanoid(), goalId: goal.id, datasetId, progress: goal.count, startedAt: streakStart, completedAt: streakEnd };
-              results.push(markProvisional(ach));
+              let ach: AchievementResult = getBaseAchievement(goal.id, streakStart);
+              ach = updateAchievement(ach, { progress: goal.count, completedAt: streakEnd });
+              const finalized = markProvisional(ach);
+              results.push(finalized);
               completedCount++;
               lastCompletedAt = streakEnd;
-              // Mark these periods as used
-              for (const p of streak) usedPeriods.add(p);
               streak = [];
               streakStart = undefined;
               streakEnd = undefined;
@@ -358,8 +325,10 @@ export function processAchievements({
         // If streak is not empty and not completed, add as in-progress
         if (streak.length > 0 && streak.length < goal.count) {
           const progress = streak.length;
-          const ach: Achievement = { id: nanoid(), goalId: goal.id, datasetId, progress, startedAt: streakStart };
-          results.push(ach);
+          let ach: AchievementResult = getBaseAchievement(goal.id, streakStart);
+          ach = updateAchievement(ach, { progress });
+          const finalized = markProvisional(ach);
+          results.push(finalized);
           currentProgress = progress;
         }
       }

@@ -46,6 +46,7 @@ import Milestones from './pages/Milestones';
 import Records from './pages/Records';
 import Targets from './pages/Targets';
 import { toast } from 'sonner';
+import type { GoalResults } from './lib/goals';
 
 
 function App() {
@@ -277,7 +278,7 @@ function AppHeader({
   };
 
   const provisionalCounts = useMemo(() => {
-    const countProvisional = (results: typeof milestones) =>
+    const countProvisional = (results: GoalResults[]) =>
       results.reduce((sum, result) => sum + result.achievements.filter(ach => ach.provisional).length, 0);
     const milestoneCount = countProvisional(milestones);
     const targetCount = countProvisional(targets);

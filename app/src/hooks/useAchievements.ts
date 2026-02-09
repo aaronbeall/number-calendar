@@ -29,7 +29,7 @@ export function useAchievements(datasetId: string): UseAchievementsResult {
       : [];
     return processAchievements({
       goals: allGoals,
-      achievements: previousAchievements,
+      priorResults: previousAchievements,
       data: allData,
       datasetId,
     });

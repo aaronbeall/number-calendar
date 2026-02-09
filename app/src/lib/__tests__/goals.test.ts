@@ -21,7 +21,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [50000], '2025-12-02': [60000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].currentProgress).toBe(1);
     expect(result[0].achievements[0].progress).toBe(1);
@@ -43,7 +43,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [50000], '2025-12-02': [40000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(0);
     expect(result[0].currentProgress).toBe(0);
   });
@@ -64,7 +64,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [1200], '2025-12-02': [800], '2025-12-03': [1500] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(2);
     expect(result[0].achievements.length).toBe(2);
   });
@@ -94,7 +94,7 @@ describe('processAchievements', () => {
       '2025-12-06': [190],
       '2025-12-07': [210],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Two streaks of 3
     expect(result[0].achievements.filter(a => a.progress === 3).length).toBe(2);
     expect(result[0].currentProgress).toBe(0);
@@ -121,7 +121,7 @@ describe('processAchievements', () => {
       '2025-12-02': [], // empty gap
       '2025-12-03': [200],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].achievements.filter(a => a.progress === 2).length).toBe(1);
     expect(result[0].currentProgress).toBe(0);
   });
@@ -146,12 +146,12 @@ describe('processAchievements', () => {
       '2025-12-02': [1],
       '2025-12-03': [-1],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].achievements[0].completedAt).toBe('2025-12-02');
   });
 
-  it('should not duplicate achievements if already completed (anytime)', () => {
+  it('should reuse ids for unchanged anytime achievements', () => {
     const goals: Goal[] = [
       {
         id: 'g1',
@@ -169,13 +169,39 @@ describe('processAchievements', () => {
       { id: 'a1', goalId: 'g1', datasetId, progress: 1, completedAt: '2025-12-02' },
     ];
     const data = { '2025-12-01': [50000], '2025-12-02': [60000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].achievements.length).toBe(1);
     expect(result[0].achievements[0].completedAt).toBe('2025-12-02');
+    expect(result[0].achievements[0].id).toBe('a1');
   });
 
-  it('should not duplicate periodic achievements if already completed', () => {
+  it('should drop prior anytime achievements when the condition is no longer met', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g1',
+        datasetId,
+        createdAt: 0,
+        title: '100k Total',
+        type: 'milestone',
+        timePeriod: 'anytime',
+        count: 1,
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 100000 },
+        badge: { style: 'trophy', icon: 'trophy', color: 'gold', label: 'Gold Trophy' }
+      },
+    ];
+    const achievements: Achievement[] = [
+      { id: 'a1', goalId: 'g1', datasetId, progress: 1, completedAt: '2025-12-02' },
+    ];
+    const data = { '2025-12-01': [40000], '2025-12-02': [50000] };
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].achievements.length).toBe(1);
+    expect(result[0].achievements[0].completedAt).toBeUndefined();
+    expect(result[0].achievements[0].progress).toBe(0);
+  });
+
+  it('should reuse ids for unchanged periodic achievements', () => {
     const goals: Goal[] = [
       {
         id: 'g2',
@@ -193,11 +219,35 @@ describe('processAchievements', () => {
       { id: 'a2', goalId: 'g2', datasetId, progress: 1, startedAt: '2025-12-01', completedAt: '2025-12-01' },
     ];
     const data = { '2025-12-01': [1200], '2025-12-02': [1500] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(2);
     expect(result[0].achievements.length).toBe(2);
     expect(result[0].achievements[0].completedAt).toBe('2025-12-01');
     expect(result[0].achievements[1].completedAt).toBe('2025-12-02');
+    expect(result[0].achievements[0].id).toBe('a2');
+  });
+
+  it('should keep stable references when achievements are unchanged', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g2',
+        datasetId,
+        createdAt: 0,
+        title: '1k Day',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        target: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
+        badge: { style: 'star', icon: 'star', color: 'gold', label: 'Star Badge' }
+      },
+    ];
+    const data = { '2025-12-01': [1200], '2025-12-02': [800], '2025-12-03': [1500] };
+    const first = processAchievements({ goals, priorResults: [], data, datasetId });
+    const second = processAchievements({ goals, priorResults: first[0].achievements, data, datasetId });
+    const firstByStart = new Map(first[0].achievements.map(ach => [ach.startedAt, ach]));
+    for (const achievement of second[0].achievements) {
+      expect(achievement).toBe(firstByStart.get(achievement.startedAt));
+    }
   });
 
   it('should continue streaks after completed streaks', () => {
@@ -226,7 +276,7 @@ describe('processAchievements', () => {
       '2025-12-05': [190],
       '2025-12-06': [210],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should have two completed streaks
     expect(result[0].achievements.filter(a => a.progress === 3 && a.completedAt).length).toBe(2);
     // Should not duplicate the first streak
@@ -235,7 +285,7 @@ describe('processAchievements', () => {
     expect(result[0].achievements.some(a => a.startedAt === '2025-12-04' && a.completedAt === '2025-12-06')).toBe(true);
   });
 
-  it('should not mark incomplete streaks as completed if already present', () => {
+  it('should re-evaluate incomplete streaks based on data', () => {
     const goals: Goal[] = [
       {
         id: 'g4',
@@ -260,10 +310,10 @@ describe('processAchievements', () => {
       '2025-12-04': [180],
       '2025-12-05': [190],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
-    // Should not mark the incomplete streak as completed
-    expect(result[0].achievements.some(a => a.progress === 2 && !a.completedAt)).toBe(true);
-    expect(result[0].achievements.some(a => a.progress === 2 && a.completedAt)).toBe(false);
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
+    // Should not preserve the old in-progress streak; the new in-progress streak starts on 2025-12-04
+    expect(result[0].achievements.some(a => a.progress === 2 && a.startedAt === '2025-12-04')).toBe(true);
+    expect(result[0].achievements.some(a => a.startedAt === '2025-12-01')).toBe(false);
   });
 
   it('should set completedAt to the exact day the anytime goal was achieved', () => {
@@ -288,7 +338,7 @@ describe('processAchievements', () => {
       '2025-12-04': [1500], // total so far: 10500
       '2025-12-05': [1000],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // The total reaches 10500 on 2025-12-04, so completedAt should be that day
     expect(result[0].completedCount).toBe(1);
     expect(result[0].achievements[0].completedAt).toBe('2025-12-04');
@@ -326,7 +376,7 @@ describe('processAchievements', () => {
       '2025-12-13': [11],
       '2025-12-14': [12],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should have 1 completed achievement (10 positive days)
     expect(result[0].completedCount).toBe(1);
     // Should have 2 days left for next achievement (if more data added)
@@ -353,7 +403,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [60000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].currentProgress).toBe(1);
     expect(result[0].achievements[0].progress).toBe(1);
@@ -375,7 +425,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [50000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].currentProgress).toBe(1);
     expect(result[0].achievements[0].progress).toBe(1);
@@ -397,7 +447,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [100000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].currentProgress).toBe(1);
     expect(result[0].achievements[0].progress).toBe(1);
@@ -419,7 +469,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [75000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].currentProgress).toBe(1);
     expect(result[0].achievements[0].progress).toBe(1);
@@ -441,7 +491,7 @@ describe('processAchievements', () => {
     ];
     const achievements: Achievement[] = [];
     const data = { '2025-12-01': [40000] };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     expect(result[0].completedCount).toBe(1);
     expect(result[0].currentProgress).toBe(1);
     expect(result[0].achievements[0].progress).toBe(1);
@@ -472,7 +522,7 @@ describe('processAchievements', () => {
       '2025-12-03': [140],
       '2025-12-04': [160],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should have 2 achievements (days 2 and 4 had positive deltas)
     expect(result[0].completedCount).toBe(2);
     expect(result[0].achievements.length).toBe(2);
@@ -502,7 +552,7 @@ describe('processAchievements', () => {
       '2025-12-03': [80],
       '2025-12-04': [70],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should have no achievements (all deltas are negative)
     expect(result[0].completedCount).toBe(0);
     expect(result[0].achievements.length).toBe(0);
@@ -531,7 +581,7 @@ describe('processAchievements', () => {
       '2025-12-03': [500],
       '2025-12-04': [1200],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Anytime goals with deltas/percents are not yet supported, so should be ignored
     expect(result[0].completedCount).toBe(0);
     expect(result[0].achievements[0].progress).toBe(0);
@@ -560,7 +610,7 @@ describe('processAchievements', () => {
       '2025-12-03': [200],
       '2025-12-04': [250],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Anytime goals with deltas/percents are not yet supported, so should be ignored
     expect(result[0].completedCount).toBe(0);
     expect(result[0].achievements[0].progress).toBe(0);
@@ -593,7 +643,7 @@ describe('processAchievements', () => {
       '2025-12-07': [150],
       '2025-12-08': [155],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should complete a 7-day streak (days 2-8, since day 1 has no delta)
     expect(result[0].completedCount).toBe(1);
     expect(result[0].achievements[0].startedAt).toBe('2025-12-02');
@@ -627,7 +677,7 @@ describe('processAchievements', () => {
       '2025-12-07': [140],
       '2025-12-08': [150],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should not complete 7-day streak because streak breaks on day 5
     expect(result[0].completedCount).toBe(0);
     expect(result[0].currentProgress).toBe(3);
@@ -658,7 +708,7 @@ describe('processAchievements', () => {
       '2025-12-03': [120],
       '2025-12-04': [135],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should have 2 achievements (days 2 and 4 had >10% increase)
     expect(result[0].completedCount).toBe(2);
     expect(result[0].achievements.length).toBe(2);
@@ -688,7 +738,7 @@ describe('processAchievements', () => {
       '2025-12-03': [108],
       '2025-12-04': [109],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should have no achievements (all increases < 10%)
     expect(result[0].completedCount).toBe(0);
     expect(result[0].achievements.length).toBe(0);
@@ -714,7 +764,7 @@ describe('processAchievements', () => {
       '2025-12-01': [100],
       '2025-12-08': [160],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should complete when week 2 reaches 60% growth from week 1
     expect(result[0].completedCount).toBe(1);
     expect(result[0].achievements[0].completedAt).toBe('2025-W50');
@@ -742,7 +792,7 @@ describe('processAchievements', () => {
       '2025-12-03': [125],
       '2025-12-04': [140],
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should not complete (only 40% growth, need 50%)
     expect(result[0].completedCount).toBe(0);
     expect(result[0].achievements[0].progress).toBe(0);
@@ -772,7 +822,7 @@ describe('processAchievements', () => {
       '2025-12-22': [130], // Week 4 (+8%)
       '2025-12-29': [140], // Week 5 (+7%)
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should complete 4-week streak (weeks 2-5 all had >5% growth)
     expect(result[0].completedCount).toBe(1);
     expect(result[0].achievements[0].progress).toBe(4);
@@ -802,7 +852,7 @@ describe('processAchievements', () => {
       '2025-12-22': [125], // Week 4 (+4%, breaks streak)
       '2025-12-29': [140], // Week 5 (+12%)
     };
-    const result = processAchievements({ goals, achievements, data, datasetId });
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
     // Should not complete because week 4 only had 4% growth, breaking the consecutive streak
     expect(result[0].completedCount).toBe(0);
     expect(result[0].currentProgress).toBe(1);
