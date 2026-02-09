@@ -1,6 +1,7 @@
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeSizes, achievementBadgeStyles, type AchievementBadgeSize } from '@/lib/achievements';
 import { cn } from '@/lib/utils';
 import type { GoalBadge } from '../db/localdb';
+import { useId } from 'react';
 
 
 type AchievementBadgeProps = {
@@ -50,6 +51,8 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
   const containerPx = sizePreset.container;
   const ShapeIcon = styleIcons[badge.style];
   const CenterIcon = badge.icon && centerIcons[badge.icon];
+  const gradientId = useId();
+  const gradientFillId = `achievement-badge-gradient-${gradientId}`;
 
   // Flat design: shape as background, icon and label in center
   return (
@@ -123,7 +126,16 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
             animation: shine ? 'achievement-shine 3s ease-in-out infinite' : undefined,
           }}
         >
-          <ShapeIcon size={containerPx} color={color.bg} />
+          <svg className="absolute h-0 w-0" aria-hidden="true" focusable="false">
+            <defs>
+              <linearGradient id={gradientFillId} x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor={color.lighting} stopOpacity="1" />
+                <stop offset="55%" stopColor={color.bg} stopOpacity="1" />
+                <stop offset="100%" stopColor={color.bg} stopOpacity="1" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <ShapeIcon size={containerPx} color={color.bg} style={{ fill: `url(#${gradientFillId})` }} />
         </span>
 
         {/* Subtle material texture */}
@@ -169,7 +181,7 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
               )}
               style={{
                 fontSize: sizePreset.label,
-                background: `${color.label}f8`,
+                background: `radial-gradient(150% 300% at 75% 200%, ${color.accent}cc 0%, ${color.label}f8 55%, ${color.label}f8 100%)`,
                 color: color.accent,
                 filter: `drop-shadow(0 0 20px ${color.accent}99)`,
               }}

@@ -51,20 +51,20 @@ export function AchievementCard({
 
   // Determine border/theme color by goal type
   let borderColor = 'border-slate-200 dark:border-slate-700';
-  let completedLabelColor = '';
-  let backgroundColor = '';
+  let completedLabelColor = 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700';
+  let backgroundColor = 'bg-slate-50/80 dark:bg-slate-900/80';
   if (goalType === 'target') {
-    backgroundColor = 'bg-green-50/50 dark:bg-green-900/50';
+    // backgroundColor = 'bg-green-50/50 dark:bg-green-900/50';
     // borderColor = 'border-green-400 dark:border-green-700';
-    completedLabelColor = 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700';
+    // completedLabelColor = 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-200 border-green-200 dark:border-green-700';
   } else if (goalType === 'milestone') {
-    backgroundColor = 'bg-blue-50/50 dark:bg-blue-900/50';
+    // backgroundColor = 'bg-blue-50/50 dark:bg-blue-900/50';
     // borderColor = 'border-blue-300 dark:border-blue-700';
-    completedLabelColor = 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700';
+    // completedLabelColor = 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-200 border-blue-200 dark:border-blue-700';
   } else {
-    backgroundColor = 'bg-yellow-50/50 dark:bg-yellow-900/50';
+    // backgroundColor = 'bg-yellow-50/50 dark:bg-yellow-900/50';
     // borderColor = 'border-yellow-300 dark:border-yellow-700';
-    completedLabelColor = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700';
+    // completedLabelColor = 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700';
   }
 
   const badgeColor = achievementBadgeColors[badge.color] ?? achievementBadgeColors.gold;
@@ -91,7 +91,7 @@ export function AchievementCard({
     <div
       className={cn(
         backgroundColor,
-        'group rounded-xl border dark:bg-slate-900/80 shadow-sm p-4 flex flex-col gap-2 h-full transition-all duration-300 ease-out items-center relative hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70 dark:hover:shadow-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
+        'group rounded-xl border shadow-sm p-4 flex flex-col gap-2 h-full transition-all duration-300 ease-out items-center relative hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70 dark:hover:shadow-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
         onSelect && 'cursor-pointer',
         borderColor,
         status === 'locked' && 'opacity-60 grayscale',
