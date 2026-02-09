@@ -75,7 +75,7 @@ export function AchievementUnlockOverlay({ achievements, onClose }: AchievementU
   if (!active) return null;
 
   return (
-    <div className="achievement-overlay fixed inset-0 z-50 flex items-center justify-center">
+    <div className="achievement-overlay fixed inset-0 z-[60] flex items-center justify-center">
       <style>{overlayAnimations}</style>
       <div
         className="absolute inset-0"

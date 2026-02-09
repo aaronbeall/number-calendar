@@ -99,7 +99,6 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
     if (!dataset) return;
     setEditResult(result);
     setEditOpen(true);
-    setActiveGoalId(null);
   };
 
   return (
