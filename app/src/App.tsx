@@ -35,7 +35,7 @@ import ExportDialog from './features/dataset/ExportDialog';
 import ImportDialog from './features/dataset/ImportDialog';
 import type { Dataset } from './features/db/localdb';
 import { useDataset, useDatasets } from './features/db/useDatasetData';
-import { useAchievements } from './hooks/useAchievements';
+import { useAchievements, type NewAchievementResult } from './hooks/useAchievements';
 import { usePreference } from './hooks/usePreference';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getSeededColorTheme } from './lib/colors';
@@ -43,6 +43,7 @@ import { getDatasetIcon } from './lib/dataset-icons';
 import { isCurrentWeek } from './lib/friendly-date';
 import type { AchievementResult, GoalResults } from './lib/goals';
 import Achievements from './pages/Achievements';
+import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
 import { Calendar } from './pages/Calendar';
 import { Landing } from './pages/Landing';
 import Milestones from './pages/Milestones';
@@ -264,6 +265,8 @@ function AppHeader({
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const { milestones, targets, achievements, new: newResults } = useAchievements(currentDataset.id);
+  const [overlayAchievements, setOverlayAchievements] = useState<NewAchievementResult[]>([]);
+  const [overlayOpen, setOverlayOpen] = useState(false);
   
   // Check if currently on the calendar view (index route of dataset)
   const calendarMatch = useMatch(`/dataset/${currentDataset.id}`);
@@ -292,10 +295,22 @@ function AppHeader({
     };
   }, [achievements, milestones, targets]);
 
+  const allResults = useMemo(
+    () => [...milestones, ...targets, ...achievements],
+    [achievements, milestones, targets]
+  );
+
   useEffect(() => {
-    console.log('New achievement results:', newResults);
     if (newResults.length === 0) return;
+    const overlayItems: NewAchievementResult[] = [];
+    const toastItems: NewAchievementResult[] = [];
+    const goalResultsById = new Map(allResults.map(result => [result.goal.id, result]));
     newResults.forEach(result => {
+      const goalResult = goalResultsById.get(result.goal.id);
+      if (goalResult?.completedCount === 1) overlayItems.push(result);
+      else toastItems.push(result);
+    });
+    toastItems.forEach(result => {
       const title = result.goal.title;
       const description = result.goal.description;
       toast.custom(() => (
@@ -314,12 +329,17 @@ function AppHeader({
         </div>
       ));
     });
+    if (overlayItems.length > 0) {
+      setOverlayAchievements(overlayItems);
+      setOverlayOpen(true);
+    }
   }, [newResults]);
   
   return (
-    <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-      <div className="max-w-4xl mx-auto px-4 py-3">
-        <div className="relative flex items-center justify-between gap-4">
+    <>
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="relative flex items-center justify-between gap-4">
           {/* Left: Menu + Dataset */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <DropdownMenu>
@@ -509,7 +529,17 @@ function AppHeader({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </header>
+      </header>
+      {overlayOpen && overlayAchievements.length > 0 && (
+        <AchievementUnlockOverlay
+          achievements={overlayAchievements}
+          onClose={() => {
+            setOverlayOpen(false);
+            setOverlayAchievements([]);
+          }}
+        />
+      )}
+    </>
   );
 }
 
