@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import {
   AlertDialog,
@@ -32,6 +33,7 @@ interface DatasetDialogProps {
 }
 
 export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: DatasetDialogProps) {
+  const navigate = useNavigate();
   const createDatasetMutation = useCreateDataset();
   const updateDatasetMutation = useUpdateDataset();
   const deleteDatasetMutation = useDeleteDataset();
@@ -147,6 +149,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       onSuccess: () => {
         setDeleteOpen(false);
         onOpenChange(false);
+        navigate('/');
       }
     });
   };
