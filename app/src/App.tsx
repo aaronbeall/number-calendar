@@ -22,31 +22,32 @@ import {
   useNavigate,
   useParams,
 } from 'react-router-dom';
+import { toast } from 'sonner';
 import { ErrorState } from './components/PageStates';
 import { useTheme } from './components/ThemeProvider';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
 import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
+import AchievementBadge from './features/achievements/AchievementBadge';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import DuplicateDialog from './features/dataset/DuplicateDialog';
 import ExportDialog from './features/dataset/ExportDialog';
 import ImportDialog from './features/dataset/ImportDialog';
 import type { Dataset } from './features/db/localdb';
 import { useDataset, useDatasets } from './features/db/useDatasetData';
-import AchievementBadge from './features/achievements/AchievementBadge';
 import { useAchievements } from './hooks/useAchievements';
 import { usePreference } from './hooks/usePreference';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getSeededColorTheme } from './lib/colors';
 import { getDatasetIcon } from './lib/dataset-icons';
+import { isCurrentWeek } from './lib/friendly-date';
+import type { AchievementResult, GoalResults } from './lib/goals';
 import Achievements from './pages/Achievements';
 import { Calendar } from './pages/Calendar';
 import { Landing } from './pages/Landing';
 import Milestones from './pages/Milestones';
 import Records from './pages/Records';
 import Targets from './pages/Targets';
-import { toast } from 'sonner';
-import type { GoalResults } from './lib/goals';
 
 
 function App() {
@@ -278,11 +279,11 @@ function AppHeader({
   };
 
   const provisionalCounts = useMemo(() => {
-    const countProvisional = (results: GoalResults[]) =>
-      results.reduce((sum, result) => sum + result.achievements.filter(ach => ach.provisional).length, 0);
-    const milestoneCount = countProvisional(milestones);
-    const targetCount = countProvisional(targets);
-    const achievementCount = countProvisional(achievements);
+    const count = (results: GoalResults[], by: (ach: AchievementResult) => boolean) =>
+      results.reduce((sum, result) => sum + result.achievements.filter(by).length, 0);
+    const milestoneCount = count(milestones, ach => !!ach.completedAt && isCurrentWeek(ach.completedAt));
+    const targetCount = count(targets, ach => !!ach.provisional);
+    const achievementCount = count(achievements, ach => !!ach.provisional);
     return {
       milestones: milestoneCount,
       targets: targetCount,
