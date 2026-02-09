@@ -41,7 +41,7 @@ import { useSearchParamState } from './hooks/useSearchParamState';
 import { getSeededColorTheme } from './lib/colors';
 import { getDatasetIcon } from './lib/dataset-icons';
 import { isCurrentWeek } from './lib/friendly-date';
-import type { AchievementResult, GoalResults } from './lib/goals';
+import { sortGoalResults, type AchievementResult, type GoalResults } from './lib/goals';
 import Achievements from './pages/Achievements';
 import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
 import { Calendar } from './pages/Calendar';
@@ -296,7 +296,7 @@ function AppHeader({
   }, [achievements, milestones, targets]);
 
   const allResults = useMemo(
-    () => [...milestones, ...targets, ...achievements],
+    () => sortGoalResults([...milestones, ...targets, ...achievements]),
     [achievements, milestones, targets]
   );
 
