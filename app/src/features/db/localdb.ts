@@ -330,7 +330,21 @@ export async function updateDataset(dataset: Dataset): Promise<void> {
 
 export async function deleteDataset(id: string): Promise<void> {
   const db = await getDb();
-  await db.delete('datasets', id);
+  const tx = db.transaction(['datasets', 'entries', 'notes', 'images', 'goals', 'achievements'], 'readwrite');
+
+  const deleteByDatasetId = async (storeName: string) => {
+    const store = tx.objectStore(storeName);
+    const keys = await store.index('datasetId').getAllKeys(id);
+    await Promise.all(keys.map((key) => store.delete(key)));
+  };
+
+  await tx.objectStore('datasets').delete(id);
+  await deleteByDatasetId('entries');
+  await deleteByDatasetId('notes');
+  await deleteByDatasetId('images');
+  await deleteByDatasetId('goals');
+  await deleteByDatasetId('achievements');
+  await tx.done;
 }
 
 export async function listDatasets(): Promise<Dataset[]> {

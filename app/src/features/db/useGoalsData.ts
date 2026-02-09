@@ -5,6 +5,7 @@ import {
   createGoal,
   listAchievements,
   listGoals,
+  type Goal,
   updateAchievement,
   updateGoal
 } from './localdb';
@@ -26,6 +27,22 @@ export function useCreateGoal() {
       if (created?.datasetId) {
         queryClient.invalidateQueries({ queryKey: ['goals', created.datasetId] });
       }
+    },
+  });
+}
+
+export function useCreateGoals() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (goals: Goal[]) => {
+      const createdGoals = await Promise.all(goals.map((goal) => createGoal(goal)));
+      return createdGoals;
+    },
+    onSuccess: (_, createdGoals) => {
+      const datasetIds = new Set(createdGoals.map((goal) => goal?.datasetId).filter(Boolean));
+      datasetIds.forEach((datasetId) => {
+        queryClient.invalidateQueries({ queryKey: ['goals', datasetId] });
+      });
     },
   });
 }

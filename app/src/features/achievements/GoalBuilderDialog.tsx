@@ -4,8 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import type { Dataset, Goal } from '@/features/db/localdb';
-import { createGoal } from '@/features/db/localdb';
 import { useAllDays, useSaveDay } from '@/features/db/useCalendarData';
+import { useCreateGoals } from '@/features/db/useGoalsData';
 import { toDayKey } from '@/lib/friendly-date';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
 import { formatValue } from '@/lib/friendly-numbers';
@@ -45,6 +45,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   // Load all days to calculate current total/last value
   const { data: allDays = [] } = useAllDays(dataset.id);
   const saveDay = useSaveDay();
+  const createGoals = useCreateGoals();
   
   // Calculate current value based on tracking type
   const currentValue = React.useMemo(() => {
@@ -302,8 +303,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     const allGoals = [...generatedGoals.milestones, ...generatedGoals.targets, ...generatedGoals.achievements];
     const goalsToCreate = allGoals.filter((g) => selectedGoals.has(g.id));
 
-    for (const goal of goalsToCreate) {
-      await createGoal(goal);
+    if (goalsToCreate.length > 0) {
+      await createGoals.mutateAsync(goalsToCreate);
     }
   };
 
