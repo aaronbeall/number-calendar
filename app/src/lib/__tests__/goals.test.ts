@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { processAchievements } from '../goals';
-import type { Goal, Achievement } from '@/features/db/localdb';
+import { processAchievements, sortGoalResults } from '../goals';
+import type { GoalResults } from '../goals';
+import type { Goal, Achievement, DateKey, GoalBadge } from '@/features/db/localdb';
 
 describe('processAchievements', () => {
   const datasetId = 'ds1';
@@ -856,5 +857,70 @@ describe('processAchievements', () => {
     // Should not complete because week 4 only had 4% growth, breaking the consecutive streak
     expect(result[0].completedCount).toBe(0);
     expect(result[0].currentProgress).toBe(1);
+  });
+});
+
+describe('sortGoalResults', () => {
+  const datasetId = 'ds-sort';
+  const badge: GoalBadge = { style: 'star', icon: 'star', color: 'gold', label: '1' };
+
+  const makeResult = ({
+    id,
+    type,
+    timePeriod,
+    count,
+    consecutive,
+    condition = 'above',
+    targetValue = 1,
+    createdAt,
+    completedAt,
+    completedCount,
+    currentProgress,
+  }: {
+    id: string;
+    type: 'milestone' | 'target' | 'goal';
+    timePeriod: 'anytime' | 'day' | 'week' | 'month' | 'year';
+    count: number;
+    consecutive?: boolean;
+    condition?: 'above' | 'below' | 'equal';
+    targetValue?: number;
+    createdAt: number;
+    completedAt?: DateKey;
+    completedCount: number;
+    currentProgress: number;
+  }): GoalResults => ({
+    goal: {
+      id,
+      datasetId,
+      createdAt,
+      title: id,
+      type,
+      timePeriod,
+      count,
+      consecutive,
+      target: { condition, metric: 'total', source: 'stats', value: targetValue },
+      badge,
+    },
+    achievements: [],
+    completedCount,
+    currentProgress,
+    firstCompletedAt: completedAt,
+    lastCompletedAt: completedAt,
+  });
+
+  it('should apply multi-level sorting rules', () => {
+    const results: GoalResults[] = [
+      makeResult({ id: 't2', type: 'target', timePeriod: 'day', count: 1, consecutive: false, createdAt: 4, completedAt: '2025-01-15', completedCount: 1, currentProgress: 0 }),
+      makeResult({ id: 'm1', type: 'milestone', timePeriod: 'anytime', count: 1, createdAt: 2, completedAt: '2025-01-02', completedCount: 1, currentProgress: 0 }),
+      makeResult({ id: 'm0', type: 'milestone', timePeriod: 'anytime', count: 1, createdAt: 1, completedAt: '2025-01-01', completedCount: 1, currentProgress: 0 }),
+      makeResult({ id: 't1', type: 'target', timePeriod: 'day', count: 2, consecutive: true, createdAt: 3, completedAt: '2025-02-01', completedCount: 1, currentProgress: 0 }),
+      makeResult({ id: 'gB', type: 'goal', timePeriod: 'week', count: 2, consecutive: false, createdAt: 5, completedCount: 0, currentProgress: 0, targetValue: 5 }),
+      makeResult({ id: 'gA', type: 'goal', timePeriod: 'week', count: 2, consecutive: false, createdAt: 6, completedCount: 0, currentProgress: 1, targetValue: 5 }),
+      makeResult({ id: 'gC', type: 'goal', timePeriod: 'week', count: 2, consecutive: false, createdAt: 2, completedCount: 0, currentProgress: 0, targetValue: 10 }),
+      makeResult({ id: 'gD', type: 'goal', timePeriod: 'week', count: 2, consecutive: false, createdAt: 3, completedCount: 0, currentProgress: 0, targetValue: 10 }),
+    ];
+
+    const sorted = sortGoalResults(results).map(result => result.goal.id);
+    expect(sorted).toEqual(['m0', 'm1', 't1', 't2', 'gB', 'gC', 'gD', 'gA']);
   });
 });

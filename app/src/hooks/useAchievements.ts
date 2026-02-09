@@ -1,7 +1,7 @@
 import { useAllDays } from '@/features/db/useDayEntryData';
 import { useGoals } from '@/features/db/useGoalsData';
 import { getDaysMap } from '@/lib/calendar';
-import { processAchievements, type AchievementResult, type GoalResults } from '@/lib/goals';
+import { processAchievements, sortGoalResults, type AchievementResult, type GoalResults } from '@/lib/goals';
 import { useEffect, useMemo, useRef } from 'react';
 
 export type UseAchievementsResult = {
@@ -27,12 +27,12 @@ export function useAchievements(datasetId: string): UseAchievementsResult {
     const previousAchievements = previousResultsRef.current
       ? previousResultsRef.current.flatMap(result => result.achievements)
       : [];
-    return processAchievements({
+    return sortGoalResults(processAchievements({
       goals: allGoals,
       priorResults: previousAchievements,
       data: allData,
       datasetId,
-    });
+    }));
   }, [allGoals, allData, datasetId]);
 
   const newResults = useMemo(() => {

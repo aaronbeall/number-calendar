@@ -545,6 +545,9 @@ export function isRangeCondition(condition: GoalTarget['condition'] | undefined)
   return !!condition && (condition === 'inside' || condition === 'outside');
 }
 
+/**
+ * Returns a string category for a goal, based on its type, timePeriod, count, and target.
+ */
 export function getGoalCategory(goal: Goal) {
   if (goal.type === 'milestone') return 'Milestones';
   if (goal.type === 'target') return 'Targets';
@@ -565,4 +568,91 @@ export function getGoalCategory(goal: Goal) {
   if (goal.badge.label?.match(/[0-9]×/)) return `${periodly} Tuples` as const;
   if (isMultiPeriod) return `Multi-${period} Goals` as const;
   return `${periodly} Goals` as const;
+}
+
+/**
+ * Sorts goal results based on multiple criteria:
+ * 1. Goal type: Milestones first, then Targets, then regular Goals.
+ * 2. Time period: Anytime first, then Day, Week, Month, Year.
+ * 3. Consecutive: Consecutive goals before non-consecutive.
+ * 4. Count: Lower count goals before higher count.
+ * 5. Completion date: Earlier completed goals before later.
+ * 6. For in-progress goals with no completions, higher progress percentage first.
+ * 7. For goals with the same valence (positive/negative), sort by target value (higher for positive, lower for negative).
+ * 8. Creation date as tiebreaker (earlier first).
+ */
+export function sortGoalResults(results: GoalResults[]): GoalResults[] {
+  const typeRank = (goal: Goal): number => {
+    if (goal.type === 'milestone') return 0;
+    if (goal.type === 'target') return 1;
+    return 2;
+  };
+
+  const periodRank = (timePeriod: TimePeriod): number => {
+    if (timePeriod === 'anytime') return 0;
+    if (timePeriod === 'day') return 1;
+    if (timePeriod === 'week') return 2;
+    if (timePeriod === 'month') return 3;
+    return 4;
+  };
+
+  const valenceForGoal = (goal: Goal): 'positive' | 'negative' | 'neutral' => {
+    if (goal.target.condition === 'below') return 'negative';
+    if (goal.target.condition === 'above') return 'positive';
+    return 'neutral';
+  };
+
+  const valenceValueForGoal = (goal: Goal): number => {
+    if (goal.target.value !== undefined) return goal.target.value;
+    if (goal.target.range) return (goal.target.range[0] + goal.target.range[1]) / 2;
+    return 0;
+  };
+
+  const completedAtKey = (result: GoalResults): string => (
+    result.firstCompletedAt ?? result.lastCompletedAt ?? '9999-99-99'
+  );
+
+  const progressPercent = (result: GoalResults): number => {
+    if (result.completedCount > 0) return 0;
+    if (!result.goal.count) return 0;
+    return result.currentProgress / result.goal.count;
+  };
+
+  return [...results].sort((a, b) => {
+    const typeDiff = typeRank(a.goal) - typeRank(b.goal);
+    if (typeDiff !== 0) return typeDiff;
+
+    const periodDiff = periodRank(a.goal.timePeriod) - periodRank(b.goal.timePeriod);
+    if (periodDiff !== 0) return periodDiff;
+
+    const consecutiveDiff = (a.goal.consecutive ? 0 : 1) - (b.goal.consecutive ? 0 : 1);
+    if (consecutiveDiff !== 0) return consecutiveDiff;
+
+    const countDiff = a.goal.count - b.goal.count;
+    if (countDiff !== 0) return countDiff;
+
+    const completedDiff = completedAtKey(a).localeCompare(completedAtKey(b));
+    if (completedDiff !== 0) return completedDiff;
+
+    if (a.completedCount === 0 && b.completedCount === 0) {
+      const progressDiff = progressPercent(a) - progressPercent(b);
+      if (progressDiff !== 0) return progressDiff;
+    }
+
+    const aValence = valenceForGoal(a.goal);
+    const bValence = valenceForGoal(b.goal);
+    const aValenceValue = valenceValueForGoal(a.goal);
+    const bValenceValue = valenceValueForGoal(b.goal);
+    if (aValence === bValence) {
+      if (aValence === 'negative') {
+        const valueDiff = bValenceValue - aValenceValue;
+        if (valueDiff !== 0) return valueDiff;
+      } else {
+        const valueDiff = aValenceValue - bValenceValue;
+        if (valueDiff !== 0) return valueDiff;
+      }
+    }
+
+    return a.goal.createdAt - b.goal.createdAt;
+  });
 }
