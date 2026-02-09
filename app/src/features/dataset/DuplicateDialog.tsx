@@ -11,7 +11,7 @@ import { AlertCircle, Copy } from 'lucide-react';
 import { nanoid } from 'nanoid';
 import { useEffect, useMemo, useState } from 'react';
 import type { Dataset, ISODateString } from '../db/localdb';
-import { useAllDays, useSaveDay } from '../db/useCalendarData';
+import { useAllDays, useSaveDay } from '../db/useDayEntryData';
 import { useCreateDataset, useDatasets } from '../db/useDatasetData';
 
 type CopyDataOption = 'all' | 'range';

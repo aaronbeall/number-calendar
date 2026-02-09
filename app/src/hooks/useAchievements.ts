@@ -1,4 +1,4 @@
-import { useAllDays } from '@/features/db/useCalendarData';
+import { useAllDays } from '@/features/db/useDayEntryData';
 import { useGoals } from '@/features/db/useGoalsData';
 import { getDaysMap } from '@/lib/calendar';
 import { processAchievements, type AchievementResult, type GoalResults } from '@/lib/goals';

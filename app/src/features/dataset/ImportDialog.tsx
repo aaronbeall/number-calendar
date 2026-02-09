@@ -11,7 +11,7 @@ import { detectDelimiter, generateDayEntries, getParsedColumns, getHeadersAndRow
 import { AlertCircle, Clipboard, Eraser, File, FileJson, Info, Table, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DayEntry, DayKey } from '../db/localdb';
-import { useAllDays, useSaveDay } from '../db/useCalendarData';
+import { useAllDays, useSaveDay } from '../db/useDayEntryData';
 import { useDataset } from '../db/useDatasetData';
 
 interface ImportDialogProps {

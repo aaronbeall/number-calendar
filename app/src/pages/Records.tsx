@@ -2,7 +2,7 @@ import { PageHeader } from '@/components/PageHeader';
 import type { DateKey, Valence } from '@/features/db/localdb';
 import { Award, CalendarDays, Flame, Skull, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
-import { useAllDays } from '../features/db/useCalendarData';
+import { useAllDays } from '../features/db/useDayEntryData';
 import { useDatasets } from '../features/db/useDatasetData';
 import { formatFriendlyDate, parseDateKey } from '../lib/friendly-date';
 import { calculateRecordsForValence } from '../lib/records';

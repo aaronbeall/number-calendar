@@ -9,7 +9,7 @@ import { dateToDayKey, dateToMonthKey } from '@/lib/friendly-date';
 import { getPrimaryMetricLabel } from '@/lib/tracking';
 import { AlertCircle, Calendar, CalendarCheck, CalendarDays, CalendarRange, Check, Copy, Download, FileType, ListOrdered } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { useAllDays } from '../db/useCalendarData';
+import { useAllDays } from '../db/useDayEntryData';
 import { useDataset } from '../db/useDatasetData';
 
 export interface ExportDialogProps {

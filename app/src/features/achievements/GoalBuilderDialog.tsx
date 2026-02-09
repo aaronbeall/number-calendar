@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import type { Dataset, Goal } from '@/features/db/localdb';
-import { useAllDays, useSaveDay } from '@/features/db/useCalendarData';
+import { useAllDays, useSaveDay } from '@/features/db/useDayEntryData';
 import { useCreateGoals } from '@/features/db/useGoalsData';
 import { toDayKey } from '@/lib/friendly-date';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';

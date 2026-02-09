@@ -1,7 +1,7 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { NumberText } from '@/components/ui/number-text';
 import type { Dataset } from '@/features/db/localdb';
-import { useMonth, useMostRecentPopulatedMonthBefore } from '@/features/db/useCalendarData';
+import { useMonth, useMostRecentPopulatedMonthBefore } from '@/features/db/useDayEntryData';
 import { getMonthDays, getPriorMonthNumbersMap } from '@/lib/calendar';
 import { getSeededColorTheme } from '@/lib/colors';
 import { getDatasetIcon } from '@/lib/dataset-icons';
