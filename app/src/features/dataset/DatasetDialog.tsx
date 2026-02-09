@@ -124,8 +124,8 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       createDatasetMutation.mutate(newDataset, {
         onSuccess: () => {
           reset();
-          onCreated(id);
           onOpenChange(false);
+          onCreated(id);
         }
       });
     }
