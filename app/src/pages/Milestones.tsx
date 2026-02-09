@@ -4,14 +4,10 @@ import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
 import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
-import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
-import { useGoals } from '@/features/db/useGoalsData';
+import { useAchievements } from '@/hooks/useAchievements';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
-import { getDaysMap } from '@/lib/calendar';
-import { processAchievements } from '@/lib/goals';
 import { Flag, Plus, Sparkles } from 'lucide-react';
-import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
 export default function Milestones() {
@@ -19,10 +15,7 @@ export default function Milestones() {
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', false);
   const { datasetId } = useParams();
   const { data: dataset, isLoading: datasetLoading } = useDataset(datasetId ?? '');
-  const { data: allDays } = useAllDays(datasetId ?? '');
-  const { data: allGoals = [], isLoading: isGoalsLoading } = useGoals(datasetId ?? '');
-
-  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
+  const { milestones: achievementResults, isLoading: isGoalsLoading } = useAchievements(datasetId ?? '');
 
   if (datasetLoading || isGoalsLoading) {
     return <LoadingState title="Loading milestones" />;
@@ -41,23 +34,13 @@ export default function Milestones() {
     );
   }
   
-  // Filter goals by type 'milestone'
-  const milestones = allGoals.filter(g => g.type === 'milestone');
-  const hasMilestones = milestones.length > 0;
+  const hasMilestones = achievementResults.length > 0;
   const headerActions = hasMilestones
     ? [
         { label: 'Add Milestone', onClick: () => setDialogOpen(true), icon: Plus },
         { label: 'Goal Builder', onClick: () => setBuilderOpen(true), variant: 'secondary' as const, icon: Sparkles, iconOnly: true, tooltip: 'Goal Builder' },
       ]
     : [];
-
-  // Compute achievement results from goals
-  const achievementResults = processAchievements({
-    goals: milestones,
-    achievements: [],
-    data: allData,
-    datasetId: datasetId ?? '',
-  });
   const unlockedMilestones = achievementResults.filter(result => result.completedCount > 0).length;
   const totalCompletions = achievementResults.reduce((sum, result) => sum + result.completedCount, 0);
   const totalMilestones = achievementResults.length;

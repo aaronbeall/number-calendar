@@ -5,14 +5,10 @@ import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { BadgePreviews } from '@/features/achievements/BadgePreview';
 import { EmptyState } from '@/features/achievements/EmptyState';
 import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
-import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
-import { useGoals } from '@/features/db/useGoalsData';
+import { useAchievements } from '@/hooks/useAchievements';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
-import { getDaysMap } from '@/lib/calendar';
-import { processAchievements } from '@/lib/goals';
 import { Plus, Sparkles, Trophy } from 'lucide-react';
-import { useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 
 export default function Achievements() {
@@ -20,12 +16,9 @@ export default function Achievements() {
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', false);
   const { datasetId } = useParams();
   const { data: dataset, isLoading: datasetLoading } = useDataset(datasetId ?? '');
-  const { data: allDays } = useAllDays(datasetId ?? '');
-  const { data: allGoals = [], isLoading: isGoalsLoading } = useGoals(datasetId ?? '');
+  const { achievements: achievementResults, isLoading: isGoalsLoading } = useAchievements(datasetId ?? '');
   const [searchParams] = useSearchParams();
   const isPreview = searchParams.has('preview');
-
-  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
   if (datasetLoading || isGoalsLoading) {
     return <LoadingState title="Loading achievements" />;
@@ -44,17 +37,6 @@ export default function Achievements() {
     );
   }
   
-  // Filter goals by type 'goal'
-  const goals = allGoals.filter(g => g.type === 'goal');
-  
-  // Compute achievement results from goals
-  const achievementResults = processAchievements({
-    goals,
-    achievements: [],
-    data: allData,
-    datasetId: datasetId ?? '',
-  });
-
   const unlockedGoals = achievementResults.filter(result => result.completedCount > 0).length;
   const totalCompletions = achievementResults.reduce((sum, result) => sum + result.completedCount, 0);
   const totalGoals = achievementResults.length;

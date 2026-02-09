@@ -57,15 +57,16 @@ export function useSaveDay() {
       const allDaysKey = ['allDays', datasetId];
       const allDays = queryClient.getQueryData(allDaysKey) as DayEntry[] | undefined;
       if (allDays) {
+        const nextAllDays = [...allDays];
         const idx = allDays.findIndex(d => d.date === date);
         if (idx !== -1) {
           // Update existing day
-          allDays[idx] = { ...allDays[idx], numbers };
+          nextAllDays[idx] = { ...allDays[idx], numbers };
         } else {
           // Add new day
-          allDays.push({ date, numbers, datasetId });
+          nextAllDays.push({ date, numbers, datasetId });
         }
-        queryClient.setQueryData(allDaysKey, [...allDays]);
+        queryClient.setQueryData(allDaysKey, nextAllDays);
       }
 
       // Update 'month' cache

@@ -4,14 +4,10 @@ import { AchievementDialog } from '@/features/achievements/AchievementDialog';
 import { AchievementsGrid } from '@/features/achievements/AchievementsGrid';
 import { EmptyState } from '@/features/achievements/EmptyState';
 import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
-import { useAllDays } from '@/features/db/useCalendarData';
 import { useDataset } from '@/features/db/useDatasetData';
-import { useGoals } from '@/features/db/useGoalsData';
+import { useAchievements } from '@/hooks/useAchievements';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
-import { getDaysMap } from '@/lib/calendar';
-import { processAchievements } from '@/lib/goals';
 import { Plus, Sparkles, Target } from 'lucide-react';
-import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
 export default function Targets() {
@@ -20,10 +16,7 @@ export default function Targets() {
 
   const { datasetId } = useParams();
   const { data: dataset, isLoading: datasetLoading } = useDataset(datasetId ?? '');
-  const { data: allDays } = useAllDays(datasetId ?? '');
-  const { data: allGoals = [], isLoading: isGoalsLoading } = useGoals(datasetId ?? '');
-
-  const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
+  const { targets: achievementResults, isLoading: isGoalsLoading } = useAchievements(datasetId ?? '');
 
   if (datasetLoading || isGoalsLoading) {
     return <LoadingState title="Loading targets" />;
@@ -42,20 +35,10 @@ export default function Targets() {
     );
   }
   
-  // Filter goals by type 'target'
-  const targets = allGoals.filter(g => g.type === 'target');
-  
-  // Compute achievement results from goals
-  const achievementResults = processAchievements({
-    goals: targets,
-    achievements: [],
-    data: allData,
-    datasetId: datasetId ?? '',
-  });
   const unlockedTargets = achievementResults.filter(result => result.completedCount > 0).length;
   const totalCompletions = achievementResults.reduce((sum, result) => sum + result.completedCount, 0);
   const totalTargets = achievementResults.length;
-  const hasTargets = targets.length > 0;
+  const hasTargets = achievementResults.length > 0;
   const headerActions = hasTargets
     ? [
         { label: 'Add Target', onClick: () => setDialogOpen(true), icon: Plus },

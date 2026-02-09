@@ -117,11 +117,11 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
   return { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getAnytimeStats };
 }
 
-export type GoalAchievement = Achievement & { provisional?: boolean };
+export type AchievementResult = Achievement & { provisional?: boolean };
 
 export interface GoalResults {
   goal: Goal;
-  achievements: GoalAchievement[];
+  achievements: AchievementResult[];
   completedCount: number;
   currentProgress: number;
   lastCompletedAt?: DateKey;
@@ -188,7 +188,7 @@ export function processAchievements({
     let currentProgress = 0;
     let lastCompletedAt: DateKey | undefined = undefined;
     let firstCompletedAt: DateKey | undefined = undefined;
-    let newAchievements: GoalAchievement[] = [];
+    let results: AchievementResult[] = [];
     const currentPeriodKey = goal.timePeriod === 'anytime'
       ? null
       : formatDateAsKey(new Date(), goal.timePeriod);
@@ -204,34 +204,38 @@ export function processAchievements({
       return undefined;
     };
 
-    const markProvisional = (achievement: Achievement): GoalAchievement => {
+    const markProvisional = (achievement: Achievement): AchievementResult => {
       if (currentPeriodKey && achievement.completedAt === currentPeriodKey) {
         return { ...achievement, provisional: true };
       }
       return achievement;
     };
 
+    const updateAchievement = (achievement: Achievement, updates: Partial<Achievement>): Achievement => ({
+      ...achievement,
+      ...updates,
+    });
+
     // ANYTIME: Only one achievement, only update if not already completed
     if (goal.timePeriod === 'anytime') {
-      let ach = goalAchievements[0] ?? { goalId: goal.id, datasetId, progress: 0 };
+      let ach = goalAchievements[0] ?? { id: nanoid(), goalId: goal.id, datasetId, progress: 0 };
       if (ach.completedAt) {
         // Already completed, nothing to do
-        newAchievements.push(ach);
+        results.push(ach);
         completedCount = 1;
         lastCompletedAt = ach.completedAt;
         currentProgress = 1;
       } else {
         if (goalSource !== 'stats') {
           // Deltas/percents are not supported for anytime goals yet.
-          ach.progress = 0;
-          newAchievements.push(ach);
-          currentProgress = ach.progress;
+          const updated = updateAchievement(ach, { progress: 0 });
+          results.push(updated);
+          currentProgress = updated.progress;
         } else {
           const stat = getAnytimeStats();
           const value = getMetricValue(stat, undefined, undefined);
           const met = typeof value === 'number' && evalCondition(goal.target, value);
           if (met) {
-            ach.progress = 1;
             // Find the exact day when the goal was met
             // TODO: Thie would be partially mitigated by a `repeatable` flag, so you can designate `day` time period 
             //   and `repeatable=false` to get an exact first-day a goal is achieved. Anytime goals would still be ambiguous.
@@ -248,13 +252,13 @@ export function processAchievements({
                 completedAt = day;
               }
             }
-            ach.completedAt = completedAt;
+            ach = updateAchievement(ach, { progress: 1, completedAt });
             completedCount = 1;
             lastCompletedAt = ach.completedAt;
           } else {
-            ach.progress = 0;
+            ach = updateAchievement(ach, { progress: 0 });
           }
-          newAchievements.push(ach);
+          results.push(ach);
           currentProgress = ach.progress;
         }
       }
@@ -277,7 +281,7 @@ export function processAchievements({
           let ach = periodAchievements[period];
           if (ach && ach.completedAt) {
             // Already completed, nothing to do
-            newAchievements.push(markProvisional(ach));
+            results.push(markProvisional(ach));
             completedCount++;
             lastCompletedAt = ach.completedAt;
             continue;
@@ -288,15 +292,12 @@ export function processAchievements({
           if (met) {
             if (!ach) {
               ach = { id: nanoid(), goalId: goal.id, datasetId, progress: 1, startedAt: period, completedAt: period };
-              completedCount++;
-              lastCompletedAt = period;
             } else {
-              ach.progress = 1;
-              ach.completedAt = period;
-              completedCount++;
-              lastCompletedAt = period;
+              ach = updateAchievement(ach, { progress: 1, completedAt: period });
             }
-            newAchievements.push(markProvisional(ach));
+            completedCount++;
+            lastCompletedAt = period;
+            results.push(markProvisional(ach));
           }
         }
         currentProgress = completedCount;
@@ -312,7 +313,7 @@ export function processAchievements({
             if (startIdx !== -1 && endIdx !== -1) {
               for (let i = startIdx; i <= endIdx; i++) usedPeriods.add(periods[i]);
             }
-            newAchievements.push(markProvisional(ach));
+            results.push(markProvisional(ach));
             completedCount++;
             lastCompletedAt = ach.completedAt;
           }
@@ -335,7 +336,7 @@ export function processAchievements({
             if (streak.length === goal.count) {
               // Completed a new achievement
               const ach: Achievement = { id: nanoid(), goalId: goal.id, datasetId, progress: goal.count, startedAt: streakStart, completedAt: streakEnd };
-              newAchievements.push(markProvisional(ach));
+              results.push(markProvisional(ach));
               completedCount++;
               lastCompletedAt = streakEnd;
               // Mark these periods as used
@@ -358,17 +359,17 @@ export function processAchievements({
         if (streak.length > 0 && streak.length < goal.count) {
           const progress = streak.length;
           const ach: Achievement = { id: nanoid(), goalId: goal.id, datasetId, progress, startedAt: streakStart };
-          newAchievements.push(ach);
+          results.push(ach);
           currentProgress = progress;
         }
       }
     }
     // After all logic for this goal, find firstCompletedAt
-    firstCompletedAt = newAchievements.find(a => !!a.completedAt)?.completedAt;
+    firstCompletedAt = results.find(a => !!a.completedAt)?.completedAt;
 
     result.push({
       goal,
-      achievements: newAchievements,
+      achievements: results,
       completedCount,
       currentProgress,
       lastCompletedAt,

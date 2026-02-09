@@ -6,10 +6,11 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Toaster } from '@/components/ui/sonner';
 import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Award, Bell, CalendarIcon, Download, Flag, Info, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
   Navigate,
@@ -32,6 +33,8 @@ import ExportDialog from './features/dataset/ExportDialog';
 import ImportDialog from './features/dataset/ImportDialog';
 import type { Dataset } from './features/db/localdb';
 import { useDataset, useDatasets } from './features/db/useDatasetData';
+import AchievementBadge from './features/achievements/AchievementBadge';
+import { useAchievements } from './hooks/useAchievements';
 import { usePreference } from './hooks/usePreference';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getSeededColorTheme } from './lib/colors';
@@ -42,6 +45,7 @@ import { Landing } from './pages/Landing';
 import Milestones from './pages/Milestones';
 import Records from './pages/Records';
 import Targets from './pages/Targets';
+import { toast } from 'sonner';
 
 
 function App() {
@@ -51,6 +55,7 @@ function App() {
       <Router basename={basename}>
         <AppLayout />
       </Router>
+      <Toaster/>
     </TooltipProvider>
   );
 }
@@ -256,6 +261,7 @@ function AppHeader({
   const { getDefaultExportDateRange } = useCalendarContext();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   const [showAIInsights, setShowAIInsights] = useState(false);
+  const { milestones, targets, achievements, new: newResults } = useAchievements(currentDataset.id);
   
   // Check if currently on the calendar view (index route of dataset)
   const calendarMatch = useMatch(`/dataset/${currentDataset.id}`);
@@ -269,6 +275,44 @@ function AppHeader({
     const normalizedSubPath = subPath === '/' ? '' : subPath;
     return `/dataset/${datasetId}${normalizedSubPath}${location.search}${location.hash}`;
   };
+
+  const provisionalCounts = useMemo(() => {
+    const countProvisional = (results: typeof milestones) =>
+      results.reduce((sum, result) => sum + result.achievements.filter(ach => ach.provisional).length, 0);
+    const milestoneCount = countProvisional(milestones);
+    const targetCount = countProvisional(targets);
+    const achievementCount = countProvisional(achievements);
+    return {
+      milestones: milestoneCount,
+      targets: targetCount,
+      achievements: achievementCount,
+      total: milestoneCount + targetCount + achievementCount,
+    };
+  }, [achievements, milestones, targets]);
+
+  useEffect(() => {
+    console.log('New achievement results:', newResults);
+    if (newResults.length === 0) return;
+    newResults.forEach(result => {
+      const title = result.goal.title;
+      const description = result.goal.description;
+      toast.custom(() => (
+        <div className="flex w-[360px] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-800 dark:bg-slate-950">
+          <AchievementBadge badge={result.goal.badge} size="small" animate />
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">
+              {title}
+            </div>
+            {description && (
+              <div className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
+                {description}
+              </div>
+            )}
+          </div>
+        </div>
+      ));
+    });
+  }, [newResults]);
   
   return (
     <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
@@ -278,8 +322,11 @@ function AppHeader({
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                <Button variant="ghost" size="icon" className="relative h-8 w-8 flex-shrink-0">
                   <Menu className="h-4 w-4" />
+                  {provisionalCounts.total > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
@@ -295,21 +342,36 @@ function AppHeader({
                   </>
                 )}
                 <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
+                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
                     <Flag className="h-4 w-4" />
-                    Milestones
+                    <span className="flex-1">Milestones</span>
+                    {provisionalCounts.milestones > 0 && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                        {provisionalCounts.milestones}
+                      </span>
+                    )}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/targets` : '#'}>
+                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/targets` : '#'}>
                     <Target className="h-4 w-4" />
-                    Targets
+                    <span className="flex-1">Targets</span>
+                    {provisionalCounts.targets > 0 && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                        {provisionalCounts.targets}
+                      </span>
+                    )}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
+                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
                     <Trophy className="h-4 w-4" />
-                    Achievements
+                    <span className="flex-1">Achievements</span>
+                    {provisionalCounts.achievements > 0 && (
+                      <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+                        {provisionalCounts.achievements}
+                      </span>
+                    )}
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2" asChild>

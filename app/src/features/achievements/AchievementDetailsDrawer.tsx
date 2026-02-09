@@ -23,7 +23,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import type { DateKey, Goal } from '@/features/db/localdb';
 import { useArchiveGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
-import { formatGoalTargetValue, isRangeCondition, type GoalAchievement, type GoalResults } from '@/lib/goals';
+import { formatGoalTargetValue, isRangeCondition, type AchievementResult, type GoalResults } from '@/lib/goals';
 import { formatValue } from '@/lib/friendly-numbers';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
@@ -480,8 +480,8 @@ function buildTimelineItems({
   currentProgress,
   createdAt,
 }: {
-  inProgress?: GoalAchievement;
-  completedAchievements: GoalAchievement[];
+  inProgress?: AchievementResult;
+  completedAchievements: AchievementResult[];
   goal: Goal;
   currentProgress: number;
   createdAt: number;
@@ -601,7 +601,7 @@ function formatTimelineHeading(date: Date, timePeriod: Goal['timePeriod']): stri
   return null;
 }
 
-function buildAchievementDateLabel(achievement: GoalAchievement): string {
+function buildAchievementDateLabel(achievement: AchievementResult): string {
   if (achievement.startedAt && achievement.completedAt) {
     return formatFriendlyDate(achievement.startedAt, achievement.completedAt);
   }
