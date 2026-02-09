@@ -156,7 +156,7 @@ export const demoGoals = (datasetId: string): Goal[] => [
 ];
 
 // Dummy targets (only in preview mode)
-const demoTargets = (datasetId: string): Goal[] => [
+export const demoTargets = (datasetId: string): Goal[] => [
   {
     id: 't1',
     datasetId: datasetId ?? '',

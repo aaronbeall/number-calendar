@@ -41,7 +41,6 @@ import {
   ShieldOff,
   Skull,
   Smile,
-  Sparkles,
   Star,
   Sun,
   Tags,
@@ -180,10 +179,10 @@ import {
 } from 'react-icons/gi';
 import { ImShield } from 'react-icons/im';
 import { IoMdPin } from 'react-icons/io';
+import { IoSparklesSharp } from 'react-icons/io5';
 import { PiFlagCheckered, PiSunHorizonFill } from 'react-icons/pi';
 import { RiVipDiamondFill } from 'react-icons/ri';
 import { TbBadgeFilled, TbSquareRoundedChevronsDownFilled, TbSquareRoundedChevronsUpFilled } from 'react-icons/tb';
-import { IoSparklesSharp } from 'react-icons/io5'
 
 // Map style to shape icon (background container)
 export const achievementBadgeStyles = {
@@ -592,10 +591,10 @@ export const achievementBadgeColors = {
     border: '#ff85a8',
   },
   iridescent: {
-    bg: '#4dd0e1',
-    lighting: '#d9fcff',
+    bg: '#fdd0f1',
+    lighting: '#40ff81',
     accent: '#ff4081',
-    label: '#1a2730',
+    label: '#33001a',
     border: '#651fff',
   },
   regal: {
