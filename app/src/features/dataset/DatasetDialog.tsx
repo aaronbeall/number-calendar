@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react';
 import { nanoid } from 'nanoid';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +18,10 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCreateDataset, useUpdateDataset, useDeleteDataset, useDatasets } from '../db/useDatasetData';
-import { Confirmation } from '@/components/ui/confirmation';
 import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { cn, isNameTaken } from '@/lib/utils';
-import { TrendingUp, BarChart3, Database } from 'lucide-react';
+import { TrendingUp, BarChart3, Database, Trash2 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
 interface DatasetDialogProps {
@@ -35,6 +44,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
   const [tracking, setTracking] = useState<Tracking>('series');
   const [valence, setValence] = useState<Valence>('positive');
   const [iconSearch, setIconSearch] = useState('');
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   const nameExists = isNameTaken({ ...dataset, name }, existingDatasets, 'name', 'id');
   const isNameValid = name.trim().length > 0 && !nameExists;
@@ -135,6 +145,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
     if (!dataset) return;
     deleteDatasetMutation.mutate(dataset.id, {
       onSuccess: () => {
+        setDeleteOpen(false);
         onOpenChange(false);
       }
     });
@@ -468,23 +479,14 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
 
           <DialogFooter className="gap-2 flex-shrink-0 px-6 pb-6 pt-4 flex items-center justify-between">
             {isEditMode && dataset && (
-              <Confirmation
-                title={`Delete ${dataset.name} dataset?`}
-                description="This action cannot be undone."
-                confirmLabel={deleteDatasetMutation.isPending ? 'Deleting…' : 'Delete'}
-                tone="destructive"
-                disabled={deleteDatasetMutation.isPending}
+              <button
+                type="button"
+                onClick={() => setDeleteOpen(true)}
+                className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400 hover:underline"
               >
-                {(confirm) => (
-                  <button
-                    type="button"
-                    onClick={confirm(handleDelete)}
-                    className="text-xs text-red-600 dark:text-red-400 hover:underline"
-                  >
-                    Delete
-                  </button>
-                )}
-              </Confirmation>
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
             )}
             <div className="flex items-center gap-2 ml-auto">
               <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
@@ -499,6 +501,28 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
             </div>
           </DialogFooter>
         </form>
+        {isEditMode && dataset && (
+          <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete {dataset.name} dataset?</AlertDialogTitle>
+                <AlertDialogDescription className="text-slate-600 dark:text-slate-400">
+                  This will permanently remove the dataset and all associated data. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={deleteDatasetMutation.isPending}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDelete}
+                  className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
+                  disabled={deleteDatasetMutation.isPending}
+                >
+                  {deleteDatasetMutation.isPending ? 'Deleting…' : 'Delete'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </DialogContent>
     </Dialog>
   );
