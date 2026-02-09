@@ -598,9 +598,9 @@ export const achievementBadgeColors = {
     border: '#651fff',
   },
   regal: {
-    bg: '#2f3b8f',
-    lighting: '#b6c0ff',
-    accent: '#f6c453',
+    bg: '#ffe47a',
+    lighting: '#fff9b6',
+    accent: '#ffb300',
     label: '#1b1f4b',
     border: '#5160c4',
   },
