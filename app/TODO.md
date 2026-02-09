@@ -127,3 +127,4 @@ I'm liking this one.
 - [ ] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
 - [ ] Tracking=series and percents aren't very helpful, percents should be based on cumulative change
 - [ ] Adding data data to new month didn't update the monthly view show a new month summary
+- [ ] Need and error boundary to catch UI errors
