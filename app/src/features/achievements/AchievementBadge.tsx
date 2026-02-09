@@ -46,10 +46,10 @@ const animationStyles = `
 `;
 
 export function AchievementBadge({ badge, size = 'medium', className, animate, floating = animate, shine = animate, pulse = animate, grayscale }: AchievementBadgeProps) {
-  const color = colorPresets[badge.color];
+  const color = colorPresets[badge.color] ?? colorPresets.gold;
   const sizePreset = sizePresets[size];
   const containerPx = sizePreset.container;
-  const ShapeIcon = styleIcons[badge.style];
+  const ShapeIcon = styleIcons[badge.style] ?? styleIcons.badge;
   const CenterIcon = badge.icon && centerIcons[badge.icon];
   const gradientId = useId();
   const gradientFillId = `achievement-badge-gradient-${gradientId}`;
