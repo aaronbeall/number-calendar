@@ -5,11 +5,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { type Dataset, type Goal, type GoalBadge, type GoalRequirements, type GoalType } from '@/features/db/localdb';
 import { useCreateGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
-import { getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
+import { formatGoalTargetValue, getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { capitalize, randomKeyOf } from '@/lib/utils';
 import { AlertTriangle, Award, Dices, Palette, Undo2 } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 import { BadgeEditDialog } from './BadgeEditDialog';
 import { GoalBuilder } from './GoalBuilder';
@@ -99,6 +99,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
       : (initialData?.goal ?? getDefaultGoal())
   );
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
+  const prevTargetRef = useRef<Goal['target'] | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -113,13 +114,44 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
         count: initialGoal.count,
         consecutive: initialGoal.consecutive,
       });
+      prevTargetRef.current = initialGoal.target;
       return;
     }
     setTitle(initialData?.title ?? '');
     setDescription(initialData?.description ?? '');
     setBadge(initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
     setGoal(initialData?.goal ?? getDefaultGoal());
+    prevTargetRef.current = (initialData?.goal ?? getDefaultGoal())?.target ?? null;
   }, [open, initialGoal, initialData, type, tracking, valence]);
+
+  const handleGoalChange = (nextGoal: Partial<GoalRequirements>) => {
+    if (!isEditMode || !nextGoal.target) {
+      setGoal(nextGoal);
+      prevTargetRef.current = nextGoal.target ?? null;
+      return;
+    }
+
+    const prevTarget = prevTargetRef.current;
+    const nextTarget = nextGoal.target;
+    if (prevTarget) {
+      const prevLong = formatGoalTargetValue(prevTarget);
+      const prevShort = formatGoalTargetValue(prevTarget, { short: true });
+      const nextLong = formatGoalTargetValue(nextTarget);
+      const nextShort = formatGoalTargetValue(nextTarget, { short: true });
+
+      setTitle(current => current.replace(prevShort, nextShort).replace(prevLong, nextLong));
+      setDescription(current => current.replace(prevShort, nextShort).replace(prevLong, nextLong));
+      setBadge(current => {
+        if (!current.label) return current;
+        const updatedLabel = current.label.replace(prevShort, nextShort).replace(prevLong, nextLong);
+        if (updatedLabel === current.label) return current;
+        return { ...current, label: updatedLabel };
+      });
+    }
+
+    setGoal(nextGoal);
+    prevTargetRef.current = nextTarget;
+  };
 
   const sugggested = getSuggestedGoalContent({ type, title, description, badge, ...goal });
 
@@ -233,13 +265,13 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
               {/* Left Column: Goal Builder */}
               <div className="flex flex-col gap-2 md:w-1/2">
                 {type === 'milestone' && (
-                  <MilestoneBuilder value={goal} onChange={setGoal} tracking={tracking} valence={valence} />
+                  <MilestoneBuilder value={goal} onChange={handleGoalChange} tracking={tracking} valence={valence} />
                 )}
                 {type === 'target' && (
-                  <TargetBuilder value={goal} onChange={setGoal} tracking={tracking} valence={valence} />
+                  <TargetBuilder value={goal} onChange={handleGoalChange} tracking={tracking} valence={valence} />
                 )}
                 {type === 'goal' && (
-                  <GoalBuilder value={goal} onChange={setGoal} tracking={tracking} valence={valence} />
+                  <GoalBuilder value={goal} onChange={handleGoalChange} tracking={tracking} valence={valence} />
                 )}
               </div>
               {/* Right Column: Badge, Title, Description */}
