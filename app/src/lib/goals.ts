@@ -183,14 +183,14 @@ export function processAchievements({
     return acc;
   }, {} as Record<string, AchievementResult>);
 
-  const result: GoalResults[] = [];
+  const results: GoalResults[] = [];
 
   for (const goal of goals) {
     let completedCount = 0;
     let currentProgress = 0;
     let lastCompletedAt: DateKey | undefined = undefined;
     let firstCompletedAt: DateKey | undefined = undefined;
-    let results: AchievementResult[] = [];
+    let achievements: AchievementResult[] = [];
     const currentPeriodKey = goal.timePeriod === 'anytime'
       ? null
       : formatDateAsKey(new Date(), goal.timePeriod);
@@ -259,7 +259,7 @@ export function processAchievements({
         }
       }
       const marked = markProvisional(ach);
-      results.push(marked);
+      achievements.push(marked);
       currentProgress = marked.progress;
     } else {
       // PERIODIC: day/week/month/year
@@ -280,7 +280,7 @@ export function processAchievements({
             const finalized = markProvisional(ach);
             completedCount++;
             lastCompletedAt = period;
-            results.push(finalized);
+            achievements.push(finalized);
           }
         }
         currentProgress = completedCount;
@@ -305,7 +305,7 @@ export function processAchievements({
               let ach: AchievementResult = getBaseAchievement(goal.id, streakStart);
               ach = updateAchievement(ach, { progress: goal.count, completedAt: streakEnd });
               const finalized = markProvisional(ach);
-              results.push(finalized);
+              achievements.push(finalized);
               completedCount++;
               lastCompletedAt = streakEnd;
               streak = [];
@@ -328,24 +328,24 @@ export function processAchievements({
           let ach: AchievementResult = getBaseAchievement(goal.id, streakStart);
           ach = updateAchievement(ach, { progress });
           const finalized = markProvisional(ach);
-          results.push(finalized);
+          achievements.push(finalized);
           currentProgress = progress;
         }
       }
     }
     // After all logic for this goal, find firstCompletedAt
-    firstCompletedAt = results.find(a => !!a.completedAt)?.completedAt;
+    firstCompletedAt = achievements.find(a => !!a.completedAt)?.completedAt;
 
-    result.push({
+    results.push({
       goal,
-      achievements: results,
+      achievements,
       completedCount,
       currentProgress,
       lastCompletedAt,
       firstCompletedAt,
     });
   }
-  return result;
+  return results;
 }
 
 // Examples:
