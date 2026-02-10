@@ -1,4 +1,4 @@
-import { type Achievement, type DateKey, type DayKey, type Goal, type GoalRequirements, type GoalTarget, type GoalType, type TimePeriod } from '@/features/db/localdb';
+import { type Achievement, type DateKey, type DayKey, type Goal, type GoalCondition, type GoalRequirements, type GoalTarget, type GoalType, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './friendly-date';
 import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
@@ -6,7 +6,7 @@ import { adjectivize, capitalize, entriesOf, keysOf, pluralize } from './utils';
 import { type FormatValueOptions, formatRange, formatValue } from './friendly-numbers';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
-function evalCondition(cond: GoalTarget, value: number): boolean {
+export function evalCondition(cond: GoalCondition, value: number): boolean {
   if (cond.condition === 'above') {
     if (cond.value === 0) return value > 0;
     return value >= cond.value;

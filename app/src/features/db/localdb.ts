@@ -77,10 +77,12 @@ export type GoalTarget = {
   source: NumberSource;
   value?: number;
   range?: [number, number];
-} & (
-  | { condition: 'above' | 'below' | 'equal'; value: number; }
+} & GoalCondition;
+
+// Condition for goals
+export type GoalCondition = 
+  { condition: 'above' | 'below' | 'equal'; value: number; }
   | { condition: 'inside' | 'outside'; range: [number, number]; }
-);
 
 // Reward visuals for goals
 export type GoalBadge = {

@@ -1,5 +1,6 @@
 // Valence helpers for stat/number semantics
-import type { Valence } from '@/features/db/localdb';
+import type { GoalCondition, Valence } from '@/features/db/localdb';
+import { evalCondition } from './goals';
 
 /**
  * Determines if a value (boolean or number) is considered "good" for the given valence.
@@ -71,6 +72,23 @@ export function getValueForValence<T>(value: number | boolean | null | undefined
   if (isGood(value ?? 0, valence)) return good;
   if (isBad(value ?? 0, valence)) return bad;
   return neutral;
+}
+
+export function getValueForValenceWithCondition<T>(
+  value: number | null | undefined,
+  valenceValue: number | null | undefined,
+  valence: Valence,
+  condition: GoalCondition | undefined, 
+  { good, bad, neutral }: { good: T; bad: T; neutral: T; }
+): T {
+  // If condition is provided, override valence evaluation with condition evaluation
+  if (condition) {
+    if (value == null) return neutral; // If no value to evaluate condition against, return neutral
+    const conditionMet = evalCondition(condition, value);
+    return conditionMet ? good : bad;
+  }
+  // Otherwise, evaluate based on valence as usual
+  return getValueForValence(valenceValue, valence, { good, bad, neutral });
 }
 
 /**

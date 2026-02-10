@@ -117,12 +117,12 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
     return candidate;
   };
 
-  const handleSelectTemplate = (template: DatasetTemplate) => {
+  const handleSelectTemplate = (template: DatasetTemplate, datasetName: string) => {
     const now = new Date().toISOString() as ISODateString;
     const id = nanoid();
     const newDataset: Dataset = {
       id,
-      name: getUniqueDatasetName(template.name),
+      name: getUniqueDatasetName(datasetName || template.name),
       description: template.description?.trim() || undefined,
       icon: template.icon,
       tracking: template.tracking,

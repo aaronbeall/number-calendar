@@ -185,7 +185,7 @@ export function getLowForMetric(metric: keyof NumberStats, extremes: StatsExtrem
 
 // Returns the delta (current - prior) for each metric in NumberStats
 export function getStatsDelta(current: NumberStats, prior: NumberStats | null): NumberStats {
-  const baseline = prior ?? computeNumberStats([current.first]) ?? current;
+  const baseline = prior ?? computeNumberStats([current.first]) ?? current; // If no prior, seed baseline with first value to get deltas out of the range of the current values instead of all zeros
   const result = {} as Record<keyof NumberStats, number>;
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
     if (typeof current[key] === 'number' && typeof baseline[key] === 'number') {
@@ -197,7 +197,7 @@ export function getStatsDelta(current: NumberStats, prior: NumberStats | null): 
 
 // Returns the percent change (delta/prior) for each metric in NumberStats
 export function getStatsPercentChange(current: NumberStats, prior: NumberStats | null): Partial<NumberStats> {
-  const baseline = prior ?? computeNumberStats([current.first]) ?? current;
+  const baseline = prior ?? computeNumberStats([current.first]) ?? current; // If no prior, seed baseline with first value to get deltas out of the range of the current values instead of all zeros
   const result: Partial<NumberStats> = {};
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
     if (typeof current[key] === 'number' && typeof baseline[key] === 'number' && baseline[key] !== 0) {

@@ -2,7 +2,7 @@ import type { DayEntry, DayKey, MonthKey, Tracking, WeekKey } from "@/features/d
 import { getWeek, parseISO } from "date-fns";
 import { dateToWeekKey, parseDateKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import { computeNumberStats, getStatsDelta, getStatsPercentChange, type StatsExtremes } from "./stats";
-import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceMetricFromData, getValenceSource } from "./tracking";
+import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
 
 
 export function getMonthDays(year: number, month: number) {

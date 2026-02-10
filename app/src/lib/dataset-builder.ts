@@ -1,6 +1,6 @@
 import type { DatasetIconName } from '@/lib/dataset-icons';
 import type { ColorThemeName } from '@/lib/colors';
-import type { Tracking, Valence } from '@/features/db/localdb';
+import type { GoalCondition, Tracking, Valence } from '@/features/db/localdb';
 
 export type DatasetTemplate = {
   id: string;
@@ -13,14 +13,14 @@ export type DatasetTemplate = {
   usesCurrency?: boolean;
   tracking: Tracking;
   valence: Valence;
+  sampleData: number[][];
   suggestedTarget?: {
     // 'period-change' (tracking=trend): target change per period (e.g. lose 1 pound per week)
     // 'period-target' (tracking=series): target value per period (e.g. walk 10,000 steps per day)
     // 'alltime-target': target total value by end date (e.g. save $5000 by end of year)
     type: 'period-change' | 'period-target' | 'alltime-target';
     period: 'day' | 'week' | 'month';
-    value?: number;
-    range?: [number, number];
+    condition?: GoalCondition; // Optional condition to determine good vs bad target (e.g. only consider it good if you hit 10k steps and also improve by 500 steps from previous week)
   };
   goalQuestions: {
     period: {
@@ -82,7 +82,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     theme: 'emerald',
     units: [],
     usesCurrency: true,
-    tracking: 'series', valence: 'positive',
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [3200, -1800, 900],
+      [4100, -2600, 700],
+      [2800, -3500, 600],
+      [5200, -2100, 1200],
+      [1900, -3200, 600],
+      [8600, -2400, 1800],
+      [2600, -1500, 800],
+      [2200, -9800, 900],
+      [4300, -2700, 1100],
+      [3500, -2600, 900],
+      [2400, -4100, 600],
+      [9800, -3800, 3200],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review profit?',
@@ -136,7 +151,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     theme: 'blue',
     units: [],
     usesCurrency: true,
-    tracking: 'series', valence: 'positive',
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [820, 310, 220],
+      [860, 320, 230],
+      [900, 340, 240],
+      [760, 280, 210],
+      [940, 350, 260],
+      [980, 360, 270],
+      [830, 300, 230],
+      [1020, 380, 290],
+      [1080, 400, 300],
+      [920, 340, 250],
+      [1120, 420, 310],
+      [1180, 440, 320],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review revenue?',
@@ -192,6 +222,20 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     usesCurrency: true,
     tracking: 'series',
     valence: 'negative',
+    sampleData: [
+      [1200, 450, 30],
+      [950, 400, 28],
+      [110, 500, 35],
+      [85, 380, -25],
+      [140, -550, 40],
+      [70, 320, 24],
+      [1600, 600, 45],
+      [900, 350, -140],
+      [130, -520, 36],
+      [75, 300, -20],
+      [1500, 580, 42],
+      [88, 340, -160],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review spending?',
@@ -244,8 +288,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'activity',
     theme: 'rose',
     units: ['pound', 'kilogram'],
-    tracking: 'trend', valence: 'negative',
-    suggestedTarget: { type: 'period-change', period: 'week', value: -0.5 },
+    tracking: 'trend',
+    valence: 'negative',
+    sampleData: [
+      [185],
+      [184.6],
+      [184.1],
+      [184.8],
+      [183.9],
+      [183.4],
+      [183.0],
+      [183.3],
+      [182.6],
+      [182.2],
+      [182.5],
+      [181.8],
+    ],
+    suggestedTarget: { type: 'period-change', period: 'week', condition: { condition: 'below', value: -0.5 } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to check your weight?',
@@ -303,8 +362,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'dumbbell',
     theme: 'amber',
     units: ['pound', 'kilogram'],
-    tracking: 'trend', valence: 'positive',
-    suggestedTarget: { type: 'period-change', period: 'week', value: 0.25 },
+    tracking: 'trend',
+    valence: 'positive',
+    sampleData: [
+      [150],
+      [150.4],
+      [150.9],
+      [150.2],
+      [151.3],
+      [151.8],
+      [152.4],
+      [151.7],
+      [152.8],
+      [153.3],
+      [152.6],
+      [153.8],
+    ],
+    suggestedTarget: { type: 'period-change', period: 'week', condition: { condition: 'above', value: 0.25 } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to check your weight?',
@@ -362,8 +436,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'heart',
     theme: 'red',
     units: ['mean-arterial-pressure', 'systolic', 'diastolic'],
-    tracking: 'trend', valence: 'negative',
-    suggestedTarget: { type: 'period-target', period: 'day', range: [70, 100] },
+    tracking: 'trend',
+    valence: 'neutral',
+    sampleData: [
+      [96],
+      [105],
+      [94],
+      [96],
+      [93],
+      [102],
+      [91],
+      [93],
+      [90],
+      [109],
+      [91],
+      [88],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'inside', range: [70, 100] } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to check blood pressure?',
@@ -416,8 +505,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'dumbbell',
     theme: 'emerald',
     units: ['minute', 'hour'],
-    tracking: 'series', valence: 'positive',
-    suggestedTarget: { type: 'period-target', period: 'day', value: 30 },
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [25, 10, 5],
+      [30, 12, 6],
+      [35, 14, 8],
+      [15, 6, 4],
+      [40, 16, 9],
+      [45, 18, 10],
+      [20, 8, 5],
+      [50, 20, 12],
+      [55, 22, 12],
+      [25, 10, 6],
+      [60, 24, 13],
+      [65, 26, 14],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'above', value: 30 } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to track exercise time?',
@@ -475,8 +579,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'footprints',
     theme: 'sky',
     units: [],
-    tracking: 'series', valence: 'positive',
-    suggestedTarget: { type: 'period-target', period: 'day', range: [8000, 10000] },
+    tracking: 'series',
+    valence: 'neutral',
+    sampleData: [
+      [3200, 2800, 1500],
+      [3400, 3000, 1600],
+      [3600, 3100, 1700],
+      [2800, 2400, 1200],
+      [3800, 3200, 1800],
+      [4000, 3400, 1900],
+      [2900, 2600, 1300],
+      [4200, 3500, 2000],
+      [4400, 3600, 2100],
+      [3000, 2700, 1400],
+      [4600, 3700, 2200],
+      [4800, 3900, 2300],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'above', value: 8000 } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review steps?',
@@ -534,8 +653,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'moon',
     theme: 'indigo',
     units: ['hour'],
-    tracking: 'trend', valence: 'positive',
-    suggestedTarget: { type: 'period-target', period: 'day', range: [7, 9] },
+    tracking: 'trend',
+    valence: 'positive',
+    sampleData: [
+      [6.6],
+      [6.7],
+      [6.8],
+      [6.5],
+      [6.9],
+      [7.0],
+      [7.1],
+      [6.8],
+      [7.2],
+      [7.3],
+      [7.0],
+      [7.4],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'inside', range: [7, 9] } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review sleep?',
@@ -588,8 +722,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'droplet',
     theme: 'blue',
     units: ['fluid-ounce', 'liter', 'milliliter'],
-    tracking: 'series', valence: 'positive',
-    suggestedTarget: { type: 'period-target', period: 'day', value: 64 },
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [20, 18, 16],
+      [22, 20, 16],
+      [24, 20, 18],
+      [16, 14, 12],
+      [26, 22, 18],
+      [28, 24, 18],
+      [18, 16, 12],
+      [30, 24, 20],
+      [32, 26, 20],
+      [20, 16, 14],
+      [34, 26, 22],
+      [36, 28, 22],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'above', value: 64 } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review hydration?',
@@ -648,8 +797,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     theme: 'orange',
     units: ['calorie', 'kilocalorie'],
     tracking: 'series',
-    valence: 'negative',
-    suggestedTarget: { type: 'period-target', period: 'day', value: 2000 },
+    valence: 'neutral',
+    sampleData: [
+      [750, 780, 700],
+      [720, 760, 680],
+      [700, 740, 660],
+      [820, 860, 760],
+      [690, 720, 650],
+      [670, 700, 640],
+      [810, 840, 740],
+      [660, 690, 620],
+      [640, 670, 610],
+      [800, 820, 730],
+      [630, 660, 600],
+      [620, 650, 590],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'inside', range: [1600, 2400] } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review calories?',
@@ -707,7 +870,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'smile',
     theme: 'pink',
     units: [],
-    tracking: 'trend', valence: 'positive',
+    tracking: 'trend',
+    valence: 'positive',
+    sampleData: [
+      [6.2],
+      [6.4],
+      [6.6],
+      [6.1],
+      [6.8],
+      [7.0],
+      [7.2],
+      [6.7],
+      [7.3],
+      [7.4],
+      [6.9],
+      [7.5],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to check in on mood?',
@@ -760,7 +938,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'book',
     theme: 'purple',
     units: ['minute', 'hour'],
-    tracking: 'series', valence: 'positive',
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [25, 15, 10],
+      [30, 18, 12],
+      [35, 20, 12],
+      [20, 12, 8],
+      [40, 22, 14],
+      [45, 24, 16],
+      [25, 14, 10],
+      [50, 26, 18],
+      [55, 28, 18],
+      [30, 16, 12],
+      [60, 30, 20],
+      [65, 32, 22],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review study time?',
@@ -813,7 +1006,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'code',
     theme: 'cyan',
     units: ['minute', 'hour'],
-    tracking: 'series', valence: 'positive',
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [30, 20, 10],
+      [35, 22, 12],
+      [40, 24, 14],
+      [20, 12, 8],
+      [45, 26, 16],
+      [50, 28, 18],
+      [25, 14, 10],
+      [55, 30, 20],
+      [60, 32, 22],
+      [30, 18, 12],
+      [65, 34, 24],
+      [70, 36, 26],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review coding time?',
@@ -867,7 +1075,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     theme: 'emerald',
     units: [],
     usesCurrency: true,
-    tracking: 'trend', valence: 'positive',
+    tracking: 'trend',
+    valence: 'positive',
+    sampleData: [
+      [2500],
+      [2600],
+      [2550],
+      [2700],
+      [2850],
+      [2800],
+      [2950],
+      [3100],
+      [3050],
+      [3250],
+      [3400],
+      [3550],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review savings?',
@@ -921,7 +1144,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     theme: 'red',
     units: [],
     usesCurrency: true,
-    tracking: 'trend', valence: 'negative',
+    tracking: 'trend',
+    valence: 'negative',
+    sampleData: [
+      [6200],
+      [6120],
+      [6050],
+      [6150],
+      [5980],
+      [5900],
+      [5960],
+      [5800],
+      [5720],
+      [5780],
+      [5600],
+      [5480],
+    ],
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review debt?',

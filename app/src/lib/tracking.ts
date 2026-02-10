@@ -58,7 +58,7 @@ export function getValenceSource(tracking: Tracking): Exclude<NumberSource, 'per
 }
 
 /**
- * Returns the valence-adjusted value for a number based on tracking type.
+ * Returns the valence-adjusted value for a number based on tracking type, ie like getValenceMetricFromData() but with just the raw numbers
  */
 export function getValenceValueForNumber(primaryMetric: number, priorPrimaryMetric: number | undefined, tracking: Tracking): number {
   if (getValenceSource(tracking) === 'deltas') {
@@ -73,7 +73,7 @@ export function getValenceValueForNumber(primaryMetric: number, priorPrimaryMetr
 /**
  * Returns the metric to use for valence from the given data based on tracking type.
  */
-export function getValenceMetricFromData(data: { stats: NumberStats; deltas?: NumberStats; }, tracking: Tracking): number | undefined {
+export function getValenceValueFromData(data: { stats: NumberStats; deltas?: NumberStats; }, tracking: Tracking): number | undefined {
   const metric = getPrimaryMetric(tracking);
   const source = getValenceSource(tracking);
   const sourceData = data[source];
