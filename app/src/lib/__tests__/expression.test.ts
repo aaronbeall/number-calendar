@@ -73,8 +73,8 @@ describe('parseSeriesExpression', () => {
     expect(parseSeriesExpression('$1,200 +$300 -50')).toEqual([1200, 300, -50]);
   });
 
-  it('returns null for invalid or empty input', () => {
-    expect(parseSeriesExpression('')).toBeNull();
+  it('returns empty array for empty input, null for invalid input', () => {
+    expect(parseSeriesExpression('')).toEqual([]);
     expect(parseSeriesExpression('abc')).toBeNull();
   });
 });

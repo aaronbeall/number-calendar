@@ -499,7 +499,7 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
     : value === 0 && condition === 'below'
     ? `a negative ${metricDescStr}`
     : isRange
-    ? `${metricDescStr} ${condition === 'inside' ? 'between' : 'outside'} ${formatValue(range![0]) || 'X'} and ${formatValue(range![1], { delta, percent }) || 'Y'}`
+    ? `${metricDescStr} ${condition === 'inside' ? 'between' : 'outside'} ${formatValue(range?.[0]) || 'X'} and ${formatValue(range?.[1], { delta, percent }) || 'Y'}`
     : `${metricArticleStr} ${metricDescStr} of ${formatValue(value, { delta, percent }) || 'X'}`;
   
   if (suggestedType === 'target' && count === 1) {
@@ -522,7 +522,7 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
   // Badge label
   let label = '';
   if (count && count > 1) label = formatValue(count, { short: true });
-  else label = formatTargetValue({ value, range, source });
+  else label = formatTargetValue({ value, range, source }, { short: true });
   // else label = title.slice(0, 4);
 
   // For now, icon is undefined

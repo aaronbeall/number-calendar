@@ -119,11 +119,6 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   }, [items, sortMode]);
 
   const handleExpressionSave = (value: string) => {
-    if (value.trim() === '') {
-      onSave?.([]);
-      setExpression('');
-      return;
-    }
     const inputNumbers = parseExpression(value, tracking);
     if (inputNumbers !== null) {
       // Only save if inputNumbers differs from numbers

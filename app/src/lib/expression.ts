@@ -167,7 +167,7 @@ export function buildSeriesExpressionFromNumbers(nums: number[]): string {
  * - Normalizes away currency, commas, and whitespace
  */
 export function parseSeriesExpression(expr: string): number[] | null {
-  if (!expr.trim()) return null;
+  if (!expr.trim()) return [];
   try {
     // Normalize input (remove currency symbols, thousands separators, whitespace)
     const normalize = (s: string) => s
