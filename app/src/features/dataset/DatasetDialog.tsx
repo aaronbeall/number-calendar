@@ -125,8 +125,8 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       name: getUniqueDatasetName(template.name),
       description: template.description?.trim() || undefined,
       icon: template.icon,
-      tracking: template.settings.tracking,
-      valence: template.settings.valence,
+      tracking: template.tracking,
+      valence: template.valence,
       createdAt: now,
       updatedAt: now,
     };

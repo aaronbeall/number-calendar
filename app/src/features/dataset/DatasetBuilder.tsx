@@ -83,8 +83,8 @@ export function DatasetBuilder({ onSelectTemplate, onManualMode }: DatasetBuilde
               const Icon = getDatasetIcon(template.icon);
               const { bg: iconBg, text: iconText } = getColorTheme(template.theme);
               const unitsLabel = template.units.length > 0 ? template.units.join(', ') : null;
-              const isTrend = template.settings.tracking === 'trend';
-              const TrackingIcon = getValueForGood(template.settings.valence, isTrend 
+              const isTrend = template.tracking === 'trend';
+              const TrackingIcon = getValueForGood(template.valence, isTrend 
                 ? {
                     positive: TrendingUp,
                     negative: TrendingDown,
