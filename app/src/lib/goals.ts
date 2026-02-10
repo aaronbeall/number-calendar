@@ -661,6 +661,7 @@ export type CompletedAchievementResult = {
   dateKey: DateKey;
   goal: Goal;
   achievement: AchievementResult;
+  goalResult: GoalResults;
 }
 
 export function getCompletedAchievementsByDateKey(goals: GoalResults[]): Record<DateKey, CompletedAchievementResult[]> {
@@ -675,6 +676,7 @@ export function getCompletedAchievementsByDateKey(goals: GoalResults[]): Record<
           dateKey: achievement.completedAt,
           goal: goalResult.goal,
           achievement,
+          goalResult,
         });
       }
     }

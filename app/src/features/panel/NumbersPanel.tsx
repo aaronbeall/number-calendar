@@ -7,12 +7,13 @@ import { PopoverTip, PopoverTipContent, PopoverTipTrigger } from '@/components/u
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import type { DateKey, DayKey, Goal, Tracking, Valence } from '@/features/db/localdb';
+import { AchievementDetailsDrawer } from '@/features/achievements/AchievementDetailsDrawer';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
 import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { getDateKeyType } from '@/lib/friendly-date';
-import type { CompletedAchievementResult } from '@/lib/goals';
+import type { CompletedAchievementResult, GoalResults } from '@/lib/goals';
 import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, type StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
@@ -148,6 +149,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   );
 
   const [adding, setAdding] = useState(false);
+  const [selectedAchievement, setSelectedAchievement] = useState<GoalResults | null>(null);
 
   // Helper to get current total for delta mode
   const currentTotal = displayNumbers.reduce((a, b) => a + b, 0);
@@ -387,8 +389,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 {achievementsLabel}
               </div>
               <div className="grid grid-cols-6 gap-1">
-                {achievementResults.map(({ goal, achievement }) => (
-                  <AchivementItem key={achievement.id} goal={goal} />
+                {achievementResults.map(({ goal, achievement, goalResult }) => (
+                  <AchivementItem
+                    key={achievement.id}
+                    goal={goal}
+                    onClick={() => setSelectedAchievement(goalResult)}
+                  />
                 ))}
               </div>
             </div>
@@ -474,17 +480,25 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           )}
         </div>
       </SheetContent>
+      <AchievementDetailsDrawer
+        open={!!selectedAchievement}
+        onOpenChange={(open) => {
+          if (!open) setSelectedAchievement(null);
+        }}
+        result={selectedAchievement}
+      />
     </Sheet>
   );
 }
 
-const AchivementItem = ({ goal }: { goal: Goal }) => {
+const AchivementItem = ({ goal, onClick }: { goal: Goal; onClick: () => void }) => {
   const [isHovered, setIsHovered] = useState(false);
   return (
     <PopoverTip>
       <PopoverTipTrigger asChild>
         <button
           type="button"
+          onClick={onClick}
           className="flex items-center justify-center rounded-md p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
           aria-label={goal.title}
           onMouseEnter={() => setIsHovered(true)}
