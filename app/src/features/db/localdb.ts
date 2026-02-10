@@ -136,7 +136,7 @@ export interface LocalDB {
   images: ImageAttachment[];
 }
 
-const DB_NAME = 'number-calendar';
+const DB_NAME = 'number-calendar_test';
 const STORE_DEFS = [
   { name: 'datasets', keyPath: 'id', indexes: [] },
   { name: 'entries', keyPath: ['datasetId', 'date'], indexes: ['datasetId', 'date'] },

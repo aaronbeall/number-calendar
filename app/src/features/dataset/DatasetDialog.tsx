@@ -189,7 +189,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
 
                 <div className="space-y-2">
                   <Label htmlFor="dataset-description">Description</Label>
-                  <Textarea id="dataset-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional short description" rows={4} />
+                  <Textarea id="dataset-description" value={description} onChange={e => setDescription(e.target.value)} placeholder="What are you tracking and why?" rows={4} />
                 </div>
               </div>
 
@@ -215,6 +215,9 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
                       className="text-sm h-8 w-32"
                     />
                   </div>
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Type to filter icons.
                 </div>
                 <div className="grid grid-cols-8 gap-1.5 md:grid-cols-4 max-h-[100px] md:max-h-[160px] overflow-y-auto p-1 border border-slate-200 dark:border-slate-700 rounded-md">
                   {DATASET_ICON_OPTIONS.filter(({ name, label }) => {
@@ -244,12 +247,23 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
                       </Tooltip>
                     );
                   })}
+                  {DATASET_ICON_OPTIONS.filter(({ name, label }) => {
+                    const search = iconSearch.toLowerCase();
+                    return !search || name.includes(search) || label.toLowerCase().includes(search);
+                  }).length === 0 && (
+                    <div className="col-span-full text-center text-xs text-slate-500 dark:text-slate-400 py-3">
+                      No matches. Try a different search.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
           <div className="space-y-3">
             <Label>Tracking Mode</Label>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              Pick the style that matches how your numbers behave.
+            </div>
               <RadioGroup value={tracking} onValueChange={(v) => {
               const t = v as Tracking;
               setTracking(t);
@@ -351,6 +365,9 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
           {/* Valence Selection (original wording preserved) */}
           <div className="space-y-3">
             <Label>Valence</Label>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              This controls what the app considers a win. You can adjust it later.
+            </div>
             {tracking === 'series' && (
               <div className="grid grid-cols-3 gap-3">
                 {/* Positive is good */}
