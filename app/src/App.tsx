@@ -28,7 +28,8 @@ import { useTheme } from './components/ThemeProvider';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
 import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
-import AchievementBadge from './features/achievements/AchievementBadge';
+import { AchievementToast } from './features/achievements/AchievementToast';
+import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
 import DatasetDialog from './features/dataset/DatasetDialog';
 import DuplicateDialog from './features/dataset/DuplicateDialog';
 import ExportDialog from './features/dataset/ExportDialog';
@@ -43,13 +44,11 @@ import { getDatasetIcon } from './lib/dataset-icons';
 import { isCurrentWeek } from './lib/friendly-date';
 import { getCompletedAchievementsByDateKey, sortGoalResults, type AchievementResult, type GoalResults } from './lib/goals';
 import Achievements from './pages/Achievements';
-import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
 import { Calendar } from './pages/Calendar';
 import { Landing } from './pages/Landing';
 import Milestones from './pages/Milestones';
 import Records from './pages/Records';
 import Targets from './pages/Targets';
-import { AchievementToast } from './features/achievements/AchievementToast';
 
 
 function App() {

@@ -24,7 +24,7 @@ import type { DatasetTemplate } from '@/lib/dataset-builder';
 import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { cn, isNameTaken } from '@/lib/utils';
-import { TrendingUp, BarChart3, Database, Trash2 } from 'lucide-react';
+import { LayoutTemplate, TrendingUp, BarChart3, Database, Trash2 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
 interface DatasetDialogProps {
@@ -181,10 +181,12 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
             <DialogHeader className="flex-shrink-0 px-6 pt-6">
-              <DialogTitle>{isEditMode ? `Edit "${dataset?.name}"` : 'Create New Dataset'}</DialogTitle>
-              <DialogDescription>
-                {isEditMode ? 'Update your dataset settings.' : 'Organize numbers for a goal or project.'}
-              </DialogDescription>
+              <div className="space-y-1">
+                <DialogTitle>{isEditMode ? `Edit "${dataset?.name}"` : 'Create New Dataset'}</DialogTitle>
+                <DialogDescription>
+                  {isEditMode ? 'Update your dataset settings.' : 'Organize numbers for a goal or project.'}
+                </DialogDescription>
+              </div>
               {isEditMode && dataset && (
                 <div className="flex gap-2 pt-2">
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
@@ -517,15 +519,27 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
           </div>{/* End scrollable content area */}
 
             <DialogFooter className="gap-2 flex-shrink-0 px-6 pb-6 pt-4 flex items-center justify-between">
-            {isEditMode && dataset && (
-              <button
+            {!isEditMode ? (
+              <Button
                 type="button"
-                onClick={() => setDeleteOpen(true)}
-                className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400 hover:underline"
+                variant="ghost"
+                onClick={() => setManualMode(false)}
+                className="gap-1 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/40"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete
-              </button>
+                <LayoutTemplate className="h-3.5 w-3.5" />
+                Create from template
+              </Button>
+            ) : (
+              isEditMode && dataset && (
+                <button
+                  type="button"
+                  onClick={() => setDeleteOpen(true)}
+                  className="inline-flex items-center gap-1 text-xs text-red-600 dark:text-red-400 hover:underline"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </button>
+              )
             )}
               <div className="flex items-center gap-2 ml-auto">
                 <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>

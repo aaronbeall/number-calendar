@@ -2,11 +2,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { DATASET_TEMPLATES, type DatasetTemplate } from '@/lib/dataset-builder';
 import { getColorTheme } from '@/lib/colors';
+import { DATASET_TEMPLATES, type DatasetTemplate } from '@/lib/dataset-builder';
 import { getDatasetIcon } from '@/lib/dataset-icons';
 import { cn } from '@/lib/utils';
-import { ArrowRight, ChartNoAxesColumnDecreasing, ChartNoAxesColumnIncreasing, Search, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
+import { getValueForGood } from '@/lib/valence';
+import { Activity, ArrowRight, ChartNoAxesColumn, ChartNoAxesColumnDecreasing, ChartNoAxesColumnIncreasing, Search, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 export type DatasetBuilderProps = {
@@ -83,10 +84,18 @@ export function DatasetBuilder({ onSelectTemplate, onManualMode }: DatasetBuilde
               const { bg: iconBg, text: iconText } = getColorTheme(template.theme);
               const unitsLabel = template.units.length > 0 ? template.units.join(', ') : null;
               const isTrend = template.settings.tracking === 'trend';
-              const isNegative = template.settings.valence === 'negative';
-              const TrackingIcon = isTrend 
-                ? (isNegative ? TrendingDown : TrendingUp) 
-                : (isNegative ? ChartNoAxesColumnDecreasing : ChartNoAxesColumnIncreasing);
+              const TrackingIcon = getValueForGood(template.settings.valence, isTrend 
+                ? {
+                    positive: TrendingUp,
+                    negative: TrendingDown,
+                    neutral: Activity,
+                }
+                : {
+                    positive: ChartNoAxesColumnIncreasing,
+                    negative: ChartNoAxesColumnDecreasing,
+                    neutral: ChartNoAxesColumn,
+                }
+              );
 
               return (
                 <button
