@@ -216,9 +216,6 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
                     />
                   </div>
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Type to filter icons.
-                </div>
                 <div className="grid grid-cols-8 gap-1.5 md:grid-cols-4 max-h-[100px] md:max-h-[160px] overflow-y-auto p-1 border border-slate-200 dark:border-slate-700 rounded-md">
                   {DATASET_ICON_OPTIONS.filter(({ name, label }) => {
                     const search = iconSearch.toLowerCase();
