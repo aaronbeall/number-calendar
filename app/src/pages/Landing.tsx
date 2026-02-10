@@ -304,10 +304,10 @@ function DatasetsLanding({
           {/* Add New Dataset Card */}
           <button
             onClick={onOpenCreate}
-            className="group w-full text-left rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-800/50 dark:to-slate-700/50 hover:from-blue-50 hover:to-indigo-50 dark:hover:from-slate-700 dark:hover:to-slate-600 hover:border-blue-400 dark:hover:border-blue-500 transition-all p-8 flex flex-col items-center justify-center min-h-[300px] shadow-sm hover:shadow-lg"
+            className="group w-full text-left rounded-2xl border-2 border-dashed border-slate-300/80 dark:border-slate-600/70 bg-transparent hover:bg-slate-50/60 dark:hover:bg-slate-800/40 hover:border-slate-400 dark:hover:border-slate-500 transition-all p-8 flex flex-col items-center justify-center min-h-[300px] shadow-none hover:shadow-md"
           >
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg shadow-blue-500/30">
-              <Plus className="w-10 h-10 text-white" />
+            <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-300/80 dark:border-slate-600/70 bg-white/70 dark:bg-slate-900/40 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform shadow-sm">
+              <Plus className="w-10 h-10 text-slate-400 group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-300 transition-colors" />
             </div>
             <h3 className="text-xl font-bold text-slate-700 dark:text-slate-200 mb-2">Create New Dataset</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 text-center">
