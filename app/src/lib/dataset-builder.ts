@@ -387,7 +387,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       goodValue: {
         period: {
           prompt: 'What change per {period} feels realistic?',
-          description[70, ]-1: 'Enter the {periodly} change in {units} you want to see.',
+          description: 'Enter the {periodly} change in {units} you want to see.',
         },
         alltime: {
           prompt: 'What reading range are you aiming for?',
