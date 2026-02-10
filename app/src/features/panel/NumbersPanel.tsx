@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { NumberText } from '@/components/ui/number-text';
 import { PopoverTip, PopoverTipContent, PopoverTipTrigger } from '@/components/ui/popover-tip';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
@@ -119,6 +119,11 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   }, [items, sortMode]);
 
   const handleExpressionSave = (value: string) => {
+    if (value.trim() === '') {
+      onSave?.([]);
+      setExpression('');
+      return;
+    }
     const inputNumbers = parseExpression(value, tracking);
     if (inputNumbers !== null) {
       // Only save if inputNumbers differs from numbers
@@ -185,27 +190,32 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
         <div className="flex flex-col gap-4 mt-6 overflow-auto">
           {showExpressionInput && (
-            <Input
-              value={expression}
-              onChange={e => {
-                setExpression(e.target.value);
-              }}
-              onBlur={e => handleExpressionSave(e.target.value)}
-              placeholder={tracking === 'series' ? 'Example: 1+2-5' : 'Example: 35 21 -76'}
-              className="text-sm border-blue-300 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm"
-              autoFocus
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  e.currentTarget.blur(); // Trigger onBlur which will save
-                }
-                if (e.key === 'Escape') {
-                  const originalExpr = buildExpressionFromNumbers(numbers, tracking);
-                  setExpression(originalExpr);
-                  (e.target as HTMLInputElement).value = originalExpr;
-                  e.currentTarget.blur();
-                }
-              }}
-            />
+            <div className="px-1 py-1">
+              <Textarea
+                value={expression}
+                onChange={e => {
+                  setExpression(e.target.value);
+                }}
+                onBlur={e => handleExpressionSave(e.target.value)}
+                placeholder={tracking === 'series' ? 'Example: 1+2-5' : 'Example: 35 21 -76'}
+                className="min-h-[44px] text-sm border-blue-300 focus:border-blue-500 focus:ring-blue-500/20 shadow-sm resize-none overflow-y-auto"
+                autoSize
+                maxAutoHeight={160}
+                autoFocus
+                rows={1}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.currentTarget.blur(); // Trigger onBlur which will save
+                  }
+                  if (e.key === 'Escape') {
+                    const originalExpr = buildExpressionFromNumbers(numbers, tracking);
+                    setExpression(originalExpr);
+                    e.currentTarget.value = originalExpr;
+                    e.currentTarget.blur();
+                  }
+                }}
+              />
+            </div>
           )}
 
           <div className="flex items-center justify-between gap-2">
