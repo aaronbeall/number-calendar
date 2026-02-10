@@ -19,6 +19,8 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCreateDataset, useUpdateDataset, useDeleteDataset, useDatasets } from '../db/useDatasetData';
+import { DatasetBuilder } from './DatasetBuilder';
+import type { DatasetTemplate } from '@/lib/dataset-builder';
 import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { cn, isNameTaken } from '@/lib/utils';
@@ -47,6 +49,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
   const [valence, setValence] = useState<Valence>('positive');
   const [iconSearch, setIconSearch] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
 
   const nameExists = isNameTaken({ ...dataset, name }, existingDatasets, 'name', 'id');
   const isNameValid = name.trim().length > 0 && !nameExists;
@@ -86,6 +89,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       setIcon(dataset.icon || 'database');
       setTracking(dataset.tracking);
       setValence(dataset.valence || 'positive');
+      setManualMode(true);
     }
   }, [dataset]);
 
@@ -96,7 +100,17 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       setIcon('database');
       setTracking('series');
       setValence('positive');
+      setManualMode(false);
     }
+  };
+
+  const handleSelectTemplate = (template: DatasetTemplate) => {
+    setName(template.name);
+    setDescription(template.description);
+    setIcon(template.icon);
+    setTracking(template.settings.tracking);
+    setValence(template.settings.valence);
+    setManualMode(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -154,28 +168,36 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
     });
   };
 
+  const showTemplateBuilder = !isEditMode && !manualMode;
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
       <DialogContent className="max-h-[90vh] p-0 gap-0 w-full sm:max-w-3xl">
-        <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
-          <DialogHeader className="flex-shrink-0 px-6 pt-6">
-            <DialogTitle>{isEditMode ? `Edit "${dataset?.name}"` : 'Create New Dataset'}</DialogTitle>
-            <DialogDescription>
-              {isEditMode ? 'Update your dataset settings.' : 'Organize numbers for a goal or project.'}
-            </DialogDescription>
-            {isEditMode && dataset && (
-              <div className="flex gap-2 pt-2">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  Created {new Date(dataset.createdAt).toLocaleDateString()}
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  Updated {new Date(dataset.updatedAt).toLocaleDateString()}
-                </span>
-              </div>
-            )}
-          </DialogHeader>
+        {showTemplateBuilder ? (
+          <DatasetBuilder
+            onSelectTemplate={handleSelectTemplate}
+            onManualMode={() => setManualMode(true)}
+          />
+        ) : (
+          <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
+            <DialogHeader className="flex-shrink-0 px-6 pt-6">
+              <DialogTitle>{isEditMode ? `Edit "${dataset?.name}"` : 'Create New Dataset'}</DialogTitle>
+              <DialogDescription>
+                {isEditMode ? 'Update your dataset settings.' : 'Organize numbers for a goal or project.'}
+              </DialogDescription>
+              {isEditMode && dataset && (
+                <div className="flex gap-2 pt-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    Created {new Date(dataset.createdAt).toLocaleDateString()}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                    Updated {new Date(dataset.updatedAt).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">{/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">{/* Scrollable content area */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Left column: Name & Description (spans 2 cols on desktop) */}
               <div className="space-y-4 md:col-span-2">
@@ -494,7 +516,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
           </div>
           </div>{/* End scrollable content area */}
 
-          <DialogFooter className="gap-2 flex-shrink-0 px-6 pb-6 pt-4 flex items-center justify-between">
+            <DialogFooter className="gap-2 flex-shrink-0 px-6 pb-6 pt-4 flex items-center justify-between">
             {isEditMode && dataset && (
               <button
                 type="button"
@@ -505,19 +527,20 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
                 Delete
               </button>
             )}
-            <div className="flex items-center gap-2 ml-auto">
-              <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
-              <Button
-                type="submit"
-                disabled={!isNameValid || createDatasetMutation.isPending || updateDatasetMutation.isPending}
-              >
-                {isEditMode
-                  ? (updateDatasetMutation.isPending ? 'Saving…' : 'Save Changes')
-                  : (createDatasetMutation.isPending ? 'Creating…' : 'Create Dataset')}
-              </Button>
-            </div>
-          </DialogFooter>
-        </form>
+              <div className="flex items-center gap-2 ml-auto">
+                <Button type="button" variant="outline" onClick={() => { reset(); onOpenChange(false); }}>Cancel</Button>
+                <Button
+                  type="submit"
+                  disabled={!isNameValid || createDatasetMutation.isPending || updateDatasetMutation.isPending}
+                >
+                  {isEditMode
+                    ? (updateDatasetMutation.isPending ? 'Saving…' : 'Save Changes')
+                    : (createDatasetMutation.isPending ? 'Creating…' : 'Create Dataset')}
+                </Button>
+              </div>
+            </DialogFooter>
+          </form>
+        )}
         {isEditMode && dataset && (
           <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
             <AlertDialogContent>
