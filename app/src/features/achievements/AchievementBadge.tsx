@@ -198,7 +198,7 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
                 </span>
               )}
               {badge.label && badge.label !== '' && (
-                <span style={{ color: color.bg }}>{badge.label}</span>
+                <span className="whitespace-nowrap" style={{ color: color.bg }}>{badge.label}</span>
               )}
             </span>
           )}

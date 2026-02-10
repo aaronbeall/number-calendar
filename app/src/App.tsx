@@ -49,6 +49,7 @@ import { Landing } from './pages/Landing';
 import Milestones from './pages/Milestones';
 import Records from './pages/Records';
 import Targets from './pages/Targets';
+import { AchievementToast } from './features/achievements/AchievementToast';
 
 
 function App() {
@@ -319,23 +320,7 @@ function AppHeader({
       else toastItems.push(result);
     });
     toastItems.forEach(result => {
-      const title = result.goal.title;
-      const description = result.goal.description;
-      toast.custom(() => (
-        <div className="flex w-[360px] items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-800 dark:bg-slate-950">
-          <AchievementBadge badge={result.goal.badge} size="small" animate />
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-slate-900 dark:text-slate-50">
-              {title}
-            </div>
-            {description && (
-              <div className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">
-                {description}
-              </div>
-            )}
-          </div>
-        </div>
-      ));
+      toast.custom(() => <AchievementToast result={result} />);
     });
     if (overlayItems.length > 0) {
       setOverlayAchievements(overlayItems);
