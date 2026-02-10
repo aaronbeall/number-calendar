@@ -54,9 +54,6 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
   const gradientId = useId();
   const gradientFillId = `achievement-badge-gradient-${gradientId}`;
   const allowEffects = size !== 'small';
-  const effectiveFloating = allowEffects && floating;
-  const effectiveShine = allowEffects && shine;
-  const effectivePulse = allowEffects && pulse;
 
   // Flat design: shape as background, icon and label in center
   return (
@@ -72,14 +69,16 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
         style={{
           width: containerPx,
           height: containerPx,
-          animation: effectiveFloating ? 'achievement-float 3s ease-in-out infinite' : undefined,
+          animation: floating ? 'achievement-float 3s ease-in-out infinite' : undefined,
         }}
       >
+        {/* Background circle shadow */}
         <span
           className="absolute -inset-2 rounded-full bg-slate-900/30 shadow-inner"
           // style={{background: `${color.label}66`}}
           aria-hidden="true"
         />
+        {/* Background circle -- only in light mode */}
         <span
           className="absolute -inset-1 rounded-full shadow-inner dark:hidden"
           style={{ background: `${color.label}ee` }}
@@ -90,12 +89,12 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
           style={{
             width: containerPx,
             height: containerPx,
-            animation: effectiveFloating ? 'achievement-wobble 3s ease-in-out infinite' : undefined,
-            animationDelay: effectiveFloating ? '-2s' : undefined,
+            animation: floating ? 'achievement-wobble 3s ease-in-out infinite' : undefined,
+            animationDelay: floating ? '-2s' : undefined,
           }}
         >
           {/* Pulse ring effect */}
-          {effectivePulse && (
+          {pulse && (
             <span
               className="absolute inset-0 rounded-full"
               style={{
@@ -125,11 +124,11 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
             className="absolute inset-0 flex items-center justify-center rounded-full"
             style={{
               color: color.bg,
-              backgroundImage: effectiveShine
+              backgroundImage: shine
                 ? `linear-gradient(90deg, ${color.accent}00, ${color.bg}40, ${color.border}00)`
                 : undefined,
-              backgroundSize: effectiveShine ? '200% 100%' : undefined,
-              animation: effectiveShine ? 'achievement-shine 3s ease-in-out infinite' : undefined,
+              backgroundSize: shine ? '200% 100%' : undefined,
+              animation: shine ? 'achievement-shine 3s ease-in-out infinite' : undefined,
             }}
           >
             <svg className="absolute h-0 w-0" aria-hidden="true" focusable="false">
