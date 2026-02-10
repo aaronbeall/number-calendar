@@ -12,6 +12,8 @@ import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
+import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { getMonthDays, getPriorMonthNumbersMap, getPriorYearMonthNumbersMap } from "@/lib/calendar";
 import { toDayKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
@@ -28,6 +30,7 @@ export function Calendar({
 }) {
   const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
   const today = new Date();
+  const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', false);
   
   // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
@@ -87,6 +90,7 @@ export function Calendar({
 
   return (
     <div className="min-h-screen">
+      <GoalBuilderDialog key={`builder-${builderOpen}`} open={!!builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} />
 
           {/* Navigation Header */}
           <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">

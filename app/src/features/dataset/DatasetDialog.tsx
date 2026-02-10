@@ -104,13 +104,40 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
     }
   };
 
+  const getUniqueDatasetName = (baseName: string) => {
+    const trimmed = baseName.trim() || 'Untitled Dataset';
+    let candidate = trimmed;
+    let suffix = 2;
+
+    while (isNameTaken({ name: candidate } as Dataset, existingDatasets, 'name', 'id')) {
+      candidate = `${trimmed} (${suffix})`;
+      suffix += 1;
+    }
+
+    return candidate;
+  };
+
   const handleSelectTemplate = (template: DatasetTemplate) => {
-    setName(template.name);
-    setDescription(template.description);
-    setIcon(template.icon);
-    setTracking(template.settings.tracking);
-    setValence(template.settings.valence);
-    setManualMode(true);
+    const now = new Date().toISOString() as ISODateString;
+    const id = nanoid();
+    const newDataset: Dataset = {
+      id,
+      name: getUniqueDatasetName(template.name),
+      description: template.description?.trim() || undefined,
+      icon: template.icon,
+      tracking: template.settings.tracking,
+      valence: template.settings.valence,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    createDatasetMutation.mutate(newDataset, {
+      onSuccess: () => {
+        reset();
+        onOpenChange(false);
+        navigate(`/dataset/${id}?goal-builder`);
+      },
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
