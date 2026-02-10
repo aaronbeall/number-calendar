@@ -19,6 +19,7 @@ export function useAchievements(datasetId: string): UseAchievementsResult {
   const { data: allDays, isLoading: isDaysLoading } = useAllDays(datasetId);
   const { data: allGoals = [], isLoading: isGoalsLoading } = useGoals(datasetId);
   const previousResultsRef = useRef<GoalResults[] | null>(null);
+  const previousDatasetIdRef = useRef<string | null>(null);
 
   const allData = useMemo(() => getDaysMap(allDays ?? []), [allDays]);
 
@@ -36,6 +37,12 @@ export function useAchievements(datasetId: string): UseAchievementsResult {
   }, [allGoals, allData, datasetId]);
 
   const newResults = useMemo(() => {
+    // If dataset changed, consider no achievements as new
+    if (previousDatasetIdRef.current !== datasetId) {
+      previousDatasetIdRef.current = datasetId;
+      return [];
+    }
+    // Find achievements that are completed now but were not completed before
     const previousResults = previousResultsRef.current;
     if (!previousResults?.length) return [];
     const previousById = new Map(
