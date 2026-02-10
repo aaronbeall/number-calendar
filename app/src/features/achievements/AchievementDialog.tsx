@@ -140,7 +140,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
       const nextShort = formatGoalTargetValue(nextTarget, { short: true });
 
       setTitle(current => current.replace(prevShort, nextShort).replace(prevLong, nextLong));
-      setDescription(current => current.replace(prevShort, nextShort).replace(prevLong, nextLong));
+      setDescription(current => current.replace(prevLong, nextLong).replace(prevShort, nextShort));
       setBadge(current => {
         if (!current.label) return current;
         const updatedLabel = current.label.replace(prevShort, nextShort).replace(prevLong, nextLong);
