@@ -1,8 +1,9 @@
 import { ChartContainer } from '@/components/ui/chart';
 import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
-import type { Tracking, Valence } from '@/features/db/localdb';
+import type { Tracking, Valence, WeekKey } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import { getValueForValence } from '@/lib/valence';
 import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
@@ -16,9 +17,11 @@ export interface WeekSummaryProps {
   valence: Valence;
   tracking: Tracking;
   priorNumbers?: number[];
+  dateKey: WeekKey;
+  achievementResults: CompletedAchievementResult[];
 }
 
-export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek, valence, tracking, priorNumbers }) => {
+export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek, valence, tracking, priorNumbers, dateKey, achievementResults }) => {
   if (!numbers || numbers.length === 0) return null;
 
   const [panelOpen, setPanelOpen] = useState(false);
@@ -199,6 +202,8 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
         showExpressionInput={false}
         valence={valence}
         tracking={tracking}
+        dateKey={dateKey}
+        achievementResults={achievementResults}
       />
     </div>
   );

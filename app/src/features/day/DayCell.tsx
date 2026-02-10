@@ -1,6 +1,8 @@
 
 import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
+import type { CompletedAchievementResult } from '@/lib/goals';
+import { dateToDayKey } from '@/lib/friendly-date';
 import { getCalendarData } from '@/lib/calendar';
 import { getRelativeSize } from '@/lib/charts';
 import { type StatsExtremes } from '@/lib/stats';
@@ -18,9 +20,10 @@ export interface DayCellProps {
   valence: Valence;
   priorNumbers?: number[];
   tracking: Tracking;
+  achievementResults: CompletedAchievementResult[];
 }
 
-export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthExtremes, valence, priorNumbers, tracking }) => {
+export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthExtremes, valence, priorNumbers, tracking, achievementResults }) => {
   const [editMode, setEditMode] = useState(false);
 
   const isToday = date.toDateString() === new Date().toDateString();
@@ -218,6 +221,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
         extremes={monthExtremes}
         valence={valence}
         tracking={tracking}
+        dateKey={dateToDayKey(date)}
+        achievementResults={achievementResults}
       />
     </div>
   );

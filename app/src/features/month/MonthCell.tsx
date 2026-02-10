@@ -3,7 +3,8 @@ import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { getCalendarData } from '@/lib/calendar';
 import { getRelativeSize } from '@/lib/charts';
-import { dateToDayKey } from '@/lib/friendly-date';
+import { dateToDayKey, toMonthKey } from '@/lib/friendly-date';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import type { StatsExtremes } from '@/lib/stats';
 import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueForNumber } from '@/lib/tracking';
@@ -12,6 +13,7 @@ import { CalendarDays, Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 interface MonthCellProps {
+  year: number;
   month: number;
   monthName: string;
   numbers: number[];
@@ -23,9 +25,10 @@ interface MonthCellProps {
   onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;
+  achievementResults: CompletedAchievementResult[];
 }
 
-export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking }: MonthCellProps) {
+export function MonthCell({ year, month, monthName, numbers, priorNumbers, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking, achievementResults }: MonthCellProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   
   // Use getCalendarData for all stats, deltas, extremes, valence, etc.
@@ -118,6 +121,8 @@ export function MonthCell({ month, monthName, numbers, priorNumbers, monthDays =
         onClose={() => setPanelOpen(false)}
         valence={valence}
         tracking={tracking}
+        dateKey={toMonthKey(year, month)}
+        achievementResults={achievementResults}
       />
 
       {/* Stats grid */}

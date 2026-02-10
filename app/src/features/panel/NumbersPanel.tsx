@@ -3,12 +3,16 @@ import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
 import { Input } from '@/components/ui/input';
 import { NumberText } from '@/components/ui/number-text';
+import { PopoverTip, PopoverTipContent, PopoverTipTrigger } from '@/components/ui/popover-tip';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
+import type { DateKey, DayKey, Goal, Tracking, Valence } from '@/features/db/localdb';
+import AchievementBadge from '@/features/achievements/AchievementBadge';
 import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
+import { getDateKeyType } from '@/lib/friendly-date';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, type StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
@@ -18,7 +22,7 @@ import React, { useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { AddNumberEditor } from './AddNumberEditor';
 import { EditableNumberBadge } from './EditableNumberBadge';
-import { capitalize } from '@/lib/utils';
+import { adjectivize, capitalize, cn } from '@/lib/utils';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -38,6 +42,8 @@ export interface NumbersPanelProps {
   tracking: Tracking;
 
   daysData?: Record<DayKey, number[]>;
+  dateKey: DateKey;
+  achievementResults?: CompletedAchievementResult[];
 }
 
 
@@ -56,7 +62,9 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   extremes,
   valence,
   tracking,
-  daysData
+  daysData,
+  dateKey,
+  achievementResults
 }) => {
   const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
 
@@ -133,6 +141,11 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   // Chart data for micro line chart
   const chartNumbers = React.useMemo(() => getChartNumbers(displayNumbers, priorNumbers, tracking), [displayNumbers, priorNumbers, tracking]);
   const chartData = React.useMemo(() => getChartData(chartNumbers, tracking), [chartNumbers, tracking]);
+
+  const achievementsLabel = useMemo(
+    () => `${capitalize(adjectivize(getDateKeyType(dateKey)))} Achievements`,
+    [dateKey]
+  );
 
   const [adding, setAdding] = useState(false);
 
@@ -367,6 +380,20 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
             </div>
           )}
 
+          {/* Achievements */}
+          {!!achievementResults?.length && (
+            <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2">
+              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-2">
+                {achievementsLabel}
+              </div>
+              <div className="grid grid-cols-6 gap-1">
+                {achievementResults.map(({ goal, achievement }) => (
+                  <AchivementItem key={achievement.id} goal={goal} />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Micro cumulative line chart below numbers, in its own box */}
           {chartData.length > 1 && (
             <div className="rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-2 mt-2 flex items-center justify-center">
@@ -448,6 +475,38 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+const AchivementItem = ({ goal }: { goal: Goal }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  return (
+    <PopoverTip>
+      <PopoverTipTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center justify-center rounded-md p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+          aria-label={goal.title}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <AchievementBadge badge={goal.badge} size="small" animate={isHovered} floating={false} className={cn(
+            isHovered && "scale-120 z-10",
+            "transition-transform"
+          )} />
+        </button>
+      </PopoverTipTrigger>
+      <PopoverTipContent>
+        <div className="text-xs font-semibold text-slate-900 dark:text-slate-50">
+          {goal.title}
+        </div>
+        {goal.description && (
+          <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+            {goal.description}
+          </div>
+        )}
+      </PopoverTipContent>
+    </PopoverTip>
   );
 }
 

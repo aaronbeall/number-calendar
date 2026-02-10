@@ -5,7 +5,7 @@ import { MonthChart } from '@/features/chart/MonthChart';
 import { TrendChart } from '@/features/chart/TrendChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
-import type { Dataset, DayKey } from '@/features/db/localdb';
+import type { Dataset, DateKey, DayKey } from '@/features/db/localdb';
 import { useMonth, useMostRecentPopulatedMonthBefore, useSaveDay, useYear } from '@/features/db/useDayEntryData';
 import { MonthlyGrid } from '@/features/month/MonthlyGrid';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
@@ -13,12 +13,19 @@ import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
 import { getMonthDays, getPriorMonthNumbersMap, getPriorYearMonthNumbersMap } from "@/lib/calendar";
-import { toDayKey, toMonthKey } from '@/lib/friendly-date';
+import { toDayKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import { calculateDailyExtremes, calculateMonthlyExtremes, type StatsExtremes } from '@/lib/stats';
 import { CalendarCheck2, CalendarDays, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
-export function Calendar({ dataset }: { dataset: Dataset; }) {
+export function Calendar({
+  dataset,
+  achievementResultsByDateKey,
+}: {
+  dataset: Dataset;
+  achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
+}) {
   const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
   const today = new Date();
   
@@ -31,6 +38,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
     priorNumbers: undefined as number[] | undefined,
     extremes: undefined as StatsExtremes | undefined,
     daysData: undefined as Record<DayKey, number[]> | undefined,
+    dateKey: toMonthKey(year, month) as DateKey,
   });
 
   // Use selectedDataset for all data hooks
@@ -71,6 +79,11 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
   const priorYearMonthNumbersMap = useMemo(() => {
     return view === 'monthly' ? getPriorYearMonthNumbersMap(year, yearData, priorYearMonthData) : {};
   }, [year, yearData, priorYearMonthData, view]);
+
+  const getAchievementsForDateKey = useCallback(
+    (key: DateKey) => achievementResultsByDateKey[key] ?? [],
+    [achievementResultsByDateKey]
+  );
 
   return (
     <div className="min-h-screen">
@@ -181,6 +194,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               valence={dataset.valence}
               tracking={dataset.tracking}
               monthExtremes={monthExtremes}
+              achievementResultsByDateKey={achievementResultsByDateKey}
               onSaveDay={handleSaveDay}
             />
             
@@ -194,6 +208,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   priorNumbers: priorMonthNumbersMap[toMonthKey(year, month)],
                   extremes: yearExtremes,
                   daysData: monthData,
+                  dateKey: toMonthKey(year, month),
                 });
               }} className="cursor-pointer">
               <MonthSummary 
@@ -241,6 +256,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
               valence={dataset.valence}
               tracking={dataset.tracking}
               priorNumbersMap={priorYearMonthNumbersMap}
+              achievementResultsByDateKey={achievementResultsByDateKey}
             />
 
             {/* Year Summary */}
@@ -253,7 +269,8 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
                   numbers: allYearNumbers,
                   extremes: undefined,
                   priorNumbers: undefined,
-                  daysData: yearData
+                  daysData: yearData,
+                  dateKey: toYearKey(year),
                 });
               }} className="cursor-pointer">
                 <YearSummary 
@@ -290,6 +307,7 @@ export function Calendar({ dataset }: { dataset: Dataset; }) {
         {...panelProps}
         valence={dataset.valence}
         tracking={dataset.tracking}
+        achievementResults={getAchievementsForDateKey(panelProps.dateKey)}
         onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
       />
     </div>

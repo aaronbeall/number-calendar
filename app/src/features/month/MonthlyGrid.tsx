@@ -1,6 +1,7 @@
-import type { DayKey, MonthKey, Tracking, Valence } from '@/features/db/localdb';
+import type { DateKey, DayKey, MonthKey, Tracking, Valence } from '@/features/db/localdb';
 import { getMonthDays } from '@/lib/calendar';
 import { toMonthKey } from '@/lib/friendly-date';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import { type StatsExtremes } from '@/lib/stats';
 import { parseISO } from 'date-fns';
 import { useMemo } from 'react';
@@ -14,9 +15,10 @@ interface MonthlyGridProps {
   valence: Valence;
   tracking: Tracking;
   priorNumbersMap: Record<DayKey | MonthKey, number[]>;
+  achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
 }
 
-export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence, tracking, priorNumbersMap }: MonthlyGridProps) {
+export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence, tracking, priorNumbersMap, achievementResultsByDateKey }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -68,6 +70,7 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
         return (
           <MonthCell
             key={monthNumber}
+            year={year}
             month={monthNumber}
             monthName={monthName}
             numbers={monthNumbers}
@@ -79,6 +82,7 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
             onOpenMonth={onOpenMonth}
             valence={valence}
             tracking={tracking}
+            achievementResults={achievementResultsByDateKey[toMonthKey(year, monthNumber)] ?? []}
           />
         );
       })}

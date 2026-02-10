@@ -1,7 +1,8 @@
 
 
-import type { DayKey, MonthKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
+import type { DateKey, DayKey, MonthKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
 import { dateToWeekKey, formatDateAsKey } from '@/lib/friendly-date';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import type { StatsExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
@@ -18,6 +19,7 @@ interface DailyGridProps {
   valence: Valence;
   tracking: Tracking;
   onSaveDay: (date: DayKey, numbers: number[]) => void;
+  achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
 }
 
 
@@ -34,6 +36,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
   valence,
   tracking,
   onSaveDay,
+  achievementResultsByDateKey,
 }) => {
 
   const { firstDay, weekdays, gridDays } = useMemo(() => {
@@ -86,6 +89,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
       weekNumber: number;
       isCurrentWeek: boolean;
       priorWeekNumbers?: number[];
+      weekDateKey?: WeekKey;
     }>;
     for (let i = 0; i < gridDays.length; i += weekdays.length) {
       const week = gridDays.slice(i, i + weekdays.length);
@@ -113,7 +117,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
       });
       const priorWeekKey = datesInWeek.length > 0 ? dateToWeekKey(datesInWeek[0]) : undefined;
       const priorWeekNumbers = priorWeekKey && priorNumbersMap[priorWeekKey];
-      weeks.push({ days: week, weekNumbers, weekNumber, isCurrentWeek, priorWeekNumbers });
+      weeks.push({ days: week, weekNumbers, weekNumber, isCurrentWeek, priorWeekNumbers, weekDateKey: priorWeekKey });
     }
     return weeks;
   }, [year, month, monthData, priorNumbersMap, gridDays, firstDay, weekdays]);
@@ -150,12 +154,13 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
                     monthExtremes={monthExtremes}
                     valence={valence}
                     tracking={tracking}
+                    achievementResults={achievementResultsByDateKey[key] ?? []}
                   />
                 </div>
               );
             })}
             {/* Week summary below the week */}
-            {week.weekNumbers.length > 0 && (
+            {week.weekNumbers.length > 0 && week.weekDateKey && (
               <div className={showWeekends ? 'col-span-7' : 'col-span-5'}>
                 <WeekSummary
                   numbers={week.weekNumbers}
@@ -164,6 +169,8 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
                   priorNumbers={week.priorWeekNumbers}
                   valence={valence}
                   tracking={tracking}
+                  dateKey={week.weekDateKey}
+                  achievementResults={achievementResultsByDateKey[week.weekDateKey] ?? []}
                 />
               </div>
             )}

@@ -574,7 +574,7 @@ export function getGoalCategory(goal: Goal) {
  * Sorts goal results based on multiple criteria:
  * 1. Goal type: Milestones first, then Targets, then regular Goals.
  * 2. Time period: Anytime first, then Day, Week, Month, Year.
- * 3. Consecutive: Consecutive goals before non-consecutive.
+ * 3. Consecutive: Non-consecutive goals before consecutive.
  * 4. Count: Lower count goals before higher count.
  * 5. Completion date: Earlier completed goals before later.
  * 6. For in-progress goals with no completions, higher progress percentage first.
@@ -625,7 +625,7 @@ export function sortGoalResults(results: GoalResults[]): GoalResults[] {
     const periodDiff = periodRank(a.goal.timePeriod) - periodRank(b.goal.timePeriod);
     if (periodDiff !== 0) return periodDiff;
 
-    const consecutiveDiff = (a.goal.consecutive ? 0 : 1) - (b.goal.consecutive ? 0 : 1);
+    const consecutiveDiff = (b.goal.consecutive ? 0 : 1) - (a.goal.consecutive ? 0 : 1);
     if (consecutiveDiff !== 0) return consecutiveDiff;
 
     const countDiff = a.goal.count - b.goal.count;
@@ -655,4 +655,29 @@ export function sortGoalResults(results: GoalResults[]): GoalResults[] {
 
     return a.goal.createdAt - b.goal.createdAt;
   });
+}
+
+export type CompletedAchievementResult = {
+  dateKey: DateKey;
+  goal: Goal;
+  achievement: AchievementResult;
+}
+
+export function getCompletedAchievementsByDateKey(goals: GoalResults[]): Record<DateKey, CompletedAchievementResult[]> {
+  const completedByDate: Record<DateKey, CompletedAchievementResult[]> = {};
+  for (const goalResult of goals) {
+    for (const achievement of goalResult.achievements) {
+      if (achievement.completedAt) {
+        if (!completedByDate[achievement.completedAt]) {
+          completedByDate[achievement.completedAt] = [];
+        }
+        completedByDate[achievement.completedAt].push({
+          dateKey: achievement.completedAt,
+          goal: goalResult.goal,
+          achievement,
+        });
+      }
+    }
+  }
+  return completedByDate;
 }

@@ -35,13 +35,13 @@ import ExportDialog from './features/dataset/ExportDialog';
 import ImportDialog from './features/dataset/ImportDialog';
 import type { Dataset } from './features/db/localdb';
 import { useDataset, useDatasets } from './features/db/useDatasetData';
-import { useAchievements, type NewAchievementResult } from './hooks/useAchievements';
+import { useAchievements, type NewAchievementResult, type UseAchievementsResult } from './hooks/useAchievements';
 import { usePreference } from './hooks/usePreference';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getSeededColorTheme } from './lib/colors';
 import { getDatasetIcon } from './lib/dataset-icons';
 import { isCurrentWeek } from './lib/friendly-date';
-import { sortGoalResults, type AchievementResult, type GoalResults } from './lib/goals';
+import { getCompletedAchievementsByDateKey, sortGoalResults, type AchievementResult, type GoalResults } from './lib/goals';
 import Achievements from './pages/Achievements';
 import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
 import { Calendar } from './pages/Calendar';
@@ -189,6 +189,11 @@ function DatasetLayout({
 }) {
   const { datasetId } = useParams();
   const { data: dataset, isLoading } = useDataset(datasetId ?? '');
+  const achievementResults = useAchievements(datasetId ?? '');
+  const achievementResultsByDateKey = useMemo(
+    () => getCompletedAchievementsByDateKey(achievementResults.all),
+    [achievementResults.all]
+  );
   
   if (isLoading) {
     return (
@@ -226,10 +231,11 @@ function DatasetLayout({
         onOpenEdit={onOpenEdit}
         onOpenImport={() => onOpenImport(dataset.id)}
         onOpenExport={(dateRange) => onOpenExport(dataset.id, dateRange)}
+        achievementResults={achievementResults}
       />
       <div className="flex-1 w-full">
         <Routes>
-          <Route index element={<Calendar dataset={dataset} />} />
+          <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
           <Route path="achievements" element={<Achievements />} />
           <Route path="targets" element={<Targets />} />
           <Route path="milestones" element={<Milestones />} />
@@ -251,6 +257,7 @@ function AppHeader({
   onOpenEdit,
   onOpenImport,
   onOpenExport,
+  achievementResults,
 }: {
   currentDataset: Dataset;
   datasets: Dataset[];
@@ -258,13 +265,14 @@ function AppHeader({
   onOpenEdit: (dataset: Dataset) => void;
   onOpenImport: () => void;
   onOpenExport: (dateRange?: { startDate: string; endDate: string }) => void;
+  achievementResults: UseAchievementsResult;
 }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { getDefaultExportDateRange } = useCalendarContext();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   const [showAIInsights, setShowAIInsights] = useState(false);
-  const { milestones, targets, achievements, new: newResults } = useAchievements(currentDataset.id);
+  const { milestones, targets, achievements, new: newResults } = achievementResults;
   const [overlayAchievements, setOverlayAchievements] = useState<NewAchievementResult[]>([]);
   const [overlayOpen, setOverlayOpen] = useState(false);
   

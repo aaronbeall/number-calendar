@@ -177,7 +177,7 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
                 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-bold text-center select-none flex items-center justify-center gap-1',
                 'rounded-full',
                 'shadow-md',
-                'py-0.5 px-4 leading-[1em] min-w-[1em]',
+                'py-0.5 px-2 leading-[1em] min-w-[1em]',
               )}
               style={{
                 fontSize: sizePreset.label,
@@ -197,7 +197,7 @@ export function AchievementBadge({ badge, size = 'medium', className, animate, f
                   <CenterIcon size={sizePreset.icon} />
                 </span>
               )}
-              {badge.label && badge.label !== '' && size !== 'small' && (
+              {badge.label && badge.label !== '' && (
                 <span style={{ color: color.bg }}>{badge.label}</span>
               )}
             </span>
