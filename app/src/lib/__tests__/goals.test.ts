@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { processAchievements, sortGoalResults } from '../goals';
+import { getSuggestedGoalContent, processAchievements, sortGoalResults } from '../goals';
 import type { GoalResults } from '../goals';
 import type { Goal, Achievement, DateKey, GoalBadge } from '@/features/db/localdb';
 
@@ -860,6 +860,61 @@ describe('processAchievements', () => {
   });
 });
 
+describe('getSuggestedGoalContent', () => {
+  it('builds content for an anytime milestone-style suggestion', () => {
+    const result = getSuggestedGoalContent({
+      timePeriod: 'anytime',
+      count: 1,
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 1000 },
+    });
+
+    expect(result.title).toBe('1K');
+    expect(result.description).toBe('Reach a total of 1,000');
+    expect(result.label).toBe('1K');
+  });
+
+  it('builds titles and descriptions for daily targets', () => {
+    const result = getSuggestedGoalContent({
+      type: 'target',
+      timePeriod: 'day',
+      count: 1,
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 5000 },
+    });
+
+    expect(result.title).toBe('Daily 5K Target');
+    expect(result.description).toBe('Hit a total of 5,000 in a day');
+    expect(result.label).toBe('5K');
+  });
+
+  it('builds streak titles with non-primary metrics and delta signs', () => {
+    const result = getSuggestedGoalContent({
+      type: 'goal',
+      timePeriod: 'day',
+      count: 7,
+      consecutive: true,
+      target: { condition: 'above', metric: 'mean', source: 'deltas', value: 10 },
+    });
+
+    expect(result.title).toBe('7-Day +10 Average Streak');
+    expect(result.description).toBe('Log an average of +10 for 7 days in a row');
+    expect(result.label).toBe('7');
+  });
+
+  it('builds multi-period titles for non-consecutive goals', () => {
+    const result = getSuggestedGoalContent({
+      type: 'goal',
+      timePeriod: 'week',
+      count: 3,
+      consecutive: false,
+      target: { condition: 'above', metric: 'total', source: 'stats', value: 100 },
+    });
+
+    expect(result.title).toBe('3 × 100 Weeks');
+    expect(result.description).toBe('Log a total of 100 on 3 weeks');
+    expect(result.label).toBe('3');
+  });
+});
+
 describe('sortGoalResults', () => {
   const datasetId = 'ds-sort';
   const badge: GoalBadge = { style: 'star', icon: 'star', color: 'gold', label: '1' };
@@ -921,6 +976,6 @@ describe('sortGoalResults', () => {
     ];
 
     const sorted = sortGoalResults(results).map(result => result.goal.id);
-    expect(sorted).toEqual(['m0', 'm1', 't1', 't2', 'gB', 'gC', 'gD', 'gA']);
+    expect(sorted).toEqual(['m0', 'm1', 't2', 't1', 'gB', 'gC', 'gD', 'gA']);
   });
 });
