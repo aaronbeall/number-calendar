@@ -18,7 +18,8 @@ export type DatasetTemplate = {
     // 'period-change' (tracking=trend): target change per period (e.g. lose 1 pound per week)
     // 'period-target' (tracking=series): target value per period (e.g. walk 10,000 steps per day)
     // 'alltime-target': target total value by end date (e.g. save $5000 by end of year)
-    type: 'period-change' | 'period-target' | 'alltime-target';
+    // 'period-range': target range (above, below, between) per period (e.g. keep blood pressure between 70-100 each day)
+    type: 'period-change' | 'period-target' | 'alltime-target' | 'period-range';
     period: 'day' | 'week' | 'month';
     condition?: GoalCondition; // Optional condition to determine good vs bad target (e.g. only consider it good if you hit 10k steps and also improve by 500 steps from previous week)
   };
@@ -32,34 +33,49 @@ export type DatasetTemplate = {
       prompt: string; // Generic: "How will you measure success?"
       description?: string; // Generic: "Track {periodly} changes or overall progress" (trend) "Focus on {periodly} totals or all-time milestones" (series)
       options: {
-        period: {
+        period?: {
           label: string; // Generic: "{Periodly} Change" (trend) or "{Periodly} Total" (series)
           description: string; // Generic: "Target improvement each {period}" (trend) or "Set targets for total value each {period}" (series)
         },
-        alltime: {
+        alltime?: {
           label: string; // Generic: "All Time Target" (trend) or "All Time Total" (series)
           description: string; // Generic: "Reach a specific overall value" (trend) or "Build towards cumulative total" (series)
         },
+        range?: {
+          label: string; // Generic: "{Periodly} Range"
+          description: string; // Generic: "Stay within a target range each {period}"
+        }
       }
     },
     goodValue: {
-      period: {
+      period?: {
         prompt: string; // Generic: "What's good {periodly} progress?" (trend) or "What's a good {period}?" (series)
         description: string; // Generic: "Enter the {periodly} improvement that would make you proud" (trend) or "Enter the target total each {period} that would make you proud" (series)
-        recommended?: {
-          day?: number | [number, number];
-          week?: number | [number, number];
-          month?: number | [number, number];
+        suggested?: {
+          day?: number;
+          week?: number;
+          month?: number;
         }
       },
-      alltime: {
+      alltime?: {
         prompt: string; // Generic: "What value are you aiming for?" (series) "What total do you want to reach?" (trend)
         description: string; // Generic: "Enter the overall target value you'd like to hit" (trend) "Enter a milestone total you'd like to reach" (series)
+      },
+      range?: {
+        prompt: string; // Generic: "What's a good {periodly} range?"
+        description: string; // Generic: "Enter the target range for each {period}" (e.g. 70-100 for blood pressure)
+        suggested?: {
+          day?: [number, number];
+          week?: [number, number];
+          month?: [number, number];
+        }
       }
     },
     startingValue: {
       prompt: string; // Generic: "Starting from?"
       description: string; // Generic: "Your current value (optional)" (trend) or "Your current total (optional)" (series)
+      required?: boolean;
+      suggested?: number;
     },
     timeline: {
       prompt: string; // Generic: "How long?"
@@ -102,7 +118,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       period: {
         prompt: 'How often do you want to review profit?',
         description: 'Choose how often you want to track profit performance.',
-        recommended: 'week',
+        recommended: 'day',
       },
       targetType: {
         prompt: 'How will you measure success?',
@@ -171,7 +187,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       period: {
         prompt: 'How often do you want to review revenue?',
         description: 'Choose how often you want to track revenue performance.',
-        recommended: 'week',
+        recommended: 'day',
       },
       targetType: {
         prompt: 'How will you measure success?',
@@ -240,7 +256,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       period: {
         prompt: 'How often do you want to review spending?',
         description: 'Choose how often you want to track spending totals.',
-        recommended: 'week',
+        recommended: 'day',
       },
       targetType: {
         prompt: 'How will you measure success?',
@@ -329,7 +345,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What loss per {period} feels healthy?',
           description: 'Enter the {periodly} loss in {units} that feels sustainable.',
-          recommended: {
+          suggested: {
             day: -0.07,
             week: -0.5,
             month: -4,
@@ -403,7 +419,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What gain per {period} feels healthy?',
           description: 'Enter the {periodly} gain in {units} that feels sustainable.',
-          recommended: {
+          suggested: {
             day: 0.04,
             week: 0.25,
             month: 1,
@@ -452,7 +468,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       [91],
       [88],
     ],
-    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'inside', range: [70, 100] } },
+    suggestedTarget: { type: 'period-range', period: 'day', condition: { condition: 'inside', range: [70, 100] } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to check blood pressure?',
@@ -467,10 +483,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
             label: '{Periodly} shift',
             description: 'Target a shift each {period}.',
           },
-          alltime: {
+          range: {
             label: 'Target range',
-            description: 'Reach a specific reading range.',
-          },
+            description: 'Stay within a healthy range each {period}.',
+          }
         },
       },
       goodValue: {
@@ -478,10 +494,15 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
           prompt: 'What shift per {period} feels realistic?',
           description: 'Enter the {periodly} shift in {units} you want to see.',
         },
-        alltime: {
+        range: {
           prompt: 'What reading range are you aiming for?',
           description: 'Enter your target range in {units}.',
-        },
+          suggested: {
+            day: [70, 100],
+            week: [70, 100],
+            month: [70, 100],
+          },
+        }
       },
       startingValue: {
         prompt: 'Starting reading?',
@@ -546,7 +567,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} activity total in {units} that would make you proud.',
-          recommended: {
+          suggested: {
             day: 30,
             week: 150,
             month: 600,
@@ -620,10 +641,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What step count per {period} feels good?',
           description: 'Enter the {periodly} step total you want to hit.',
-          recommended: {
-            day: [8000, 10000],
-            week: [56000, 70000],
-            month: [240000, 300000],
+          suggested: {
+            day: 8000,
+            week: 56000,
+            month: 240000,
           },
         },
         alltime: {
@@ -669,7 +690,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       [7.0],
       [7.4],
     ],
-    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'inside', range: [7, 9] } },
+    suggestedTarget: { type: 'period-range', period: 'day', condition: { condition: 'inside', range: [7, 9] } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review sleep?',
@@ -678,16 +699,16 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} improvements or aim for a target sleep value.',
+        description: 'Track {periodly} improvements or aim for a target sleep range.',
         options: {
           period: {
             label: '{Periodly} improvement',
             description: 'Target a sleep improvement each {period}.',
           },
-          alltime: {
-            label: 'Sleep target',
-            description: 'Reach a specific sleep value.',
-          },
+          range: {
+            label: 'Target range',
+            description: 'Stay within a healthy sleep range each {period}.',
+          }
         },
       },
       goodValue: {
@@ -695,10 +716,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
           prompt: 'What improvement per {period} feels good?',
           description: 'Enter the {periodly} improvement in {units} you want to see.',
         },
-        alltime: {
-          prompt: 'What sleep value are you aiming for?',
-          description: 'Enter your target sleep value in {units}.',
-        },
+        range: {
+          prompt: 'What sleep range are you aiming for?',
+          description: 'Enter your target range in {units}.',
+        }
       },
       startingValue: {
         prompt: 'Starting sleep average?',
@@ -763,7 +784,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How much water per {period} feels good?',
           description: 'Enter the {periodly} total in {units} you want to hit.',
-          recommended: {
+          suggested: {
             day: 64,
             week: 448,
             month: 1920,
@@ -812,7 +833,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       [630, 660, 600],
       [620, 650, 590],
     ],
-    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'inside', range: [1600, 2400] } },
+    suggestedTarget: { type: 'period-range', period: 'day', condition: { condition: 'inside', range: [1600, 2400] } },
     goalQuestions: {
       period: {
         prompt: 'How often do you want to review calories?',
@@ -821,31 +842,23 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Focus on {periodly} limits or an all-time cap.',
+        description: 'Aim for a healthy range each {period}.',
         options: {
-          period: {
-            label: '{Periodly} total',
-            description: 'Set a calorie limit each {period}.',
-          },
-          alltime: {
-            label: 'All time total',
-            description: 'Stay under a cumulative calorie total.',
-          },
+          range: {
+            label: 'Target range',
+            description: 'Stay within your calorie range each {period}.',
+          }
         },
       },
       goodValue: {
-        period: {
-          prompt: 'What calorie limit per {period} feels right?',
-          description: 'Enter the {periodly} limit in {units} that keeps you on track.',
-          recommended: {
-            day: 2000,
-            week: 14000,
-            month: 60000,
+        range: {
+          prompt: 'What calorie range per {period} feels right?',
+          description: 'Enter the {periodly} range in {units} that keeps you on track.',
+          suggested: {
+            day: [1600, 2400],
+            week: [11200, 16800],
+            month: [48000, 72000],
           },
-        },
-        alltime: {
-          prompt: 'What total calories do you want to stay under?',
-          description: 'Enter a cumulative calorie limit in {units}.',
         },
       },
       startingValue: {
@@ -1709,7 +1722,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       period: {
         prompt: 'How often do you want to review running distance?',
         description: 'Choose how often you want to track distance totals.',
-        recommended: 'week',
+        recommended: 'day',
       },
       targetType: {
         prompt: 'How will you measure success?',

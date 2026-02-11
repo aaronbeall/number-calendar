@@ -21,6 +21,25 @@ export function evalCondition(cond: GoalCondition, value: number): boolean {
   return false;
 }
 
+export function formatGoalConditionLabel(condition: GoalCondition): string {
+  if (condition.condition === 'above') {
+    return `${formatValue(condition.value)} and above`;
+  }
+  if (condition.condition === 'below') {
+    return `${formatValue(condition.value)} and below`;
+  }
+  if (condition.condition === 'inside') {
+    return `Between ${formatValue(condition.range[0])} and ${formatValue(condition.range[1])}`;
+  }
+  if (condition.condition === 'outside') {
+    return `Outside ${formatValue(condition.range[0])} and ${formatValue(condition.range[1])}`;
+  }
+  if (condition.condition === 'equal') {
+    return `${formatValue(condition.value)}`;
+  }
+  return '';
+}
+
 // Caches for periods, period data, and period stats by timePeriod type
 function createPeriodCache(data: Record<DayKey, number[]>) {
   const periodsCache: Partial<Record<TimePeriod, DateKey[]>> = {};

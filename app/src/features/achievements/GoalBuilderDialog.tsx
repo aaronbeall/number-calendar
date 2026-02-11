@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
-import type { Dataset, Goal } from '@/features/db/localdb';
+import type { Dataset, Goal, GoalCondition } from '@/features/db/localdb';
 import { useAllDays, useSaveDay } from '@/features/db/useDayEntryData';
 import { useCreateGoals, useGoals } from '@/features/db/useGoalsData';
 import { toDayKey } from '@/lib/friendly-date';
@@ -11,10 +11,10 @@ import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
 import { formatValue } from '@/lib/friendly-numbers';
 import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput } from '@/lib/goals-builder';
 import { DATASET_TEMPLATES } from '@/lib/dataset-builder';
-import { getGoalCategory, isSameGoal } from '@/lib/goals';
+import { formatGoalConditionLabel, getGoalCategory, isSameGoal } from '@/lib/goals';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { getValueForGood, isBad } from '@/lib/valence';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
 import * as React from 'react';
 import { useState } from 'react';
 import { AchievementBadge } from './AchievementBadge';
@@ -33,8 +33,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const [step, setStep] = useState<Step>('period');
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | ''>('');
   const [goodValue, setGoodValue] = useState<string>('');
+  const [goodValueRangeMin, setGoodValueRangeMin] = useState<string>('');
+  const [goodValueRangeMax, setGoodValueRangeMax] = useState<string>('');
   const [startingValue, setStartingValue] = useState<string>('');
-  const [valueType, setValueType] = useState<'' | 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target'>('');
+  const [valueType, setValueType] = useState<'' | 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range'>('');
   const [targetDays, setTargetDays] = useState<string>(''); // Stored in days
   const [timePeriodUnit, setTimePeriodUnit] = useState<'days' | 'weeks' | 'months'>('days');
   const [activePeriods, setActivePeriods] = useState<string>('');
@@ -125,6 +127,20 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const exampleAmountLabel = formatValue(exampleAmount);
   const exampleChangeLabel = formatValue(exampleChange, { delta: true });
   const parsedStartingValue = Number.isFinite(parseFloat(startingValue)) ? parseFloat(startingValue) : undefined;
+  const parsedRangeMin = Number.isFinite(parseFloat(goodValueRangeMin)) ? parseFloat(goodValueRangeMin) : undefined;
+  const parsedRangeMax = Number.isFinite(parseFloat(goodValueRangeMax)) ? parseFloat(goodValueRangeMax) : undefined;
+  const rangeOrderInvalid =
+    typeof parsedRangeMin === 'number' && typeof parsedRangeMax === 'number' && parsedRangeMin > parsedRangeMax;
+  const rangeCondition = React.useMemo<GoalCondition | null>(() => {
+    if (rangeOrderInvalid) return null;
+    if (typeof parsedRangeMin === 'number' && typeof parsedRangeMax === 'number') {
+      return { condition: 'inside', range: [parsedRangeMin, parsedRangeMax] };
+    }
+    if (typeof parsedRangeMin === 'number') return { condition: 'above', value: parsedRangeMin };
+    if (typeof parsedRangeMax === 'number') return { condition: 'below', value: parsedRangeMax };
+    return null;
+  }, [parsedRangeMin, parsedRangeMax, rangeOrderInvalid]);
+  const rangeConditionLabel = rangeCondition ? formatGoalConditionLabel(rangeCondition) : '';
   const allTimePriorValue = parsedStartingValue ?? currentValue;
   const isAllTimeValueType = valueType === 'alltime-total' || valueType === 'alltime-target';
   const hasNonZeroStartingValue = typeof parsedStartingValue === 'number' && parsedStartingValue !== 0;
@@ -211,6 +227,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
         : `In ${Math.round(summaryDurationDays / 30)} months (${summaryTargetDate})`;
   const isPeriodTarget = valueType === 'period-total' || valueType === 'period-change';
   const isAllTimeTarget = valueType === 'alltime-total' || valueType === 'alltime-target';
+  const isRangeTarget = valueType === 'period-range';
 
   const questions = template?.goalQuestions;
   const recommendedPeriod = questions?.period.recommended ?? 'day';
@@ -219,54 +236,144 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     questions?.period.description,
     "Choose how often you'd like to track your progress"
   );
-  const targetTypePrompt = resolveText(questions?.targetType.prompt, 'How will you measure success?');
+  const targetTypePrompt = resolveText(questions?.targetType?.prompt, 'How will you measure success?');
+  const templateOptions = questions?.targetType?.options;
+  const showPeriodOption = template ? !!templateOptions?.period : true;
+  const showAlltimeOption = template ? !!templateOptions?.alltime : true;
+  const showRangeOption = template ? !!templateOptions?.range : dataset.valence === 'neutral';
+  const targetTypeDescriptionFallback =
+    showRangeOption && !showPeriodOption && !showAlltimeOption
+      ? `Aim for a healthy range each ${period}`
+      : dataset.tracking === 'series'
+        ? `Focus on ${adjectivize(period)} totals or all-time milestones`
+        : `Track ${adjectivize(period)} changes or overall progress`;
   const targetTypeDescription = resolveText(
-    questions?.targetType.description,
-    dataset.tracking === 'series'
-      ? `Focus on ${adjectivize(period)} totals or all-time milestones`
-      : `Track ${adjectivize(period)} changes or overall progress`
+    questions?.targetType?.description,
+    targetTypeDescriptionFallback
   );
   const targetPeriodLabel = resolveText(
-    questions?.targetType.options.period.label,
+    templateOptions?.period?.label,
     dataset.tracking === 'series'
       ? `${capitalize(adjectivize(period))} Total`
       : `${capitalize(adjectivize(period))} Change`
   );
   const targetPeriodDescription = resolveText(
-    questions?.targetType.options.period.description,
+    templateOptions?.period?.description,
     dataset.tracking === 'series'
       ? `Set targets for total value each ${period}`
       : `Target improvement each ${period}`
   );
   const targetAlltimeLabel = resolveText(
-    questions?.targetType.options.alltime.label,
+    templateOptions?.alltime?.label,
     dataset.tracking === 'series' ? 'All Time Total' : 'All Time Target'
   );
   const targetAlltimeDescription = resolveText(
-    questions?.targetType.options.alltime.description,
+    templateOptions?.alltime?.description,
     dataset.tracking === 'series'
       ? 'Build toward cumulative milestones'
       : 'Reach a specific overall value'
   );
+  const targetRangeLabel = resolveText(
+    templateOptions?.range?.label,
+    `${capitalize(adjectivize(period))} Range`
+  );
+  const targetRangeDescription = resolveText(
+    templateOptions?.range?.description,
+    `Stay within a target range each ${period}`
+  );
+  const targetTypeOptions = React.useMemo(() => {
+    const options: Array<{
+      key: 'period' | 'alltime' | 'range';
+      valueType: 'period-total' | 'period-change' | 'alltime-total' | 'alltime-target' | 'period-range';
+      label: string;
+      description: string;
+      icon: React.ReactNode;
+    }> = [];
+
+    if (showPeriodOption) {
+      options.push({
+        key: 'period',
+        valueType: dataset.tracking === 'series' ? 'period-total' : 'period-change',
+        label: targetPeriodLabel,
+        description: targetPeriodDescription,
+        icon: dataset.tracking === 'series' ? <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" /> : <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
+      });
+    }
+
+    if (showRangeOption) {
+      options.push({
+        key: 'range',
+        valueType: 'period-range',
+        label: targetRangeLabel,
+        description: targetRangeDescription,
+        icon: <ArrowLeftRight className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
+      });
+    }
+
+    if (showAlltimeOption) {
+      options.push({
+        key: 'alltime',
+        valueType: dataset.tracking === 'series' ? 'alltime-total' : 'alltime-target',
+        label: targetAlltimeLabel,
+        description: targetAlltimeDescription,
+        icon: dataset.tracking === 'series' ? <Trophy className="w-5 h-5 text-blue-600 dark:text-blue-400" /> : <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
+      });
+    }
+
+    return options;
+  }, [dataset.tracking, showAlltimeOption, showPeriodOption, showRangeOption, targetAlltimeDescription, targetAlltimeLabel, targetPeriodDescription, targetPeriodLabel, targetRangeDescription, targetRangeLabel]);
+
+  React.useEffect(() => {
+    if (!period || !valueType) return;
+    if (!template?.goalQuestions?.goodValue) return;
+
+    if (valueType === 'period-range') {
+      if (goodValueRangeMin || goodValueRangeMax) return;
+      const suggestedRange = template.goalQuestions.goodValue.range?.suggested?.[period];
+      if (!suggestedRange) return;
+      setGoodValueRangeMin(String(suggestedRange[0]));
+      setGoodValueRangeMax(String(suggestedRange[1]));
+      return;
+    }
+
+    if (goodValue) return;
+    const suggestedValue = template.goalQuestions.goodValue.period?.suggested?.[period];
+    if (typeof suggestedValue !== 'number') return;
+    if (valueType === 'period-total' || valueType === 'period-change') {
+      setGoodValue(String(suggestedValue));
+    }
+  }, [goodValue, goodValueRangeMax, goodValueRangeMin, period, template?.goalQuestions?.goodValue, valueType]);
   const goodValuePrompt = resolveText(
-    isPeriodTarget ? questions?.goodValue.period.prompt : questions?.goodValue.alltime.prompt,
+    isRangeTarget
+      ? questions?.goodValue?.range?.prompt
+      : isPeriodTarget
+        ? questions?.goodValue?.period?.prompt
+        : questions?.goodValue?.alltime?.prompt,
     valueType === 'period-total'
       ? `What's a good ${period}?`
       : valueType === 'alltime-total'
         ? 'What total do you want to reach?'
         : valueType === 'period-change'
           ? "What's good progress?"
-          : 'What value are you aiming for?'
+          : valueType === 'period-range'
+            ? `What's a good ${adjectivize(period)} range?`
+            : 'What value are you aiming for?'
   );
   const goodValueDescription = resolveText(
-    isPeriodTarget ? questions?.goodValue.period.description : questions?.goodValue.alltime.description,
+    isRangeTarget
+      ? questions?.goodValue?.range?.description
+      : isPeriodTarget
+        ? questions?.goodValue?.period?.description
+        : questions?.goodValue?.alltime?.description,
     valueType === 'period-total'
       ? `Enter the target total for each ${period}`
       : valueType === 'alltime-total'
         ? 'Enter a milestone total you want to achieve'
         : valueType === 'period-change'
           ? `Enter the ${adjectivize(period)} improvement that would make you proud`
-          : 'Enter the overall target value'
+          : valueType === 'period-range'
+            ? `Enter the target range for each ${period}`
+            : 'Enter the overall target value'
   );
   const startingValuePrompt = resolveText(questions?.startingValue.prompt, 'Starting point');
   const startingValueDescription = resolveText(
@@ -280,7 +387,23 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   
   // Consolidated GoalBuilderInput creation
   const builderInput = React.useMemo<GoalBuilderInput | null>(() => {
-    if (!period || !valueType || !goodValue) return null;
+    if (!period || !valueType) return null;
+    if (valueType === 'period-range') {
+      if (!rangeCondition) return null;
+      return {
+        datasetId: dataset.id,
+        tracking: dataset.tracking,
+        valence: dataset.valence,
+        period: period as 'day' | 'week' | 'month',
+        value: 0,
+        valueType,
+        valueRange: { min: parsedRangeMin, max: parsedRangeMax },
+        activePeriods: parseFloat(activePeriods) || 1,
+        startingValue: startingValue.trim() ? parseFloat(startingValue) : currentValue,
+        targetDays: summaryDurationDays,
+      };
+    }
+    if (!goodValue) return null;
     return {
       datasetId: dataset.id,
       tracking: dataset.tracking,
@@ -292,9 +415,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       startingValue: startingValue.trim() ? parseFloat(startingValue) : currentValue,
       targetDays: summaryDurationDays,
     };
-  }, [dataset.id, dataset.tracking, dataset.valence, period, valueType, goodValue, activePeriods, startingValue, currentValue, summaryDurationDays]);
+  }, [dataset.id, dataset.tracking, dataset.valence, period, valueType, goodValue, parsedRangeMin, parsedRangeMax, rangeCondition, activePeriods, startingValue, currentValue, summaryDurationDays]);
   
-  const summaryBaselines = builderInput ? calculateBaselines(builderInput) : null;
+  const summaryBaselines = builderInput && !isRangeTarget ? calculateBaselines(builderInput) : null;
   const conversionLabel = (() => {
     if (!summaryBaselines || !period || !isPeriodTarget) return '';
     const delta = valueType === 'period-change';
@@ -336,6 +459,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     setPeriod(value);
     // Reset defaults when period changes
     // setValueType('');
+    setGoodValueRangeMin('');
+    setGoodValueRangeMax('');
     setActivePeriods(value === 'day' ? '5' : value === 'week' ? '4' : '12');
     
     // Set time period unit and default targetDays to match period
@@ -459,6 +584,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     setStep('period');
     setPeriod('');
     setGoodValue('');
+    setGoodValueRangeMin('');
+    setGoodValueRangeMax('');
     setStartingValue('');
     setValueType('');
     setTargetDays('');
@@ -502,7 +629,13 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     if (step !== 'period') return { canProceed: false, feedbackMessage: null };
     
     // Check basic requirements
-    if (!period || !valueType || !goodValue) return { canProceed: false, feedbackMessage: null };
+    if (!period || !valueType) return { canProceed: false, feedbackMessage: null };
+    if (isRangeTarget) {
+      const hasRangeInput = typeof parsedRangeMin === 'number' || typeof parsedRangeMax === 'number';
+      if (!hasRangeInput || rangeOrderInvalid) return { canProceed: false, feedbackMessage: null };
+      return { canProceed: true, feedbackMessage: null };
+    }
+    if (!goodValue) return { canProceed: false, feedbackMessage: null };
     
     const numValue = parseFloat(goodValue);
     if (numValue === 0 || isNaN(numValue)) return { canProceed: false, feedbackMessage: null };
@@ -757,139 +890,49 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     </div>
 
                     {!valueType ? (
-                      <div className="grid grid-cols-2 gap-4 max-w-xl mx-auto">
-                        {dataset.tracking === 'series' ? (
-                          <>
-                            {/* Series: Period Total */}
-                            <button
-                              onClick={() => setValueType('period-total')}
-                              className={cn(
-                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
-                                'hover:scale-105 active:scale-95 text-left',
-                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetPeriodLabel}</span>
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">
-                                {targetPeriodDescription}
-                              </p>
-                            </button>
-
-                            {/* Series: All Time Total */}
-                            <button
-                              onClick={() => setValueType('alltime-total')}
-                              className={cn(
-                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
-                                'hover:scale-105 active:scale-95 text-left',
-                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Trophy className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetAlltimeLabel}</span>
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">
-                                {targetAlltimeDescription}
-                              </p>
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            {/* Trend: Period Change */}
-                            <button
-                              onClick={() => setValueType('period-change')}
-                              className={cn(
-                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
-                                'hover:scale-105 active:scale-95 text-left',
-                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetPeriodLabel}</span>
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">
-                                {targetPeriodDescription}
-                              </p>
-                            </button>
-
-                            {/* Trend: All Time Target */}
-                            <button
-                              onClick={() => setValueType('alltime-target')}
-                              className={cn(
-                                'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
-                                'hover:scale-105 active:scale-95 text-left',
-                                'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
-                              )}
-                            >
-                              <div className="flex items-center gap-2">
-                                <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetAlltimeLabel}</span>
-                              </div>
-                              <p className="text-xs text-slate-600 dark:text-slate-400">
-                                {targetAlltimeDescription}
-                              </p>
-                            </button>
-                          </>
-                        )}
+                      <div className={cn(
+                        'grid gap-4 max-w-xl mx-auto',
+                        targetTypeOptions.length === 1 && 'grid-cols-1',
+                        targetTypeOptions.length === 2 && 'grid-cols-2',
+                        targetTypeOptions.length >= 3 && 'grid-cols-3',
+                      )}>
+                        {targetTypeOptions.map((option) => (
+                          <button
+                            key={option.key}
+                            onClick={() => setValueType(option.valueType)}
+                            className={cn(
+                              'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
+                              'hover:scale-105 active:scale-95 text-left',
+                              'border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-700'
+                            )}
+                          >
+                            <div className="flex items-center gap-2">
+                              {option.icon}
+                              <span className="font-bold text-slate-900 dark:text-slate-50">{option.label}</span>
+                            </div>
+                            <p className="text-xs text-slate-600 dark:text-slate-400">
+                              {option.description}
+                            </p>
+                          </button>
+                        ))}
                       </div>
                     ) : (
                       <div className="flex items-center justify-center gap-2 animate-in fade-in duration-300">
                         <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900/50">
-                          {dataset.tracking === 'series' ? (
-                            <>
-                              <button
-                                onClick={() => setValueType('period-total')}
-                                className={cn(
-                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
-                                  valueType === 'period-total'
-                                    ? 'bg-purple-600 text-white shadow-sm'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                                )}
-                              >
-                                {targetPeriodLabel}
-                              </button>
-                              <button
-                                onClick={() => setValueType('alltime-total')}
-                                className={cn(
-                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
-                                  valueType === 'alltime-total'
-                                    ? 'bg-purple-600 text-white shadow-sm'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                                )}
-                              >
-                                {targetAlltimeLabel}
-                              </button>
-                            </>
-                          ) : (
-                            <>
-                              <button
-                                onClick={() => setValueType('period-change')}
-                                className={cn(
-                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
-                                  valueType === 'period-change'
-                                    ? 'bg-purple-600 text-white shadow-sm'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                                )}
-                              >
-                                {targetPeriodLabel}
-                              </button>
-                              <button
-                                onClick={() => setValueType('alltime-target')}
-                                className={cn(
-                                  'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
-                                  valueType === 'alltime-target'
-                                    ? 'bg-purple-600 text-white shadow-sm'
-                                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-                                )}
-                              >
-                                {targetAlltimeLabel}
-                              </button>
-                            </>
-                          )}
+                          {targetTypeOptions.map((option) => (
+                            <button
+                              key={option.key}
+                              onClick={() => setValueType(option.valueType)}
+                              className={cn(
+                                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
+                                valueType === option.valueType
+                                  ? 'bg-purple-600 text-white shadow-sm'
+                                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+                              )}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     )}
@@ -909,40 +952,77 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                       </p>
                     </div>
 
-                    <div className="relative">
-                      <Input
-                        id="goodValue"
-                        type="number"
-                        value={goodValue}
-                        onChange={(e) => setGoodValue(e.target.value)}
-                        placeholder={
-                          valueType === 'period-total'
-                            ? `e.g., ${exampleAmountLabel}`
-                            : valueType === 'period-change'
-                              ? `e.g., ${exampleChangeLabel}`
-                              : valueType === 'alltime-total'
-                                ? `e.g., ${formatValue(allTimeTotalExample)}`
-                                : `e.g., ${formatValue(allTimeTargetExample)}`
-                        }
-                        hideStepperButtons
-                        className="text-center !text-2xl font-bold h-16 pr-12"
-                      />
-                      {(valueType === 'period-change' || valueType === 'alltime-target') && (
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                          {getValueForGood(dataset.valence, {
-                            positive: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
-                            negative: <ArrowDown className="w-6 h-6 text-green-600 dark:text-green-400" />,
-                            neutral: null,
-                          })}
+                    {isRangeTarget ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                          <Input
+                            id="goodValueRangeMin"
+                            type="number"
+                            value={goodValueRangeMin}
+                            onChange={(e) => setGoodValueRangeMin(e.target.value)}
+                            placeholder="Min"
+                            hideStepperButtons
+                            className="text-center !text-2xl font-bold h-16"
+                          />
+                          <Input
+                            id="goodValueRangeMax"
+                            type="number"
+                            value={goodValueRangeMax}
+                            onChange={(e) => setGoodValueRangeMax(e.target.value)}
+                            placeholder="Max"
+                            hideStepperButtons
+                            className="text-center !text-2xl font-bold h-16"
+                          />
                         </div>
-                      )}
-                    </div>
+                        {rangeOrderInvalid ? (
+                          <p className="text-xs text-rose-600 dark:text-rose-400 text-center">
+                            Minimum should be less than or equal to maximum.
+                          </p>
+                        ) : (
+                          <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+                            {rangeConditionLabel || 'Enter a minimum, a maximum, or both.'}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative">
+                        <Input
+                          id="goodValue"
+                          type="number"
+                          value={goodValue}
+                          onChange={(e) => setGoodValue(e.target.value)}
+                          placeholder={
+                            valueType === 'period-total'
+                              ? `e.g., ${exampleAmountLabel}`
+                              : valueType === 'period-change'
+                                ? `e.g., ${exampleChangeLabel}`
+                                : valueType === 'alltime-total'
+                                  ? `e.g., ${formatValue(allTimeTotalExample)}`
+                                  : `e.g., ${formatValue(allTimeTargetExample)}`
+                          }
+                          hideStepperButtons
+                          className="text-center !text-2xl font-bold h-16 pr-12"
+                        />
+                        {(valueType === 'period-change' || valueType === 'alltime-target') && (
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                            {getValueForGood(dataset.valence, {
+                              positive: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
+                              negative: <ArrowDown className="w-6 h-6 text-green-600 dark:text-green-400" />,
+                              neutral: null,
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Starting Value and Time Period Inputs - only show after value is entered */}
-                  {goodValue && (() => {
-                    const numValue = parseFloat(goodValue);
-                    if (numValue === 0 || isNaN(numValue)) return null;
+                  {(isRangeTarget ? rangeCondition : goodValue) && (() => {
+                    if (isRangeTarget) return null;
+                    if (!isRangeTarget) {
+                      const numValue = parseFloat(goodValue);
+                      if (numValue === 0 || isNaN(numValue)) return null;
+                    }
                     
                     return (
                       <div className={cn(
@@ -1128,13 +1208,16 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                       Target
                     </div>
                     <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {formatValue(parseFloat(goodValue), { 
-                        delta: valueType === 'period-change'
-                      })}
+                      {isRangeTarget
+                        ? rangeConditionLabel
+                        : formatValue(parseFloat(goodValue), {
+                            delta: valueType === 'period-change'
+                          })}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
                       {valueType === 'period-total' && `${capitalize(adjectivize(period))} total`}
                       {valueType === 'period-change' && `${capitalize(adjectivize(period))} change`}
+                      {isRangeTarget && `${capitalize(adjectivize(period))} range`}
                       {isAllTimeTarget && summaryDurationLabel}
                     </div>
                     {isPeriodTarget && conversionLabel && (
