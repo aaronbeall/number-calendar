@@ -5,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import type { Dataset, Goal } from '@/features/db/localdb';
 import { useAllDays, useSaveDay } from '@/features/db/useDayEntryData';
-import { useCreateGoals } from '@/features/db/useGoalsData';
+import { useCreateGoals, useGoals } from '@/features/db/useGoalsData';
 import { toDayKey } from '@/lib/friendly-date';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
 import { formatValue } from '@/lib/friendly-numbers';
 import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput } from '@/lib/goals-builder';
-import { getGoalCategory } from '@/lib/goals';
+import { getGoalCategory, isSameGoal } from '@/lib/goals';
 import { adjectivize, capitalize, cn } from '@/lib/utils';
 import { getValueForGood, isBad } from '@/lib/valence';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
@@ -44,8 +44,19 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
 
   // Load all days to calculate current total/last value
   const { data: allDays = [] } = useAllDays(dataset.id);
+  const { data: existingGoals = [] } = useGoals(dataset.id);
   const saveDay = useSaveDay();
   const createGoals = useCreateGoals();
+
+  const filterGeneratedGoals = React.useCallback((goals: GeneratedGoals): GeneratedGoals => {
+    if (!existingGoals.length) return goals;
+    const isDuplicate = (candidate: Goal) => existingGoals.some((existing) => isSameGoal(existing, candidate));
+    return {
+      milestones: goals.milestones.filter((goal) => !isDuplicate(goal)),
+      targets: goals.targets.filter((goal) => !isDuplicate(goal)),
+      achievements: goals.achievements.filter((goal) => !isDuplicate(goal)),
+    };
+  }, [existingGoals]);
   
   // Calculate current value based on tracking type
   const currentValue = React.useMemo(() => {
@@ -247,12 +258,13 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
         if (!builderInput) return; // Type guard
         
         const goals = generateGoals(builderInput);
-        setGeneratedGoals(goals);
+        const filteredGoals = filterGeneratedGoals(goals);
+        setGeneratedGoals(filteredGoals);
         // Select all goals by default
         const allGoalIds = new Set([
-          ...goals.milestones.map((g) => g.id),
-          ...goals.targets.map((g) => g.id),
-          ...goals.achievements.map((g) => g.id),
+          ...filteredGoals.milestones.map((g) => g.id),
+          ...filteredGoals.targets.map((g) => g.id),
+          ...filteredGoals.achievements.map((g) => g.id),
         ]);
         setSelectedGoals(allGoalIds);
         setIsGenerating(false);
@@ -287,13 +299,13 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
     });
 
     
-    const goals = generateGoals(builderInput);
+    const goals = filterGeneratedGoals(generateGoals(builderInput));
     setGeneratedGoals(goals);
     // Update selected goals to match previous selection index
     const allGoalIds = new Set<string>();
-    selectedGoalIndexes.milestones.forEach(idx => idx != -1 && allGoalIds.add(goals.milestones[idx].id));
-    selectedGoalIndexes.targets.forEach(idx => idx != -1 && allGoalIds.add(goals.targets[idx].id));
-    selectedGoalIndexes.achievements.forEach(idx => idx != -1 && allGoalIds.add(goals.achievements[idx].id));
+    selectedGoalIndexes.milestones.forEach((idx) => idx >= 0 && idx < goals.milestones.length && allGoalIds.add(goals.milestones[idx].id));
+    selectedGoalIndexes.targets.forEach((idx) => idx >= 0 && idx < goals.targets.length && allGoalIds.add(goals.targets[idx].id));
+    selectedGoalIndexes.achievements.forEach((idx) => idx >= 0 && idx < goals.achievements.length && allGoalIds.add(goals.achievements[idx].id));
     setSelectedGoals(allGoalIds);
   };
 
@@ -376,6 +388,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
       return next;
     });
   };
+
 
   // Consolidated validation and feedback logic
   const getPeriodStepValidation = () => {
@@ -1069,19 +1082,27 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
               
               {/* Progress dots */}
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-purple-600 animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 rounded-full bg-blue-600 animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 rounded-full bg-green-600 animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           )}
 
           {step === 'preview' && generatedGoals && (
             <div className="space-y-6 py-4 px-4 animate-in fade-in duration-300">
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                We've generated {generatedGoals.milestones.length + generatedGoals.targets.length + generatedGoals.achievements.length} personalized goals for you.
-                Select which ones you'd like to create.
-              </p>
+              {(() => {
+                const totalGenerated =
+                  generatedGoals.milestones.length +
+                  generatedGoals.targets.length +
+                  generatedGoals.achievements.length;
+                return (
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    We've generated {totalGenerated} personalized goals for you.
+                    Select which ones you'd like to create.
+                  </p>
+                );
+              })()}
 
                 {/* Milestones */}
                 <div className="space-y-3">
@@ -1115,18 +1136,24 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Big, all-time achievements that celebrate major progress.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {generatedGoals.milestones.map((goal) => (
-                      <GoalPreviewItem
-                        key={goal.id}
-                        goal={goal}
-                        selected={selectedGoals.has(goal.id)}
-                        onToggle={() => toggleGoal(goal.id)}
-                        desaturateUnselected
-                        animateIn
-                      />
-                    ))}
-                  </div>
+                  {generatedGoals.milestones.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                      No new milestones for this setup. Try adjusting your target or timeframe.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {generatedGoals.milestones.map((goal) => (
+                        <GoalPreviewItem
+                          key={goal.id}
+                          goal={goal}
+                          selected={selectedGoals.has(goal.id)}
+                          onToggle={() => toggleGoal(goal.id)}
+                          desaturateUnselected
+                          animateIn
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Targets */}
@@ -1152,17 +1179,23 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Repeatable period goals to keep you on pace.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {generatedGoals.targets.map((goal) => (
-                      <GoalPreviewItem
-                        key={goal.id}
-                        goal={goal}
-                        selected={selectedGoals.has(goal.id)}
-                        onToggle={() => toggleGoal(goal.id)}
-                        desaturateUnselected
-                      />
-                    ))}
-                  </div>
+                  {generatedGoals.targets.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                      No new targets for this setup. Adjust your inputs to get more options.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {generatedGoals.targets.map((goal) => (
+                        <GoalPreviewItem
+                          key={goal.id}
+                          goal={goal}
+                          selected={selectedGoals.has(goal.id)}
+                          onToggle={() => toggleGoal(goal.id)}
+                          desaturateUnselected
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Achievements */}
@@ -1188,36 +1221,42 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     Winning moments and streaks that highlight consistency.
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(() => {
-                      let lastCategory: string | null = null;
-                      return generatedGoals.achievements.map((goal) => {
-                        const category = getGoalCategory(goal);
-                        const showHeading = category !== lastCategory;
-                        lastCategory = category;
+                  {generatedGoals.achievements.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
+                      No new milestones for this setup. Try changing your target or activity level.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {(() => {
+                        let lastCategory: string | null = null;
+                        return generatedGoals.achievements.map((goal) => {
+                          const category = getGoalCategory(goal);
+                          const showHeading = category !== lastCategory;
+                          lastCategory = category;
 
-                        return (
-                          <React.Fragment key={goal.id}>
-                            {showHeading && (
-                              <div className="col-span-full flex items-center gap-3 pt-2">
-                                <div className="h-px flex-1 bg-slate-200/80 dark:bg-slate-700/70" />
-                                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                                  {category}
-                                </span>
-                                <div className="h-px flex-1 bg-slate-200/80 dark:bg-slate-700/70" />
-                              </div>
-                            )}
-                            <GoalPreviewItem
-                              goal={goal}
-                              selected={selectedGoals.has(goal.id)}
-                              onToggle={() => toggleGoal(goal.id)}
-                              desaturateUnselected
-                            />
-                          </React.Fragment>
-                        );
-                      });
-                    })()}
-                  </div>
+                          return (
+                            <React.Fragment key={goal.id}>
+                              {showHeading && (
+                                <div className="col-span-full flex items-center gap-3 pt-2">
+                                  <div className="h-px flex-1 bg-slate-200/80 dark:bg-slate-700/70" />
+                                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                                    {category}
+                                  </span>
+                                  <div className="h-px flex-1 bg-slate-200/80 dark:bg-slate-700/70" />
+                                </div>
+                              )}
+                              <GoalPreviewItem
+                                goal={goal}
+                                selected={selectedGoals.has(goal.id)}
+                                onToggle={() => toggleGoal(goal.id)}
+                                desaturateUnselected
+                              />
+                            </React.Fragment>
+                          );
+                        });
+                      })()}
+                    </div>
+                  )}
                 </div>
               </div>
           )}
@@ -1293,9 +1332,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                 </>
               ) : step === 'preview' ? (
                 <>
-                  <span className="text-sm text-slate-600 dark:text-slate-400">
-                    {selectedGoals.size} selected
-                  </span>
+                  {!isGenerating && (
+                    <span className="text-sm text-slate-600 dark:text-slate-400">
+                      {selectedGoals.size} selected
+                    </span>
+                  )}
                   <Button onClick={handleCreateClick} disabled={selectedGoals.size === 0}>
                     <Check className="w-4 h-4 mr-2" />
                     Create Goals

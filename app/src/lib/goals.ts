@@ -683,3 +683,18 @@ export function getCompletedAchievementsByDateKey(goals: GoalResults[]): Record<
   }
   return completedByDate;
 }
+
+export function isSameGoal(a: Goal, b: Goal): boolean {
+  return (
+    a.type === b.type &&
+    a.timePeriod === b.timePeriod &&
+    a.count === b.count &&
+    !!a.consecutive === !!b.consecutive &&
+    a.target.condition === b.target.condition &&
+    a.target.metric === b.target.metric &&
+    a.target.source === b.target.source &&
+    isRangeGoal(a.target) === isRangeGoal(b.target) &&
+    (!isRangeGoal(a.target) || a.target.range?.join("") === b.target.range?.join("")) &&
+    (isRangeGoal(a.target) || a.target.value === b.target.value)
+  );
+}
