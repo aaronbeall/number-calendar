@@ -74,6 +74,10 @@ export function getValueForValence<T>(value: number | boolean | null | undefined
   return neutral;
 }
 
+/**
+ * Returns one of the provided good/bad/neutral values based on the evaluation of the input value, valence, and an optional condition.
+ * If the condition is provided, it overrides the valence evaluation.
+ */
 export function getValueForValenceWithCondition<T>(
   value: number | null | undefined,
   valenceValue: number | null | undefined,
