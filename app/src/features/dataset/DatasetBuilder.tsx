@@ -13,7 +13,7 @@ import { formatRange, formatValue } from '@/lib/friendly-numbers';
 import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetricFromStats, getPrimaryMetricLabel } from '@/lib/tracking';
 import { cn, isNameTaken } from '@/lib/utils';
-import { getValueForGood, getValueForValence, getValueForValenceWithCondition, isBad, isGood } from '@/lib/valence';
+import { getValueForGood, getValueForValence, getValueForValenceWithCondition } from '@/lib/valence';
 import { Activity, ArrowDown, ArrowDownFromLine, ArrowLeft, ArrowRight, ArrowRightLeft, ArrowUp, ArrowUpFromLine, ChartNoAxesColumn, ChartNoAxesColumnDecreasing, ChartNoAxesColumnIncreasing, Diff, FoldVertical, Minus, Plus, Search, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
@@ -438,12 +438,11 @@ function SampleDataPreview({ tracking, valence, period, sampleData, target }: Sa
         neutral: 'text-blue-600 dark:text-blue-300',
       });
     }
-    const isPositive = isGood(value, valence);
-    const isNegative = isBad(value, valence);
-    if (valence === 'neutral') return 'text-blue-600 dark:text-blue-300';
-    if (isPositive) return 'text-green-600 dark:text-green-400';
-    if (isNegative) return 'text-red-600 dark:text-red-400';
-    return 'text-slate-500 dark:text-slate-400';
+    return getValueForValence(valenceValue, valence, {
+      good: 'text-green-600 dark:text-green-400',
+      bad: 'text-red-600 dark:text-red-400',
+      neutral: 'text-blue-600 dark:text-blue-300',
+    });
   };
   const renderTooltip = ({ active, payload }: { active?: boolean; payload?: { payload?: NumbersChartDataPoint }[] }) => {
     if (!active || !payload?.length) return null;
