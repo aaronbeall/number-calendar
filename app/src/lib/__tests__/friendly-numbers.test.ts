@@ -2,15 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { convertPeriodUnitWithRounding, countSignificantDigits, formatRange, formatValue, roundToClean } from '../friendly-numbers';
 
 describe('convertPeriodValueWithRounding', () => {
-  it('rounds to fewer decimals when converting to smaller periods', () => {
-    expect(convertPeriodUnitWithRounding('14.25', 'week', 'day')).toBe('99.8');
-    expect(convertPeriodUnitWithRounding('15.2', 'week', 'day')).toBe('106');
-    expect(convertPeriodUnitWithRounding('15', 'week', 'day')).toBe('105');
+  it('adds precision when converting to smaller periods', () => {
+    expect(convertPeriodUnitWithRounding('14.25', 'week', 'day')).toBe('2.036');
+    expect(convertPeriodUnitWithRounding('15.2', 'week', 'day')).toBe('2.17');
+    expect(convertPeriodUnitWithRounding('15', 'week', 'day')).toBe('2.1');
   });
 
-  it('preserves more decimals when converting to larger periods', () => {
-    expect(convertPeriodUnitWithRounding('10.5', 'day', 'week')).toBe('1.5');
-    expect(convertPeriodUnitWithRounding('10', 'day', 'month')).toBe('0.3');
+  it('reduces precision when converting to larger periods', () => {
+    expect(convertPeriodUnitWithRounding('10.5', 'day', 'week')).toBe('74');
+    expect(convertPeriodUnitWithRounding('10', 'day', 'month')).toBe('300');
   });
 
   it('returns null for invalid input', () => {

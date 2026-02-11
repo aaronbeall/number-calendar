@@ -20,7 +20,7 @@ export type DatasetTemplate = {
     // 'alltime-target': target total value by end date (e.g. save $5000 by end of year)
     // 'period-range': target range (above, below, between) per period (e.g. keep blood pressure between 70-100 each day)
     type: 'period-change' | 'period-target' | 'alltime-target' | 'period-range';
-    period: 'day' | 'week' | 'month';
+    period?: 'day' | 'week' | 'month';
     condition?: GoalCondition; // Optional condition to determine good vs bad target (e.g. only consider it good if you hit 10k steps and also improve by 500 steps from previous week)
   };
   goalQuestions: {
@@ -60,6 +60,7 @@ export type DatasetTemplate = {
       alltime?: {
         prompt: string; // Generic: "What value are you aiming for?" (series) "What total do you want to reach?" (trend)
         description: string; // Generic: "Enter the overall target value you'd like to hit" (trend) "Enter a milestone total you'd like to reach" (series)
+        suggested?: number; // Default is based on starting value and valence based delta (e.g. startingValue + or - 10)
       },
       range?: {
         prompt: string; // Generic: "What's a good {periodly} range?"
@@ -74,9 +75,9 @@ export type DatasetTemplate = {
     startingValue: {
       prompt: string; // Generic: "Starting from?"
       description: string; // Generic: "Your current value (optional)" (trend) or "Your current total (optional)" (series)
-      required?: boolean;
-      suggested?: number;
-    },
+      required?: boolean; // Default is false
+      suggested?: number; // Default is based on current data, or 0
+    } | null; // If null, don't show the starting value prompt
     timeline: {
       prompt: string; // Generic: "How long?"
       description: string; // Generic: "Time to reach goal (optional)"
@@ -142,6 +143,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total profit do you want to reach?',
           description: 'Enter the overall net profit milestone you want to hit.',
+          suggested: 25000,
         },
       },
       startingValue: {
@@ -211,6 +213,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total revenue do you want to reach?',
           description: 'Enter the overall revenue milestone you want to hit.',
+          suggested: 50000,
         },
       },
       startingValue: {
@@ -280,6 +283,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total spend do you want to stay under?',
           description: 'Enter a cumulative spending cap you want to maintain.',
+          suggested: 20000,
         },
       },
       startingValue: {
@@ -354,11 +358,14 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What goal weight do you want to reach?',
           description: 'Enter your target weight in {units}.',
+          suggested: 175,
         },
       },
       startingValue: {
         prompt: 'Starting weight?',
-        description: 'Your current weight (optional).',
+        description: 'Your current weight.',
+        required: true,
+        suggested: 185,
       },
       timeline: {
         prompt: 'How long do you want to give yourself?',
@@ -428,11 +435,14 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What goal weight do you want to reach?',
           description: 'Enter your target weight in {units}.',
+          suggested: 160,
         },
       },
       startingValue: {
         prompt: 'Starting weight?',
-        description: 'Your current weight (optional).',
+        description: 'Your current weight.',
+        required: true,
+        suggested: 150,
       },
       timeline: {
         prompt: 'How long do you want to give yourself?',
@@ -507,6 +517,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       startingValue: {
         prompt: 'Starting reading?',
         description: 'Your current reading (optional).',
+        suggested: 96,
       },
       timeline: {
         prompt: 'How long do you want to give yourself?',
@@ -576,12 +587,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total activity do you want to reach?',
           description: 'Enter a cumulative activity target in {units}.',
+          suggested: 5000,
         },
       },
-      startingValue: {
-        prompt: 'Starting activity total?',
-        description: 'Your current total activity (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -650,12 +659,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total steps do you want to reach?',
           description: 'Enter a cumulative step milestone you want to hit.',
+          suggested: 500000,
         },
       },
-      startingValue: {
-        prompt: 'Starting step total?',
-        description: 'Your current total steps so far (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -721,10 +728,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
           description: 'Enter your target range in {units}.',
         }
       },
-      startingValue: {
-        prompt: 'Starting sleep average?',
-        description: 'Your current sleep average (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -793,12 +797,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total water intake do you want to reach?',
           description: 'Enter a cumulative hydration target in {units}.',
+          suggested: 10000,
         },
       },
-      startingValue: {
-        prompt: 'Starting intake?',
-        description: 'Your current average intake (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -861,10 +863,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
           },
         },
       },
-      startingValue: {
-        prompt: 'Starting intake?',
-        description: 'Your current average intake (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -927,11 +926,13 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What mood score are you aiming for?',
           description: 'Enter the overall mood score you want to reach.',
+          suggested: 8,
         },
       },
       startingValue: {
         prompt: 'Starting mood score?',
         description: 'Your current average mood (optional).',
+        suggested: 6.5,
       },
       timeline: {
         prompt: 'How long do you want to plan ahead?',
@@ -995,12 +996,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total study time do you want to reach?',
           description: 'Enter a cumulative study target in {units}.',
+          suggested: 2000,
         },
       },
-      startingValue: {
-        prompt: 'Starting study total?',
-        description: 'Your current total study time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1063,12 +1062,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total coding time do you want to reach?',
           description: 'Enter a cumulative coding target in {units}.',
+          suggested: 3000,
         },
       },
-      startingValue: {
-        prompt: 'Starting coding total?',
-        description: 'Your current total coding time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1131,12 +1128,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total hobby time do you want to reach?',
           description: 'Enter a cumulative hobby time target in {units}.',
+          suggested: 1500,
         },
       },
-      startingValue: {
-        prompt: 'Starting hobby total?',
-        description: 'Your current total hobby time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1199,12 +1194,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total reading time do you want to reach?',
           description: 'Enter a cumulative reading target in {units}.',
+          suggested: 1200,
         },
       },
-      startingValue: {
-        prompt: 'Starting reading total?',
-        description: 'Your current total reading time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1268,12 +1261,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total meditation time do you want to reach?',
           description: 'Enter a cumulative meditation target in {units}.',
+          suggested: 600,
         },
       },
-      startingValue: {
-        prompt: 'Starting meditation total?',
-        description: 'Your current total meditation time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1336,12 +1327,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total volunteer time do you want to reach?',
           description: 'Enter a cumulative volunteer target in {units}.',
+          suggested: 5000,
         },
       },
-      startingValue: {
-        prompt: 'Starting volunteer total?',
-        description: 'Your current total volunteer time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1404,12 +1393,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How much total practice time do you want to reach?',
           description: 'Enter a cumulative practice target in {units}.',
+          suggested: 2000,
         },
       },
-      startingValue: {
-        prompt: 'Starting practice total?',
-        description: 'Your current total practice time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1472,12 +1459,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'How many sessions do you want to reach overall?',
           description: 'Enter a cumulative session milestone you want to hit.',
+          suggested: 100,
         },
       },
-      startingValue: {
-        prompt: 'Starting session total?',
-        description: 'Your current total sessions (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1540,11 +1525,13 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What rating are you aiming for?',
           description: 'Enter the overall rating you want to reach.',
+          suggested: 8,
         },
       },
       startingValue: {
         prompt: 'Starting rating?',
         description: 'Your current average rating (optional).',
+        suggested: 6.5,
       },
       timeline: {
         prompt: 'How long do you want to plan ahead?',
@@ -1609,12 +1596,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total screen time do you want to stay under?',
           description: 'Enter a cumulative screen time limit in {units}.',
+          suggested: 5000,
         },
       },
-      startingValue: {
-        prompt: 'Starting screen time total?',
-        description: 'Your current total screen time (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1678,12 +1663,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total caffeine do you want to stay under?',
           description: 'Enter a cumulative caffeine limit in {units}.',
+          suggested: 20000,
         },
       },
-      startingValue: {
-        prompt: 'Starting caffeine total?',
-        description: 'Your current total caffeine intake (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1746,12 +1729,10 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What total distance do you want to reach?',
           description: 'Enter a cumulative distance milestone in {units}.',
+          suggested: 100,
         },
       },
-      startingValue: {
-        prompt: 'Starting distance total?',
-        description: 'Your current total distance (optional).',
-      },
+      startingValue: null,
       timeline: {
         prompt: 'How long do you want to plan ahead?',
         description: 'Time to reach the target (optional).',
@@ -1815,11 +1796,13 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         alltime: {
           prompt: 'What savings balance do you want to reach?',
           description: 'Enter the total balance milestone you want to hit.',
+          suggested: 10000,
         },
       },
       startingValue: {
         prompt: 'Starting balance?',
         description: 'Your current balance (optional).',
+        suggested: 2500,
       },
       timeline: {
         prompt: 'How long do you want to plan ahead?',
@@ -1889,6 +1872,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       startingValue: {
         prompt: 'Starting balance?',
         description: 'Your current balance (optional).',
+        suggested: 6200,
       },
       timeline: {
         prompt: 'How long do you want to plan ahead?',
@@ -1900,7 +1884,9 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
     },
   },
-];
+] satisfies DatasetTemplate[];
+
+export type DatasetTemplateId = typeof DATASET_TEMPLATES[number]['id'];
 
 export const DATASET_TEMPLATE_IDS = DATASET_TEMPLATES.map((template) => template.id);
 

@@ -35,6 +35,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const [goodValue, setGoodValue] = useState<string>('');
   const [goodValueRangeMin, setGoodValueRangeMin] = useState<string>('');
   const [goodValueRangeMax, setGoodValueRangeMax] = useState<string>('');
+  const [hasTouchedGoodValue, setHasTouchedGoodValue] = useState(false);
+  const [hasTouchedRangeValue, setHasTouchedRangeValue] = useState(false);
   const [startingValue, setStartingValue] = useState<string>('');
   const [valueType, setValueType] = useState<'' | 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range'>('');
   const [targetDays, setTargetDays] = useState<string>(''); // Stored in days
@@ -144,7 +146,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const allTimePriorValue = parsedStartingValue ?? currentValue;
   const isAllTimeValueType = valueType === 'alltime-total' || valueType === 'alltime-target';
   const hasNonZeroStartingValue = typeof parsedStartingValue === 'number' && parsedStartingValue !== 0;
-  const shouldPromptInitialData = isAllTimeValueType && hasNonZeroStartingValue && currentValue === 0;
   const todayLabel = React.useMemo(() => {
     const now = new Date();
     return now.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -230,6 +231,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const isRangeTarget = valueType === 'period-range';
 
   const questions = template?.goalQuestions;
+  const hasStartingValueQuestion = questions?.startingValue != null;
+  const isStartingValueRequired = !!questions?.startingValue?.required;
+  const shouldPromptInitialData =
+    hasStartingValueQuestion && isAllTimeValueType && hasNonZeroStartingValue && currentValue === 0;
   const recommendedPeriod = questions?.period.recommended ?? 'day';
   const periodPrompt = resolveText(questions?.period.prompt, 'What time period are you focused on?');
   const periodDescription = resolveText(
@@ -281,6 +286,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     templateOptions?.range?.description,
     `Stay within a target range each ${period}`
   );
+  const suggestedPeriodValue = period ? questions?.goodValue?.period?.suggested?.[period] : undefined;
+  const suggestedAlltimeValue = questions?.goodValue?.alltime?.suggested;
+  const suggestedRangeValue = period ? questions?.goodValue?.range?.suggested?.[period] : undefined;
   const targetTypeOptions = React.useMemo(() => {
     const options: Array<{
       key: 'period' | 'alltime' | 'range';
@@ -324,25 +332,45 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   }, [dataset.tracking, showAlltimeOption, showPeriodOption, showRangeOption, targetAlltimeDescription, targetAlltimeLabel, targetPeriodDescription, targetPeriodLabel, targetRangeDescription, targetRangeLabel]);
 
   React.useEffect(() => {
-    if (!period || !valueType) return;
-    if (!template?.goalQuestions?.goodValue) return;
+    if (!template?.suggestedTarget || !period || !valueType) return;
+    const { suggestedTarget } = template;
+    const periodMatches = suggestedTarget.period === period;
+    if (!periodMatches && suggestedTarget.type !== 'alltime-target') return;
 
-    if (valueType === 'period-range') {
+    if (suggestedTarget.type === 'period-range' && valueType === 'period-range') {
+      if (!periodMatches) return;
+      if (hasTouchedRangeValue) return;
       if (goodValueRangeMin || goodValueRangeMax) return;
-      const suggestedRange = template.goalQuestions.goodValue.range?.suggested?.[period];
-      if (!suggestedRange) return;
-      setGoodValueRangeMin(String(suggestedRange[0]));
-      setGoodValueRangeMax(String(suggestedRange[1]));
+      if (suggestedTarget.condition?.condition === 'inside' && suggestedTarget.condition.range) {
+        setGoodValueRangeMin(String(suggestedTarget.condition.range[0]));
+        setGoodValueRangeMax(String(suggestedTarget.condition.range[1]));
+        return;
+      }
+      if (suggestedTarget.condition?.condition === 'above' && typeof suggestedTarget.condition.value === 'number') {
+        setGoodValueRangeMin(String(suggestedTarget.condition.value));
+        return;
+      }
+      if (suggestedTarget.condition?.condition === 'below' && typeof suggestedTarget.condition.value === 'number') {
+        setGoodValueRangeMax(String(suggestedTarget.condition.value));
+      }
       return;
     }
 
     if (goodValue) return;
-    const suggestedValue = template.goalQuestions.goodValue.period?.suggested?.[period];
+    if (hasTouchedGoodValue) return;
+    const isPeriodChange =
+      suggestedTarget.type === 'period-change' && valueType === 'period-change' && periodMatches;
+    const isPeriodTotal =
+      suggestedTarget.type === 'period-target' && valueType === 'period-total' && periodMatches;
+    const isAlltimeTarget =
+      suggestedTarget.type === 'alltime-target' &&
+      valueType === (dataset.tracking === 'series' ? 'alltime-total' : 'alltime-target');
+
+    if (!isPeriodChange && !isPeriodTotal && !isAlltimeTarget) return;
+    const suggestedValue = suggestedTarget.condition && 'value' in suggestedTarget.condition && suggestedTarget.condition.value;
     if (typeof suggestedValue !== 'number') return;
-    if (valueType === 'period-total' || valueType === 'period-change') {
-      setGoodValue(String(suggestedValue));
-    }
-  }, [goodValue, goodValueRangeMax, goodValueRangeMin, period, template?.goalQuestions?.goodValue, valueType]);
+    setGoodValue(String(suggestedValue));
+  }, [dataset.tracking, goodValue, goodValueRangeMax, goodValueRangeMin, hasTouchedGoodValue, hasTouchedRangeValue, period, template, valueType]);
   const goodValuePrompt = resolveText(
     isRangeTarget
       ? questions?.goodValue?.range?.prompt
@@ -375,11 +403,39 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
             ? `Enter the target range for each ${period}`
             : 'Enter the overall target value'
   );
-  const startingValuePrompt = resolveText(questions?.startingValue.prompt, 'Starting point');
+  const suggestedGoodValue = isPeriodTarget
+    ? suggestedPeriodValue
+    : isAllTimeTarget && !hasStartingValueQuestion
+      ? suggestedAlltimeValue
+      : undefined;
+  const goodValuePlaceholder = (() => {
+    if (typeof suggestedGoodValue === 'number') {
+      return `e.g. ${formatValue(suggestedGoodValue, { delta: valueType === 'period-change' })}`;
+    }
+    if (valueType === 'period-total') return `e.g. ${exampleAmountLabel}`;
+    if (valueType === 'period-change') return `e.g. ${exampleChangeLabel}`;
+    if (valueType === 'alltime-total') return `e.g. ${formatValue(allTimeTotalExample)}`;
+    return `e.g. ${formatValue(allTimeTargetExample)}`;
+  })();
+  const rangeMinPlaceholder =
+    typeof suggestedRangeValue?.[0] === 'number' ? `e.g. ${formatValue(suggestedRangeValue[0])}` : 'Min';
+  const rangeMaxPlaceholder =
+    typeof suggestedRangeValue?.[1] === 'number' ? `e.g. ${formatValue(suggestedRangeValue[1])}` : 'Max';
+  const showTimelineInput = valueType.startsWith('alltime');
+  const startingValueContainerWidth = showTimelineInput && hasStartingValueQuestion ? 'max-w-2xl' : 'max-w-md';
+  const startingValueGridCols = showTimelineInput && hasStartingValueQuestion ? 'grid-cols-2' : 'grid-cols-1';
+  const startingValuePrompt = resolveText(questions?.startingValue?.prompt, 'Starting point');
   const startingValueDescription = resolveText(
-    questions?.startingValue.description,
+    questions?.startingValue?.description,
     dataset.tracking === 'series' ? 'Current total (optional)' : 'Current value (optional)'
   );
+  const startingValuePlaceholder = (() => {
+    if (typeof questions?.startingValue?.suggested === 'number') {
+      return `e.g. ${formatValue(questions.startingValue.suggested)}`;
+    }
+    if (currentValue !== 0) return `e.g. ${formatValue(currentValue)}`;
+    return 'e.g. 0';
+  })();
   const timelinePrompt = resolveText(questions?.timeline.prompt, 'How long?');
   const timelineDescription = resolveText(questions?.timeline.description, 'Time to reach goal (optional)');
   const activityHeaderPrompt = resolveText(questions?.activity.prompt, 'How actively will you make progress?');
@@ -388,6 +444,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   // Consolidated GoalBuilderInput creation
   const builderInput = React.useMemo<GoalBuilderInput | null>(() => {
     if (!period || !valueType) return null;
+    if (hasStartingValueQuestion && isStartingValueRequired && typeof parsedStartingValue !== 'number') return null;
     if (valueType === 'period-range') {
       if (!rangeCondition) return null;
       return {
@@ -399,7 +456,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
         valueType,
         valueRange: { min: parsedRangeMin, max: parsedRangeMax },
         activePeriods: parseFloat(activePeriods) || 1,
-        startingValue: startingValue.trim() ? parseFloat(startingValue) : currentValue,
+        startingValue: hasStartingValueQuestion && startingValue.trim() ? parseFloat(startingValue) : currentValue,
         targetDays: summaryDurationDays,
       };
     }
@@ -412,10 +469,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       value: parseFloat(goodValue) || 0,
       valueType,
       activePeriods: parseFloat(activePeriods) || 1,
-      startingValue: startingValue.trim() ? parseFloat(startingValue) : currentValue,
+      startingValue: hasStartingValueQuestion && startingValue.trim() ? parseFloat(startingValue) : currentValue,
       targetDays: summaryDurationDays,
     };
-  }, [dataset.id, dataset.tracking, dataset.valence, period, valueType, goodValue, parsedRangeMin, parsedRangeMax, rangeCondition, activePeriods, startingValue, currentValue, summaryDurationDays]);
+  }, [activePeriods, currentValue, dataset.id, dataset.tracking, dataset.valence, goodValue, hasStartingValueQuestion, isStartingValueRequired, parsedRangeMax, parsedRangeMin, parsedStartingValue, period, rangeCondition, startingValue, summaryDurationDays, valueType]);
   
   const summaryBaselines = builderInput && !isRangeTarget ? calculateBaselines(builderInput) : null;
   const conversionLabel = (() => {
@@ -450,6 +507,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
           : summaryBaselines.monthTarget;
     return formatValue(perPeriodValue);
   })();
+
+  const handleValueTypeSelect = (
+    nextValueType: 'period-total' | 'period-change' | 'alltime-total' | 'alltime-target' | 'period-range'
+  ) => {
+    setValueType(nextValueType);
+    setHasTouchedGoodValue(false);
+    setHasTouchedRangeValue(false);
+  };
 
   const handlePeriodSelect = (value: 'day' | 'week' | 'month') => {
     if (period && period !== value && goodValue.trim() && !valueType.startsWith('alltime')) {
@@ -586,6 +651,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     setGoodValue('');
     setGoodValueRangeMin('');
     setGoodValueRangeMax('');
+    setHasTouchedGoodValue(false);
+    setHasTouchedRangeValue(false);
     setStartingValue('');
     setValueType('');
     setTargetDays('');
@@ -633,12 +700,41 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     if (isRangeTarget) {
       const hasRangeInput = typeof parsedRangeMin === 'number' || typeof parsedRangeMax === 'number';
       if (!hasRangeInput || rangeOrderInvalid) return { canProceed: false, feedbackMessage: null };
+      if (hasStartingValueQuestion && isStartingValueRequired && typeof parsedStartingValue !== 'number') {
+        return {
+          canProceed: false,
+          feedbackMessage: (
+            <div className="flex-1 px-4 animate-in fade-in duration-300">
+              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  Add a starting value to continue.
+                </p>
+              </div>
+            </div>
+          ),
+        };
+      }
       return { canProceed: true, feedbackMessage: null };
     }
     if (!goodValue) return { canProceed: false, feedbackMessage: null };
     
     const numValue = parseFloat(goodValue);
     if (numValue === 0 || isNaN(numValue)) return { canProceed: false, feedbackMessage: null };
+
+    if (hasStartingValueQuestion && isStartingValueRequired && typeof parsedStartingValue !== 'number') {
+      return {
+        canProceed: false,
+        feedbackMessage: (
+          <div className="flex-1 px-4 animate-in fade-in duration-300">
+            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+              <p className="text-sm text-amber-700 dark:text-amber-300">
+                Add a starting value to continue.
+              </p>
+            </div>
+          </div>
+        ),
+      };
+    }
     
     // Calculate valence-adjusted value
     const isAllTime = valueType === 'alltime-total' || valueType === 'alltime-target';
@@ -899,7 +995,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                         {targetTypeOptions.map((option) => (
                           <button
                             key={option.key}
-                            onClick={() => setValueType(option.valueType)}
+                            onClick={() => handleValueTypeSelect(option.valueType)}
                             className={cn(
                               'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
                               'hover:scale-105 active:scale-95 text-left',
@@ -922,7 +1018,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                           {targetTypeOptions.map((option) => (
                             <button
                               key={option.key}
-                              onClick={() => setValueType(option.valueType)}
+                              onClick={() => handleValueTypeSelect(option.valueType)}
                               className={cn(
                                 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
                                 valueType === option.valueType
@@ -959,8 +1055,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                             id="goodValueRangeMin"
                             type="number"
                             value={goodValueRangeMin}
-                            onChange={(e) => setGoodValueRangeMin(e.target.value)}
-                            placeholder="Min"
+                            onChange={(e) => {
+                              setGoodValueRangeMin(e.target.value);
+                              setHasTouchedRangeValue(true);
+                            }}
+                            placeholder={rangeMinPlaceholder}
                             hideStepperButtons
                             className="text-center !text-2xl font-bold h-16"
                           />
@@ -968,8 +1067,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                             id="goodValueRangeMax"
                             type="number"
                             value={goodValueRangeMax}
-                            onChange={(e) => setGoodValueRangeMax(e.target.value)}
-                            placeholder="Max"
+                            onChange={(e) => {
+                              setGoodValueRangeMax(e.target.value);
+                              setHasTouchedRangeValue(true);
+                            }}
+                            placeholder={rangeMaxPlaceholder}
                             hideStepperButtons
                             className="text-center !text-2xl font-bold h-16"
                           />
@@ -990,16 +1092,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                           id="goodValue"
                           type="number"
                           value={goodValue}
-                          onChange={(e) => setGoodValue(e.target.value)}
-                          placeholder={
-                            valueType === 'period-total'
-                              ? `e.g., ${exampleAmountLabel}`
-                              : valueType === 'period-change'
-                                ? `e.g., ${exampleChangeLabel}`
-                                : valueType === 'alltime-total'
-                                  ? `e.g., ${formatValue(allTimeTotalExample)}`
-                                  : `e.g., ${formatValue(allTimeTargetExample)}`
-                          }
+                          onChange={(e) => {
+                            setGoodValue(e.target.value);
+                            setHasTouchedGoodValue(true);
+                          }}
+                          placeholder={goodValuePlaceholder}
                           hideStepperButtons
                           className="text-center !text-2xl font-bold h-16 pr-12"
                         />
@@ -1023,43 +1120,53 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                       const numValue = parseFloat(goodValue);
                       if (numValue === 0 || isNaN(numValue)) return null;
                     }
+                    if (!hasStartingValueQuestion && !showTimelineInput) return null;
                     
                     return (
                       <div className={cn(
                         "p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/20 mx-auto animate-in fade-in duration-500",
-                        valueType.startsWith('alltime') ? "max-w-2xl" : "max-w-md"
+                        startingValueContainerWidth
                       )}>
                         <div className={cn(
                           "grid gap-6",
-                          valueType.startsWith('alltime') ? "grid-cols-2" : "grid-cols-1"
+                          startingValueGridCols
                         )}>
                           {/* Starting Value Input */}
-                          <div className="space-y-3">
-                            <div className="text-center space-y-1">
-                              <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2">
-                                <Flag className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                                {startingValuePrompt}
-                              </h3>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {startingValueDescription}
-                              </p>
-                            </div>
+                          {hasStartingValueQuestion && (
+                            <div className="space-y-3">
+                              <div className="text-center space-y-1">
+                                <div className="flex items-center justify-center gap-2">
+                                  <Flag className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                                  <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">
+                                    {startingValuePrompt}
+                                  </h3>
+                                  {isStartingValueRequired && (
+                                    <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                                      Required
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  {startingValueDescription}
+                                </p>
+                              </div>
 
-                            <div className="relative">
-                              <Input
-                                id="startingValue"
-                                type="number"
-                                value={startingValue}
-                                onChange={(e) => setStartingValue(e.target.value)}
-                                placeholder={currentValue !== 0 ? formatValue(currentValue) : 'e.g., 0'}
-                                hideStepperButtons
-                                className="text-center !text-base font-medium h-10"
-                              />
+                              <div className="relative">
+                                <Input
+                                  id="startingValue"
+                                  type="number"
+                                  value={startingValue}
+                                  onChange={(e) => setStartingValue(e.target.value)}
+                                  placeholder={startingValuePlaceholder}
+                                  hideStepperButtons
+                                  className="text-center !text-base font-medium h-10"
+                                />
+                              </div>
                             </div>
-                          </div>
+                          )}
                           
                           {/* Time Period Input (only for alltime options) */}
-                          {valueType.startsWith('alltime') && (
+                          {showTimelineInput && (
                             <div className="space-y-3">
                               <div className="text-center space-y-1">
                                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2">
@@ -1077,7 +1184,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                                   type="number"
                                   value={targetPeriodsDisplayValue}
                                   onChange={(e) => handleTargetPeriodsChange(e.target.value)}
-                                  placeholder="e.g., 12"
+                                  placeholder="e.g. 12"
                                   className="text-center !text-base font-medium h-10 flex-1 !rounded-r-none border-r-0"
                                 />
                                 

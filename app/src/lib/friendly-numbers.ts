@@ -58,15 +58,15 @@ export function countSignificantDigits(num: number | string): number {
 export type PeriodUnit = 'day' | 'week' | 'month';
 
 /**
- * Convert a value between different period units (day, week, month),
+ * Convert a per-period value between different period units (day, week, month),
  * adjusting decimal places based on whether converting to a larger or smaller period.
- * - When converting to a smaller period (e.g., month → week), reduce decimal places by 1
- * - When converting to a larger period (e.g., day → week), increase decimal places by 1
+ * - When converting to a smaller period (e.g., week → day), increase decimal places by 1
+ * - When converting to a larger period (e.g., day → week), reduce decimal places by 1
  * - When converting between same-sized periods, keep the same number of decimal places
  *
  * E.g.,
- *   convertPeriodUnitWithRounding("4.5", "week", "day") -> "0.6" (4.5 weeks = 31.5 days, rounded to 0.6 days with 1 less decimal)
- *   convertPeriodUnitWithRounding("10", "day", "week") -> "1.4" (10 days = 1.42857 weeks, rounded to 1.4 weeks with 1 more decimal)
+ *   convertPeriodUnitWithRounding("0.5", "week", "day") -> "0.07" (0.5 per week = 0.0714 per day, rounded to 2 decimals)
+ *   convertPeriodUnitWithRounding("10", "day", "week") -> "70" (10 per day = 70 per week)
  *
  * Returns null for invalid input.
  */
@@ -77,13 +77,13 @@ export function convertPeriodUnitWithRounding(value: string, from: PeriodUnit, t
   const decimalMatch = value.match(/\.(\d+)/);
   const currentDecimals = decimalMatch ? decimalMatch[1].length : 0;
   const periodDays: Record<PeriodUnit, number> = { day: 1, week: 7, month: 30 };
-  const convertedValue = parsed * (periodDays[from] / periodDays[to]);
+  const convertedValue = parsed * (periodDays[to] / periodDays[from]);
   const goingToSmallerPeriod = periodDays[from] > periodDays[to];
   const goingToLargerPeriod = periodDays[from] < periodDays[to];
   const targetDecimals = goingToSmallerPeriod
-    ? Math.max(0, currentDecimals - 1)
+    ? currentDecimals + 1
     : goingToLargerPeriod
-      ? currentDecimals + 1
+      ? Math.max(0, currentDecimals - 1)
       : currentDecimals;
 
   return String(Number(convertedValue.toFixed(targetDecimals)));
