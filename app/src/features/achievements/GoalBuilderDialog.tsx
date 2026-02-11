@@ -10,8 +10,9 @@ import { toDayKey } from '@/lib/friendly-date';
 import { convertPeriodUnitWithRounding } from '@/lib/friendly-numbers';
 import { formatValue } from '@/lib/friendly-numbers';
 import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput } from '@/lib/goals-builder';
+import { DATASET_TEMPLATES } from '@/lib/dataset-builder';
 import { getGoalCategory, isSameGoal } from '@/lib/goals';
-import { adjectivize, capitalize, cn } from '@/lib/utils';
+import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { getValueForGood, isBad } from '@/lib/valence';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
 import * as React from 'react';
@@ -22,12 +23,13 @@ type GoalBuilderDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   dataset: Dataset;
+  templateId?: string;
   onComplete?: () => void;
 };
 
 type Step = 'period' | 'activity' | 'preview' | 'starting-point';
 
-export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: GoalBuilderDialogProps) {
+export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onComplete }: GoalBuilderDialogProps) {
   const [step, setStep] = useState<Step>('period');
   const [period, setPeriod] = useState<'day' | 'week' | 'month' | ''>('');
   const [goodValue, setGoodValue] = useState<string>('');
@@ -47,6 +49,45 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   const { data: existingGoals = [] } = useGoals(dataset.id);
   const saveDay = useSaveDay();
   const createGoals = useCreateGoals();
+
+  const template = React.useMemo(
+    () => (templateId ? DATASET_TEMPLATES.find((item) => item.id === templateId) : undefined),
+    [templateId]
+  );
+
+  const tokenValues = React.useMemo(() => {
+    const selectedPeriod = period || 'period';
+    const periodly = period ? adjectivize(period) : 'periodly';
+    const periods = period ? pluralize(period) : 'periods';
+    const parent = period === 'day' ? 'week' : period === 'week' ? 'month' : period === 'month' ? 'year' : 'period';
+    const unit = template?.units?.[0] ?? 'unit';
+    const units = template?.units?.length ? pluralize(unit) : 'units';
+    return { period: selectedPeriod, periodly, periods, parent, unit, units };
+  }, [period, template]);
+
+  const replaceTokens = React.useCallback((text: string): string => {
+    const replacements: Record<string, string> = {
+      period: tokenValues.period,
+      periodly: tokenValues.periodly,
+      periods: tokenValues.periods,
+      parent: tokenValues.parent,
+      unit: tokenValues.unit,
+      units: tokenValues.units,
+      Period: capitalize(tokenValues.period),
+      Periodly: capitalize(tokenValues.periodly),
+      Periods: capitalize(tokenValues.periods),
+      Parent: capitalize(tokenValues.parent),
+      Unit: capitalize(tokenValues.unit),
+      Units: capitalize(tokenValues.units),
+    };
+
+    return text.replace(/\{(\w+)\}/g, (_match, key) => replacements[key] ?? `{${key}}`);
+  }, [tokenValues]);
+
+  const resolveText = React.useCallback(
+    (templateText: string | undefined, fallback: string) => replaceTokens(templateText ?? fallback),
+    [replaceTokens]
+  );
 
   const filterGeneratedGoals = React.useCallback((goals: GeneratedGoals): GeneratedGoals => {
     if (!existingGoals.length) return goals;
@@ -115,7 +156,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
   };
   const allTimeTotalExample = allTimePriorValue + exampleAmount;
   const allTimeTargetExample = allTimePriorValue + exampleChange;
-  const activityPrompt =
+  const activityPromptFallback =
     period === 'day'
       ? 'How many days per week will you typically record data?'
       : period === 'week'
@@ -170,6 +211,72 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
         : `In ${Math.round(summaryDurationDays / 30)} months (${summaryTargetDate})`;
   const isPeriodTarget = valueType === 'period-total' || valueType === 'period-change';
   const isAllTimeTarget = valueType === 'alltime-total' || valueType === 'alltime-target';
+
+  const questions = template?.goalQuestions;
+  const recommendedPeriod = questions?.period.recommended ?? 'day';
+  const periodPrompt = resolveText(questions?.period.prompt, 'What time period are you focused on?');
+  const periodDescription = resolveText(
+    questions?.period.description,
+    "Choose how often you'd like to track your progress"
+  );
+  const targetTypePrompt = resolveText(questions?.targetType.prompt, 'How will you measure success?');
+  const targetTypeDescription = resolveText(
+    questions?.targetType.description,
+    dataset.tracking === 'series'
+      ? `Focus on ${adjectivize(period)} totals or all-time milestones`
+      : `Track ${adjectivize(period)} changes or overall progress`
+  );
+  const targetPeriodLabel = resolveText(
+    questions?.targetType.options.period.label,
+    dataset.tracking === 'series'
+      ? `${capitalize(adjectivize(period))} Total`
+      : `${capitalize(adjectivize(period))} Change`
+  );
+  const targetPeriodDescription = resolveText(
+    questions?.targetType.options.period.description,
+    dataset.tracking === 'series'
+      ? `Set targets for total value each ${period}`
+      : `Target improvement each ${period}`
+  );
+  const targetAlltimeLabel = resolveText(
+    questions?.targetType.options.alltime.label,
+    dataset.tracking === 'series' ? 'All Time Total' : 'All Time Target'
+  );
+  const targetAlltimeDescription = resolveText(
+    questions?.targetType.options.alltime.description,
+    dataset.tracking === 'series'
+      ? 'Build toward cumulative milestones'
+      : 'Reach a specific overall value'
+  );
+  const goodValuePrompt = resolveText(
+    isPeriodTarget ? questions?.goodValue.period.prompt : questions?.goodValue.alltime.prompt,
+    valueType === 'period-total'
+      ? `What's a good ${period}?`
+      : valueType === 'alltime-total'
+        ? 'What total do you want to reach?'
+        : valueType === 'period-change'
+          ? "What's good progress?"
+          : 'What value are you aiming for?'
+  );
+  const goodValueDescription = resolveText(
+    isPeriodTarget ? questions?.goodValue.period.description : questions?.goodValue.alltime.description,
+    valueType === 'period-total'
+      ? `Enter the target total for each ${period}`
+      : valueType === 'alltime-total'
+        ? 'Enter a milestone total you want to achieve'
+        : valueType === 'period-change'
+          ? `Enter the ${adjectivize(period)} improvement that would make you proud`
+          : 'Enter the overall target value'
+  );
+  const startingValuePrompt = resolveText(questions?.startingValue.prompt, 'Starting point');
+  const startingValueDescription = resolveText(
+    questions?.startingValue.description,
+    dataset.tracking === 'series' ? 'Current total (optional)' : 'Current value (optional)'
+  );
+  const timelinePrompt = resolveText(questions?.timeline.prompt, 'How long?');
+  const timelineDescription = resolveText(questions?.timeline.description, 'Time to reach goal (optional)');
+  const activityHeaderPrompt = resolveText(questions?.activity.prompt, 'How actively will you make progress?');
+  const activityDescription = resolveText(questions?.activity.description, activityPromptFallback);
   
   // Consolidated GoalBuilderInput creation
   const builderInput = React.useMemo<GoalBuilderInput | null>(() => {
@@ -470,7 +577,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
           <DialogHeader className="flex-shrink-0 px-6 pt-6">
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              Goal Builder
+              {template?.name ? `${template.name} Goal Builder` : 'Goal Builder'}
             </DialogTitle>
           </DialogHeader>
 
@@ -484,10 +591,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <div className="text-center space-y-2">
                     <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
                       <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                      What time period are you focused on?
+                      {periodPrompt}
                     </h3>
                     <p className="text-sm text-slate-600 dark:text-slate-400">
-                      Choose how often you'd like to track your progress
+                      {periodDescription}
                     </p>
                   </div>
 
@@ -501,10 +608,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
                       )}
                     >
-                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 whitespace-nowrap">
-                        <Info className="w-3 h-3" />
-                        Recommended
-                      </span>
+                      {recommendedPeriod === 'day' && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 whitespace-nowrap">
+                          <Info className="w-3 h-3" />
+                          Recommended
+                        </span>
+                      )}
                       <AchievementBadge
                         badge={{ style: 'star_formation', color: 'sapphire', icon: 'calendar', label: '' }}
                         size="small"
@@ -526,6 +635,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
                       )}
                     >
+                      {recommendedPeriod === 'week' && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 whitespace-nowrap">
+                          <Info className="w-3 h-3" />
+                          Recommended
+                        </span>
+                      )}
                       <AchievementBadge
                         badge={{ style: 'star_stack', color: 'emerald', icon: 'calendar', label: '' }}
                         size="small"
@@ -547,6 +662,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         'border-slate-200 dark:border-slate-700 hover:border-purple-300 dark:hover:border-purple-700'
                       )}
                     >
+                      {recommendedPeriod === 'month' && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 whitespace-nowrap">
+                          <Info className="w-3 h-3" />
+                          Recommended
+                        </span>
+                      )}
                       <AchievementBadge
                         badge={{ style: 'star', color: 'amethyst', icon: 'calendar', label: '' }}
                         size="small"
@@ -566,7 +687,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                   <div className="text-center">
                     <h3 className="font-semibold text-base text-slate-900/50 dark:text-slate-50/50 flex items-center justify-center gap-2 transition-all duration-300">
                       <Calendar className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                      What time period are you focused on?
+                      {periodPrompt}
                     </h3>
                   </div>
                   <div className="flex items-center justify-center gap-2">
@@ -626,13 +747,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                         )}
                       >
                         <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                        How will you measure success?
+                        {targetTypePrompt}
                       </h3>
                       {!valueType && (
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                          {dataset.tracking === 'series'
-                            ? `Focus on ${adjectivize(period)} totals or all-time milestones`
-                            : `Track ${adjectivize(period)} changes or overall progress`}
+                          {targetTypeDescription}
                         </p>
                       )}
                     </div>
@@ -652,10 +771,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                             >
                               <div className="flex items-center gap-2">
                                 <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">{capitalize(adjectivize(period))} Total</span>
+                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetPeriodLabel}</span>
                               </div>
                               <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Set targets for total value each {period}
+                                {targetPeriodDescription}
                               </p>
                             </button>
 
@@ -670,10 +789,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                             >
                               <div className="flex items-center gap-2">
                                 <Trophy className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">All Time Total</span>
+                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetAlltimeLabel}</span>
                               </div>
                               <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Build toward cumulative milestones
+                                {targetAlltimeDescription}
                               </p>
                             </button>
                           </>
@@ -690,10 +809,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                             >
                               <div className="flex items-center gap-2">
                                 <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">{capitalize(adjectivize(period))} Change</span>
+                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetPeriodLabel}</span>
                               </div>
                               <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Target improvement each {period}
+                                {targetPeriodDescription}
                               </p>
                             </button>
 
@@ -708,10 +827,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                             >
                               <div className="flex items-center gap-2">
                                 <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                <span className="font-bold text-slate-900 dark:text-slate-50">All Time Target</span>
+                                <span className="font-bold text-slate-900 dark:text-slate-50">{targetAlltimeLabel}</span>
                               </div>
                               <p className="text-xs text-slate-600 dark:text-slate-400">
-                                Reach a specific overall value
+                                {targetAlltimeDescription}
                               </p>
                             </button>
                           </>
@@ -731,7 +850,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                 )}
                               >
-                                {capitalize(adjectivize(period))} Total
+                                {targetPeriodLabel}
                               </button>
                               <button
                                 onClick={() => setValueType('alltime-total')}
@@ -742,7 +861,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                 )}
                               >
-                                All Time Total
+                                {targetAlltimeLabel}
                               </button>
                             </>
                           ) : (
@@ -756,7 +875,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                 )}
                               >
-                                {capitalize(adjectivize(period))} Change
+                                {targetPeriodLabel}
                               </button>
                               <button
                                 onClick={() => setValueType('alltime-target')}
@@ -767,7 +886,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                 )}
                               >
-                                All Time Target
+                                {targetAlltimeLabel}
                               </button>
                             </>
                           )}
@@ -783,16 +902,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                     <div className="text-center space-y-2">
                       <h3 className="text-lg font-bold text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
                         <Trophy className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
-                        {valueType === 'period-total' && `What's a good ${period}?`}
-                        {valueType === 'alltime-total' && 'What total do you want to reach?'}
-                        {valueType === 'period-change' && `What's good progress?`}
-                        {valueType === 'alltime-target' && 'What value are you aiming for?'}
+                        {goodValuePrompt}
                       </h3>
                       <p className="text-sm text-slate-600 dark:text-slate-400">
-                        {valueType === 'period-total' && `Enter the target total for each ${period}`}
-                        {valueType === 'alltime-total' && 'Enter a milestone total you want to achieve'}
-                        {valueType === 'period-change' && `Enter the ${adjectivize(period)} improvement that would make you proud`}
-                        {valueType === 'alltime-target' && 'Enter the overall target value'}
+                        {goodValueDescription}
                       </p>
                     </div>
 
@@ -845,12 +958,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                             <div className="text-center space-y-1">
                               <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2">
                                 <Flag className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                                Starting point
+                                {startingValuePrompt}
                               </h3>
                               <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {dataset.tracking === 'series'
-                                  ? 'Current total (optional)'
-                                  : 'Current value (optional)'}
+                                {startingValueDescription}
                               </p>
                             </div>
 
@@ -873,10 +984,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
                               <div className="text-center space-y-1">
                                 <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-center gap-2">
                                   <Calendar className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                                  How long?
+                                  {timelinePrompt}
                                 </h3>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  Time to reach goal (optional)
+                                  {timelineDescription}
                                 </p>
                               </div>
 
@@ -950,10 +1061,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, onComplete }: G
               <div className="text-center space-y-2">
                 <h3 className="font-bold text-xl text-slate-900 dark:text-slate-50 flex items-center justify-center gap-2">
                   <Target className="w-6 h-6 text-green-600 dark:text-green-400" />
-                  How actively will you make progress?
+                  {activityHeaderPrompt}
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  {activityPrompt}
+                  {activityDescription}
                 </p>
               </div>
 

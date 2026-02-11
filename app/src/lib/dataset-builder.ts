@@ -109,7 +109,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} profit totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a profit total to hit each {period}.',
           },
           alltime: {
@@ -178,7 +178,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} revenue totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a revenue total to hit each {period}.',
           },
           alltime: {
@@ -247,7 +247,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} spending limits or an all-time cap.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a spending limit for each {period}.',
           },
           alltime: {
@@ -313,22 +313,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or set an all-time goal weight.',
+        description: 'Track {periodly} loss or set an all-time goal weight.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target a change in weight each {period}.',
+            label: '{Periodly} loss',
+            description: 'Target a weight loss each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Goal weight',
             description: 'Reach a specific goal weight.',
           },
         },
       },
       goodValue: {
         period: {
-          prompt: 'What change per {period} feels healthy?',
-          description: 'Enter the {periodly} change in {units} that feels sustainable.',
+          prompt: 'What loss per {period} feels healthy?',
+          description: 'Enter the {periodly} loss in {units} that feels sustainable.',
           recommended: {
             day: -0.07,
             week: -0.5,
@@ -387,22 +387,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or set an all-time goal weight.',
+        description: 'Track {periodly} gain or set an all-time goal weight.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target a change in weight each {period}.',
+            label: '{Periodly} gain',
+            description: 'Target a weight gain each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Goal weight',
             description: 'Reach a specific goal weight.',
           },
         },
       },
       goodValue: {
         period: {
-          prompt: 'What change per {period} feels healthy?',
-          description: 'Enter the {periodly} change in {units} that feels sustainable.',
+          prompt: 'What gain per {period} feels healthy?',
+          description: 'Enter the {periodly} gain in {units} that feels sustainable.',
           recommended: {
             day: 0.04,
             week: 0.25,
@@ -461,22 +461,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or aim for a healthy range.',
+        description: 'Track {periodly} shifts or aim for a healthy range.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target improvement each {period}.',
+            label: '{Periodly} shift',
+            description: 'Target a shift each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Target range',
             description: 'Reach a specific reading range.',
           },
         },
       },
       goodValue: {
         period: {
-          prompt: 'What change per {period} feels realistic?',
-          description: 'Enter the {periodly} change in {units} you want to see.',
+          prompt: 'What shift per {period} feels realistic?',
+          description: 'Enter the {periodly} shift in {units} you want to see.',
         },
         alltime: {
           prompt: 'What reading range are you aiming for?',
@@ -533,7 +533,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} activity totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a target for {units} each {period}.',
           },
           alltime: {
@@ -607,7 +607,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} step totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a step total to hit each {period}.',
           },
           alltime: {
@@ -678,22 +678,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or aim for a target sleep value.',
+        description: 'Track {periodly} improvements or aim for a target sleep value.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target improvement each {period}.',
+            label: '{Periodly} improvement',
+            description: 'Target a sleep improvement each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Sleep target',
             description: 'Reach a specific sleep value.',
           },
         },
       },
       goodValue: {
         period: {
-          prompt: 'What change per {period} feels good?',
-          description: 'Enter the {periodly} change in {units} you want to see.',
+          prompt: 'What improvement per {period} feels good?',
+          description: 'Enter the {periodly} improvement in {units} you want to see.',
         },
         alltime: {
           prompt: 'What sleep value are you aiming for?',
@@ -750,7 +750,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} intake totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a target for {units} each {period}.',
           },
           alltime: {
@@ -824,7 +824,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} limits or an all-time cap.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a calorie limit each {period}.',
           },
           alltime: {
@@ -894,22 +894,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or aim for an all-time mood score.',
+        description: 'Track {periodly} lifts or aim for an all-time mood score.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target improvement each {period}.',
+            label: '{Periodly} lift',
+            description: 'Target a mood lift each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Goal mood score',
             description: 'Reach a specific overall mood score.',
           },
         },
       },
       goodValue: {
         period: {
-          prompt: 'What change per {period} feels good?',
-          description: 'Enter the {periodly} change in mood score you want to see.',
+          prompt: 'What lift per {period} feels good?',
+          description: 'Enter the {periodly} lift in mood score you want to see.',
         },
         alltime: {
           prompt: 'What mood score are you aiming for?',
@@ -965,7 +965,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} study totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a study target for each {period}.',
           },
           alltime: {
@@ -1033,7 +1033,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} coding totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a coding target for each {period}.',
           },
           alltime: {
@@ -1101,7 +1101,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} hobby totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a hobby time target for each {period}.',
           },
           alltime: {
@@ -1169,7 +1169,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} reading totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a reading target for each {period}.',
           },
           alltime: {
@@ -1238,7 +1238,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} meditation totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a meditation target for each {period}.',
           },
           alltime: {
@@ -1306,7 +1306,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} volunteer totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a volunteer time target for each {period}.',
           },
           alltime: {
@@ -1374,7 +1374,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} practice totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a practice target for each {period}.',
           },
           alltime: {
@@ -1442,7 +1442,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} session totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a session target for each {period}.',
           },
           alltime: {
@@ -1507,22 +1507,22 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or aim for an all-time rating.',
+        description: 'Track {periodly} improvements or aim for an all-time rating.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target improvement each {period}.',
+            label: '{Periodly} improvement',
+            description: 'Target a rating improvement each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Goal rating',
             description: 'Reach a specific overall rating.',
           },
         },
       },
       goodValue: {
         period: {
-          prompt: 'What change per {period} feels good?',
-          description: 'Enter the {periodly} change in your rating you want to see.',
+          prompt: 'What improvement per {period} feels good?',
+          description: 'Enter the {periodly} improvement in your rating you want to see.',
         },
         alltime: {
           prompt: 'What rating are you aiming for?',
@@ -1579,7 +1579,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} screen time limits or an all-time cap.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a screen time limit for each {period}.',
           },
           alltime: {
@@ -1648,7 +1648,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} intake limits or an all-time cap.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a caffeine limit for each {period}.',
           },
           alltime: {
@@ -1716,7 +1716,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         description: 'Focus on {periodly} distance totals or an all-time milestone.',
         options: {
           period: {
-            label: '{periodly} total',
+            label: '{Periodly} total',
             description: 'Set a distance target for each {period}.',
           },
           alltime: {
@@ -1782,21 +1782,21 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or set an all-time balance goal.',
+        description: 'Track {periodly} increases or set an all-time balance goal.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target an increase each {period}.',
+            label: '{Periodly} increase',
+            description: 'Target a balance increase each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Savings goal',
             description: 'Reach a specific savings balance.',
           },
         },
       },
       goodValue: {
         period: {
-          prompt: 'What change per {period} feels good?',
+          prompt: 'What increase per {period} feels good?',
           description: 'Enter the {periodly} savings increase that keeps you on track.',
         },
         alltime: {
@@ -1851,14 +1851,14 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       },
       targetType: {
         prompt: 'How will you measure success?',
-        description: 'Track {periodly} changes or set an all-time payoff goal.',
+        description: 'Track {periodly} reductions or set an all-time payoff goal.',
         options: {
           period: {
-            label: '{periodly} change',
-            description: 'Target a reduction each {period}.',
+            label: '{Periodly} reduction',
+            description: 'Target a balance reduction each {period}.',
           },
           alltime: {
-            label: 'All time target',
+            label: 'Payoff target',
             description: 'Reach a specific remaining balance.',
           },
         },

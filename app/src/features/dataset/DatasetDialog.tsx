@@ -135,7 +135,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       onSuccess: () => {
         reset();
         onOpenChange(false);
-        navigate(`/dataset/${id}?goal-builder`);
+        navigate(`/dataset/${id}?goal-builder=${template.id}`);
       },
     });
   };

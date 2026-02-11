@@ -30,7 +30,8 @@ export function Calendar({
 }) {
   const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
   const today = new Date();
-  const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', false);
+  const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
+  const builderTemplateId = typeof builderOpen === 'string' && builderOpen ? builderOpen : undefined;
   
   // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
@@ -90,7 +91,13 @@ export function Calendar({
 
   return (
     <div className="min-h-screen">
-      <GoalBuilderDialog key={`builder-${builderOpen}`} open={!!builderOpen} onOpenChange={setBuilderOpen} dataset={dataset} />
+      <GoalBuilderDialog
+        key={`builder-${builderOpen}`}
+        open={!!builderOpen}
+        onOpenChange={(open) => setBuilderOpen(open)}
+        dataset={dataset}
+        templateId={builderTemplateId}
+      />
 
           {/* Navigation Header */}
           <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
