@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { convertPeriodUnitWithRounding, countSignificantDigits, formatRange, formatValue, roundToClean } from '../friendly-numbers';
+import { convertPeriodLengthWithRounding, convertPeriodUnitWithRounding, countSignificantDigits, formatRange, formatValue, roundToClean } from '../friendly-numbers';
 
-describe('convertPeriodValueWithRounding', () => {
+describe('convertPeriodUnitWithRounding', () => {
   it('adds precision when converting to smaller periods', () => {
     expect(convertPeriodUnitWithRounding('14.25', 'week', 'day')).toBe('2.036');
     expect(convertPeriodUnitWithRounding('15.2', 'week', 'day')).toBe('2.17');
@@ -16,6 +16,19 @@ describe('convertPeriodValueWithRounding', () => {
   it('returns null for invalid input', () => {
     expect(convertPeriodUnitWithRounding('', 'day', 'week')).toBeNull();
     expect(convertPeriodUnitWithRounding('abc', 'week', 'day')).toBeNull();
+  });
+});
+
+describe('convertPeriodLengthWithRounding', () => {
+  it('converts period length values correctly', () => {
+    expect(convertPeriodLengthWithRounding('500', 'week', 3, 'day')).toBe('24');
+    expect(convertPeriodLengthWithRounding('1200', 'month', 2, 'week')).toBe('140');
+  });
+
+  it('returns null for invalid input', () => {
+    expect(convertPeriodLengthWithRounding('', 'day', 3, 'week')).toBeNull();
+    expect(convertPeriodLengthWithRounding('abc', 'week', 2, 'day')).toBeNull();
+    expect(convertPeriodLengthWithRounding('100', 'day', 0, 'week')).toBeNull();
   });
 });
 

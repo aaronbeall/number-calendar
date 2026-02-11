@@ -15,7 +15,7 @@ describe('goals-builder: Series Tracking', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'day',
-        valueType: 'period-total',
+        targetType: 'period-total',
         startingValue: 5
       };
 
@@ -59,7 +59,7 @@ describe('goals-builder: Series Tracking', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'day',
-        valueType: 'alltime-total',
+        targetType: 'alltime-total',
         targetDays: 90,
         startingValue: 20,
       };
@@ -105,7 +105,7 @@ describe('goals-builder: Series Tracking', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'week',
-        valueType: 'period-total',
+        targetType: 'period-total',
         startingValue: 25,
       };
 
@@ -145,7 +145,7 @@ describe('goals-builder: Series Tracking', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'week',
-        valueType: 'alltime-total',
+        targetType: 'alltime-total',
         targetDays: 91, // 13 weeks
         startingValue: 20,
       };
@@ -191,7 +191,7 @@ describe('goals-builder: Series Tracking', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'month',
-        valueType: 'period-total',
+        targetType: 'period-total',
         startingValue: 12,
       };
 
@@ -232,7 +232,7 @@ describe('goals-builder: Series Tracking', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'month',
-        valueType: 'alltime-total',
+        targetType: 'alltime-total',
         targetDays: 90, // 3 months
         startingValue: 15,
       };
@@ -283,7 +283,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 1000,
-        valueType: 'alltime-total',
+        targetType: 'alltime-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -304,7 +304,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'week',
         value: 200,
-        valueType: 'alltime-target',
+        targetType: 'alltime-target',
         activePeriods: 3,
         startingValue: 50,
         targetDays: 180,
@@ -325,7 +325,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 100,
-        valueType: 'alltime-total',
+        targetType: 'alltime-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 0,
@@ -343,7 +343,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 50,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -363,7 +363,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'week',
         value: 100,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 4,
         startingValue: 0,
         targetDays: 90,
@@ -383,7 +383,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'month',
         value: 300,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 12,
         startingValue: 0,
         targetDays: 90,
@@ -403,7 +403,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 50,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 5,
         startingValue: 1000,
         targetDays: 90,
@@ -424,7 +424,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 25,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -446,7 +446,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 5,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 3,
         startingValue: 0,
         targetDays: 90,
@@ -467,7 +467,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 2.5,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -488,7 +488,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 10,
-        valueType: 'period-change',
+        targetType: 'period-change',
         activePeriods: 5,
         startingValue: 100,
         targetDays: 90,
@@ -507,7 +507,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'week',
         value: 200,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 4,
         startingValue: 0,
         targetDays: 90,
@@ -527,7 +527,7 @@ describe('calculateBaselines', () => {
         valence: 'negative',
         period: 'day',
         value: -5,
-        valueType: 'period-change',
+        targetType: 'period-change',
         activePeriods: 5,
         startingValue: 100,
         targetDays: 90,
@@ -546,7 +546,7 @@ describe('calculateBaselines', () => {
         valence: 'neutral',
         period: 'day',
         value: 50,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -564,7 +564,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 10000,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -584,7 +584,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 0.1,
-        valueType: 'period-total',
+        targetType: 'period-total',
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,

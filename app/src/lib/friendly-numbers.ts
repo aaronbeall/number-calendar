@@ -89,6 +89,28 @@ export function convertPeriodUnitWithRounding(value: string, from: PeriodUnit, t
   return String(Number(convertedValue.toFixed(targetDecimals)));
 }
 
+/**
+ * Converts a value from a period + length (ex "500" in "3 weeks") to a per-period value in a different 
+ * period unit, applying the same rounding rules as convertPeriodUnitWithRounding.
+ * E.g. 
+ * ```
+ * convertPeriodLengthWithRounding("500", "week", 3, "day") 
+ * // -> "24" (500 over 3 weeks = ~71.43 per week = ~23.81 per day, rounded to 2 significant digits)
+ * ```
+ * Returns null for invalid input.
+ */
+export function convertPeriodLengthWithRounding(value: string, from: PeriodUnit, fromLength: number, to: PeriodUnit): string | null {
+  const parsed = parseFloat(value);
+  if (!Number.isFinite(parsed) || fromLength <= 0) return null;
+
+  // Determine significant digits to use based on conversion direction
+  const toSignificantDigits = countSignificantDigits(value) + 
+    (['day', 'week', 'month'].indexOf(from) < ['day', 'week', 'month'].indexOf(to) ? -1 : 1);
+  const perPeriodValue = parsed / fromLength;
+  const converted = convertPeriodUnitWithRounding(String(perPeriodValue), from, to);
+  return converted ? String(roundToClean(parseFloat(converted), toSignificantDigits)) : null;
+}
+
 
 export type FormatValueOptions = { short?: boolean; percent?: boolean; delta?: boolean; };
 

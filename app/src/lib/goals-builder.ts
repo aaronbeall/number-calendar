@@ -16,7 +16,7 @@ export interface GoalBuilderInput {
   valence: Valence;
   period: 'day' | 'week' | 'month';
   value: number;
-  valueType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range';
+  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range';
   valueRange?: {
     min?: number;
     max?: number;
@@ -62,17 +62,17 @@ function createTargetFromCondition(
 
 // Helper to get appropriate metric and source based on value type
 function getMetricAndSource(
-  valueType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range',
+  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range',
   goalType: 'milestone' | 'target',
   tracking: Tracking
 ): { metric: NumberMetric; source: 'stats' | 'deltas' } {
-  if (valueType === 'period-range') {
+  if (targetType === 'period-range') {
     return {
       metric: tracking === 'trend' ? 'last' : 'total',
       source: 'stats',
     };
   }
-  const isTrend = valueType === 'period-change' || valueType === 'alltime-target';
+  const isTrend = targetType === 'period-change' || targetType === 'alltime-target';
   
   return isTrend
     ? {
@@ -97,9 +97,9 @@ function getCondition(valence: Valence, target: number): 'above' | 'below' {
 }
 
 // Helper to get the term for valence
-function getValenceTerm(valueType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range', valence: Valence): string {
-  if (valueType === 'period-range') return 'In Range';
-  return (valueType === 'period-change' || valueType === 'alltime-target')
+function getValenceTerm(targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range', valence: Valence): string {
+  if (targetType === 'period-range') return 'In Range';
+  return (targetType === 'period-change' || targetType === 'alltime-target')
     ? getValueForGood(valence, { positive: 'Uptrend', negative: 'Downtrend', neutral: 'Target' })
     : getValueForGood(valence, { positive: 'Positive', negative: 'Negative', neutral: 'Target' });
 }
@@ -124,11 +124,11 @@ interface BaselineValues {
 
 // Calculate baseline values based on user input
 export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
-  const { period, value: goodValue, valueType, activePeriods, startingValue, targetDays } = input;
-  if (valueType === 'period-range') {
+  const { period, value: goodValue, targetType, activePeriods, startingValue, targetDays } = input;
+  if (targetType === 'period-range') {
     throw new Error('calculateBaselines does not support period-range goals');
   }
-  const isAllTime = valueType === 'alltime-total' || valueType === 'alltime-target';
+  const isAllTime = targetType === 'alltime-total' || targetType === 'alltime-target';
   
   // Determine base significant digits from user input
   const baseSigDigits = countSignificantDigits(goodValue);
@@ -193,8 +193,8 @@ export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
 
 // Generate milestone goals
 function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
-  const { datasetId, valueType, valence, tracking, startingValue } = input;
-  const { metric, source } = getMetricAndSource(valueType, 'milestone', tracking);
+  const { datasetId, targetType, valence, tracking, startingValue } = input;
+  const { metric, source } = getMetricAndSource(targetType, 'milestone', tracking);
   const condition = getCondition(valence, baselines.baselineMilestone - startingValue);
   const nextCreatedAt = sequenceFromNow();
 
@@ -494,8 +494,8 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
 
 // Generate target goals
 function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
-  const { datasetId, valueType, valence, tracking } = input;
-  const { metric, source } = getMetricAndSource(valueType, 'target', tracking);
+  const { datasetId, targetType, valence, tracking } = input;
+  const { metric, source } = getMetricAndSource(targetType, 'target', tracking);
   const condition = getCondition(valence, baselines.baselineMilestone - input.startingValue);
   const nextCreatedAt = sequenceFromNow();
   
@@ -530,13 +530,13 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
 
 // Generate achievement goals
 function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues): Goal[] {
-  const { datasetId, period, valueType, valence, tracking } = input;
-  const { metric, source } = getMetricAndSource(valueType, 'target', tracking);
+  const { datasetId, period, targetType, valence, tracking } = input;
+  const { metric, source } = getMetricAndSource(targetType, 'target', tracking);
   const condition = getCondition(valence, baselines.baselineMilestone - input.startingValue);
   const nextCreatedAt = sequenceFromNow();
 
   const achievements: Goal[] = [];
-  const valenceTerm = getValenceTerm(valueType, valence);
+  const valenceTerm = getValenceTerm(targetType, valence);
 
   // Use baseline targets for achievement calculations
   const periodTargets = {
@@ -874,7 +874,7 @@ function generateRangeAchievements(input: GoalBuilderInput, rangeCondition: Goal
 
 // Main function to generate all goals
 export function generateGoals(input: GoalBuilderInput): GeneratedGoals {
-  if (input.valueType === 'period-range') {
+  if (input.targetType === 'period-range') {
     const rangeCondition = resolveRangeCondition(input.valueRange);
     if (!rangeCondition) {
       return { milestones: [], targets: [], achievements: [] };
