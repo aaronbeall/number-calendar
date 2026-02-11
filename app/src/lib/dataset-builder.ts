@@ -499,7 +499,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
   },
   {
     id: 'exercise',
-    name: 'Exercise Minutes',
+    name: 'Exercise',
     description: 'Track daily workout minutes or activity time.',
     searchTerms: ['exercise', 'workout', 'minutes', 'fitness', 'activity'],
     icon: 'dumbbell',
@@ -1063,6 +1063,689 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       activity: {
         prompt: 'How often will you log coding time?',
         description: 'How many {periods} per {parent} will you record coding time?',
+      },
+    },
+  },
+  {
+    id: 'hobby-time',
+    name: 'Hobby Time',
+    description: 'Track time spent on hobbies and creative projects.',
+    searchTerms: ['hobby', 'creative', 'craft', 'painting', 'music', 'project'],
+    icon: 'palette',
+    theme: 'teal',
+    units: ['minute', 'hour'],
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [20, 12, 8],
+      [25, 15, 10],
+      [30, 18, 12],
+      [15, 10, 6],
+      [35, 20, 14],
+      [40, 22, 16],
+      [18, 12, 8],
+      [45, 26, 18],
+      [50, 28, 20],
+      [22, 14, 10],
+      [55, 30, 22],
+      [60, 32, 24],
+    ],
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review hobby time?',
+        description: 'Choose how often you want to track hobby totals.',
+        recommended: 'day',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} hobby totals or an all-time milestone.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a hobby time target for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Reach a cumulative hobby time milestone.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'How many {units} per {period} feels good?',
+          description: 'Enter the {periodly} hobby total in {units} you want to hit.',
+        },
+        alltime: {
+          prompt: 'How much total hobby time do you want to reach?',
+          description: 'Enter a cumulative hobby time target in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting hobby total?',
+        description: 'Your current total hobby time (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log hobby time?',
+        description: 'How many {periods} per {parent} will you record hobby time?',
+      },
+    },
+  },
+  {
+    id: 'reading',
+    name: 'Reading Time',
+    description: 'Track daily reading minutes or hours.',
+    searchTerms: ['reading', 'books', 'literature', 'study', 'pages'],
+    icon: 'book',
+    theme: 'amber',
+    units: ['minute', 'hour'],
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [15, 10, 5],
+      [20, 12, 8],
+      [25, 14, 10],
+      [10, 6, 4],
+      [30, 16, 12],
+      [35, 18, 14],
+      [12, 8, 6],
+      [40, 20, 16],
+      [45, 22, 18],
+      [18, 10, 8],
+      [50, 24, 20],
+      [55, 26, 22],
+    ],
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review reading time?',
+        description: 'Choose how often you want to track reading totals.',
+        recommended: 'day',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} reading totals or an all-time milestone.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a reading target for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Reach a cumulative reading milestone.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'How many {units} per {period} feels good?',
+          description: 'Enter the {periodly} reading total in {units} you want to hit.',
+        },
+        alltime: {
+          prompt: 'How much total reading time do you want to reach?',
+          description: 'Enter a cumulative reading target in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting reading total?',
+        description: 'Your current total reading time (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log reading time?',
+        description: 'How many {periods} per {parent} will you record reading time?',
+      },
+    },
+  },
+  {
+    id: 'meditation',
+    name: 'Meditation',
+    description: 'Track daily meditation or mindfulness minutes.',
+    searchTerms: ['meditation', 'mindfulness', 'breathing', 'calm', 'focus'],
+    icon: 'sparkle',
+    theme: 'indigo',
+    units: ['minute'],
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [5, 3, 2],
+      [8, 4, 3],
+      [10, 5, 4],
+      [6, 3, 2],
+      [12, 6, 4],
+      [15, 7, 5],
+      [7, 4, 3],
+      [18, 8, 6],
+      [20, 10, 6],
+      [9, 5, 4],
+      [22, 10, 8],
+      [25, 12, 8],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'above', value: 10 } },
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review meditation?',
+        description: 'Choose how often you want to track meditation minutes.',
+        recommended: 'day',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} meditation totals or an all-time milestone.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a meditation target for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Reach a cumulative meditation milestone.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'How many {units} per {period} feels good?',
+          description: 'Enter the {periodly} meditation total in {units} you want to hit.',
+        },
+        alltime: {
+          prompt: 'How much total meditation time do you want to reach?',
+          description: 'Enter a cumulative meditation target in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting meditation total?',
+        description: 'Your current total meditation time (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log meditation?',
+        description: 'How many {periods} per {parent} will you record meditation?',
+      },
+    },
+  },
+  {
+    id: 'volunteer-time',
+    name: 'Volunteer Time',
+    description: 'Track hours spent volunteering or giving back.',
+    searchTerms: ['volunteer', 'service', 'community', 'charity', 'giving'],
+    icon: 'heart',
+    theme: 'rose',
+    units: ['minute', 'hour'],
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [60, 40, 20],
+      [75, 50, 25],
+      [90, 60, 30],
+      [45, 30, 15],
+      [120, 80, 40],
+      [135, 90, 45],
+      [50, 35, 20],
+      [150, 100, 50],
+      [165, 110, 55],
+      [70, 45, 25],
+      [180, 120, 60],
+      [195, 130, 65],
+    ],
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review volunteer time?',
+        description: 'Choose how often you want to track volunteer totals.',
+        recommended: 'week',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} volunteer totals or an all-time milestone.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a volunteer time target for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Reach a cumulative volunteer time milestone.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'How many {units} per {period} feels good?',
+          description: 'Enter the {periodly} volunteer total in {units} you want to hit.',
+        },
+        alltime: {
+          prompt: 'How much total volunteer time do you want to reach?',
+          description: 'Enter a cumulative volunteer target in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting volunteer total?',
+        description: 'Your current total volunteer time (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log volunteer time?',
+        description: 'How many {periods} per {parent} will you record volunteer time?',
+      },
+    },
+  },
+  {
+    id: 'practice-time',
+    name: 'Practice Time',
+    description: 'Track time spent practicing a skill or craft.',
+    searchTerms: ['practice', 'skill', 'training', 'repetition', 'drill'],
+    icon: 'book',
+    theme: 'amber',
+    units: ['minute', 'hour'],
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [20, 12, 8],
+      [25, 15, 10],
+      [30, 18, 12],
+      [15, 10, 6],
+      [35, 20, 14],
+      [40, 22, 16],
+      [18, 12, 8],
+      [45, 26, 18],
+      [50, 28, 20],
+      [22, 14, 10],
+      [55, 30, 22],
+      [60, 32, 24],
+    ],
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review practice time?',
+        description: 'Choose how often you want to track practice totals.',
+        recommended: 'day',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} practice totals or an all-time milestone.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a practice target for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Reach a cumulative practice milestone.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'How many {units} per {period} feels good?',
+          description: 'Enter the {periodly} practice total in {units} you want to hit.',
+        },
+        alltime: {
+          prompt: 'How much total practice time do you want to reach?',
+          description: 'Enter a cumulative practice target in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting practice total?',
+        description: 'Your current total practice time (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log practice time?',
+        description: 'How many {periods} per {parent} will you record practice time?',
+      },
+    },
+  },
+  {
+    id: 'session-count',
+    name: 'Session Count',
+    description: 'Track how many sessions you complete over time.',
+    searchTerms: ['session', 'count', 'appointments', 'classes', 'events'],
+    icon: 'activity',
+    theme: 'emerald',
+    units: ['session'],
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [2, 1, 1],
+      [3, 2, 1],
+      [4, 2, 2],
+      [1, 1, 0],
+      [5, 3, 2],
+      [6, 3, 3],
+      [2, 1, 1],
+      [7, 4, 3],
+      [8, 4, 4],
+      [3, 2, 1],
+      [9, 5, 4],
+      [10, 5, 5],
+    ],
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review session counts?',
+        description: 'Choose how often you want to track session totals.',
+        recommended: 'week',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} session totals or an all-time milestone.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a session target for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Reach a cumulative session milestone.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'How many sessions per {period} feels good?',
+          description: 'Enter the {periodly} session total you want to hit.',
+        },
+        alltime: {
+          prompt: 'How many sessions do you want to reach overall?',
+          description: 'Enter a cumulative session milestone you want to hit.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting session total?',
+        description: 'Your current total sessions (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log sessions?',
+        description: 'How many {periods} per {parent} will you record sessions?',
+      },
+    },
+  },
+  {
+    id: 'daily-rating',
+    name: 'Daily Rating',
+    description: 'Track a daily rating on a simple numeric scale.',
+    searchTerms: ['rating', 'score', 'scale', 'daily', 'check-in'],
+    icon: 'smile',
+    theme: 'pink',
+    units: [],
+    tracking: 'trend',
+    valence: 'neutral',
+    sampleData: [
+      [6.0],
+      [6.3],
+      [6.6],
+      [6.1],
+      [6.7],
+      [6.9],
+      [7.1],
+      [6.8],
+      [7.2],
+      [7.3],
+      [6.9],
+      [7.4],
+    ],
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to check in?',
+        description: 'Choose how often you want to record ratings.',
+        recommended: 'day',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Track {periodly} changes or aim for an all-time rating.',
+        options: {
+          period: {
+            label: '{periodly} change',
+            description: 'Target improvement each {period}.',
+          },
+          alltime: {
+            label: 'All time target',
+            description: 'Reach a specific overall rating.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'What change per {period} feels good?',
+          description: 'Enter the {periodly} change in your rating you want to see.',
+        },
+        alltime: {
+          prompt: 'What rating are you aiming for?',
+          description: 'Enter the overall rating you want to reach.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting rating?',
+        description: 'Your current average rating (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log ratings?',
+        description: 'How many {periods} per {parent} will you record ratings?',
+      },
+    },
+  },
+  {
+    id: 'screen-time',
+    name: 'Screen Time',
+    description: 'Track daily screen time usage.',
+    searchTerms: ['screen', 'phone', 'device', 'usage', 'digital'],
+    icon: 'code',
+    theme: 'sky',
+    units: ['minute', 'hour'],
+    tracking: 'series',
+    valence: 'negative',
+    sampleData: [
+      [180, 120, 60],
+      [200, 130, 70],
+      [220, 140, 80],
+      [150, 100, 50],
+      [240, 150, 90],
+      [260, 160, 100],
+      [170, 110, 60],
+      [280, 170, 110],
+      [300, 180, 120],
+      [190, 120, 70],
+      [320, 190, 130],
+      [340, 200, 140],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'below', value: 180 } },
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review screen time?',
+        description: 'Choose how often you want to track screen usage.',
+        recommended: 'day',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} screen time limits or an all-time cap.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a screen time limit for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Stay under a cumulative screen time cap.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'What screen time limit per {period} feels right?',
+          description: 'Enter the {periodly} limit in {units} that keeps you on track.',
+        },
+        alltime: {
+          prompt: 'What total screen time do you want to stay under?',
+          description: 'Enter a cumulative screen time limit in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting screen time total?',
+        description: 'Your current total screen time (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log screen time?',
+        description: 'How many {periods} per {parent} will you record screen time?',
+      },
+    },
+  },
+  {
+    id: 'caffeine-intake',
+    name: 'Caffeine Intake',
+    description: 'Track daily caffeine consumption.',
+    searchTerms: ['caffeine', 'coffee', 'tea', 'energy drink', 'stimulant'],
+    icon: 'apple',
+    theme: 'orange',
+    units: ['milligram', 'cup'],
+    tracking: 'series',
+    valence: 'neutral',
+    sampleData: [
+      [120, 80, 40],
+      [140, 90, 50],
+      [160, 100, 60],
+      [100, 60, 40],
+      [180, 110, 70],
+      [200, 120, 80],
+      [110, 70, 40],
+      [220, 130, 90],
+      [240, 140, 100],
+      [130, 80, 50],
+      [260, 150, 110],
+      [280, 160, 120],
+    ],
+    suggestedTarget: { type: 'period-target', period: 'day', condition: { condition: 'below', value: 300 } },
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review caffeine intake?',
+        description: 'Choose how often you want to track caffeine totals.',
+        recommended: 'day',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} intake limits or an all-time cap.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a caffeine limit for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Stay under a cumulative caffeine total.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'What caffeine limit per {period} feels right?',
+          description: 'Enter the {periodly} limit in {units} that keeps you on track.',
+        },
+        alltime: {
+          prompt: 'What total caffeine do you want to stay under?',
+          description: 'Enter a cumulative caffeine limit in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting caffeine total?',
+        description: 'Your current total caffeine intake (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log caffeine intake?',
+        description: 'How many {periods} per {parent} will you record caffeine intake?',
+      },
+    },
+  },
+  {
+    id: 'running-distance',
+    name: 'Running Distance',
+    description: 'Track running distance over time.',
+    searchTerms: ['running', 'distance', 'miles', 'kilometers', 'cardio'],
+    icon: 'footprints',
+    theme: 'emerald',
+    units: ['mile', 'kilometer'],
+    tracking: 'series',
+    valence: 'positive',
+    sampleData: [
+      [2.1, 1.4, 0.7],
+      [2.4, 1.6, 0.8],
+      [2.7, 1.8, 0.9],
+      [1.5, 1.0, 0.5],
+      [3.0, 2.0, 1.0],
+      [3.3, 2.2, 1.1],
+      [1.8, 1.2, 0.6],
+      [3.6, 2.4, 1.2],
+      [3.9, 2.6, 1.3],
+      [2.0, 1.3, 0.7],
+      [4.2, 2.8, 1.4],
+      [4.5, 3.0, 1.5],
+    ],
+    goalQuestions: {
+      period: {
+        prompt: 'How often do you want to review running distance?',
+        description: 'Choose how often you want to track distance totals.',
+        recommended: 'week',
+      },
+      targetType: {
+        prompt: 'How will you measure success?',
+        description: 'Focus on {periodly} distance totals or an all-time milestone.',
+        options: {
+          period: {
+            label: '{periodly} total',
+            description: 'Set a distance target for each {period}.',
+          },
+          alltime: {
+            label: 'All time total',
+            description: 'Reach a cumulative distance milestone.',
+          },
+        },
+      },
+      goodValue: {
+        period: {
+          prompt: 'What distance per {period} feels good?',
+          description: 'Enter the {periodly} distance total in {units} you want to hit.',
+        },
+        alltime: {
+          prompt: 'What total distance do you want to reach?',
+          description: 'Enter a cumulative distance milestone in {units}.',
+        },
+      },
+      startingValue: {
+        prompt: 'Starting distance total?',
+        description: 'Your current total distance (optional).',
+      },
+      timeline: {
+        prompt: 'How long do you want to plan ahead?',
+        description: 'Time to reach the target (optional).',
+      },
+      activity: {
+        prompt: 'How often will you log running distance?',
+        description: 'How many {periods} per {parent} will you record distance?',
       },
     },
   },

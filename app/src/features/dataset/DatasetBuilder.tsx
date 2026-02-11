@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { GoalTarget, Tracking, Valence } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import { useDatasets } from '@/features/db/useDatasetData';
 import { getChartData, type NumbersChartDataPoint } from '@/lib/charts';
 import { getColorTheme } from '@/lib/colors';
@@ -14,7 +14,7 @@ import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetricFromStats, getPrimaryMetricLabel } from '@/lib/tracking';
 import { cn, isNameTaken } from '@/lib/utils';
 import { getValueForGood, getValueForValence, getValueForValenceWithCondition, isBad, isGood } from '@/lib/valence';
-import { Activity, ArrowDown, ArrowDownFromLine, ArrowLeft, ArrowRight, ArrowRightLeft, ArrowUp, ArrowUpFromLine, ChartNoAxesColumn, ChartNoAxesColumnDecreasing, ChartNoAxesColumnIncreasing, Diff, FoldVertical, Minus, Plus, Search, Sparkles, TrendingDown, TrendingUp, TrendingUpDown } from 'lucide-react';
+import { Activity, ArrowDown, ArrowDownFromLine, ArrowLeft, ArrowRight, ArrowRightLeft, ArrowUp, ArrowUpFromLine, ChartNoAxesColumn, ChartNoAxesColumnDecreasing, ChartNoAxesColumnIncreasing, Diff, FoldVertical, Minus, Plus, Search, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, Cell, Line, LineChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts';
 
@@ -445,7 +445,7 @@ function SampleDataPreview({ tracking, valence, period, sampleData, target }: Sa
     if (isNegative) return 'text-red-600 dark:text-red-400';
     return 'text-slate-500 dark:text-slate-400';
   };
-  const renderTooltip = ({ active, payload }: { active?: boolean; payload?: { payload: NumbersChartDataPoint }[] }) => {
+  const renderTooltip = ({ active, payload }: { active?: boolean; payload?: { payload?: NumbersChartDataPoint }[] }) => {
     if (!active || !payload?.length) return null;
     const point = payload[0]?.payload;
     if (!point) return null;
