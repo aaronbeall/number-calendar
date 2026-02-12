@@ -139,6 +139,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What profit per {period} feels like a win?',
           description: 'Enter the {periodly} net profit that would make you proud.',
+          suggested: {
+            day: 1000,
+            week: 5000,
+            month: 20000,
+          },
         },
         alltime: {
           prompt: 'What total profit do you want to reach?',
@@ -209,6 +214,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What revenue per {period} feels good?',
           description: 'Enter the {periodly} revenue total that would make you proud.',
+          suggested: {
+            day: 1000,
+            week: 7000,
+            month: 30000,
+          },
         },
         alltime: {
           prompt: 'What total revenue do you want to reach?',
@@ -279,6 +289,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What spending cap per {period} feels right?',
           description: 'Enter the {periodly} spending limit that keeps you on track.',
+          suggested: {
+            day: 500,
+            week: 3000,
+            month: 12000,
+          },
         },
         alltime: {
           prompt: 'What total spend do you want to stay under?',
@@ -503,6 +518,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What shift per {period} feels realistic?',
           description: 'Enter the {periodly} shift in {units} you want to see.',
+          suggested: {
+            day: -0.5,
+            week: -1.5,
+            month: -4,
+          },
         },
         range: {
           prompt: 'What reading range are you aiming for?',
@@ -722,10 +742,20 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What improvement per {period} feels good?',
           description: 'Enter the {periodly} improvement in {units} you want to see.',
+          suggested: {
+            day: 0.1,
+            week: 0.3,
+            month: 1,
+          },
         },
         range: {
           prompt: 'What sleep range are you aiming for?',
           description: 'Enter your target range in {units}.',
+          suggested: {
+            day: [7, 9],
+            week: [7, 9],
+            month: [7, 9],
+          },
         }
       },
       startingValue: null,
@@ -922,6 +952,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What lift per {period} feels good?',
           description: 'Enter the {periodly} lift in mood score you want to see.',
+          suggested: {
+            day: 0.1,
+            week: 0.3,
+            month: 1,
+          },
         },
         alltime: {
           prompt: 'What mood score are you aiming for?',
@@ -992,6 +1027,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} study total in {units} you want to hit.',
+          suggested: {
+            day: 30,
+            week: 180,
+            month: 720,
+          },
         },
         alltime: {
           prompt: 'How much total study time do you want to reach?',
@@ -1058,6 +1098,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} coding total in {units} you want to hit.',
+          suggested: {
+            day: 45,
+            week: 240,
+            month: 960,
+          },
         },
         alltime: {
           prompt: 'How much total coding time do you want to reach?',
@@ -1124,6 +1169,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} hobby total in {units} you want to hit.',
+          suggested: {
+            day: 30,
+            week: 150,
+            month: 600,
+          },
         },
         alltime: {
           prompt: 'How much total hobby time do you want to reach?',
@@ -1190,6 +1240,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} reading total in {units} you want to hit.',
+          suggested: {
+            day: 20,
+            week: 120,
+            month: 480,
+          },
         },
         alltime: {
           prompt: 'How much total reading time do you want to reach?',
@@ -1257,6 +1312,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} meditation total in {units} you want to hit.',
+          suggested: {
+            day: 10,
+            week: 70,
+            month: 300,
+          },
         },
         alltime: {
           prompt: 'How much total meditation time do you want to reach?',
@@ -1323,6 +1383,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} volunteer total in {units} you want to hit.',
+          suggested: {
+            day: 60,
+            week: 180,
+            month: 720,
+          },
         },
         alltime: {
           prompt: 'How much total volunteer time do you want to reach?',
@@ -1389,6 +1454,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many {units} per {period} feels good?',
           description: 'Enter the {periodly} practice total in {units} you want to hit.',
+          suggested: {
+            day: 30,
+            week: 180,
+            month: 720,
+          },
         },
         alltime: {
           prompt: 'How much total practice time do you want to reach?',
@@ -1455,6 +1525,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'How many sessions per {period} feels good?',
           description: 'Enter the {periodly} session total you want to hit.',
+          suggested: {
+            day: 1,
+            week: 5,
+            month: 20,
+          },
         },
         alltime: {
           prompt: 'How many sessions do you want to reach overall?',
@@ -1521,6 +1596,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What improvement per {period} feels good?',
           description: 'Enter the {periodly} improvement in your rating you want to see.',
+          suggested: {
+            day: 0.1,
+            week: 0.3,
+            month: 1,
+          },
         },
         alltime: {
           prompt: 'What rating are you aiming for?',
@@ -1592,6 +1672,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What screen time limit per {period} feels right?',
           description: 'Enter the {periodly} limit in {units} that keeps you on track.',
+          suggested: {
+            day: 180,
+            week: 1260,
+            month: 5400,
+          },
         },
         alltime: {
           prompt: 'What total screen time do you want to stay under?',
@@ -1659,6 +1744,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What caffeine limit per {period} feels right?',
           description: 'Enter the {periodly} limit in {units} that keeps you on track.',
+          suggested: {
+            day: 200,
+            week: 1200,
+            month: 5000,
+          },
         },
         alltime: {
           prompt: 'What total caffeine do you want to stay under?',
@@ -1725,6 +1815,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What distance per {period} feels good?',
           description: 'Enter the {periodly} distance total in {units} you want to hit.',
+          suggested: {
+            day: 3,
+            week: 15,
+            month: 60,
+          },
         },
         alltime: {
           prompt: 'What total distance do you want to reach?',
@@ -1792,6 +1887,11 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What increase per {period} feels good?',
           description: 'Enter the {periodly} savings increase that keeps you on track.',
+          suggested: {
+            day: 10,
+            week: 50,
+            month: 200,
+          },
         },
         alltime: {
           prompt: 'What savings balance do you want to reach?',
@@ -1863,10 +1963,16 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         period: {
           prompt: 'What reduction per {period} feels good?',
           description: 'Enter the {periodly} payoff amount that keeps you on track.',
+          suggested: {
+            day: 10,
+            week: 50,
+            month: 200,
+          },
         },
         alltime: {
           prompt: 'What balance do you want to reach?',
           description: 'Enter the remaining balance target you want to hit.',
+          suggested: 0,
         },
       },
       startingValue: {
