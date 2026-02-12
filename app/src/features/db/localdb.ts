@@ -1,6 +1,7 @@
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from '@/lib/achievements';
 import type { DatasetIconName } from '@/lib/dataset-icons';
-import { toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
+import { getDateKeyType, parseWeekKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
+import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths, getYearWeeks } from '@/lib/calendar';
 import type { NumberMetric, NumberSource } from '@/lib/stats';
 import { openDB } from 'idb';
 import { nanoid } from 'nanoid';
@@ -41,6 +42,16 @@ export type DayEntry = {
   numbers: DayNumbers;
   datasetId: string;
 };
+
+// Not used yet 
+export type NumberEntry = {
+  createdAt: number;
+  updatedAt: number;
+  number: number;
+  expression?: string; // e.g. "2+3" or "5*4"
+  note?: string;
+  tags?: string[];
+}
 
 // Date/Week/Month/Year key types
 export type DayKey = `${number}-${number}-${number}`;  // YYYY-MM-DD
@@ -128,14 +139,6 @@ export interface Achievement {
   progress: number; // For goals with count > 1
   startedAt?: DateKey; // corresponds to the goal.timePeriod type
   completedAt?: DateKey; // corresponds to the goal.timePeriod type
-}
-
-// Main DB structure
-export interface LocalDB {
-  datasets: Dataset[];
-  entries: DayEntry[];
-  notes: Note[];
-  images: ImageAttachment[];
 }
 
 const DB_NAME = 'number-calendar';
@@ -434,6 +437,82 @@ export async function loadAllDays(datasetId: string): Promise<DayEntry[]> {
   // Query using the datasetId index to get all entries for this dataset
   const all: DayEntry[] = await db.getAllFromIndex('entries', 'datasetId', datasetId);
   return all;
+}
+
+// Notes CRUD
+export async function listNotes(datasetId: string): Promise<Note[]> {
+  const db = await getDb();
+  return await db.getAllFromIndex('notes', 'datasetId', datasetId);
+}
+
+export async function loadNote(datasetId: string, date: DateKey): Promise<Note | null> {
+  const db = await getDb();
+  const note = await db.get('notes', [datasetId, date]);
+  return note ?? null;
+}
+
+export async function saveNote(datasetId: string, date: DateKey, text: string): Promise<Note> {
+  const db = await getDb();
+  const existing = await db.get('notes', [datasetId, date]) as Note | undefined;
+  const now = Date.now();
+  const note: Note = {
+    datasetId,
+    date,
+    text,
+    createdAt: existing?.createdAt ?? now,
+    updatedAt: now,
+  };
+  await db.put('notes', note);
+
+  const ds = await db.get('datasets', datasetId) as Dataset | undefined;
+  if (ds) {
+    ds.updatedAt = new Date().toISOString() as ISODateString;
+    await db.put('datasets', ds);
+  }
+
+  return note;
+}
+
+function buildNoteKeySet(dateKey: DateKey): Set<DateKey> {
+  const keyType = getDateKeyType(dateKey);
+  const keys = new Set<DateKey>();
+  keys.add(dateKey);
+
+  if (keyType === 'day') {
+    return keys;
+  }
+
+  if (keyType === 'week') {
+    const { year, week } = parseWeekKey(dateKey);
+    getWeekDays(year, week).forEach((day) => keys.add(day));
+    return keys;
+  }
+
+  if (keyType === 'month') {
+    const [yearStr, monthStr] = dateKey.split('-');
+    const year = Number(yearStr);
+    const month = Number(monthStr);
+    getMonthDays(year, month).forEach((day) => keys.add(day));
+    getMonthWeeks(year, month).forEach((weekKey) => keys.add(weekKey));
+    return keys;
+  }
+
+  const year = Number(dateKey);
+  getYearDays(year).forEach((day) => keys.add(day));
+  getYearWeeks(year).forEach((weekKey) => keys.add(weekKey));
+  getYearMonths(year).forEach((monthKey) => keys.add(monthKey));
+  return keys;
+}
+
+export async function loadNotesMapByDateKey(datasetId: string, dateKey: DateKey): Promise<Record<DateKey, Note>> {
+  const notes = await listNotes(datasetId);
+  const keys = buildNoteKeySet(dateKey);
+  return notes.reduce<Record<DateKey, Note>>((acc, note) => {
+    if (keys.has(note.date)) {
+      acc[note.date] = note;
+    }
+    return acc;
+  }, {});
 }
 
 

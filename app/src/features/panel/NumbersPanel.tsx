@@ -24,6 +24,7 @@ import { Line, LineChart, Tooltip } from 'recharts';
 import { AddNumberEditor } from './AddNumberEditor';
 import { EditableNumberBadge } from './EditableNumberBadge';
 import { adjectivize, capitalize, cn } from '@/lib/utils';
+import { NotesEditor } from '@/features/notes/NotesEditor';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -483,6 +484,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
               />
             </>
           )}
+          <NotesEditor dateKey={dateKey} />
         </div>
       </SheetContent>
       <AchievementDetailsDrawer

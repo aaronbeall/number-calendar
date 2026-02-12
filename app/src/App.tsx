@@ -28,6 +28,7 @@ import { useTheme } from './components/ThemeProvider';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
 import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
+import { DatasetProvider } from './context/DatasetContext';
 import { AchievementToast } from './features/achievements/AchievementToast';
 import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
 import DatasetDialog from './features/dataset/DatasetDialog';
@@ -223,28 +224,30 @@ function DatasetLayout({
   }
   
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
-      <AppHeader
-        currentDataset={dataset}
-        datasets={datasets}
-        onOpenCreate={onOpenCreate}
-        onOpenEdit={onOpenEdit}
-        onOpenImport={() => onOpenImport(dataset.id)}
-        onOpenExport={(dateRange) => onOpenExport(dataset.id, dateRange)}
-        achievementResults={achievementResults}
-      />
-      <div className="flex-1 w-full">
-        <Routes>
-          <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
-          <Route path="achievements" element={<Achievements />} />
-          <Route path="targets" element={<Targets />} />
-          <Route path="milestones" element={<Milestones />} />
-          <Route path="records" element={<Records datasetId={dataset.id} />} />
-          <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
-        </Routes>
+    <DatasetProvider dataset={dataset}>
+      <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+        <AppHeader
+          currentDataset={dataset}
+          datasets={datasets}
+          onOpenCreate={onOpenCreate}
+          onOpenEdit={onOpenEdit}
+          onOpenImport={() => onOpenImport(dataset.id)}
+          onOpenExport={(dateRange) => onOpenExport(dataset.id, dateRange)}
+          achievementResults={achievementResults}
+        />
+        <div className="flex-1 w-full">
+          <Routes>
+            <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
+            <Route path="achievements" element={<Achievements />} />
+            <Route path="targets" element={<Targets />} />
+            <Route path="milestones" element={<Milestones />} />
+            <Route path="records" element={<Records datasetId={dataset.id} />} />
+            <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
+          </Routes>
+        </div>
+        <AppFooter />
       </div>
-      <AppFooter />
-    </div>
+    </DatasetProvider>
   );
 }
 
