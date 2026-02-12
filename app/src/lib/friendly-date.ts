@@ -180,9 +180,43 @@ export function parseDateKey(key: DateKey): Date {
   throw new Error(`Invalid DateKey: ${key}`);
 }
 
+export function parseDayKey(dayKey: DayKey): { year: number; month: number; day: number } {
+  const [yearStr, monthStr, dayStr] = dayKey.split('-');
+  return { year: parseInt(yearStr, 10), month: parseInt(monthStr, 10), day: parseInt(dayStr, 10) };
+}
+
 export function parseWeekKey(weekKey: WeekKey): { year: number; week: number } {
   const [yearStr, weekStr] = weekKey.split('-W');
   return { year: parseInt(yearStr, 10), week: parseInt(weekStr, 10) };
+}
+
+export function parseMonthKey(monthKey: MonthKey): { year: number; month: number } {
+  const [yearStr, monthStr] = monthKey.split('-');
+  return { year: parseInt(yearStr, 10), month: parseInt(monthStr, 10) };
+}
+
+export function parseYearKey(yearKey: YearKey) {
+  return parseInt(yearKey, 10);
+}
+
+export function parseDateKeyToParts(dateKey: DateKey): { year: number; month?: number; day?: number; week?: number } {
+  if (isDayKey(dateKey)) {
+    const { year, month, day } = parseDayKey(dateKey);
+    return { year, month, day };
+  }
+  if (isWeekKey(dateKey)) {
+    const { year, week } = parseWeekKey(dateKey);
+    return { year, week };
+  }
+  if (isMonthKey(dateKey)) {
+    const { year, month } = parseMonthKey(dateKey);
+    return { year, month };
+  }
+  if (isYearKey(dateKey)) {
+    const year = parseYearKey(dateKey);
+    return { year };
+  }
+  throw new Error(`Invalid DateKey: ${dateKey}`);
 }
 
 /**

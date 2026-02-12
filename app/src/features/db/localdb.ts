@@ -1,6 +1,6 @@
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from '@/lib/achievements';
 import type { DatasetIconName } from '@/lib/dataset-icons';
-import { getDateKeyType, parseWeekKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
+import { isDayKey, isMonthKey, isWeekKey, parseDayKey, parseMonthKey, parseWeekKey, parseYearKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths, getYearWeeks } from '@/lib/calendar';
 import type { NumberMetric, NumberSource } from '@/lib/stats';
 import { openDB } from 'idb';
@@ -474,30 +474,27 @@ export async function saveNote(datasetId: string, date: DateKey, text: string): 
 }
 
 function buildNoteKeySet(dateKey: DateKey): Set<DateKey> {
-  const keyType = getDateKeyType(dateKey);
   const keys = new Set<DateKey>();
   keys.add(dateKey);
 
-  if (keyType === 'day') {
+  if (isDayKey(dateKey)) {
     return keys;
   }
 
-  if (keyType === 'week') {
+  if (isWeekKey(dateKey)) {
     const { year, week } = parseWeekKey(dateKey);
     getWeekDays(year, week).forEach((day) => keys.add(day));
     return keys;
   }
 
-  if (keyType === 'month') {
-    const [yearStr, monthStr] = dateKey.split('-');
-    const year = Number(yearStr);
-    const month = Number(monthStr);
+  if (isMonthKey(dateKey)) {
+    const { year, month } = parseMonthKey(dateKey);
     getMonthDays(year, month).forEach((day) => keys.add(day));
     getMonthWeeks(year, month).forEach((weekKey) => keys.add(weekKey));
     return keys;
   }
 
-  const year = Number(dateKey);
+  const year = parseYearKey(dateKey);
   getYearDays(year).forEach((day) => keys.add(day));
   getYearWeeks(year).forEach((weekKey) => keys.add(weekKey));
   getYearMonths(year).forEach((monthKey) => keys.add(monthKey));
@@ -527,10 +524,10 @@ export async function findMostRecentPopulatedMonthBefore(datasetId: string, befo
   while (cursor) {
     if (cursor.value.numbers && cursor.value.numbers.length > 0) {
       // Found the most recent populated day
-      const foundDate = cursor.value.date;
-      const [year, month] = foundDate.split('-');
+      const foundDate = cursor.value.date as DayKey;
+      const { year, month } = parseDayKey(foundDate);
       // Load the entire month for that entry
-      return await loadMonth(datasetId, Number(year), Number(month));
+      return await loadMonth(datasetId, year, month);
     }
     cursor = await cursor.continue();
   }

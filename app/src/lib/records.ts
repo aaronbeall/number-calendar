@@ -1,7 +1,7 @@
 
 import { parseISO } from 'date-fns';
 import type { DateKey, DayEntry, DayKey, MonthKey, Valence, WeekKey } from '../features/db/localdb';
-import { dateToWeekKey } from './friendly-date';
+import { dateToWeekKey, parseDayKey, parseMonthKey, parseWeekKey } from './friendly-date';
 import { entriesOf } from './utils';
 
 // Helper: group entries by week and month
@@ -81,24 +81,24 @@ function longestStreakByPredicate<K extends DateKey>(
 
 // Helper: check if two day keys are consecutive (YYYY-MM-DD)
 function areConsecutiveDays(a: DayKey, b: DayKey): boolean {
-  const [ay, am, ad] = a.split('-').map(Number);
-  const [by, bm, bd] = b.split('-').map(Number);
+  const { year: ay, month: am, day: ad } = parseDayKey(a);
+  const { year: by, month: bm, day: bd } = parseDayKey(b);
   const adate = new Date(ay, am - 1, ad);
   const bdate = new Date(by, bm - 1, bd);
   return (bdate.getTime() - adate.getTime()) === 86400000;
 }
 // Helper: check if two week keys are consecutive (YYYY-Www)
 function areConsecutiveWeeks(a: WeekKey, b: WeekKey): boolean {
-  const [ay, aw] = a.split('-W').map(Number);
-  const [by, bw] = b.split('-W').map(Number);
+  const { year: ay, week: aw } = parseWeekKey(a);
+  const { year: by, week: bw } = parseWeekKey(b);
   if (by === ay && bw === aw + 1) return true;
   if (by === ay + 1 && aw === 52 && bw === 1) return true; // year wrap
   return false;
 }
 // Helper: check if two month keys are consecutive (YYYY-MM)
 function areConsecutiveMonths(a: MonthKey, b: MonthKey): boolean {
-  const [ay, am] = a.split('-').map(Number);
-  const [by, bm] = b.split('-').map(Number);
+  const { year: ay, month: am } = parseMonthKey(a);
+  const { year: by, month: bm } = parseMonthKey(b);
   if (by === ay && bm === am + 1) return true;
   if (by === ay + 1 && am === 12 && bm === 1) return true;
   return false;

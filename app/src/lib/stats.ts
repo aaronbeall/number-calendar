@@ -1,5 +1,5 @@
 import type { DayKey, MonthKey } from "@/features/db/localdb";
-import { toMonthKey } from "./friendly-date";
+import { parseDayKey, toMonthKey } from "./friendly-date";
 import { capitalize, entriesOf } from "./utils";
 
 // Stats for an array of numbers
@@ -101,9 +101,7 @@ export function computeMonthlyStats(data: Record<DayKey, number[]>): MonthStatsD
     if (dayNumbers.length === 0) continue;
     
     // Extract year and month from DayKey (YYYY-MM-DD)
-    const [yearStr, monthStr] = dateStr.split('-');
-    const year = parseInt(yearStr, 10);
-    const monthNumber = parseInt(monthStr, 10);
+    const { year, month: monthNumber } = parseDayKey(dateStr);
     const monthKey = toMonthKey(year, monthNumber);
     
     if (!monthGroups.has(monthKey)) {

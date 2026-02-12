@@ -3,9 +3,10 @@ import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
 import type { DayKey, Valence } from '@/features/db/localdb';
-import { toDayKey } from '@/lib/friendly-date';
+import { parseDayKey, toDayKey } from '@/lib/friendly-date';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
+import { entriesOf } from '@/lib/utils';
 
 type YearChartMode = 'serial' | 'cumulative';
 type YearChartGroup = 'daily' | 'monthly';
@@ -19,8 +20,8 @@ interface YearChartProps {
 // Helper to group data by month
 function groupByMonth(yearData: Record<DayKey, number[]>): { month: number; numbers: number[] }[] {
   const months: { month: number; numbers: number[] }[] = Array.from({ length: 12 }, (_, i) => ({ month: i + 1, numbers: [] }));
-  Object.entries(yearData).forEach(([date, nums]) => {
-    const [, month] = date.split('-').map(Number);
+  entriesOf(yearData).forEach(([date, nums]) => {
+    const { month } = parseDayKey(date);
     if (month >= 1 && month <= 12) {
       months[month - 1].numbers.push(...nums);
     }

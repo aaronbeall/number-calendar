@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Toaster } from '@/components/ui/sonner';
 import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Award, Bell, CalendarIcon, Download, Flag, Info, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User } from 'lucide-react';
+import { Award, Bell, CalendarIcon, Download, Flag, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
@@ -50,6 +50,7 @@ import { Landing } from './pages/Landing';
 import Milestones from './pages/Milestones';
 import Records from './pages/Records';
 import Targets from './pages/Targets';
+import { Timeline } from './pages/Timeline';
 
 
 function App() {
@@ -242,6 +243,7 @@ function DatasetLayout({
             <Route path="targets" element={<Targets />} />
             <Route path="milestones" element={<Milestones />} />
             <Route path="records" element={<Records datasetId={dataset.id} />} />
+            <Route path="timeline" element={<Timeline />} />
             <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
           </Routes>
         </div>
@@ -395,6 +397,12 @@ function AppHeader({
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}/records` : '#'}>
                     <Award className="h-4 w-4" />
                     Records
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/timeline` : '#'}>
+                    <List className="h-4 w-4" />
+                    Timeline
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800" onClick={() => setShowAIInsights(true)}>
