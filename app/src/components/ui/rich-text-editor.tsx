@@ -116,8 +116,8 @@ const RichTextEditor = React.forwardRef<HTMLDivElement, RichTextEditorProps>(
         value={value}
         onChange={handleChange}
         containerProps={{
+          ...(hideToolbar && { "data-toolbar-hidden": true }),
           ...containerProps,
-          ...(!hideToolbar && { "data-toolbar-hidden": undefined }),
           className: cn(
             "rsw-theme !overflow-hidden !rounded-md !border !border-slate-200 !bg-white !shadow-none focus-within:outline-none focus-within:!border-slate-400 data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50 dark:!border-slate-800 dark:!bg-slate-950 dark:focus-within:!border-slate-600",
             "[&[data-toolbar-hidden=true]_.rsw-toolbar]:!hidden",
