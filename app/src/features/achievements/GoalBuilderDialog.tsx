@@ -426,9 +426,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
             ? `Enter the target range for each ${period}`
             : 'Enter the overall target value'
   );
+  const shouldUseSuggestedAlltimeValue =
+    isAllTimeTarget && (typeof parsedStartingValue !== 'number' || parsedStartingValue === 0);
   const suggestedGoodValue = isPeriodTarget
     ? suggestedPeriodValue
-    : isAllTimeTarget && !hasStartingValueQuestion
+    : shouldUseSuggestedAlltimeValue
       ? suggestedAlltimeValue
       : undefined;
   const goodValuePlaceholder = (() => {
@@ -455,6 +457,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const resolvedStartingValue = hasStartingValueQuestion && startingValue.trim() 
     ? parseFloat(startingValue) 
     : questions?.startingValue?.required ? null : currentValue;
+  const hasStartingValueInput = startingValue.trim() !== '';
+  const shouldShowStartingSection = isRangeTarget
+    ? !!rangeCondition
+    : !!activeValue || hasStartingValueInput;
   const startingValuePlaceholder = useMemo(() => {
     if (resolvedStartingValue !== null) return `${formatValue(currentValue)} (today's value)`;
     if (isAllTimeTarget && resolvedAlltimeTargetValue?.trim()) {
@@ -1187,11 +1193,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                   </div>
 
                   {/* Starting Value and Time Period Inputs - only show after value is entered */}
-                  {(isRangeTarget ? rangeCondition : activeValue) && (() => {
+                  {shouldShowStartingSection && (() => {
                     if (isRangeTarget) return null;
                     if (!isRangeTarget) {
                       const numValue = parseFloat(activeValue ?? '');
-                      if (numValue === 0 || isNaN(numValue)) return null;
+                      if ((numValue === 0 || isNaN(numValue)) && !hasStartingValueInput) return null;
                     }
                     if (!hasStartingValueQuestion && !showTimelineInput) return null;
                     

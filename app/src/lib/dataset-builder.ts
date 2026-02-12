@@ -140,9 +140,9 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
           prompt: 'What profit per {period} feels like a win?',
           description: 'Enter the {periodly} net profit that would make you proud.',
           suggested: {
-            day: 1000,
-            week: 5000,
-            month: 20000,
+            day: 100,
+            week: 500,
+            month: 2000,
           },
         },
         alltime: {
@@ -215,9 +215,9 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
           prompt: 'What revenue per {period} feels good?',
           description: 'Enter the {periodly} revenue total that would make you proud.',
           suggested: {
-            day: 1000,
-            week: 7000,
-            month: 30000,
+            day: 100,
+            week: 700,
+            month: 3000,
           },
         },
         alltime: {
