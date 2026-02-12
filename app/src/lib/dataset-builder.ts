@@ -25,32 +25,32 @@ export type DatasetTemplate = {
   };
   goalQuestions: {
     period: {
-      prompt: string; // Generic: "What time period are you focused on?"
-      description: string; // Generic: "Choose how often you'd like to track progress"
+      prompt: string; // Default: "What time period are you focused on?"
+      description: string; // Default: "Choose how often you'd like to track progress"
       recommended?: 'day' | 'week' | 'month';
     },
     targetType: {
-      prompt: string; // Generic: "How will you measure success?"
-      description?: string; // Generic: "Track {periodly} changes or overall progress" (trend) "Focus on {periodly} totals or all-time milestones" (series)
+      prompt: string; // Default: "How will you measure success?"
+      description?: string; // Default: "Track {periodly} changes or overall progress" (trend) "Focus on {periodly} totals or all-time milestones" (series)
       options: {
         period?: {
-          label: string; // Generic: "{Periodly} Change" (trend) or "{Periodly} Total" (series)
-          description: string; // Generic: "Target improvement each {period}" (trend) or "Set targets for total value each {period}" (series)
+          label: string; // Default: "{Periodly} Change" (trend) or "{Periodly} Total" (series)
+          description: string; // Default: "Target improvement each {period}" (trend) or "Set targets for total value each {period}" (series)
         },
         alltime?: {
-          label: string; // Generic: "All Time Target" (trend) or "All Time Total" (series)
-          description: string; // Generic: "Reach a specific overall value" (trend) or "Build towards cumulative total" (series)
+          label: string; // Default: "All Time Target" (trend) or "All Time Total" (series)
+          description: string; // Default: "Reach a specific overall value" (trend) or "Build towards cumulative total" (series)
         },
         range?: {
-          label: string; // Generic: "{Periodly} Range"
-          description: string; // Generic: "Stay within a target range each {period}"
+          label: string; // Default: "{Periodly} Range"
+          description: string; // Default: "Stay within a target range each {period}"
         }
       }
     },
     goodValue: {
       period?: {
-        prompt: string; // Generic: "What's good {periodly} progress?" (trend) or "What's a good {period}?" (series)
-        description: string; // Generic: "Enter the {periodly} improvement that would make you proud" (trend) or "Enter the target total each {period} that would make you proud" (series)
+        prompt: string; // Default: "What's good {periodly} progress?" (trend) or "What's a good {period}?" (series)
+        description: string; // Default: "Enter the {periodly} improvement that would make you proud" (trend) or "Enter the target total each {period} that would make you proud" (series)
         suggested?: {
           day?: number;
           week?: number;
@@ -58,13 +58,13 @@ export type DatasetTemplate = {
         }
       },
       alltime?: {
-        prompt: string; // Generic: "What value are you aiming for?" (series) "What total do you want to reach?" (trend)
-        description: string; // Generic: "Enter the overall target value you'd like to hit" (trend) "Enter a milestone total you'd like to reach" (series)
+        prompt: string; // Default: "What value are you aiming for?" (series) "What total do you want to reach?" (trend)
+        description: string; // Default: "Enter the overall target value you'd like to hit" (trend) "Enter a milestone total you'd like to reach" (series)
         suggested?: number; // Default is based on starting value and valence based delta (e.g. startingValue + or - 10)
       },
       range?: {
-        prompt: string; // Generic: "What's a good {periodly} range?"
-        description: string; // Generic: "Enter the target range for each {period}" (e.g. 70-100 for blood pressure)
+        prompt: string; // Default: "What's a good {periodly} range?"
+        description: string; // Default: "Enter the target range for each {period}" (e.g. 70-100 for blood pressure)
         suggested?: {
           day?: [number, number];
           week?: [number, number];
@@ -73,18 +73,18 @@ export type DatasetTemplate = {
       }
     },
     startingValue: {
-      prompt: string; // Generic: "Starting from?"
-      description: string; // Generic: "Your current value (optional)" (trend) or "Your current total (optional)" (series)
-      required?: boolean; // Default is false
+      prompt: string; // Default: "Starting from?"
+      description: string; // Default: "Your current value (optional)" (trend) or "Your current total (optional)" (series)
+      required?: boolean; // Default is false, if true the user must enter a starting value to proceed (e.g. for weight loss/gain goals)
       suggested?: number; // Default is based on current data, or 0
     } | null; // If null, don't show the starting value prompt
     timeline: {
-      prompt: string; // Generic: "How long?"
-      description: string; // Generic: "Time to reach goal (optional)"
+      prompt: string; // Default: "How long?"
+      description: string; // Default: "Time to reach goal (optional)"
     },
     activity: {
-      prompt: string; // Generic: "How actively will you make progress?"
-      description: string; // Generic: "How many {periods} per {parent} will you typically record data?"
+      prompt: string; // Default: "How actively will you make progress?"
+      description: string; // Default: "How many {periods} per {parent} will you typically record data?"
     }
   }
 };
