@@ -30,6 +30,7 @@ export type RichTextEditorProps = Omit<
   onChange: (value: string) => void
   containerProps?: React.ComponentProps<"div">
   toolbar?: React.ReactNode | null
+  hideToolbar?: boolean
 }
 
 type ColorButtonProps = {
@@ -99,7 +100,7 @@ const defaultToolbar = (
 
 const RichTextEditor = React.forwardRef<HTMLDivElement, RichTextEditorProps>(
   (
-    { value, onChange, className, containerProps, toolbar, ...props },
+    { value, onChange, className, containerProps, toolbar, hideToolbar, ...props },
     ref
   ) => {
     const handleChange = React.useCallback(
@@ -116,9 +117,7 @@ const RichTextEditor = React.forwardRef<HTMLDivElement, RichTextEditorProps>(
         onChange={handleChange}
         containerProps={{
           ...containerProps,
-          "data-disabled":
-            containerProps?.["data-disabled"] ??
-            (props.disabled ? "true" : undefined),
+          ...(!hideToolbar && { "data-toolbar-hidden": undefined }),
           className: cn(
             "rsw-theme !overflow-hidden !rounded-md !border !border-slate-200 !bg-white !shadow-none focus-within:outline-none focus-within:!border-slate-400 data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-50 dark:!border-slate-800 dark:!bg-slate-950 dark:focus-within:!border-slate-600",
             "[&[data-toolbar-hidden=true]_.rsw-toolbar]:!hidden",

@@ -8,6 +8,7 @@ describe('goals-builder: Series Tracking', () => {
     valence: 'positive',
     value: 100,
     activePeriods: 5, // 5 periods per parent (e.g., 5 days per week)
+    targetType: 'period-total',
   };
 
   describe('Daily Period', () => {
