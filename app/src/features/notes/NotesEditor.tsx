@@ -89,9 +89,9 @@ export function NotesEditor({ dateKey, className }: NotesEditorProps) {
           <RichTextEditor
             value={draft}
             onChange={setDraft}
+            hideToolbar={!isFocused}
             containerProps={{
               ref: editorContainerRef,
-              "data-toolbar-hidden": isFocused ? undefined : "true",
               onFocusCapture: () => setIsFocused(true),
               onBlurCapture: (event) => {
                 if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
