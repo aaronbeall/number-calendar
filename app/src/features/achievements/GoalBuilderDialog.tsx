@@ -894,6 +894,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     {/* Day Option */}
                     <button
                       onClick={() => handlePeriodSelect('day')}
+                      type="button"
                       className={cn(
                         'group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200',
                         'hover:scale-105 active:scale-95',
@@ -921,6 +922,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     {/* Week Option */}
                     <button
                       onClick={() => handlePeriodSelect('week')}
+                      type="button"
                       className={cn(
                         'group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200',
                         'hover:scale-105 active:scale-95',
@@ -948,6 +950,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     {/* Month Option */}
                     <button
                       onClick={() => handlePeriodSelect('month')}
+                      type="button"
                       className={cn(
                         'group relative flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all duration-200',
                         'hover:scale-105 active:scale-95',
@@ -986,6 +989,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     <div className="inline-flex rounded-lg border border-slate-200 dark:border-slate-700 p-1 bg-slate-50 dark:bg-slate-900/50">
                     <button
                       onClick={() => handlePeriodSelect('day')}
+                      type="button"
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
                         period === 'day'
@@ -998,6 +1002,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     </button>
                     <button
                       onClick={() => handlePeriodSelect('week')}
+                      type="button"
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
                         period === 'week'
@@ -1010,6 +1015,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     </button>
                     <button
                       onClick={() => handlePeriodSelect('month')}
+                      type="button"
                       className={cn(
                         'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
                         period === 'month'
@@ -1058,6 +1064,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                         {targetTypeOptions.map((option) => (
                           <button
                             key={option.key}
+                            type="button"
                             onClick={() => handleTargetTypeSelect(option.type)}
                             className={cn(
                               'relative flex flex-col items-start gap-3 p-5 rounded-xl border-2 transition-all duration-200',
@@ -1081,6 +1088,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                           {targetTypeOptions.map((option) => (
                             <button
                               key={option.key}
+                              type="button"
                               onClick={() => handleTargetTypeSelect(option.type)}
                               className={cn(
                                 'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
