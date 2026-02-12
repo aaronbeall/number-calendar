@@ -63,6 +63,8 @@ export function NotesEditor({ dateKey, className }: NotesEditorProps) {
     setIsEditing(false);
   };
 
+  const showEditor = hasNote || isEditing;
+
   return (
     <div className={cn('min-h-[28px]', className)}>
       {hasNote && (
@@ -70,7 +72,7 @@ export function NotesEditor({ dateKey, className }: NotesEditorProps) {
           Notes
         </div>
       )}
-      {!isEditing && !hasNote && (
+      {!showEditor && (
         <Button
           variant="ghost"
           size="sm"
@@ -82,24 +84,14 @@ export function NotesEditor({ dateKey, className }: NotesEditorProps) {
         </Button>
       )}
 
-      {!isEditing && hasNote && (
-        <button
-          type="button"
-          className="w-full rounded-md px-2 py-1 text-left text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-900"
-          onClick={handleStartEditing}
-        >
-          <div dangerouslySetInnerHTML={{ __html: note?.text ?? '' }} />
-        </button>
-      )}
-
-      {isEditing && (
+      {showEditor && (
         <div className="space-y-3">
           <RichTextEditor
             value={draft}
             onChange={setDraft}
-            toolbar={isFocused ? undefined : null}
             containerProps={{
               ref: editorContainerRef,
+              "data-toolbar-hidden": isFocused ? undefined : "true",
               onFocusCapture: () => setIsFocused(true),
               onBlurCapture: (event) => {
                 if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
