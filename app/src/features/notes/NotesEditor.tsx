@@ -5,7 +5,7 @@ import type { DateKey } from '@/features/db/localdb';
 import { useNote, useSaveNote } from '@/features/db/useNotesData';
 import { cn } from '@/lib/utils';
 import { PlusSquare } from 'lucide-react';
-import React from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface NotesEditorProps {
   dateKey: DateKey;
@@ -25,19 +25,19 @@ export function NotesEditor({ dateKey, className }: NotesEditorProps) {
   const datasetId = dataset.id;
   const { data: note } = useNote(datasetId, dateKey);
   const saveNoteMutation = useSaveNote();
-  const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement | null>(null);
 
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [isFocused, setIsFocused] = React.useState(false);
-  const [draft, setDraft] = React.useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+  const [draft, setDraft] = useState('');
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isEditing) {
       setDraft(note?.text ?? '');
     }
   }, [note?.text, isEditing]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!isEditing) return;
     requestAnimationFrame(() => {
       const editable = editorContainerRef.current?.querySelector('[contenteditable="true"]') as HTMLElement | null;

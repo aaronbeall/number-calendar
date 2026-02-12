@@ -5,7 +5,7 @@ import type { Valence } from '@/features/db/localdb';
 import { parseSingleNumberExpression } from '@/lib/expression';
 import { motion } from 'framer-motion';
 import { Equal, Plus, X } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { EditableNumberBadge } from './EditableNumberBadge';
 
 
@@ -24,10 +24,10 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
   const [input, setInput] = useState('');
   // Modes: series: ['entry', 'total'], trend: ['entry', 'delta']
   const [addMode, setAddMode] = useState<'entry' | 'total' | 'delta'>(tracking === 'trend' ? 'entry' : 'entry');
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Mode auto-switching for input
-  React.useEffect(() => {
+  useEffect(() => {
     if (tracking === 'series') {
       if (input.startsWith('=')) {
         if (addMode !== 'total') setAddMode('total');
@@ -70,7 +70,7 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
   }
 
   // Focus input when mode changes
-  React.useEffect(() => {
+  useEffect(() => {
     inputRef.current?.focus();
   }, [addMode]);
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { getValueForValence } from '@/lib/valence';
@@ -13,10 +13,10 @@ export interface EditableNumberBadgeProps {
 }
 
 export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value, valenceValue, editable = true, onCommit, valence }) => {
-  const [isEditing, setIsEditing] = React.useState(false);
-  const [draft, setDraft] = React.useState<string>('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [draft, setDraft] = useState<string>('');
   // Track whether blur should auto-commit or if we've already handled via Enter/Escape
-  const handledRef = React.useRef<'none' | 'commit' | 'cancel'>('none');
+  const handledRef = useRef<'none' | 'commit' | 'cancel'>('none');
 
   const beginEdit = () => {
     if (!editable) return;

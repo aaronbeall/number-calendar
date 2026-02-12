@@ -19,7 +19,7 @@ import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } fro
 import { getValueForValence } from '@/lib/valence';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpDown, ArrowUpToLine } from "lucide-react";
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { AddNumberEditor } from './AddNumberEditor';
 import { EditableNumberBadge } from './EditableNumberBadge';
@@ -68,17 +68,17 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   dateKey,
   achievementResults
 }) => {
-  const [sortMode, setSortMode] = React.useState<'original' | 'asc' | 'desc'>('original');
+  const [sortMode, setSortMode] = useState<'original' | 'asc' | 'desc'>('original');
 
 
   // Local state for the expression input, initialized from numbers
-  const [expression, setExpression] = React.useState<string>(buildExpressionFromNumbers(numbers, tracking));
+  const [expression, setExpression] = useState<string>(buildExpressionFromNumbers(numbers, tracking));
 
   // Derive parsedNumbers from expression
-  const parsedNumbers = React.useMemo(() => parseExpression(expression, tracking), [expression, tracking]);
+  const parsedNumbers = useMemo(() => parseExpression(expression, tracking), [expression, tracking]);
 
   // Update expression when numbers change
-  React.useEffect(() => {
+  useEffect(() => {
     setExpression(buildExpressionFromNumbers(numbers, tracking));
   }, [numbers, tracking]);
 
@@ -107,8 +107,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   } = useMemo(() => getCalendarData(displayNumbers, priorNumbers, extremes, tracking), [displayNumbers, priorNumbers, extremes, tracking]);;
 
   // Prepare items with original indices for stable mapping when sorting
-  const items = React.useMemo(() => displayNumbers.map((value, index) => ({ value, index })), [displayNumbers]);
-  const sortedItems = React.useMemo(() => {
+  const items = useMemo(() => displayNumbers.map((value, index) => ({ value, index })), [displayNumbers]);
+  const sortedItems = useMemo(() => {
     if (sortMode === 'original') return items;
     const arr = [...items];
     if (sortMode === 'asc') {
@@ -141,8 +141,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   };
 
   // Chart data for micro line chart
-  const chartNumbers = React.useMemo(() => getChartNumbers(displayNumbers, priorNumbers, tracking), [displayNumbers, priorNumbers, tracking]);
-  const chartData = React.useMemo(() => getChartData(chartNumbers, tracking), [chartNumbers, tracking]);
+  const chartNumbers = useMemo(() => getChartNumbers(displayNumbers, priorNumbers, tracking), [displayNumbers, priorNumbers, tracking]);
+  const chartData = useMemo(() => getChartData(chartNumbers, tracking), [chartNumbers, tracking]);
 
   const achievementsLabel = useMemo(
     () => `${capitalize(adjectivize(getDateKeyType(dateKey)))} Achievements`,
