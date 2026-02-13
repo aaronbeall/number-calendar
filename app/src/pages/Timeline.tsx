@@ -8,6 +8,7 @@ import type { DateKey, DayKey, MonthKey, Tracking, Valence, WeekKey } from '@/fe
 import { useAllDays } from '@/features/db/useDayEntryData';
 import { useNotes } from '@/features/db/useNotesData';
 import { NotesDisplay } from '@/features/notes/NotesDisplay';
+import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { useAchievements } from '@/hooks/useAchievements';
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
@@ -17,7 +18,7 @@ import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } fro
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Ellipsis } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 type TimelineEntryKind = 'year' | 'month' | 'week' | 'day';
 
@@ -32,7 +33,7 @@ type TimelineEntry = {
   isToday?: boolean;
 };
 
-function PeriodAchievements({ achievements }: { achievements: CompletedAchievementResult[] }) {
+const PeriodAchievements = React.memo(function PeriodAchievements({ achievements }: { achievements: CompletedAchievementResult[] }) {
   const [isOpen, setIsOpen] = useState(false);
   if (!achievements.length) return null;
   const maxEmblems = 5;
@@ -86,7 +87,7 @@ function PeriodAchievements({ achievements }: { achievements: CompletedAchieveme
           </div>
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[320px]">
+      <PopoverContent align="end" className="w-[320px] max-h-[60vh] overflow-y-auto">
         {isOpen && (
           <div className="space-y-3">
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -122,7 +123,9 @@ function PeriodAchievements({ achievements }: { achievements: CompletedAchieveme
       </PopoverContent>
     </Popover>
   );
-}
+});
+
+PeriodAchievements.displayName = 'PeriodAchievements';
 
 function TimelineDividerHeading({ title, className }: { title: string; className?: string }) {
   return (
@@ -220,18 +223,22 @@ function TimelineStatsRow({
   );
 }
 
-const TimelineEntryCard = ({
+const TimelineEntryCard = React.memo(({
   entry,
   achievements,
   noteText,
   valence,
   tracking,
+  onOpen,
+  isSelected,
 }: {
   entry: TimelineEntry;
   achievements: CompletedAchievementResult[];
   noteText?: string;
   valence: Valence;
   tracking: Tracking;
+  onOpen?: (entry: TimelineEntry) => void;
+  isSelected?: boolean;
 }) => {
   const stats = useMemo(() => computeNumberStats(entry.numbers), [entry.numbers]);
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
@@ -278,11 +285,37 @@ const TimelineEntryCard = ({
         positive: ArrowUpRight,
         negative: ArrowDownRight,
         zero: ArrowRight,
-      })
+      });
+
+  const interactiveSelector = 'button, a, input, textarea, select, [data-no-panel]';
+  const handleOpen = (event: React.MouseEvent | React.KeyboardEvent) => {
+    if (!onOpen) return;
+    const target = event.target as HTMLElement | null;
+    if (target?.closest(interactiveSelector)) return;
+    onOpen(entry);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (!onOpen) return;
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleOpen(event);
+    }
+  };
 
   if (isDay) {
     return (
-      <div className="space-y-2">
+      <div
+        role={onOpen ? 'button' : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+        onClick={handleOpen}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          'space-y-2 rounded-lg px-2 py-1 transition-colors -mx-2',
+          onOpen && 'cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-300/60 dark:focus-visible:ring-offset-slate-900',
+          isSelected && 'bg-blue-50/70 dark:bg-blue-950/30 ring-2 ring-blue-400/60 ring-offset-2 ring-offset-white dark:ring-blue-300/60 dark:ring-offset-slate-900'
+        )}
+      >
         <div className="relative flex gap-3">
           <div
             className={cn(
@@ -343,7 +376,17 @@ const TimelineEntryCard = ({
 
   if (isMonth && isEmptyEntry) {
     return (
-      <div className="relative flex gap-3">
+      <div
+        role={onOpen ? 'button' : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+        onClick={handleOpen}
+        onKeyDown={handleKeyDown}
+        className={cn(
+          'relative flex gap-3 rounded-lg px-2 py-1 transition-colors -mx-2',
+          onOpen && 'cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-900/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-300/60 dark:focus-visible:ring-offset-slate-900',
+          isSelected && 'bg-blue-50/70 dark:bg-blue-950/30 ring-2 ring-blue-400/60 ring-offset-2 ring-offset-white dark:ring-blue-300/60 dark:ring-offset-slate-900'
+        )}
+      >
         <div className={cn('mt-1 flex h-6 w-6 items-center justify-center rounded-full border', dotClasses)}>
           {React.createElement(dotIcon, { className: 'h-3.5 w-3.5' })}
         </div>
@@ -360,17 +403,28 @@ const TimelineEntryCard = ({
   }
 
   return (
-    <div className="relative flex gap-3">
+    <div
+      role={onOpen ? 'button' : undefined}
+      tabIndex={onOpen ? 0 : undefined}
+      onClick={handleOpen}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        'relative flex gap-3 group',
+        onOpen && 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-blue-300/60 dark:focus-visible:ring-offset-slate-900'
+      )}
+    >
       <div className={cn('mt-1 flex h-6 w-6 items-center justify-center rounded-full border', dotClasses)}>
         {React.createElement(dotIcon, { className: 'h-3.5 w-3.5' })}
       </div>
       <div
         className={cn(
-          'flex-1 rounded-xl border border-t-4 shadow-sm',
+          'flex-1 rounded-xl border border-t-4 shadow-sm transition-shadow',
           isYear && 'px-6 py-5',
           isMonth && 'px-5 py-4',
           isWeek && 'px-4 py-3',
-          accentClasses
+          accentClasses,
+          onOpen && 'group-hover:shadow-md',
+          isSelected && 'ring-2 ring-blue-400/60 ring-offset-2 ring-offset-white dark:ring-blue-300/60 dark:ring-offset-slate-900'
         )}
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -418,7 +472,9 @@ const TimelineEntryCard = ({
       </div>
     </div>
   );
-};
+});
+
+TimelineEntryCard.displayName = 'TimelineEntryCard';
 
 const buildEntry = (
   kind: TimelineEntryKind,
@@ -465,6 +521,16 @@ export function Timeline() {
   }, [notes]);
 
   const todayKey = useMemo(() => dateToDayKey(new Date()), []);
+
+  const [panelProps, setPanelProps] = useState({
+    isOpen: false,
+    title: '',
+    numbers: [] as number[],
+    priorNumbers: undefined as number[] | undefined,
+    extremes: undefined,
+    daysData: undefined as Record<DayKey, number[]> | undefined,
+    dateKey: todayKey as DateKey,
+  });
 
   const latestKey = useMemo(() => {
     for (const entry of allDays) {
@@ -635,6 +701,53 @@ export function Timeline() {
     });
   }, [dayMap, noteDaySet, years, maxVisibleDayKey]);
 
+  const getPanelTitleForEntry = useCallback((entry: TimelineEntry) => {
+    if (entry.kind === 'year') {
+      return `${entry.title} Year Summary`;
+    }
+    if (entry.kind === 'week') {
+      const { week } = parseWeekKey(entry.dateKey as WeekKey);
+      return `Week ${week}`;
+    }
+    return entry.title;
+  }, []);
+
+  const getDaysDataForEntry = useCallback((entry: TimelineEntry) => {
+    if (entry.kind === 'day') return undefined;
+
+    let dayKeys: DayKey[] = [];
+    if (entry.kind === 'year') {
+      const year = parseDateKey(entry.dateKey).getFullYear();
+      dayKeys = getYearDays(year);
+    } else if (entry.kind === 'month') {
+      const { year, month } = parseMonthKey(entry.dateKey as MonthKey);
+      dayKeys = getMonthDays(year, month);
+    } else {
+      const { year, week } = parseWeekKey(entry.dateKey as WeekKey);
+      dayKeys = getWeekDays(year, week);
+    }
+
+    return dayKeys.reduce((acc, dayKey) => {
+      const numbers = dayMap.get(dayKey);
+      if (numbers && numbers.length > 0) {
+        acc[dayKey] = numbers;
+      }
+      return acc;
+    }, {} as Record<DayKey, number[]>);
+  }, [dayMap]);
+
+  const handleOpenEntry = useCallback((entry: TimelineEntry) => {
+    setPanelProps({
+      isOpen: true,
+      title: getPanelTitleForEntry(entry),
+      numbers: entry.numbers,
+      priorNumbers: undefined,
+      extremes: undefined,
+      daysData: getDaysDataForEntry(entry),
+      dateKey: entry.dateKey,
+    });
+  }, [getDaysDataForEntry, getPanelTitleForEntry]);
+
   return (
     <div className="min-h-screen py-6">
       <div className="mx-auto flex w-full max-w-6xl gap-6 px-6">
@@ -693,6 +806,8 @@ export function Timeline() {
                   noteText={notesByDateKey.get(yearEntry.dateKey)}
                   valence={dataset.valence}
                   tracking={dataset.tracking}
+                  onOpen={handleOpenEntry}
+                  isSelected={panelProps.isOpen && panelProps.dateKey === yearEntry.dateKey}
                 />
                 {monthEntries.map(({ monthEntry, weekEntries }) => (
                   <div key={monthEntry.dateKey} className="space-y-5">
@@ -705,6 +820,8 @@ export function Timeline() {
                       noteText={notesByDateKey.get(monthEntry.dateKey)}
                       valence={dataset.valence}
                       tracking={dataset.tracking}
+                      onOpen={handleOpenEntry}
+                      isSelected={panelProps.isOpen && panelProps.dateKey === monthEntry.dateKey}
                     />
                     {weekEntries.map(({ weekEntry, dayEntries }) => (
                       <div key={weekEntry.dateKey} className="space-y-3">
@@ -714,6 +831,8 @@ export function Timeline() {
                           noteText={notesByDateKey.get(weekEntry.dateKey)}
                           valence={dataset.valence}
                           tracking={dataset.tracking}
+                          onOpen={handleOpenEntry}
+                          isSelected={panelProps.isOpen && panelProps.dateKey === weekEntry.dateKey}
                         />
                         <div className="space-y-2">
                           {dayEntries.map((dayEntry) => (
@@ -724,6 +843,8 @@ export function Timeline() {
                               noteText={notesByDateKey.get(dayEntry.dateKey)}
                               valence={dataset.valence}
                               tracking={dataset.tracking}
+                              onOpen={handleOpenEntry}
+                              isSelected={panelProps.isOpen && panelProps.dateKey === dayEntry.dateKey}
                             />
                           ))}
                         </div>
@@ -736,6 +857,13 @@ export function Timeline() {
           </div>
         </main>
       </div>
+      <NumbersPanel
+        {...panelProps}
+        valence={dataset.valence}
+        tracking={dataset.tracking}
+        achievementResults={achievementResultsByDateKey[panelProps.dateKey] ?? []}
+        onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
