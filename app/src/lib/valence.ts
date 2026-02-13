@@ -49,6 +49,9 @@ export type ValueForNumber<T> = {
   zero: T;
 }
 
+/**
+ * Returns one of the provided positive/negative/zero values based on the sign of the input number.)
+ */
 export function getValueForSign<T>(value: number, values: ValueForNumber<T>): T {
   if (value > 0) return values.positive;
   if (value < 0) return values.negative;
