@@ -11,6 +11,7 @@ import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { useDatasetContext } from '@/context/DatasetContext';
 import type { DateKey } from '@/features/db/localdb';
 import { useNote, useSaveNote } from '@/features/db/useNotesData';
+import { getPlainText } from '@/features/notes/NotesDisplay';
 import { cn } from '@/lib/utils';
 import { Copy, CopyCheck, MoreHorizontal, PlusSquare, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -19,14 +20,6 @@ interface NotesEditorProps {
   dateKey: DateKey;
   className?: string;
 }
-
-const getPlainText = (value: string) => {
-  return value
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
 
 export function NotesEditor({ dateKey, className }: NotesEditorProps) {
   const { dataset } = useDatasetContext();

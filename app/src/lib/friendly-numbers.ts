@@ -111,8 +111,24 @@ export function convertPeriodLengthWithRounding(value: string, from: PeriodUnit,
   return converted ? String(roundToClean(parseFloat(converted), toSignificantDigits)) : null;
 }
 
+// WIP
+export type NumberDisplayOptions = {
+  /** e.g. "USD" for formatting as currency */
+  currency?: string;
+  /** e.g. "kg" for formatting with a unit suffix */
+  unit?: string;
+  /** if true, format negative numbers in accounting style (e.g. ($1,234.56) instead of -$1,234.56) */
+  accounting?: boolean;
+}
 
-export type FormatValueOptions = { short?: boolean; percent?: boolean; delta?: boolean; };
+export type FormatValueOptions = { 
+  /** If true, use compact notation (e.g. 1.2K instead of 1200) */
+  short?: boolean; 
+  /** If true, format as percentage (e.g. 12.3 -> "12.3%") */
+  percent?: boolean; 
+  /** If true, format as a delta with sign (e.g. +5, -3) */
+  delta?: boolean;
+};
 
 /**
  * Helper to format values for display in goal titles and descriptions,
@@ -129,8 +145,8 @@ export function formatValue(num: number | undefined, { short = false, percent = 
     options = { ...options, style: 'percent', maximumFractionDigits: 2 };
     value = num / 100;
   }
-  if (delta && num !== 0) {
-    options = { ...options, signDisplay: 'always' };
+  if (delta) {
+    options = { ...options, signDisplay: 'exceptZero' };
   }
   return new Intl.NumberFormat('en-US', options).format(value);
 }
