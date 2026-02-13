@@ -5,16 +5,21 @@ I'm liking this one.
 ## Features
 - [x] Numeric formatting
 - [x] Manage multiple datasets
-  - [ ] Copy dataset
-- [ ] Achievements
-- [ ] Milestones
+  - [x] Duplicate dataset
+- [x] Achievements
+  - [x] Show achievements in numbers panel
+  - [ ] Achievement unlocked interstitial
+  - [ ] Show achievements on calendar
+- [x] Milestones
+  - [ ] Next milestone progress bar
 - [ ] Streaks
-- [ ] Goals/targets
+- [x] Targets
+  - [ ] Valence from targets
 - [x] Records
   - [ ] Records timeline
   - [ ] Records calendar
   - [ ] Show records on calendar
-- [ ] Notifications on new Records/Achievements/Streaks
+- [x] Notifications on new Records/Achievements/Streaks
 - [ ] Onboarding
   - [ ] Example datasets
   - [ ] Create dataset from template (Weightloss, P&L, Diet, etc)
@@ -25,16 +30,17 @@ I'm liking this one.
   - [ ] Import dataset (with name, settings, etc)
 - [x] Data export
 - [ ] Data settings
-  - [x] Which is better: higher, lower, etc
-    - [ ] Advanced valence: above, blow, inside, outside
-  - [ ] Limit range
+  - [x] Which is better (valence): higher, lower, etc
+    - [ ] Range-bound valence: above, below, inside, outside
+  - [ ] Allowed range (combines with valence for semantics, ex positive valence with positive numbers means higher is better, not positive is better)
   - [ ] Formatting style (none, currency, percent, unit)
     - [ ] Options (sign display, accounting, precision)
-  - [x] Tracking: trend (weight, etc), log (P&L, etc)
-  - [ ] Computed data (formula)
-  - [ ] Primary metric
-- [ ] Notes (Day, Week, Month) with rich text/markdown support
-  - [ ] Paste images (Day, Week, Month)
+  - [x] Tracking: trend (weight, etc), series (P&L, etc)
+  - [ ] Computed data (formula input from other sources)
+  - [ ] Primary metric (default: series=total, trend=close)
+  - [ ] Valence metric (default: series=total, trend=delta)
+- [x] Notes (Day, Week, Month) with rich text/markdown support
+  - [ ] Paste images
 - [x] Week summary microchart
 - [x] Day cell microdots/chart
 - [x] Month cell microdots/microchart
@@ -51,7 +57,7 @@ I'm liking this one.
   - [ ] Heatmap
   - [ ] Show/hide week summaries
   - [ ] Weeks across months
-  - [ ] Abbreviate numbers
+  - [x] Short format numbers (10K, 1M, etc)
   - [ ] Customize displayed stats
 - [ ] Full math support, ex `1+(100/23)`
   - [ ] Sub-expression parsing in numbers input, ex `1+2-(4+6)` = `[1, 2, -10]`
@@ -65,14 +71,14 @@ I'm liking this one.
   - [ ] Rolling averages
   - [ ] Compare
   - [ ] Rolling start from
-  - [ ] Formula
+  - [ ] Formulas
   - [ ] Expand/fullscreen
   - [ ] Export image/pdf
 - [ ] Data integrations
   - [ ] Public data sources (weather, demographics, etc)
 - [ ] Additional add options
   - [x] Add by diff
-  - [ ] Global quick add (with options)
+  - [ ] Global quick add (with options) tailored for mobile
   - [ ] Add to rollups (week, month, year) -- how to distribute?
   - [ ] Multi-line add (re-use import code)
 - [ ] Prev/Next in the panel
@@ -83,7 +89,7 @@ I'm liking this one.
 - [ ] Growth projections
 - [ ] Search
 - [ ] Filter by expression
-- [ ] Custom queries (expose generic `stats.ts` API)
+- [ ] Custom analytics queries (expose generic `stats.ts` API)
 - [ ] Add tags (on day/month/week/year)
 - [ ] Tooltips on extremes, ex "January Best"
 - [ ] Highlight min/max in editable numbers badge
@@ -98,33 +104,50 @@ I'm liking this one.
 - [ ] User social login/data sync
 - [x] Support (Patreon, Buy Me A Coffee)
 - [x] Feedback
-- [ ] Ads
+- [ ] Ads?
 - [x] Share
-- [ ] Copyright/authorship
+- [ ] Copyright/EULA/authorship
 - [x] About
 - [x] Routing (deep linking)
+- [ ] Sharing
 - [ ] Premium features
   - [ ] No ads
   - [ ] Number of datasets
-  - [ ] AI assistance
-  - [ ] Syncing (via Dropbox)
-  - [ ] Data import
+  - [ ] AI assistance (bleh)
+  - [ ] Data Syncing (via Dropbox)
+  - [ ] Data export/import
   - [ ] Data integrations
+  - [ ] Insights/Reporting
+  - [ ] Combined dataset
 
 ## Issues
-- [ ] System color mode doesn't match light/dark selection
+- [x] System color mode doesn't match light/dark selection
 - [ ] Chart days are off by 1 (timezone offset?)
+- [ ] Chart is missing numeric formatting, rounding, etc
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
-- [ ] Re-render on page activation to sync with current date
+- [ ] Current date is wrong when left open overnight, etc
 - [x] Negative year summary has green
 - [x] [High] Hide weekends is causing June 2026 days to be wrong
 - [ ] Deleting a prior day numbers does not update deltas (changing normally it does)
-- [ ] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun
+- [x] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun
 - [ ] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
-- [ ] Normalize UUIDs
+- [x] Normalize UUIDs
 - [ ] Week/Month/Year summaries need hover and selected state
-- [ ] Can't delete all data on a day anymore
-- [ ] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
-- [ ] Tracking=series and percents aren't very helpful, percents should be based on cumulative change
+- [x] Can't delete all data on a day anymore
+- [x] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
+- [ ] Tracking=series and deltas and percents aren't very helpful, period total is already a delta, and percents should be based on cumulative change, not change from prior delta -- will need to add cumulatives source (which itself is useless for tracking=trend)
 - [ ] Adding data data to new month didn't update the monthly view show a new month summary
 - [ ] Need and error boundary to catch UI errors
+- [ ] Need suggested goal weight, meaningful suggested values throughout
+- [ ] Edit badge from numbers panel doesn't work -- replace with "Manage Achievements"
+- [ ] Expand Range based achievements
+- [ ] Count and average achievements
+- [ ] "First Win" is kinda broken -- fix or remove
+- [ ] Delete note confirmation disappears -- replace menu item with button
+- [ ] Changing passed data can shift streaks/multi-count achievements, triggering their notification -- may need to use number id -- partial mitigation by obnly norifiying on current period changes
+- [ ] Overlapping same category achievements (X-day streak, X-target, etc) should be stacked
+- [ ] Refactor to use unified data manager instead of individual data hooks
+- [ ] Dashboard month trend delta (valence) is wrong, but after opening the data is right -- needs priors
+- [ ] Updating goal requirements should replace title/description/label, use word boundaries and formatted matchers
+- [ ] [Minor] Generated goal text has extra whitespace (renders fine)
+- [ ] Maintain template with created dataset for goal builder -- add way to get to generic goal builder
