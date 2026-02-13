@@ -32,6 +32,7 @@ import {
   Heart,
   HeartCrack,
   HeartOff,
+  Infinity,
   Leaf,
   Medal,
   Moon,
@@ -99,6 +100,7 @@ import {
   GiBoltShield,
   GiBurningEmbers,
   GiCardboardBox,
+  GiChainedHeart,
   GiCheckedShield,
   GiCircle,
   GiCircleSparks,
@@ -255,6 +257,7 @@ export const achievementBadgeStyles = {
   solid_diamond: RiVipDiamondFill,
   x_diamond: BsXDiamondFill,
   filled_diamond: BsFillDiamondFill,
+  diamond_trophy: GiDiamondTrophy,
   rupee: GiRupee,
   broadcast: BsBroadcast,
   angel: GiAngelWings,
@@ -296,6 +299,7 @@ export const achievementBadgeStyles = {
   hearts: BsHearts,
   heart_arrow: BsArrowThroughHeartFill,
   heart_flame: GiHeartburn,
+  chained_heart: GiChainedHeart,
   circle_arrow: FaCircleArrowUp,
   feather: FaFeatherPointed,
   leaf: FaLeaf,
@@ -422,6 +426,7 @@ export const achievementBadgeIcons = {
   chevron_down: BiSolidChevronsDown,
   chevron_circle_up: BiSolidChevronUpCircle,
   chevron_circle_down: BiSolidChevronDownCircle,
+  infinity: Infinity,
 };
 
 export type AchievementBadgeIcon = keyof typeof achievementBadgeIcons;

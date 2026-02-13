@@ -79,7 +79,7 @@ function getMetricAndSource(
         // For Trend tracking, use 'last' metric
         // Milestones use 'stats' source, targets use 'deltas' source
         metric: 'last',
-        source: goalType === 'milestone' ? 'stats' : 'deltas',
+        source: goalType === 'milestone' ? 'stats' : 'deltas'
       }
     : {
         // For Series tracking (period-total and alltime-total), use total
@@ -97,11 +97,11 @@ function getCondition(valence: Valence, target: number): 'above' | 'below' {
 }
 
 // Helper to get the term for valence
-function getValenceTerm(targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range', valence: Valence): string {
+function getValenceTerm(targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range', valence: Valence) {
   if (targetType === 'period-range') return 'In Range';
   return (targetType === 'period-change' || targetType === 'alltime-target')
-    ? getValueForGood(valence, { positive: 'Uptrend', negative: 'Downtrend', neutral: 'Target' })
-    : getValueForGood(valence, { positive: 'Positive', negative: 'Negative', neutral: 'Target' });
+    ? getValueForGood(valence, { positive: 'Uptrend', negative: 'Downtrend', neutral: 'Target' } as const)
+    : getValueForGood(valence, { positive: 'Positive', negative: 'Negative', neutral: 'Target' } as const);
 }
 
 // Helper to create badge
@@ -559,7 +559,8 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     count: 1,
   });
 
-  // First Win - use the user's selected period target
+  // First Win
+  const goodBoundaryMetric = condition === 'above' ? 'max' : 'min';
   achievements.push({
     id: nanoid(),
     datasetId,
@@ -568,12 +569,40 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     title: 'First Win',
     description: `Record your first ${valenceTerm.toLowerCase()} entry`,
     badge: createBadge('sports_medal', 'gold', 'trophy', '1ˢᵗ'),
-    target: createTarget(metric, source, condition, periodTargets[period]),
+    target: createTarget(goodBoundaryMetric, source, condition, 0),
     timePeriod: 'anytime',
     count: 1,
   });
 
-  // Good Days/Weeks/Months completed (non-consecutive)
+  // Initial target achieved (need to implement one-time period targets, aka `resets` or `repeatable=false` goals)
+  // achievements.push({
+  //   id: nanoid(),
+  //   datasetId,
+  //   createdAt: nextCreatedAt(),
+  //   type: 'goal',
+  //   title: `In the Zone`,
+  //   description: `Reach your first target of ${formatValue(periodTargets[period], { delta: source === 'deltas' })} in a ${period}`,
+  //   badge: createBadge('trophy', 'gold_medallion', 'star'),
+  //   target: createTarget(metric, source, condition, periodTargets[period]),
+  //   timePeriod: 'anytime',
+  //   resets: period,
+  // });
+
+  // Baseline milestone achieved in 1 year (need `resets` or `repeatable=false` goals)
+  // achievements.push({
+  //   id: nanoid(),
+  //   datasetId,
+  //   createdAt: nextCreatedAt(),
+  //   type: 'goal',
+  //   title: `Diamond Hands`,
+  //   description: `Reach your ${valenceTerm.toLowerCase()} milestone of ${formatValue(baselines.baselineMilestone, { delta: source === 'deltas' })} in a year`,
+  //   badge: createBadge('diamond', 'diamond', 'star'),
+  //   target: createTarget(metric, source, condition, baselines.baselineMilestone),
+  //   timePeriod: 'anytime',
+  //   resets: 'year',
+  // });
+
+  // Good Days/Weeks/Months completed (non-consecutive), e.g. "5 Positive Days"
   const goodPeriodCounts = [1, 5, 10, 20, 50, 100];
   const goodPeriodColors: AchievementBadgeColor[] = ['copper', 'bronze', 'silver', 'gold', 'diamond', 'magic'];
   (['day', 'week', 'month'] as const).forEach((p, idx, periods) => {
@@ -729,9 +758,54 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     });
   });
 
+  // For tracking=series, positive mean and median day/wee/month achievements
+  if (tracking === 'series') {
+    const statsColors: AchievementBadgeColor[] = ['jade', 'topaz', 'rose_quartz'];
+    const statsStyles: AchievementBadgeStyle[] = ['narrow_shield', 'echo_shield', 'sword_shield'];
+    (['day', 'week', 'month'] as const).forEach((statPeriod, idx, periods) => {
+      if (idx < periods.indexOf(statPeriod)) return; // Skip periods before user's selected period
+      const periodName = capitalize(statPeriod);
+      const periodMetric = 'median';
+      const color = statsColors[idx];
+      const style = statsStyles[idx];
+
+      achievements.push({
+        id: nanoid(),
+        datasetId,
+        createdAt: nextCreatedAt(),
+        type: 'goal',
+        title: `${adjectivize(periodName)} ${capitalize(periodMetric)}`,
+        description: `Sustain a ${valenceTerm.toLowerCase()} ${periodMetric} in a ${statPeriod}`,
+        badge: createBadge(style, color, 'star'),
+        target: createTarget(periodMetric, source, condition, 0),
+        timePeriod: statPeriod,
+        count: 1,
+      });
+    });
+  }
+
+  // All time entry counts
+  const allTimeCounts = [100, 500, 1000, 5000, 10000, 1000000];
+  const allTimeColors: AchievementBadgeColor[] = ['copper_medallion', 'bronze_medallion', 'silver_medallion', 'gold_medallion', 'diamond_medallion', 'magic_medallion'];
+  allTimeCounts.forEach((count, idx) => {
+    achievements.push({
+      id: nanoid(),
+      datasetId,
+      createdAt: nextCreatedAt(),
+      type: 'goal',
+      title: `${formatValue(count, { short: true })} Entries`,
+      description: `Log ${formatValue(count)} entries`,
+      badge: createBadge('chained_heart', allTimeColors[idx], 'infinity', formatValue(count, { short: true })),
+      target: createTarget('count', 'stats', 'above', count),
+      timePeriod: 'anytime',
+      count,
+    });
+  });
+
   // Perfect day/week/month (min entry in a day/week/month is good)
   const perfectStyles: AchievementBadgeStyle[] = ['ribbon_shield', 'chevron_shield', 'castle_shield'];
   const perfectColors: AchievementBadgeColor[] = ['gold_medallion', 'diamond_medallion', 'magic_medallion'];
+  const perfectBoundaryMetric = condition === 'above' ? 'min' : 'max';
   (['day', 'week', 'month'] as const).forEach((perfectPeriod, idx, periods) => {
     if (idx < periods.indexOf(perfectPeriod)) return; // Skip periods before user's selected period
 
@@ -743,7 +817,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
       title: `Perfect ${capitalize(perfectPeriod)}`,
       description: `All entries in a ${perfectPeriod} are ${valenceTerm.toLowerCase()}`,
       badge: createBadge(perfectStyles[idx], perfectColors[idx], 'sparkles'),
-      target: createTarget("min", source, condition, 0),
+      target: createTarget(perfectBoundaryMetric, source, condition, 0),
       timePeriod: perfectPeriod,
       count: 1,
     });
