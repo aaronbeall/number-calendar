@@ -151,3 +151,4 @@ I'm liking this one.
 - [ ] Updating goal requirements should replace title/description/label, use word boundaries and formatted matchers
 - [ ] [Minor] Generated goal text has extra whitespace (renders fine)
 - [ ] Maintain template with created dataset for goal builder -- add way to get to generic goal builder
+- [ ] Optimization -- component memo and data calc caching

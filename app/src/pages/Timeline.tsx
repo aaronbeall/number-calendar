@@ -4,21 +4,24 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useDatasetContext } from '@/context/DatasetContext';
 import AchievementBadgeIcon from '@/features/achievements/AchievementBadgeIcon';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
-import type { DateKey, DayKey, MonthKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
+import type { DateKey, DayKey, MonthKey, Tracking, Valence, WeekKey, YearKey } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useDayEntryData';
 import { useNotes } from '@/features/db/useNotesData';
 import { NotesDisplay } from '@/features/notes/NotesDisplay';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { useAchievements } from '@/hooks/useAchievements';
+import { ChartContainer } from '@/components/ui/chart';
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
 import { getCompletedAchievementsByDateKey, type CompletedAchievementResult } from '@/lib/goals';
+import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Ellipsis } from 'lucide-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Line, LineChart, Tooltip as ChartTooltip} from 'recharts';
 
 type TimelineEntryKind = 'year' | 'month' | 'week' | 'day';
 
@@ -223,6 +226,33 @@ function TimelineStatsRow({
   );
 }
 
+const renderTimelineChartTooltip = (valence: Valence) => ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload?: NumbersChartDataPoint }>;
+}) => {
+  if (active && payload && payload.length) {
+    if (!payload[0].payload) return null;
+    const { value, valenceValue, format, secondaryValue, secondaryFormat, secondaryLabel } = payload[0].payload;
+    return (
+      <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+        <div style={{ fontWeight: 600, fontSize: 14 }}>
+          <NumberText value={value} valenceValue={valenceValue} valence={valence} formatOptions={format ?? undefined} />
+        </div>
+        {secondaryValue !== undefined && secondaryValue !== null ? (
+          <div style={{ fontSize: 12, opacity: 0.7 }}>
+            {secondaryLabel && <span className="mr-1">{secondaryLabel}</span>}
+            <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} formatOptions={secondaryFormat ?? undefined} />
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+  return null;
+};
+
 const TimelineEntryCard = React.memo(({
   entry,
   achievements,
@@ -252,6 +282,12 @@ const TimelineEntryCard = React.memo(({
   const isMonth = entry.kind === 'month';
   const isWeek = entry.kind === 'week';
   const isToday = isDay && entry.isToday;
+  const showMicroChart = (isYear || isMonth) && entry.numbers.length > 1;
+  const entryChartData = useMemo(() => {
+    if (!showMicroChart) return [] as NumbersChartDataPoint[];
+    const chartNumbers = getChartNumbers(entry.numbers, undefined, tracking);
+    return getChartData(chartNumbers, tracking);
+  }, [entry.numbers, showMicroChart, tracking]);
   const yearClasses = getValueForValence(primaryValenceMetric, valence, {
     good: 'border-green-400/90 bg-gradient-to-r from-green-50 via-green-100 to-green-200 shadow-[0_10px_30px_rgba(16,185,129,0.25)] dark:border-green-700/80 dark:from-[#163322] dark:via-[#1a3a2a] dark:to-[#1f4a33] dark:shadow-[0_10px_30px_rgba(16,185,129,0.35)]',
     bad: 'border-red-400/90 bg-gradient-to-r from-red-50 via-red-100 to-red-200 shadow-[0_10px_30px_rgba(239,68,68,0.25)] dark:border-red-700/80 dark:from-[#2b1616] dark:via-[#3a1a1a] dark:to-[#4a1f1f] dark:shadow-[0_10px_30px_rgba(239,68,68,0.35)]',
@@ -469,6 +505,41 @@ const TimelineEntryCard = React.memo(({
           )}
         </div>
         <NotesDisplay text={noteText} className="mt-3 text-[13px]" />
+        {showMicroChart && entryChartData.length > 1 && (
+          <ChartContainer
+            config={{ numbers: { color: getValueForValence(primaryValenceMetric, valence, {
+              good: '#22c55e',
+              bad: '#ef4444',
+              neutral: '#3b82f6',
+            }) } }}
+            className="mt-3 h-14 w-full"
+          >
+            <LineChart width={260} height={56} data={entryChartData} margin={{ top: 6, right: 4, left: 0, bottom: 6 }}>
+              <Line
+                type="monotone"
+                dataKey="y"
+                stroke={getValueForValence(primaryValenceMetric, valence, {
+                  good: '#22c55e',
+                  bad: '#ef4444',
+                  neutral: '#3b82f6',
+                })}
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+              <ChartTooltip
+                cursor={{
+                  fill: getValueForValence(primaryValenceMetric, valence, {
+                    good: 'rgba(16,185,129,0.08)',
+                    bad: 'rgba(239,68,68,0.08)',
+                    neutral: 'rgba(59,130,246,0.08)',
+                  }),
+                }}
+                content={renderTimelineChartTooltip(valence)}
+              />
+            </LineChart>
+          </ChartContainer>
+        )}
       </div>
     </div>
   );
@@ -521,6 +592,32 @@ export function Timeline() {
   }, [notes]);
 
   const todayKey = useMemo(() => dateToDayKey(new Date()), []);
+  const todayDate = useMemo(() => new Date(), []);
+  const [activeMonthKey, setActiveMonthKey] = useState<MonthKey | null>(null);
+  const [activeYearKey, setActiveYearKey] = useState<YearKey | null>(null);
+
+  const allTimeNumbers = useMemo(() => {
+    return allDays
+      .slice()
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .flatMap((entry) => entry.numbers);
+  }, [allDays]);
+
+  const allTimePrimaryValence = useMemo(() => {
+    if (allTimeNumbers.length === 0) return 0;
+    const stats = computeNumberStats(allTimeNumbers);
+    if (!stats) return 0;
+    const primaryMetric = stats[getPrimaryMetric(dataset.tracking)];
+    const priorPrimaryMetric = allTimeNumbers.length > 1
+      ? allTimeNumbers[allTimeNumbers.length - 2]
+      : undefined;
+    return getValenceValueForNumber(primaryMetric ?? 0, priorPrimaryMetric, dataset.tracking);
+  }, [allTimeNumbers, dataset.tracking]);
+
+  const allTimeChartData = useMemo(() => {
+    const chartNumbers = getChartNumbers(allTimeNumbers, undefined, dataset.tracking);
+    return getChartData(chartNumbers, dataset.tracking);
+  }, [allTimeNumbers, dataset.tracking]);
 
   const [panelProps, setPanelProps] = useState({
     isOpen: false,
@@ -568,6 +665,13 @@ export function Timeline() {
     }
     return Array.from(yearSet).sort((a, b) => b - a);
   }, [allDays, notes]);
+
+  useEffect(() => {
+    if (!activeYearKey && years.length > 0) {
+      setActiveYearKey(toYearKey(years[0]));
+    }
+  }, [activeYearKey, years]);
+
 
   const entriesByYear = useMemo(() => {
     const todayKey = dateToDayKey(new Date());
@@ -701,6 +805,30 @@ export function Timeline() {
     });
   }, [dayMap, noteDaySet, years, maxVisibleDayKey]);
 
+  useEffect(() => {
+    const monthNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-month-key]'));
+    if (monthNodes.length === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((entry) => entry.isIntersecting);
+        if (visible.length === 0) return;
+
+        visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        const target = visible[0]?.target as HTMLElement | undefined;
+        const monthKey = target?.dataset.monthKey as MonthKey | undefined;
+        if (monthKey) {
+          setActiveMonthKey(monthKey);
+          setActiveYearKey(toYearKey(parseMonthKey(monthKey).year));
+        }
+      },
+      { rootMargin: '0px 0px -65% 0px', threshold: 0.1 }
+    );
+
+    monthNodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, [entriesByYear]);
+
   const getPanelTitleForEntry = useCallback((entry: TimelineEntry) => {
     if (entry.kind === 'year') {
       return `${entry.title} Year Summary`;
@@ -748,6 +876,72 @@ export function Timeline() {
     });
   }, [getDaysDataForEntry, getPanelTitleForEntry]);
 
+  const activeYearMonthDots = useMemo(() => {
+    if (!activeYearKey) return {} as Record<MonthKey, React.ReactElement[]>;
+    const year = parseInt(activeYearKey, 10);
+    const result: Record<MonthKey, React.ReactElement[]> = {} as Record<MonthKey, React.ReactElement[]>;
+    let priorDayValue: number | undefined = undefined;
+
+    const getDotColor = (valenceValue: number, isFuture: boolean, hasData: boolean) => {
+      if (isFuture) {
+        return 'bg-slate-200 dark:bg-slate-700/40 opacity-40';
+      }
+      if (!hasData) {
+        return 'bg-slate-400 dark:bg-slate-700/40 opacity-40';
+      }
+      return getValueForValence(valenceValue, dataset.valence, {
+        good: 'bg-green-500 dark:bg-green-800/70 opacity-90',
+        bad: 'bg-red-500 dark:bg-red-800/70 opacity-90',
+        neutral: 'bg-blue-500 dark:bg-blue-800/70 opacity-90',
+      });
+    };
+
+    for (let month = 1; month <= 12; month++) {
+      const daysInMonth = new Date(year, month, 0).getDate();
+      const dayDots: React.ReactElement[] = [];
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month - 1, day);
+        const dateKey = dateToDayKey(date);
+        const numbers = dayMap.get(dateKey) ?? [];
+        const value = computeNumberStats(numbers)?.[getPrimaryMetric(dataset.tracking)] ?? 0;
+        const isFuture = date > todayDate;
+        const hasData = numbers.length > 0;
+        const valenceValue = hasData
+          ? getValenceValueForNumber(value, priorDayValue ?? numbers[0], dataset.tracking)
+          : 0;
+        const color = getDotColor(valenceValue, isFuture, hasData);
+
+        dayDots.push(
+          <div
+            key={dateKey}
+            className={cn('h-1 w-1 rounded-full transition-all duration-200', color)}
+            title={`${formatFriendlyDate(dateKey)}${hasData ? `: ${value}` : ''}`}
+          />
+        );
+        if (hasData) priorDayValue = value;
+      }
+
+      const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+      const lastDayOfWeek = new Date(year, month, 0).getDay();
+      const padStart = firstDayOfWeek;
+      const padEnd = 6 - lastDayOfWeek;
+
+      const paddedDots: React.ReactElement[] = [
+        ...Array.from({ length: padStart }, (_, index) => (
+          <div key={`pad-start-${month}-${index}`} className="h-1 w-1 rounded-full opacity-0" aria-hidden />
+        )),
+        ...dayDots,
+        ...Array.from({ length: padEnd }, (_, index) => (
+          <div key={`pad-end-${month}-${index}`} className="h-1 w-1 rounded-full opacity-0" aria-hidden />
+        )),
+      ];
+
+      result[toMonthKey(year, month)] = paddedDots;
+    }
+
+    return result;
+  }, [activeYearKey, dayMap, dataset.tracking, dataset.valence, todayDate]);
+
   return (
     <div className="min-h-screen py-6">
       <div className="mx-auto flex w-full max-w-6xl gap-6 px-6">
@@ -756,12 +950,55 @@ export function Timeline() {
             <div className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Timeline
             </div>
-            {entriesByYear.map(({ yearEntry }) => {
+            {allTimeChartData.length > 1 && (
+              <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  All-time trend
+                </div>
+                <ChartContainer
+                  config={{ numbers: { color: getValueForValence(allTimePrimaryValence, dataset.valence, {
+                    good: '#22c55e',
+                    bad: '#ef4444',
+                    neutral: '#3b82f6',
+                  }) } }}
+                  className="h-16 w-full"
+                >
+                  <LineChart width={180} height={56} data={allTimeChartData} margin={{ top: 6, right: 0, left: 0, bottom: 6 }}>
+                    <Line
+                      type="monotone"
+                      dataKey="y"
+                      stroke={getValueForValence(allTimePrimaryValence, dataset.valence, {
+                        good: '#22c55e',
+                        bad: '#ef4444',
+                        neutral: '#3b82f6',
+                      })}
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                    <ChartTooltip
+                      cursor={{
+                        fill: getValueForValence(allTimePrimaryValence, dataset.valence, {
+                          good: 'rgba(16,185,129,0.08)',
+                          bad: 'rgba(239,68,68,0.08)',
+                          neutral: 'rgba(59,130,246,0.08)',
+                        }),
+                      }}
+                      content={renderTimelineChartTooltip(dataset.valence)}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </div>
+            )}
+            {entriesByYear.map(({ yearEntry, monthEntries }) => {
               const stats = computeNumberStats(yearEntry.numbers);
               const primaryMetric = stats ? stats[getPrimaryMetric(dataset.tracking)] : 0;
               const primaryValenceMetric = stats
                 ? getValenceValueForNumber(primaryMetric ?? 0, undefined, dataset.tracking)
                 : 0;
+              const yearChartNumbers = getChartNumbers(yearEntry.numbers, undefined, dataset.tracking);
+              const yearChartData = getChartData(yearChartNumbers, dataset.tracking);
+              const isActiveYear = activeYearKey === yearEntry.dateKey;
               const badgeClasses = getValueForValence(primaryValenceMetric, dataset.valence, {
                 good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
                 bad: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
@@ -769,26 +1006,125 @@ export function Timeline() {
               });
 
               return (
-                <a
-                  key={yearEntry.dateKey}
-                  href={`#year-${yearEntry.dateKey}`}
-                  className="block rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm transition hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="text-base font-semibold text-slate-700 dark:text-slate-100">
-                      {yearEntry.title}
+                <div key={yearEntry.dateKey} className="space-y-2">
+                  <a
+                    href={`#year-${yearEntry.dateKey}`}
+                    onClick={() => setActiveYearKey(yearEntry.dateKey as YearKey)}
+                    className={cn(
+                      'block rounded-lg border px-3 py-2 text-sm shadow-sm transition',
+                      isActiveYear
+                        ? 'border-blue-300/80 bg-blue-50/80 dark:border-blue-400/40 dark:bg-blue-950/40'
+                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700'
+                    )}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-base font-semibold text-slate-700 dark:text-slate-100">
+                        {yearEntry.title}
+                      </div>
+                      <div className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', badgeClasses)}>
+                        <NumberText
+                          value={primaryMetric}
+                          valenceValue={primaryValenceMetric}
+                          valence={dataset.valence}
+                          formatOptions={shortNumberFormat}
+                        />
+                      </div>
                     </div>
-                    <div className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', badgeClasses)}>
-                      <NumberText
-                        value={primaryMetric}
-                        valenceValue={primaryValenceMetric}
-                        valence={dataset.valence}
-                        formatOptions={shortNumberFormat}
-                      />
+                    <div className="text-[11px] text-slate-400">{yearEntry.dayCount} entries</div>
+                    {yearChartData.length > 1 && (
+                      <ChartContainer
+                        config={{ numbers: { color: getValueForValence(primaryValenceMetric, dataset.valence, {
+                          good: '#22c55e',
+                          bad: '#ef4444',
+                          neutral: '#3b82f6',
+                        }) } }}
+                        className="mt-2 h-8 w-full"
+                      >
+                        <LineChart width={180} height={32} data={yearChartData} margin={{ top: 6, right: 0, left: 0, bottom: 4 }}>
+                          <Line
+                            type="monotone"
+                            dataKey="y"
+                            stroke={getValueForValence(primaryValenceMetric, dataset.valence, {
+                              good: '#22c55e',
+                              bad: '#ef4444',
+                              neutral: '#3b82f6',
+                            })}
+                            strokeWidth={2}
+                            dot={false}
+                            isAnimationActive={false}
+                          />
+                          <ChartTooltip
+                            cursor={{
+                              fill: getValueForValence(primaryValenceMetric, dataset.valence, {
+                                good: 'rgba(16,185,129,0.08)',
+                                bad: 'rgba(239,68,68,0.08)',
+                                neutral: 'rgba(59,130,246,0.08)',
+                              }),
+                            }}
+                            content={renderTimelineChartTooltip(dataset.valence)}
+                          />
+                        </LineChart>
+                      </ChartContainer>
+                    )}
+                  </a>
+                  {isActiveYear && (
+                    <div className="space-y-2 border-l border-slate-200 pl-3 dark:border-slate-800">
+                      {monthEntries.map(({ monthEntry }) => {
+                        const isActiveMonth = activeMonthKey === monthEntry.dateKey;
+                        const monthDots = activeYearMonthDots[monthEntry.dateKey as MonthKey] ?? [];
+                        const monthStats = computeNumberStats(monthEntry.numbers);
+                        const monthPrimaryMetric = monthStats ? monthStats[getPrimaryMetric(dataset.tracking)] : 0;
+                        const monthPrimaryValence = monthStats
+                          ? getValenceValueForNumber(monthPrimaryMetric ?? 0, undefined, dataset.tracking)
+                          : 0;
+                        const monthBadgeClasses = getValueForValence(monthPrimaryValence, dataset.valence, {
+                          good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
+                          bad: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
+                          neutral: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                        });
+                        return (
+                          <a
+                            key={monthEntry.dateKey}
+                            href={`#month-${monthEntry.dateKey}`}
+                            className={cn(
+                              'relative flex gap-2 rounded-md px-2 py-1 transition',
+                              isActiveMonth
+                                ? 'bg-blue-50/70 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200'
+                                : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900/40'
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                'mt-1 h-2 w-2 rounded-full border',
+                                isActiveMonth
+                                  ? 'border-blue-500 bg-blue-500'
+                                  : 'border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900'
+                              )}
+                            />
+                            <div className="flex min-w-0 flex-1 flex-col gap-1">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className={cn('text-xs font-medium', isActiveMonth && 'font-semibold')}>
+                                  {monthEntry.title}
+                                </div>
+                                <div className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', monthBadgeClasses)}>
+                                  <NumberText
+                                    value={monthPrimaryMetric}
+                                    valenceValue={monthPrimaryValence}
+                                    valence={dataset.valence}
+                                    formatOptions={shortNumberFormat}
+                                  />
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-7 gap-0.5 w-fit">
+                                {monthDots}
+                              </div>
+                            </div>
+                          </a>
+                        );
+                      })}
                     </div>
-                  </div>
-                  <div className="text-[11px] text-slate-400">{yearEntry.dayCount} entries</div>
-                </a>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -810,7 +1146,12 @@ export function Timeline() {
                   isSelected={panelProps.isOpen && panelProps.dateKey === yearEntry.dateKey}
                 />
                 {monthEntries.map(({ monthEntry, weekEntries }) => (
-                  <div key={monthEntry.dateKey} className="space-y-5">
+                  <div
+                    key={monthEntry.dateKey}
+                    id={`month-${monthEntry.dateKey}`}
+                    data-month-key={monthEntry.dateKey}
+                    className="space-y-5"
+                  >
                     {monthEntry.numbers.length > 0 && (
                       <TimelineDividerHeading title={monthEntry.title} />
                     )}
