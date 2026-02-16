@@ -1,16 +1,13 @@
 import { useMemo, useRef } from 'react';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { useAllDays } from '@/features/db/useDayEntryData';
-import type { DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, YearKey } from '@/features/db/localdb';
+import type { DateKeyByPeriod, DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, YearKey } from '@/features/db/localdb';
 import { convertDateKey } from '@/lib/friendly-date';
 import type { NumberStats, StatsExtremes } from '@/lib/stats';
 import { calculateExtremes, computePeriodDerivedStats } from '@/lib/stats';
 
 export type PeriodAggregateData<T extends TimePeriod> = {
-  dateKey: T extends 'day' ? DayKey :
-           T extends 'week' ? WeekKey :
-           T extends 'month' ? MonthKey :
-           T extends 'year' ? YearKey : null;
+  dateKey: DateKeyByPeriod<T>;
   period: T;
   numbers: number[];
   stats: NumberStats;
@@ -67,10 +64,7 @@ const flattenNumbers = <T extends TimePeriod>(items: PeriodAggregateData<T>[]): 
 };
 
 const computePeriodData = <T extends TimePeriod>(
-  dateKey: T extends 'day' ? DayKey :
-           T extends 'week' ? WeekKey :
-           T extends 'month' ? MonthKey :
-           T extends 'year' ? YearKey : null,
+  dateKey: DateKeyByPeriod<T>,
   period: T,
   numbers: number[],
   prior: PeriodAggregateData<T> | null,
@@ -90,6 +84,20 @@ const pushMapItem = <K, V>(map: Map<K, V[]>, key: K, value: V) => {
   map.get(key)!.push(value);
 }
 
+const areExtremesEqual = (left: StatsExtremes | undefined, right: StatsExtremes | undefined): boolean => {
+  if (!left && !right) return true;
+  if (!left || !right) return false;
+  const leftKeys = Object.keys(left) as (keyof StatsExtremes)[];
+  const rightKeys = Object.keys(right) as (keyof StatsExtremes)[];
+  if (leftKeys.length !== rightKeys.length) return false;
+  return leftKeys.every((key) => left[key] === right[key]);
+};
+
+/**
+ * Custom hook to aggregate calendar data into daily, weekly, monthly, yearly, and all-time statistics.
+ *
+ * This hook retrieves all day entries for the current dataset and computes aggregate statistics for each time period. It uses memoization and caching to optimize performance, only recomputing aggregates for periods that have changed.
+ */
 export function useAllCalendarData(): AllCalendarData {
   const { dataset } = useDatasetContext();
   const { data: allDays = [] } = useAllDays(dataset.id);
@@ -200,20 +208,32 @@ export function useAllCalendarData(): AllCalendarData {
 
     const alltime = computeAlltimeData(yearData);
 
-    const weeksWithExtremes = weekData.map((week) => ({
-      ...week,
-      extremes: calculateExtremes((dayStatsByWeek.get(week.dateKey) ?? []).map((day) => day.stats)),
-    }));
+    const weeksWithExtremes = weekData.map((week) => {
+      const extremes = calculateExtremes((dayStatsByWeek.get(week.dateKey) ?? []).map((day) => day.stats));
+      const prevWeek = prevWeekByKey.get(week.dateKey);
+      if (prevWeek && prevWeek === week && areExtremesEqual(prevWeek.extremes, extremes)) {
+        return week;
+      }
+      return { ...week, extremes };
+    });
 
-    const monthsWithExtremes = monthData.map((month) => ({
-      ...month,
-      extremes: calculateExtremes((dayStatsByMonth.get(month.dateKey) ?? []).map((day) => day.stats)),
-    }));
+    const monthsWithExtremes = monthData.map((month) => {
+      const extremes = calculateExtremes((dayStatsByMonth.get(month.dateKey) ?? []).map((day) => day.stats));
+      const prevMonth = prevMonthByKey.get(month.dateKey);
+      if (prevMonth && prevMonth === month && areExtremesEqual(prevMonth.extremes, extremes)) {
+        return month;
+      }
+      return { ...month, extremes };
+    });
 
-    const yearsWithExtremes = yearData.map((year) => ({
-      ...year,
-      extremes: calculateExtremes((monthStatsByYear.get(year.dateKey) ?? []).map((month) => month.stats)),
-    }));
+    const yearsWithExtremes = yearData.map((year) => {
+      const extremes = calculateExtremes((monthStatsByYear.get(year.dateKey) ?? []).map((month) => month.stats));
+      const prevYear = prevYearByKey.get(year.dateKey);
+      if (prevYear && prevYear === year && areExtremesEqual(prevYear.extremes, extremes)) {
+        return year;
+      }
+      return { ...year, extremes };
+    });
 
     const alltimeWithExtremes = {
       ...alltime,

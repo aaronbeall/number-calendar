@@ -131,6 +131,14 @@ export type GoalType = 'milestone' | 'target' | 'goal';
 // Goal time period types
 export type TimePeriod = DateKeyType | 'anytime';
 
+export type DateKeyByPeriod<T extends TimePeriod> = {
+  day: DayKey;
+  week: WeekKey;
+  month: MonthKey;
+  year: YearKey;
+  anytime: null;
+}[T];
+
 // Achievement -- tracks user progress on goals, each goal can potentially have multiple achievements
 export interface Achievement {
   id: string;
