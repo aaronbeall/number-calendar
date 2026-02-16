@@ -3,7 +3,7 @@ import { getWeek, parseISO } from "date-fns";
 import { dateToWeekKey, parseDateKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import type { PeriodAggregateData } from "./period-aggregate";
 import type { StatsExtremes } from "./stats";
-import { getChangeMetricValueFromData, getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getSecondaryMetricValueFromData, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
+import { getChangeMetricValueFromData, getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getSecondaryMetricLabel, getSecondaryMetricValueFromData, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
 
 
 export function getMonthDays(year: number, month: number) {
@@ -87,6 +87,7 @@ export function getCalendarData<T extends TimePeriod>(
   const primaryMetricPercent = percents && percents[getPrimaryMetric(tracking)];
   const primaryValenceMetric = (stats && getValenceMetricFromData({ stats, deltas }, tracking));
   const secondaryMetric = (stats && getSecondaryMetricValueFromData({ stats, deltas, cumulatives: data?.cumulatives }, tracking));
+  const secondaryMetricLabel = getSecondaryMetricLabel(tracking);
   const changeMetric = (stats && getChangeMetricValueFromData({ stats, deltas, percents, cumulatives: data?.cumulatives, cumulativePercents: data?.cumulativePercents }, tracking));
   const hasData = (data?.numbers?.length ?? 0) > 0;
   return {
@@ -100,6 +101,7 @@ export function getCalendarData<T extends TimePeriod>(
     primaryMetricPercent,
     primaryValenceMetric,
     secondaryMetric,
+    secondaryMetricLabel,
     changeMetric,
     isHighestPrimary: hasData && extremes && primaryMetric === getPrimaryMetricHighFromExtremes(extremes, tracking),
     isLowestPrimary: hasData && extremes && primaryMetric === getPrimaryMetricLowFromExtremes(extremes, tracking),
