@@ -5,6 +5,7 @@ import type { DateKeyByPeriod, DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, 
 import { convertDateKey } from '@/lib/friendly-date';
 import type { NumberStats, StatsExtremes } from '@/lib/stats';
 import { calculateExtremes, computePeriodDerivedStats } from '@/lib/stats';
+import { keysOf } from '@/lib/utils';
 
 export type PeriodAggregateData<T extends TimePeriod> = {
   dateKey: DateKeyByPeriod<T>;
@@ -87,8 +88,8 @@ const pushMapItem = <K, V>(map: Map<K, V[]>, key: K, value: V) => {
 const areExtremesEqual = (left: StatsExtremes | undefined, right: StatsExtremes | undefined): boolean => {
   if (!left && !right) return true;
   if (!left || !right) return false;
-  const leftKeys = Object.keys(left) as (keyof StatsExtremes)[];
-  const rightKeys = Object.keys(right) as (keyof StatsExtremes)[];
+  const leftKeys = keysOf(left);
+  const rightKeys = keysOf(right);
   if (leftKeys.length !== rightKeys.length) return false;
   return leftKeys.every((key) => left[key] === right[key]);
 };
@@ -134,7 +135,7 @@ export function useAllCalendarData(): AllCalendarData {
     const dayStatsByMonth = new Map<MonthKey, PeriodAggregateData<'day'>[]>();
 
     for (const day of dayData) {
-      const dayKey = day.dateKey as DayKey;
+      const dayKey = day.dateKey;
       const weekKey = convertDateKey(dayKey, 'week');
       const monthKey = convertDateKey(dayKey, 'month');
 
@@ -152,8 +153,8 @@ export function useAllCalendarData(): AllCalendarData {
       ? findFirstKeyIndex(monthKeys, earliestDayKey ? convertDateKey(earliestDayKey, 'month') : null)
       : monthKeys.length;
 
-    const prevWeekByKey = new Map(prevCache?.weekData?.map((item) => [item.dateKey as WeekKey, item]) ?? []);
-    const prevMonthByKey = new Map(prevCache?.monthData?.map((item) => [item.dateKey as MonthKey, item]) ?? []);
+    const prevWeekByKey = new Map(prevCache?.weekData?.map((item) => [item.dateKey, item]) ?? []);
+    const prevMonthByKey = new Map(prevCache?.monthData?.map((item) => [item.dateKey, item]) ?? []);
 
     const weekData: PeriodAggregateData<'week'>[] = [];
     const monthData: PeriodAggregateData<'month'>[] = [];
@@ -182,7 +183,7 @@ export function useAllCalendarData(): AllCalendarData {
 
     const monthStatsByYear = new Map<YearKey, PeriodAggregateData<'month'>[]>(); 
     for (const month of monthData) {
-      const monthKey = month.dateKey as MonthKey;
+      const monthKey = month.dateKey;
       const yearKey = convertDateKey(monthKey, 'year');
       pushMapItem(monthStatsByYear, yearKey, month);
     }
@@ -192,7 +193,7 @@ export function useAllCalendarData(): AllCalendarData {
       ? findFirstKeyIndex(yearKeys, earliestDayKey ? convertDateKey(earliestDayKey, 'year') : null)
       : yearKeys.length;
 
-    const prevYearByKey = new Map(prevCache?.yearData?.map((item) => [item.dateKey as YearKey, item]) ?? []);
+    const prevYearByKey = new Map(prevCache?.yearData?.map((item) => [item.dateKey, item]) ?? []);
     const yearData: PeriodAggregateData<'year'>[] = [];
 
     for (let i = 0; i < yearKeys.length; i += 1) {
