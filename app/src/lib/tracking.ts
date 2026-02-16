@@ -1,5 +1,5 @@
 import type { Tracking } from "@/features/db/localdb";
-import { METRIC_DISPLAY_INFO, type NumberMetric, type NumberSource, type NumberStats, type StatsExtremes } from "./stats";
+import { type NumberMetric, type NumberSource, type NumberStats, type StatsExtremes } from "./stats";
 import { capitalize } from "./utils";
 
 /**
@@ -102,9 +102,8 @@ export function getSecondaryMetricValueFromData(data: { stats: NumberStats; delt
 
 export function getSecondaryMetricLabel(tracking: Tracking) {
   const source = getSecondaryMetricSource(tracking);
-  const metric = getPrimaryMetric(tracking);
   return {
-    cumulatives: `All-time ${METRIC_DISPLAY_INFO[metric].label}`,
+    cumulatives: `All-time`,
     deltas: 'Change',
   }[source]
 }

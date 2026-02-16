@@ -5,7 +5,7 @@ import { useDatasetContext } from '@/context/DatasetContext';
 import AchievementBadgeIcon from '@/features/achievements/AchievementBadgeIcon';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
 import type { DateKey, DateKeyByPeriod, DayKey, MonthKey, TimePeriod, Tracking, Valence, WeekKey, YearKey } from '@/features/db/localdb';
-import { useAllDays } from '@/features/db/useDayEntryData';
+import { useAllPeriodsAggregateData } from '@/hooks/useAllPeriodsAggregateData';
 import { useNotes } from '@/features/db/useNotesData';
 import { NotesDisplay } from '@/features/notes/NotesDisplay';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
@@ -13,12 +13,13 @@ import { useAchievements } from '@/hooks/useAchievements';
 import { ChartContainer } from '@/components/ui/chart';
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
+import { formatValue } from '@/lib/friendly-numbers';
 import { getCompletedAchievementsByDateKey, type CompletedAchievementResult } from '@/lib/goals';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
-import { computeNumberStats, computePeriodDerivedStats, emptyStats } from '@/lib/stats';
-import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from '@/lib/tracking';
+import { computeNumberStats, emptyStats } from '@/lib/stats';
+import { getChangeMetricValueFromData, getPrimaryMetric, getPrimaryMetricLabel, getSecondaryMetricLabel, getSecondaryMetricValueFromData, getValenceValueForNumber, getValenceValueFromData } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Ellipsis } from 'lucide-react';
@@ -31,8 +32,7 @@ type TimelineEntry = {
   kind: TimelineEntryKind;
   dateKey: DateKey;
   title: string;
-  numbers: number[];
-  dayCount: number;
+  data?: PeriodAggregateData<'day' | 'week' | 'month' | 'year'>;
   hasData?: boolean;
   hasNote?: boolean;
   isToday?: boolean;
@@ -174,17 +174,31 @@ function TimelineStatsRow({
   primaryMetric,
   primaryMetricLabel,
   primaryValenceMetric,
+  secondaryMetricLabel,
+  secondaryMetric,
+  changePercent,
 }: {
   stats: NonNullable<ReturnType<typeof computeNumberStats>>;
   valence: Valence;
   primaryMetric: number | undefined;
   primaryMetricLabel: string;
   primaryValenceMetric: number;
+  secondaryMetricLabel: string;
+  secondaryMetric?: number;
+  changePercent?: number;
 }) {
   const primaryClasses = getValueForValence(primaryValenceMetric, valence, {
     good: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300',
     bad: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300',
     neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
+  });
+  const formattedChange = changePercent !== undefined
+    ? formatValue(changePercent, { percent: true, delta: true })
+    : '';
+  const changeClass = getValueForValence(changePercent ?? 0, valence, {
+    good: 'text-green-600 dark:text-green-400',
+    bad: 'text-red-600 dark:text-red-400',
+    neutral: 'text-slate-500 dark:text-slate-400',
   });
 
   return (
@@ -240,15 +254,30 @@ function TimelineStatsRow({
       <div className="hidden sm:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
 
       <div className={cn('flex items-center gap-2 px-3 py-2 rounded font-mono font-bold', primaryClasses)}>
-        <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-          {primaryMetricLabel}
+        <div className="flex flex-col items-end">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            {primaryMetricLabel}
+          </div>
+          <NumberText
+            value={primaryMetric ?? null}
+            valenceValue={primaryValenceMetric}
+            valence={valence}
+            className="text-lg sm:text-xl font-extrabold"
+          />
+          <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="uppercase tracking-wide">{secondaryMetricLabel}</span>{' '}
+            <NumberText
+              value={secondaryMetric ?? null}
+              valenceValue={secondaryMetric ?? 0}
+              valence={valence}
+              className="font-semibold"
+              formatOptions={shortNumberFormat}
+            />{' '}
+            { formattedChange && (
+              <span className={changeClass}>({formattedChange})</span>
+            )}
+          </div>
         </div>
-        <NumberText
-          value={primaryMetric ?? null}
-          valenceValue={primaryValenceMetric}
-          valence={valence}
-          className="text-lg sm:text-xl font-extrabold"
-        />
       </div>
     </div>
   );
@@ -298,10 +327,13 @@ const TimelineEntryCard = React.memo(({
   onOpen?: (entry: TimelineEntry) => void;
   isSelected?: boolean;
 }) => {
-  const stats = useMemo(() => computeNumberStats(entry.numbers), [entry.numbers]);
+  const stats = entry.data?.stats;
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
   const primaryMetricKey = getPrimaryMetric(tracking);
   const primaryMetric = stats ? stats[primaryMetricKey] : undefined;
+  const secondaryMetricLabel = getSecondaryMetricLabel(tracking);
+  const secondaryMetric = entry.data ? getSecondaryMetricValueFromData(entry.data, tracking) : undefined;
+  const changePercent = entry.data ? getChangeMetricValueFromData(entry.data, tracking) : stats?.changePercent;
   const primaryValenceMetric = stats
     ? getValenceValueForNumber(primaryMetric ?? 0, undefined, tracking)
     : 0;
@@ -310,12 +342,13 @@ const TimelineEntryCard = React.memo(({
   const isMonth = entry.kind === 'month';
   const isWeek = entry.kind === 'week';
   const isToday = isDay && entry.isToday;
-  const showMicroChart = (isYear || isMonth) && entry.numbers.length > 1;
+  const numbers = entry.data?.numbers ?? [];
+  const showMicroChart = (isYear || isMonth) && numbers.length > 1;
   const entryChartData = useMemo(() => {
     if (!showMicroChart) return [] as NumbersChartDataPoint[];
-    const chartNumbers = getChartNumbers(entry.numbers, undefined, tracking);
+    const chartNumbers = getChartNumbers(numbers, undefined, tracking);
     return getChartData(chartNumbers, tracking);
-  }, [entry.numbers, showMicroChart, tracking]);
+  }, [numbers, showMicroChart, tracking]);
   const yearClasses = getValueForValence(primaryValenceMetric, valence, {
     good: 'border-green-400/90 bg-gradient-to-r from-green-50 via-green-100 to-green-200 shadow-[0_10px_30px_rgba(16,185,129,0.25)] dark:border-green-700/80 dark:from-[#163322] dark:via-[#1a3a2a] dark:to-[#1f4a33] dark:shadow-[0_10px_30px_rgba(16,185,129,0.35)]',
     bad: 'border-red-400/90 bg-gradient-to-r from-red-50 via-red-100 to-red-200 shadow-[0_10px_30px_rgba(239,68,68,0.25)] dark:border-red-700/80 dark:from-[#2b1616] dark:via-[#3a1a1a] dark:to-[#4a1f1f] dark:shadow-[0_10px_30px_rgba(239,68,68,0.35)]',
@@ -335,7 +368,7 @@ const TimelineEntryCard = React.memo(({
   const weekMeta = isWeek ? parseWeekKey(entry.dateKey as WeekKey) : null;
   const weekRangeLabel = isWeek ? formatFriendlyDate(entry.dateKey as WeekKey) : null;
   const isEmptyDay = isDay && !entry.hasData && !entry.hasNote;
-  const isEmptyEntry = isDay ? isEmptyDay : entry.numbers.length === 0;
+  const isEmptyEntry = isDay ? isEmptyDay : numbers.length === 0;
   const dotClasses = isEmptyEntry
     ? 'border-slate-200 bg-slate-100 text-slate-400 dark:border-slate-800/70 dark:bg-slate-900/60 dark:text-slate-500'
     : getValueForValence(primaryValenceMetric, valence, {
@@ -423,6 +456,9 @@ const TimelineEntryCard = React.memo(({
                     primaryMetric={primaryMetric}
                     primaryMetricLabel={primaryMetricLabel}
                     primaryValenceMetric={primaryValenceMetric}
+                    secondaryMetricLabel={secondaryMetricLabel}
+                    secondaryMetric={secondaryMetric}
+                    changePercent={changePercent}
                   />
                 )}
               </>
@@ -510,11 +546,11 @@ const TimelineEntryCard = React.memo(({
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   <span>{weekRangeLabel}</span>
                   <span className="mx-1 text-slate-400 dark:text-slate-600" aria-hidden="true">&middot;</span>
-                  <span>{entry.dayCount} entries</span>
+                  <span>{entry.data?.stats.count ?? 0} entries</span>
                 </div>
               ) : (
                 <div className="text-xs text-slate-500 dark:text-slate-400">
-                  {entry.dayCount} entries
+                  {entry.data?.stats.count ?? 0} entries
                 </div>
               )}
             </div>
@@ -529,6 +565,9 @@ const TimelineEntryCard = React.memo(({
               primaryMetric={primaryMetric}
               primaryMetricLabel={primaryMetricLabel}
               primaryValenceMetric={primaryValenceMetric}
+              secondaryMetricLabel={secondaryMetricLabel}
+              secondaryMetric={secondaryMetric}
+              changePercent={changePercent}
             />
           )}
         </div>
@@ -578,22 +617,20 @@ TimelineEntryCard.displayName = 'TimelineEntryCard';
 const buildEntry = (
   kind: TimelineEntryKind,
   dateKey: DateKey,
-  numbers: number[],
-  dayCount: number,
   title: string,
+  data?: PeriodAggregateData<'day' | 'week' | 'month' | 'year'>,
   meta?: Pick<TimelineEntry, 'hasData' | 'hasNote' | 'isToday'>
 ): TimelineEntry => ({
   kind,
   dateKey,
-  numbers,
-  dayCount,
   title,
+  data,
   ...meta,
 });
 
 export function Timeline() {
   const { dataset } = useDatasetContext();
-  const { data: allDays = [] } = useAllDays(dataset.id);
+  const { days: periodDays, weeks: periodWeeks, months: periodMonths, years: periodYears, alltime: alltimeAggregate } = useAllPeriodsAggregateData();
   const { data: notes = [] } = useNotes(dataset.id);
   const achievementResults = useAchievements(dataset.id);
   const achievementResultsByDateKey = useMemo(
@@ -601,13 +638,10 @@ export function Timeline() {
     [achievementResults.all]
   );
 
-  const dayMap = useMemo(() => {
-    const map = new Map<DayKey, number[]>();
-    allDays.forEach((entry) => {
-      map.set(entry.date, entry.numbers);
-    });
-    return map;
-  }, [allDays]);
+  const dayAggByKey = useMemo(() => new Map(periodDays.map((day) => [day.dateKey, day])), [periodDays]);
+  const weekAggByKey = useMemo(() => new Map(periodWeeks.map((week) => [week.dateKey, week])), [periodWeeks]);
+  const monthAggByKey = useMemo(() => new Map(periodMonths.map((month) => [month.dateKey, month])), [periodMonths]);
+  const yearAggByKey = useMemo(() => new Map(periodYears.map((year) => [year.dateKey, year])), [periodYears]);
 
   const noteDaySet = useMemo(() => {
     const set = new Set<DayKey>();
@@ -625,22 +659,21 @@ export function Timeline() {
   const [activeYearKey, setActiveYearKey] = useState<YearKey | null>(null);
 
   const allTimeNumbers = useMemo(() => {
-    return allDays
+    return periodDays
       .slice()
-      .sort((a, b) => a.date.localeCompare(b.date))
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
       .flatMap((entry) => entry.numbers);
-  }, [allDays]);
+  }, [periodDays]);
 
-  const allTimePrimaryValence = useMemo(() => {
-    if (allTimeNumbers.length === 0) return 0;
-    const stats = computeNumberStats(allTimeNumbers);
-    if (!stats) return 0;
-    const primaryMetric = stats[getPrimaryMetric(dataset.tracking)];
-    const priorPrimaryMetric = allTimeNumbers.length > 1
-      ? allTimeNumbers[allTimeNumbers.length - 2]
-      : undefined;
-    return getValenceValueForNumber(primaryMetric ?? 0, priorPrimaryMetric, dataset.tracking);
-  }, [allTimeNumbers, dataset.tracking]);
+  const allTimePrimaryMetric = useMemo(
+    () => alltimeAggregate?.stats?.[getPrimaryMetric(dataset.tracking)] ?? 0,
+    [alltimeAggregate, dataset.tracking]
+  );
+
+  const allTimePrimaryValence = useMemo(
+    () => (alltimeAggregate ? (getValenceValueFromData(alltimeAggregate, dataset.tracking) ?? 0) : 0),
+    [alltimeAggregate, dataset.tracking]
+  );
 
   const allTimeChartData = useMemo(() => {
     const chartNumbers = getChartNumbers(allTimeNumbers, undefined, dataset.tracking);
@@ -658,8 +691,8 @@ export function Timeline() {
   }));
 
   const latestKey = useMemo(() => {
-    for (const entry of allDays) {
-      if (entry.date === todayKey) {
+    for (const entry of periodDays) {
+      if (entry.dateKey === todayKey) {
         return todayKey;
       }
     }
@@ -668,7 +701,7 @@ export function Timeline() {
         return todayKey;
       }
     }
-  }, [allDays, noteDaySet]);
+  }, [periodDays, noteDaySet]);
 
   const maxVisibleDayKey = !latestKey || todayKey > latestKey ? todayKey : latestKey;
 
@@ -682,8 +715,8 @@ export function Timeline() {
 
   const years = useMemo(() => {
     const yearSet = new Set<number>();
-    allDays.forEach((entry) => {
-      yearSet.add(parseDateKey(entry.date).getFullYear());
+    periodDays.forEach((entry) => {
+      yearSet.add(parseDateKey(entry.dateKey).getFullYear());
     });
     notes.forEach((note) => {
       yearSet.add(parseDateKey(note.date).getFullYear());
@@ -692,7 +725,7 @@ export function Timeline() {
       yearSet.add(new Date().getFullYear());
     }
     return Array.from(yearSet).sort((a, b) => b - a);
-  }, [allDays, notes]);
+  }, [periodDays, notes]);
 
   useEffect(() => {
     if (!activeYearKey && years.length > 0) {
@@ -708,14 +741,12 @@ export function Timeline() {
 
     return years.map((year) => {
       const yearKey = toYearKey(year);
-      const yearDayKeys = getYearDays(year);
-      const yearNumbers = yearDayKeys.flatMap((day) => dayMap.get(day) ?? []);
+      const yearAggregate = yearAggByKey.get(yearKey) ?? createEmptyAggregate(yearKey, 'year');
       const yearEntry = buildEntry(
         'year',
         yearKey,
-        yearNumbers,
-        yearNumbers.length,
-        `${year}`
+        `${year}`,
+        yearAggregate
       );
 
       const monthEntries = getYearMonths(year).map((monthKey) => {
@@ -723,31 +754,28 @@ export function Timeline() {
             return null;
           }
           const { month: monthNumber } = parseMonthKey(monthKey);
-          const monthDayKeys = getMonthDays(year, monthNumber);
-          const monthNumbers = monthDayKeys.flatMap((day) => dayMap.get(day) ?? []);
+          const monthAggregate = monthAggByKey.get(monthKey) ?? createEmptyAggregate(monthKey, 'month');
         const monthEntry = buildEntry(
           'month',
           monthKey as MonthKey,
-          monthNumbers,
-          monthNumbers.length,
-          formatFriendlyDate(monthKey as MonthKey)
+          formatFriendlyDate(monthKey as MonthKey),
+          monthAggregate
         );
 
         const weekEntries = getMonthWeeks(year, monthNumber)
           .map((weekKey) => {
           const { week } = parseWeekKey(weekKey);
           const weekDays = getWeekDays(year, week);
-          const weekNumbers = weekDays.flatMap((day) => dayMap.get(day) ?? []);
+          const weekAggregate = weekAggByKey.get(weekKey) ?? createEmptyAggregate(weekKey, 'week');
           const weekHasNotes = weekDays.some((day) => noteDaySet.has(day));
           const includesMaxVisible = weekDays.includes(maxVisibleDayKey as DayKey);
-          const weekHasContent = weekNumbers.length > 0 || weekHasNotes || includesMaxVisible;
+          const weekHasContent = weekAggregate.numbers.length > 0 || weekHasNotes || includesMaxVisible;
           if (!weekHasContent) return null;
           const weekEntry = buildEntry(
             'week',
             weekKey as WeekKey,
-            weekNumbers,
-            weekNumbers.length,
-            formatFriendlyDate(weekKey as WeekKey)
+            formatFriendlyDate(weekKey as WeekKey),
+            weekAggregate
           );
 
           const dayEntries: TimelineEntry[] = [];
@@ -770,9 +798,8 @@ export function Timeline() {
               buildEntry(
                 'day',
                 emptyRangeStart,
-                [],
-                0,
                 label,
+                undefined,
                 { hasData: false, hasNote: false }
               )
             );
@@ -781,7 +808,8 @@ export function Timeline() {
           };
 
           monthWeekDays.forEach((dayKey) => {
-            const dayNumbers = dayMap.get(dayKey) ?? [];
+            const dayAggregate = dayAggByKey.get(dayKey);
+            const dayNumbers = dayAggregate?.numbers ?? [];
             const hasData = dayNumbers.length > 0;
             const hasNote = noteDaySet.has(dayKey);
             const isTodayKey = dayKey === todayKey;
@@ -792,9 +820,8 @@ export function Timeline() {
                   buildEntry(
                     'day',
                     dayKey,
-                    [],
-                    0,
                     formatFriendlyDate(dayKey),
+                    undefined,
                     { hasData: false, hasNote: false, isToday: true }
                   )
                 );
@@ -811,9 +838,8 @@ export function Timeline() {
               buildEntry(
                 'day',
                 dayKey,
-                dayNumbers,
-                dayNumbers.length,
                 formatFriendlyDate(dayKey),
+                dayAggregate,
                 { hasData, hasNote, isToday: isTodayKey }
               )
             );
@@ -831,7 +857,7 @@ export function Timeline() {
 
       return { yearEntry, monthEntries };
     });
-  }, [dayMap, noteDaySet, years, maxVisibleDayKey]);
+  }, [dayAggByKey, monthAggByKey, noteDaySet, weekAggByKey, yearAggByKey, years, maxVisibleDayKey]);
 
   useEffect(() => {
     const monthNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-month-key]'));
@@ -884,33 +910,20 @@ export function Timeline() {
     }
 
     return dayKeys.reduce((acc, dayKey) => {
-      const numbers = dayMap.get(dayKey);
-      if (numbers && numbers.length > 0) {
-        const derived = computePeriodDerivedStats(numbers, null, null);
-        acc[dayKey] = {
-          dateKey: dayKey,
-          period: 'day',
-          numbers,
-          ...derived,
-          extremes: undefined,
-        };
+      const aggregate = dayAggByKey.get(dayKey);
+      if (aggregate && aggregate.numbers.length > 0) {
+        acc[dayKey] = aggregate;
       }
       return acc;
     }, {} as Record<DayKey, PeriodAggregateData<'day'>>);
-  }, [dayMap]);
+  }, [dayAggByKey]);
 
   const handleOpenEntry = useCallback((entry: TimelineEntry) => {
-    const derived = computePeriodDerivedStats(entry.numbers, null, null);
+    const data = entry.data ?? createEmptyAggregate(entry.dateKey as DateKeyByPeriod<'day' | 'week' | 'month' | 'year'>, entry.kind);
     setPanelProps({
       isOpen: true,
       title: getPanelTitleForEntry(entry),
-      data: {
-        dateKey: entry.dateKey as DateKeyByPeriod<'day' | 'week' | 'month' | 'year'>,
-        period: entry.kind,
-        numbers: entry.numbers,
-        ...derived,
-        extremes: undefined,
-      },
+      data,
       priorData: undefined,
       extremes: undefined,
       daysData: getDaysDataForEntry(entry),
@@ -944,12 +957,13 @@ export function Timeline() {
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
         const dateKey = dateToDayKey(date);
-        const numbers = dayMap.get(dateKey) ?? [];
-        const value = computeNumberStats(numbers)?.[getPrimaryMetric(dataset.tracking)] ?? 0;
+        const dayAggregate = dayAggByKey.get(dateKey);
+        const numbers = dayAggregate?.numbers ?? [];
+        const value = dayAggregate?.stats?.[getPrimaryMetric(dataset.tracking)] ?? 0;
         const isFuture = date > todayDate;
         const hasData = numbers.length > 0;
-        const valenceValue = hasData
-          ? getValenceValueForNumber(value, priorDayValue ?? numbers[0], dataset.tracking)
+        const valenceValue = hasData && dayAggregate
+          ? (getValenceValueFromData(dayAggregate, dataset.tracking) ?? 0)
           : 0;
         const color = getDotColor(valenceValue, isFuture, hasData);
 
@@ -982,7 +996,7 @@ export function Timeline() {
     }
 
     return result;
-  }, [activeYearKey, dayMap, dataset.tracking, dataset.valence, todayDate]);
+  }, [activeYearKey, dayAggByKey, dataset.tracking, dataset.valence, todayDate]);
 
   return (
     <div className="min-h-screen py-6">
@@ -994,8 +1008,20 @@ export function Timeline() {
             </div>
             {allTimeChartData.length > 1 && (
               <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-950">
-                <div className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                  All-time trend
+                <div className="mb-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <span>All-time trend</span>
+                  <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', getValueForValence(allTimePrimaryValence, dataset.valence, {
+                    good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
+                    bad: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
+                    neutral: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                  }))}>
+                    <NumberText
+                      value={allTimePrimaryMetric}
+                      valenceValue={allTimePrimaryValence}
+                      valence={dataset.valence}
+                      formatOptions={shortNumberFormat}
+                    />
+                  </span>
                 </div>
                 <ChartContainer
                   config={{ numbers: { color: getValueForValence(allTimePrimaryValence, dataset.valence, {
@@ -1033,12 +1059,13 @@ export function Timeline() {
               </div>
             )}
             {entriesByYear.map(({ yearEntry, monthEntries }) => {
-              const stats = computeNumberStats(yearEntry.numbers);
+              const stats = yearEntry.data?.stats;
               const primaryMetric = stats ? stats[getPrimaryMetric(dataset.tracking)] : 0;
               const primaryValenceMetric = stats
                 ? getValenceValueForNumber(primaryMetric ?? 0, undefined, dataset.tracking)
                 : 0;
-              const yearChartNumbers = getChartNumbers(yearEntry.numbers, undefined, dataset.tracking);
+              const yearNumbers = yearEntry.data?.numbers ?? [];
+              const yearChartNumbers = getChartNumbers(yearNumbers, undefined, dataset.tracking);
               const yearChartData = getChartData(yearChartNumbers, dataset.tracking);
               const isActiveYear = activeYearKey === yearEntry.dateKey;
               const badgeClasses = getValueForValence(primaryValenceMetric, dataset.valence, {
@@ -1072,7 +1099,7 @@ export function Timeline() {
                         />
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-400">{yearEntry.dayCount} entries</div>
+                    <div className="text-[11px] text-slate-400">{yearEntry.data?.stats.count ?? 0} entries</div>
                     {yearChartData.length > 1 && (
                       <ChartContainer
                         config={{ numbers: { color: getValueForValence(primaryValenceMetric, dataset.valence, {
@@ -1114,7 +1141,7 @@ export function Timeline() {
                       {monthEntries.map(({ monthEntry }) => {
                         const isActiveMonth = activeMonthKey === monthEntry.dateKey;
                         const monthDots = activeYearMonthDots[monthEntry.dateKey as MonthKey] ?? [];
-                        const monthStats = computeNumberStats(monthEntry.numbers);
+                        const monthStats = monthEntry.data?.stats;
                         const monthPrimaryMetric = monthStats ? monthStats[getPrimaryMetric(dataset.tracking)] : 0;
                         const monthPrimaryValence = monthStats
                           ? getValenceValueForNumber(monthPrimaryMetric ?? 0, undefined, dataset.tracking)
@@ -1194,7 +1221,7 @@ export function Timeline() {
                     data-month-key={monthEntry.dateKey}
                     className="space-y-5"
                   >
-                    {monthEntry.numbers.length > 0 && (
+                    {(monthEntry.data?.numbers.length ?? 0) > 0 && (
                       <TimelineDividerHeading title={monthEntry.title} />
                     )}
                     <TimelineEntryCard
