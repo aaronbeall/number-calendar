@@ -21,7 +21,7 @@ export interface NumberStats {
 export type NumberMetric = keyof NumberStats;
 
 // NumberStats can represent different sources: 'stats' (values), 'deltas' (change values), or 'percents' (percentage changes)
-export type NumberSource = 'stats' | 'deltas' | 'percents'; // TODO: | 'cumulatives' | 'cumulativePercents' | 'averages' | 'maximums' | 'minimums';
+export type NumberSource = 'stats' | 'deltas' | 'percents' | 'cumulatives' | 'cumulativePercents'; //| 'averages' | 'maximums' | 'minimums';
 
 /**
  * Compute basic statistics for an array of numbers
@@ -271,8 +271,8 @@ export const METRIC_SOURCES_DISPLAY_INFO: Record<NumberSource, { label: string; 
   stats: { label: 'Value', description: 'Actual recorded value for a time period' },
   deltas: { label: 'Delta', description: 'Change from prior time period' },
   percents: { label: 'Percentage', description: 'Percentage change from prior time period' },
-  // cumulatives: { label: 'Cumulatives', description: 'Cumulative total from beginning to the time period' },
-  // cumulativePercents: { label: 'Cumulative Percentages', description: 'Percentage change from prior time period cumulative total' },
+  cumulatives: { label: 'Cumulative', description: 'Cumulative value from beginning to the time period' },
+  cumulativePercents: { label: 'Cumulative Percentage', description: 'Percentage change from prior time period cumulative value' },
 };
 
 export function getMetricSourceDisplayName(source: NumberSource): string {

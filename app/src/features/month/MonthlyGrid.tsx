@@ -4,7 +4,6 @@ import { toMonthKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
 import { createEmptyAggregate, type PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
-import { emptyStats } from '@/lib/stats';
 import { parseISO } from 'date-fns';
 import { useMemo } from 'react';
 import { MonthCell } from './MonthCell';

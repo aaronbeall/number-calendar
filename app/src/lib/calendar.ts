@@ -3,7 +3,7 @@ import { getWeek, parseISO } from "date-fns";
 import { dateToWeekKey, parseDateKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import type { PeriodAggregateData } from "./period-aggregate";
 import type { StatsExtremes } from "./stats";
-import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
+import { getChangeMetricValueFromData, getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getSecondaryMetricValueFromData, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
 
 
 export function getMonthDays(year: number, month: number) {
@@ -86,6 +86,8 @@ export function getCalendarData<T extends TimePeriod>(
   const primaryMetricDelta = deltas && deltas[getPrimaryMetric(tracking)];
   const primaryMetricPercent = percents && percents[getPrimaryMetric(tracking)];
   const primaryValenceMetric = (stats && getValenceMetricFromData({ stats, deltas }, tracking));
+  const secondaryMetric = (stats && getSecondaryMetricValueFromData({ stats, deltas, cumulatives: data?.cumulatives }, tracking));
+  const changeMetric = (stats && getChangeMetricValueFromData({ stats, deltas, percents, cumulatives: data?.cumulatives, cumulativePercents: data?.cumulativePercents }, tracking));
   const hasData = (data?.numbers?.length ?? 0) > 0;
   return {
     stats,
@@ -97,6 +99,8 @@ export function getCalendarData<T extends TimePeriod>(
     primaryMetricDelta,
     primaryMetricPercent,
     primaryValenceMetric,
+    secondaryMetric,
+    changeMetric,
     isHighestPrimary: hasData && extremes && primaryMetric === getPrimaryMetricHighFromExtremes(extremes, tracking),
     isLowestPrimary: hasData && extremes && primaryMetric === getPrimaryMetricLowFromExtremes(extremes, tracking),
     isHighestCount: hasData && extremes && stats?.count === extremes.highestCount,

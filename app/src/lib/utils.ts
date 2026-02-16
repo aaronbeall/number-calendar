@@ -84,7 +84,7 @@ export const keysOf = <T extends object>(obj: T) =>
 export const arrayToRecord = <T, K extends string | number | symbol, V = T>(
   items: T[],
   getKey: (item: T) => K,
-  getValue: (item: T) => V = (item) => item,
+  getValue: (item: T) => V = (item) => item as unknown as V,
 ): Record<K, V> => {
   const record = {} as Record<K, V>;
   for (const item of items) {
@@ -99,7 +99,7 @@ export const arrayToRecord = <T, K extends string | number | symbol, V = T>(
 export const arrayToMap = <T, K, V = T>(
   items: T[],
   getKey: (item: T) => K,
-  getValue: (item: T) => V = (item) => item,
+  getValue: (item: T) => V = (item) => item as unknown as V,
 ): Map<K, V> => {
   const map = new Map<K, V>();
   for (const item of items) {
