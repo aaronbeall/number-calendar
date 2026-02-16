@@ -2,7 +2,7 @@ import type { DateKey, DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, YearKey 
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths, getYearWeeks } from "./calendar";
 import { convertDateKey, getDateKeyType, parseDateKey, parseWeekKey, type DateKeyType } from "./friendly-date";
 import type { NumberStats, StatsExtremes } from "./stats";
-import { calculateExtremes, computeNumberStats, emptyStats, getStatsDelta, getStatsPercentChange } from "./stats";
+import { calculateExtremes, computeNumberStats, emptyStats, computeStatsDeltas, computeStatsPercents } from "./stats";
 
 export type PeriodData<P extends TimePeriod> = {
   dateKey: {
@@ -290,11 +290,11 @@ export class CalendarData {
     let percents: Partial<NumberStats>;
     if (priorKey) {
       const priorStats = getPriorStats(priorKey);
-      deltas = getStatsDelta(cache.stats, priorStats);
-      percents = getStatsPercentChange(cache.stats, priorStats);
+      deltas = computeStatsDeltas(cache.stats, priorStats);
+      percents = computeStatsPercents(cache.stats, priorStats);
     } else {
-      deltas = getStatsDelta(cache.stats, null);
-      percents = getStatsPercentChange(cache.stats, null);
+      deltas = computeStatsDeltas(cache.stats, null);
+      percents = computeStatsPercents(cache.stats, null);
     }
     
     return this.updateCache(cacheMap, { dateKey: currentKey, deltas, percents }) as PartialComputedCache<P, 'stats' | 'numbers' | 'deltas' | 'percents'>;
@@ -352,8 +352,8 @@ export class CalendarData {
         // Seed the running total with the prior cumulative total, then add current numbers.
         const allNumbers: number[] = [priorCumulatives.total, ...(currentCache.numbers ?? [])];
         cumulatives = computeNumberStats(allNumbers) ?? stats;
-        cumulativeDeltas = getStatsDelta(cumulatives, priorCumulatives);
-        cumulativePercents = getStatsPercentChange(cumulatives, priorCumulatives);
+        cumulativeDeltas = computeStatsDeltas(cumulatives, priorCumulatives);
+        cumulativePercents = computeStatsPercents(cumulatives, priorCumulatives);
       } else {
         // First period in the chain: cumulative equals the period stats, no deltas or percents
         cumulatives = stats;

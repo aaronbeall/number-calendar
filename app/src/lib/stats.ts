@@ -182,7 +182,7 @@ export function getLowForMetric(metric: keyof NumberStats, extremes: StatsExtrem
 }
 
 // Returns the delta (current - prior) for each metric in NumberStats
-export function getStatsDelta(current: NumberStats, prior: NumberStats | null): NumberStats {
+export function computeStatsDeltas(current: NumberStats, prior: NumberStats | null): NumberStats {
   const baseline = prior ?? computeNumberStats([current.first]) ?? current; // If no prior, seed baseline with first value to get deltas out of the range of the current values instead of all zeros
   const result = {} as Record<keyof NumberStats, number>;
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
@@ -194,7 +194,7 @@ export function getStatsDelta(current: NumberStats, prior: NumberStats | null): 
 }
 
 // Returns the percent change (delta/prior) for each metric in NumberStats
-export function getStatsPercentChange(current: NumberStats, prior: NumberStats | null): Partial<NumberStats> {
+export function computeStatsPercents(current: NumberStats, prior: NumberStats | null): Partial<NumberStats> {
   const baseline = prior ?? computeNumberStats([current.first]) ?? current; // If no prior, seed baseline with first value to get deltas out of the range of the current values instead of all zeros
   const result: Partial<NumberStats> = {};
   for (const key of Object.keys(current) as (keyof NumberStats)[]) {
@@ -205,6 +205,43 @@ export function getStatsPercentChange(current: NumberStats, prior: NumberStats |
     }
   }
   return result;
+}
+
+export type PeriodDerivedStats = {
+  stats: NumberStats;
+  deltas: NumberStats;
+  percents: Partial<NumberStats>;
+  cumulatives: NumberStats;
+  cumulativeDeltas: NumberStats;
+  cumulativePercents: Partial<NumberStats>;
+};
+
+export function computePeriodDerivedStats(
+  numbers: number[],
+  priorStats: NumberStats | null,
+  priorCumulatives: NumberStats | null,
+): PeriodDerivedStats {
+  const stats = computeNumberStats(numbers) ?? emptyStats();
+  const deltas = computeStatsDeltas(stats, priorStats);
+  const percents = computeStatsPercents(stats, priorStats);
+
+  if (!priorCumulatives) {
+    return {
+      stats,
+      deltas,
+      percents,
+      cumulatives: stats,
+      cumulativeDeltas: emptyStats(),
+      cumulativePercents: {},
+    };
+  }
+
+  const cumulativeNumbers = [priorCumulatives.total, ...numbers];
+  const cumulatives = computeNumberStats(cumulativeNumbers) ?? stats;
+  const cumulativeDeltas = computeStatsDeltas(cumulatives, priorCumulatives);
+  const cumulativePercents = computeStatsPercents(cumulatives, priorCumulatives);
+
+  return { stats, deltas, percents, cumulatives, cumulativeDeltas, cumulativePercents };
 }
 
 export const METRIC_DISPLAY_INFO: Record<NumberMetric, { label: string; description: string }> = {

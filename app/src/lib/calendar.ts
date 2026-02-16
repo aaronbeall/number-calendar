@@ -1,7 +1,7 @@
 import type { DayEntry, DayKey, MonthKey, Tracking, WeekKey } from "@/features/db/localdb";
 import { getWeek, parseISO } from "date-fns";
 import { dateToWeekKey, parseDateKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
-import { computeNumberStats, getStatsDelta, getStatsPercentChange, type StatsExtremes } from "./stats";
+import { computeNumberStats, computeStatsDeltas, computeStatsPercents, type StatsExtremes } from "./stats";
 import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
 
 
@@ -74,8 +74,8 @@ export function getYearWeeks(year: number): WeekKey[] {
 export function getCalendarData(numbers: number[], priorNumbers: number[] | undefined, extremes: StatsExtremes | undefined, tracking: Tracking) {
   const stats = computeNumberStats(numbers);
   const priorStats = computeNumberStats(priorNumbers ?? []);
-  const deltas = stats ? getStatsDelta(stats, priorStats) : undefined;
-  const percents = stats ? getStatsPercentChange(stats, priorStats) : undefined;
+  const deltas = stats ? computeStatsDeltas(stats, priorStats) : undefined;
+  const percents = stats ? computeStatsPercents(stats, priorStats) : undefined;
   const valenceStats = { stats, deltas }[getValenceSource(tracking)];
   const primaryMetric = stats ? getPrimaryMetricFromStats(stats, tracking) : undefined;
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);

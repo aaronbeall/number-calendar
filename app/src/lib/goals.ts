@@ -1,7 +1,7 @@
 import { type Achievement, type DateKey, type DayKey, type Goal, type GoalCondition, type GoalRequirements, type GoalTarget, type GoalType, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './friendly-date';
-import { computeNumberStats, getMetricDisplayName, getStatsDelta, getStatsPercentChange, type NumberStats } from './stats';
+import { computeNumberStats, getMetricDisplayName, computeStatsDeltas, computeStatsPercents, type NumberStats } from './stats';
 import { adjectivize, capitalize, entriesOf, keysOf, pluralize } from './utils';
 import { type FormatValueOptions, formatRange, formatValue } from './friendly-numbers';
 
@@ -98,7 +98,7 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
     for (const period of periods) {
       const stats = statsByPeriod[period];
       if (stats) {
-        deltas[period] = getStatsDelta(stats, priorStats);
+        deltas[period] = computeStatsDeltas(stats, priorStats);
       } else {
         deltas[period] = null;
       }
@@ -117,7 +117,7 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
     for (const period of periods) {
       const stats = statsByPeriod[period];
       if (stats) {
-        percents[period] = getStatsPercentChange(stats, priorStats);
+        percents[period] = computeStatsPercents(stats, priorStats);
       } else {
         percents[period] = null;
       }

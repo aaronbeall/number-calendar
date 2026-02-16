@@ -3,8 +3,10 @@ import {
   calculateExtremes,
   computeMetricStats,
   computeNumberStats,
-  getStatsDelta,
-  getStatsPercentChange,
+  computePeriodDerivedStats,
+  computeStatsDeltas,
+  computeStatsPercents,
+  emptyStats,
 } from '../stats';
 
 describe('stats', () => {
@@ -76,10 +78,10 @@ describe('stats', () => {
     });
   });
 
-  describe('getStatsDelta', () => {
+  describe('computeStatsDeltas', () => {
     it('uses the current first value as baseline when prior is null', () => {
       const current = computeNumberStats([10, 20, 30])!;
-      const delta = getStatsDelta(current, null);
+      const delta = computeStatsDeltas(current, null);
       expect(delta.total).toBe(50);
       expect(delta.mean).toBe(10);
       expect(delta.change).toBe(20);
@@ -88,25 +90,67 @@ describe('stats', () => {
     it('computes deltas against a prior stats object', () => {
       const current = computeNumberStats([10, 20, 30])!;
       const prior = computeNumberStats([5, 5])!;
-      const delta = getStatsDelta(current, prior);
+      const delta = computeStatsDeltas(current, prior);
       expect(delta.total).toBe(50);
       expect(delta.mean).toBe(15);
     });
   });
 
-  describe('getStatsPercentChange', () => {
+  describe('computeStatsPercents', () => {
     it('uses the current first value as baseline when prior is null', () => {
       const current = computeNumberStats([10, 20, 30])!;
-      const percents = getStatsPercentChange(current, null);
+      const percents = computeStatsPercents(current, null);
       expect(percents.total).toBe(500);
       expect(percents.mean).toBe(100);
     });
 
     it('returns undefined percent when baseline is zero', () => {
       const current = computeNumberStats([0, 10])!;
-      const percents = getStatsPercentChange(current, null);
+      const percents = computeStatsPercents(current, null);
       expect(percents.total).toBeUndefined();
       expect(percents.mean).toBeUndefined();
+    });
+  });
+
+  describe('computePeriodDerivedStats', () => {
+    it('uses stats as cumulatives when no prior cumulatives', () => {
+      const derived = computePeriodDerivedStats([2, 4], null, null);
+      const stats = computeNumberStats([2, 4])!;
+      expect(derived.stats).toEqual(stats);
+      expect(derived.cumulatives).toEqual(stats);
+      expect(derived.cumulativeDeltas).toEqual(emptyStats());
+      expect(derived.cumulativePercents).toEqual({});
+    });
+
+    it('computes deltas and percents against prior stats', () => {
+      const currentStats = computeNumberStats([10, 20, 30])!;
+      const priorStats = computeNumberStats([5, 5])!;
+      const derived = computePeriodDerivedStats([10, 20, 30], priorStats, null);
+
+      const expectedDeltas = computeStatsDeltas(currentStats, priorStats);
+      const expectedPercents = computeStatsPercents(currentStats, priorStats);
+      expect(derived.deltas).toEqual(expectedDeltas);
+      expect(derived.percents).toEqual(expectedPercents);
+    });
+
+    it('builds cumulatives from prior total plus current numbers', () => {
+      const priorCumulatives = computeNumberStats([6, 4])!; // total = 10
+      const derived = computePeriodDerivedStats([2, 4], null, priorCumulatives);
+
+      const expectedCumulatives = computeNumberStats([priorCumulatives.total, 2, 4])!;
+      const expectedDeltas = computeStatsDeltas(expectedCumulatives, priorCumulatives);
+      const expectedPercents = computeStatsPercents(expectedCumulatives, priorCumulatives);
+
+      expect(derived.cumulatives).toEqual(expectedCumulatives);
+      expect(derived.cumulativeDeltas).toEqual(expectedDeltas);
+      expect(derived.cumulativePercents).toEqual(expectedPercents);
+    });
+
+    it('returns empty stats for empty numbers', () => {
+      const derived = computePeriodDerivedStats([], null, null);
+      const stats = emptyStats();
+      expect(derived.stats).toEqual(stats);
+      expect(derived.deltas).toEqual(computeStatsDeltas(stats, null));
     });
   });
 });
