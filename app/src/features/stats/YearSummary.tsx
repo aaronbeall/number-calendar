@@ -1,32 +1,35 @@
 import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
-import { computeNumberStats } from '@/lib/stats';
-import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
-import { getValueForValence } from '@/lib/valence';
+import { getCalendarData } from '@/lib/calendar';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 
 interface YearSummaryProps {
-  numbers: number[];
+  data: PeriodAggregateData<'year'>;
   yearName: string;
   isCurrentYear: boolean;
   valence: Valence;
   tracking: Tracking;
 }
 
-export function YearSummary({ numbers, yearName, isCurrentYear, valence, tracking }: YearSummaryProps) {
-  const stats = useMemo(() => computeNumberStats(numbers), [numbers]);
+export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }: YearSummaryProps) {
+  const { stats, primaryMetric, primaryMetricLabel, primaryValenceMetric } = useMemo(
+    () => getCalendarData(data, undefined, tracking),
+    [data, tracking]
+  );
 
   if (!stats) {
     return null;
   }
 
-  // Use primary metric and label
-  const primaryMetric = stats[getPrimaryMetric(tracking)];
-  const primaryMetricLabel = getPrimaryMetricLabel(tracking);
-  const primaryValenceMetric = getValenceValueForNumber(primaryMetric, primaryMetric - stats.change, tracking);
   // Choose icon based on valence and primary metric
-  const IconComponent = primaryValenceMetric > 0 ? TrendingUp : primaryValenceMetric < 0 ? TrendingDown : Minus;
+  const IconComponent = getValueForSign(primaryValenceMetric, {
+    positive: TrendingUp,
+    negative: TrendingDown,
+    zero: Minus,
+  });
 
   // Color classes for background
   const bgClasses = isCurrentYear

@@ -1,23 +1,27 @@
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useCalendarContext } from '@/context/CalendarContext';
+import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
 import { MonthChart } from '@/features/chart/MonthChart';
 import { TrendChart } from '@/features/chart/TrendChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
-import type { Dataset, DateKey, DayKey } from '@/features/db/localdb';
-import { useMonth, useMostRecentPopulatedMonthBefore, useSaveDay, useYear } from '@/features/db/useDayEntryData';
+import type { Dataset, DateKey, DayKey, TimePeriod } from '@/features/db/localdb';
+import { useSaveDay } from '@/features/db/useDayEntryData';
 import { MonthlyGrid } from '@/features/month/MonthlyGrid';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
-import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
+import { useAllPeriodsAggregateData } from '@/hooks/useAllCalendarData';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
-import { getMonthDays, getPriorMonthNumbersMap, getPriorYearMonthNumbersMap } from "@/lib/calendar";
-import { toDayKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
+import { getMonthDays } from "@/lib/calendar";
+import { toMonthKey, toYearKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
-import { calculateDailyExtremes, calculateMonthlyExtremes, type StatsExtremes } from '@/lib/stats';
+import { buildPriorAggregateMap, createEmptyAggregate, type PeriodAggregateData } from '@/lib/period-aggregate';
+import { type StatsExtremes } from '@/lib/stats';
+import { arrayToRecord } from '@/lib/utils';
+import { parseISO } from 'date-fns';
 import { CalendarCheck2, CalendarDays, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
@@ -28,6 +32,16 @@ export function Calendar({
   dataset: Dataset;
   achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
 }) {
+  type PanelProps = {
+    isOpen: boolean;
+    title: string;
+    data: PeriodAggregateData<TimePeriod>;
+    priorData?: PeriodAggregateData<TimePeriod>;
+    extremes?: StatsExtremes;
+    daysData?: Record<DayKey, PeriodAggregateData<'day'>>;
+    dateKey: DateKey;
+  };
+
   const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
   const today = new Date();
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
@@ -35,54 +49,89 @@ export function Calendar({
   
   // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
-  const [panelProps, setPanelProps] = useState({
+  const [panelProps, setPanelProps] = useState<PanelProps>(() => ({
     isOpen: false,
     title: '',
-    numbers: [] as number[],
-    priorNumbers: undefined as number[] | undefined,
-    extremes: undefined as StatsExtremes | undefined,
-    daysData: undefined as Record<DayKey, number[]> | undefined,
-    dateKey: toMonthKey(year, month) as DateKey,
-  });
+    data: createEmptyAggregate(toMonthKey(year, month), 'month'),
+    priorData: undefined,
+    extremes: undefined,
+    daysData: undefined,
+    dateKey: toMonthKey(year, month),
+  }));
 
-  // Use selectedDataset for all data hooks
-  const { data: monthData = {} } = useMonth(dataset.id, year, month);
-  const { data: yearData = {} } = useYear(dataset.id, year);
+  const { days, weeks, months, years } = useAllPeriodsAggregateData();
   const saveDayMutation = useSaveDay();
 
   const handleSaveDay = async (date: string, numbers: number[]) => {
     await saveDayMutation.mutateAsync({ datasetId: dataset.id, date: date as `${number}-${number}-${number}`, numbers });
   };
 
-  const daysOfMonth = getMonthDays(year, month);
-  const monthNumbers = Object.values(monthData).flat();
-  
-  // Calculate extremes across all days for highlighting and dot scaling
-  const monthExtremes = useMemo(() => {
-    return calculateDailyExtremes(monthData);
-  }, [monthData]);
+  // All days data key
+  const dayDataByKey = useMemo(() => arrayToRecord(days, (day) => day.dateKey), [days]);
+  const priorDayDataByKey = useMemo(() => buildPriorAggregateMap(days), [days]);
 
-  // Calculate extremes across all months in the year for MonthSummary highlighting
-  const yearExtremes = useMemo(() => {
-    return calculateMonthlyExtremes(yearData);
-  }, [yearData]);
+  // Data for all days in the selected month
+  const monthDayKeys = useMemo(() => getMonthDays(year, month), [year, month]);
+  const monthDays = useMemo(() => {
+    return monthDayKeys.map((dayKey) => ({
+      date: parseISO(dayKey),
+      data: dayDataByKey[dayKey] ?? createEmptyAggregate(dayKey, 'day'),
+      priorData: priorDayDataByKey[dayKey],
+    }));
+  }, [monthDayKeys, dayDataByKey, priorDayDataByKey]);
+
+  const monthDaysData = useMemo(() => arrayToRecord(monthDays, (day) => day.data.dateKey, (day) => day.data), [monthDays]);
+
+  // Aggregate data for weeks, months, years
+  const monthDataByKey = useMemo(() => arrayToRecord(months, (item) => item.dateKey), [months]);
+  const priorMonthDataByKey = useMemo(() => buildPriorAggregateMap(months), [months]);
+  const weekDataByKey = useMemo(() => arrayToRecord(weeks, (item) => item.dateKey), [weeks]);
+  const priorWeekDataByKey = useMemo(() => buildPriorAggregateMap(weeks), [weeks]);
+  const yearDataByKey = useMemo(() => arrayToRecord(years, (item) => item.dateKey), [years]);
+
+  // Current month and year aggregate data for summary panels and charts
+  const monthKey = toMonthKey(year, month);
+  const monthAggregate = monthDataByKey[monthKey] ?? createEmptyAggregate(monthKey, 'month');
+  const yearKey = toYearKey(year);
+  const yearAggregate = yearDataByKey[yearKey] ?? createEmptyAggregate(yearKey, 'year');
+  const monthExtremes = monthAggregate.extremes;
+  const yearExtremes = yearAggregate.extremes;
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
 
-  // Get prior month numbers map for daily view
-  const firstDayOfMonthStr = view === 'daily' ? daysOfMonth[0] : '' as DayKey;
-  const { data: priorMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, firstDayOfMonthStr);
-  const priorMonthNumbersMap = useMemo(() => {
-    return view === 'daily' ? getPriorMonthNumbersMap(daysOfMonth, monthData, priorMonthData) : {};
-  }, [daysOfMonth, monthData, priorMonthData, view]);
+  // Precompute year-level data maps for quick access in YearOverview and MonthlyGrid
+  const yearDayDataByKey = useMemo(
+    () => arrayToRecord(
+      days.filter((day) => day.dateKey.startsWith(`${year}-`)),
+      (day) => day.dateKey
+    ),
+    [days, year]
+  );
 
-  // Get prior year month numbers map for monthly view
-  const firstDayOfYearStr = view === 'monthly' ? toDayKey(year, 1, 1) : '' as DayKey;
-  const { data: priorYearMonthData } = useMostRecentPopulatedMonthBefore(dataset.id, firstDayOfYearStr);
-  const priorYearMonthNumbersMap = useMemo(() => {
-    return view === 'monthly' ? getPriorYearMonthNumbersMap(year, yearData, priorYearMonthData) : {};
-  }, [year, yearData, priorYearMonthData, view]);
+  // For year view trend chart: { [dayKey]: numbers[] }
+  const yearNumbersByDay = useMemo(
+    () => arrayToRecord(
+      days.filter((day) => day.dateKey.startsWith(`${year}-`)),
+      (day) => day.dateKey,
+      (day) => day.numbers
+    ),
+    [days, year]
+  );
+
+  const monthChartDays = useMemo(
+    () => monthDays.map((day) => ({ date: day.data.dateKey, numbers: day.data.numbers })),
+    [monthDays]
+  );
+
+  const monthNumbersByDay = useMemo(
+    () => arrayToRecord(
+      monthDays,
+      (day) => day.data.dateKey,
+      (day) => day.data.numbers
+    ),
+    [monthDays]
+  );
 
   const getAchievementsForDateKey = useCallback(
     (key: DateKey) => achievementResultsByDateKey[key] ?? [],
@@ -188,7 +237,7 @@ export function Calendar({
             {/* Year Overview */}
             <YearOverview
               year={year}
-              data={yearData}
+              dayDataByKey={yearDayDataByKey}
               currentMonth={month}
               onMonthClick={setMonth}
               valence={dataset.valence}
@@ -200,8 +249,9 @@ export function Calendar({
               year={year}
               month={month}
               showWeekends={showWeekends}
-              monthData={monthData}
-              priorNumbersMap={priorMonthNumbersMap}
+              monthDays={monthDays}
+              weekDataByKey={weekDataByKey}
+              priorWeekByKey={priorWeekDataByKey}
               valence={dataset.valence}
               tracking={dataset.tracking}
               monthExtremes={monthExtremes}
@@ -215,16 +265,15 @@ export function Calendar({
                 setPanelProps({
                   isOpen: true,
                   title: `${monthNames[month - 1]}`,
-                  numbers: monthNumbers,
-                  priorNumbers: priorMonthNumbersMap[toMonthKey(year, month)],
+                  data: monthAggregate,
+                  priorData: priorMonthDataByKey[monthKey],
                   extremes: yearExtremes,
-                  daysData: monthData,
+                  daysData: monthDaysData,
                   dateKey: toMonthKey(year, month),
                 });
               }} className="cursor-pointer">
               <MonthSummary 
-                numbers={monthNumbers} 
-                priorNumbers={priorMonthNumbersMap[toMonthKey(year, month)]}
+                data={monthAggregate}
                 monthName={monthNames[month - 1]} 
                 isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
                 yearExtremes={yearExtremes}
@@ -240,13 +289,13 @@ export function Calendar({
                 <TrendChart
                   year={year}
                   month={month}
-                  data={monthData}
+                  data={monthNumbersByDay}
                   valence={dataset.valence}
-                  priorDay={priorMonthNumbersMap[daysOfMonth[0]]}
+                  priorDay={monthDays[0]?.priorData?.numbers}
                 />
               ) : (
                 <MonthChart
-                  days={daysOfMonth.map(date => ({ date, numbers: monthData[date] || [] }))}
+                  days={monthChartDays}
                   valence={dataset.valence}
                 />
               )}
@@ -257,7 +306,10 @@ export function Calendar({
             {/* Monthly Grid */}
             <MonthlyGrid
               year={year}
-              yearData={yearData}
+              dayDataByKey={yearDayDataByKey}
+              priorDayByKey={priorDayDataByKey}
+              monthDataByKey={monthDataByKey}
+              priorMonthByKey={priorMonthDataByKey}
               yearExtremes={yearExtremes}
               onOpenMonth={(monthNumber) => {
                 setView('daily');
@@ -266,26 +318,24 @@ export function Calendar({
               }}
               valence={dataset.valence}
               tracking={dataset.tracking}
-              priorNumbersMap={priorYearMonthNumbersMap}
               achievementResultsByDateKey={achievementResultsByDateKey}
             />
 
             {/* Year Summary */}
             <div className="mt-8 mb-6">
               <div onClick={() => {
-                const allYearNumbers = Object.values(yearData).flat();
                 setPanelProps({
                   isOpen: true,
                   title: `${year} Year Summary`,
-                  numbers: allYearNumbers,
+                  data: yearAggregate,
                   extremes: undefined,
-                  priorNumbers: undefined,
-                  daysData: yearData,
+                  priorData: undefined,
+                  daysData: yearDayDataByKey,
                   dateKey: toYearKey(year),
                 });
               }} className="cursor-pointer">
                 <YearSummary 
-                  numbers={Object.values(yearData).flat()} 
+                  data={yearAggregate}
                   yearName={`${year}`} 
                   isCurrentYear={year === today.getFullYear()}
                   valence={dataset.valence}
@@ -299,14 +349,14 @@ export function Calendar({
               {dataset.tracking === 'trend' ? (
                 <TrendChart
                   year={year}
-                  data={yearData}
+                  data={yearNumbersByDay}
                   valence={dataset.valence}
                   // Todo: prior day for year view?
                 />
               ) : (
                 <YearChart
                   year={year}
-                  yearData={yearData}
+                  yearData={yearNumbersByDay}
                   valence={dataset.valence}
                 />
               )}

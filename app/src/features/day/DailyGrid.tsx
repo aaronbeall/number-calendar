@@ -1,8 +1,9 @@
 
 
-import type { DateKey, DayKey, MonthKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
+import type { DateKey, DayKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
 import { dateToWeekKey, formatDateAsKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
 import { useMemo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
@@ -12,8 +13,9 @@ import { DayCell } from './DayCell';
 interface DailyGridProps {
   year: number;
   month: number;
-  monthData: Record<DayKey, number[]>;
-  priorNumbersMap: Record<DayKey | WeekKey | MonthKey, number[]>;
+  monthDays: { date: Date; data: PeriodAggregateData<'day'>; priorData?: PeriodAggregateData<'day'> }[];
+  weekDataByKey: Record<WeekKey, PeriodAggregateData<'week'>>;
+  priorWeekByKey: Record<WeekKey, PeriodAggregateData<'week'> | undefined>;
   showWeekends?: boolean;
   monthExtremes?: StatsExtremes;
   valence: Valence;
@@ -29,8 +31,9 @@ const allWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export const DailyGrid: React.FC<DailyGridProps> = ({
   year,
   month,
-  monthData,
-  priorNumbersMap,
+  monthDays,
+  weekDataByKey,
+  priorWeekByKey,
   showWeekends = true,
   monthExtremes,
   valence,
@@ -79,16 +82,20 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
     return { firstDay, lastDay, cols, weekdays, gridDays };
   }, [year, month, showWeekends]);
 
-  const weeks = useMemo(() => {
+  const monthDayMap = useMemo(
+    () => new Map(monthDays.map((day) => [formatDateAsKey(day.date, 'day'), day])),
+    [monthDays]
+  );
 
+  const weeks = useMemo(() => {
     // Precompute weeks: each week is { days: (Date|null)[], weekNumbers: number[], weekNumber: number, isCurrentWeek: boolean }
     const today = new Date();
     const weeks = [] as Array<{
       days: (Date | null)[];
-      weekNumbers: number[];
+      weekData?: PeriodAggregateData<'week'>;
+      priorWeekData?: PeriodAggregateData<'week'>;
       weekNumber: number;
       isCurrentWeek: boolean;
-      priorWeekNumbers?: number[];
       weekDateKey?: WeekKey;
     }>;
     for (let i = 0; i < gridDays.length; i += weekdays.length) {
@@ -111,16 +118,13 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
         d.getMonth() === today.getMonth() &&
         d.getDate() === today.getDate()
       );
-      const weekNumbers = datesInWeek.flatMap(d => {
-        const key = formatDateAsKey(d, 'day');
-        return monthData[key] || [];
-      });
       const priorWeekKey = datesInWeek.length > 0 ? dateToWeekKey(datesInWeek[0]) : undefined;
-      const priorWeekNumbers = priorWeekKey && priorNumbersMap[priorWeekKey];
-      weeks.push({ days: week, weekNumbers, weekNumber, isCurrentWeek, priorWeekNumbers, weekDateKey: priorWeekKey });
+      const weekData = priorWeekKey ? weekDataByKey[priorWeekKey] : undefined;
+      const priorWeekData = priorWeekKey ? priorWeekByKey[priorWeekKey] : undefined;
+      weeks.push({ days: week, weekData, priorWeekData, weekNumber, isCurrentWeek, weekDateKey: priorWeekKey });
     }
     return weeks;
-  }, [year, month, monthData, priorNumbersMap, gridDays, firstDay, weekdays]);
+  }, [weekDataByKey, priorWeekByKey, gridDays, firstDay, weekdays, month]);
 
   return (
     <>
@@ -142,14 +146,14 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
                 return <div key={`empty-${wi}-${di}`} className="invisible" />;
               }
               const key = formatDateAsKey(date, 'day');
-              const numbers = monthData[key] || [];
-              const priorNumbers = priorNumbersMap[key] || [];
+              const dayData = monthDayMap.get(key);
+              if (!dayData) return null;
               return (
                 <div key={formatDateAsKey(date, 'day')} className="transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl">
                   <DayCell
                     date={date}
-                    numbers={numbers}
-                    priorNumbers={priorNumbers}
+                    data={dayData.data}
+                    priorData={dayData.priorData}
                     onSave={nums => onSaveDay(key, nums)}
                     monthExtremes={monthExtremes}
                     valence={valence}
@@ -160,13 +164,14 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
               );
             })}
             {/* Week summary below the week */}
-            {week.weekNumbers.length > 0 && week.weekDateKey && (
+            {week.weekData && week.weekData.numbers.length > 0 && week.weekDateKey && (
               <div className={showWeekends ? 'col-span-7' : 'col-span-5'}>
                 <WeekSummary
-                  numbers={week.weekNumbers}
+                  data={week.weekData}
+                  priorData={week.priorWeekData}
+                  monthExtremes={monthExtremes}
                   weekNumber={week.weekNumber}
                   isCurrentWeek={week.isCurrentWeek}
-                  priorNumbers={week.priorWeekNumbers}
                   valence={valence}
                   tracking={tracking}
                   dateKey={week.weekDateKey}

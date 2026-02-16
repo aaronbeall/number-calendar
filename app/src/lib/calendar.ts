@@ -1,7 +1,8 @@
-import type { DayEntry, DayKey, MonthKey, Tracking, WeekKey } from "@/features/db/localdb";
+import type { DayEntry, DayKey, MonthKey, TimePeriod, Tracking, WeekKey } from "@/features/db/localdb";
 import { getWeek, parseISO } from "date-fns";
 import { dateToWeekKey, parseDateKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
-import { computeNumberStats, computeStatsDeltas, computeStatsPercents, type StatsExtremes } from "./stats";
+import type { PeriodAggregateData } from "./period-aggregate";
+import type { StatsExtremes } from "./stats";
 import { getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
 
 
@@ -71,18 +72,21 @@ export function getYearWeeks(year: number): WeekKey[] {
  * Aggregates calendar data for a given set of numbers, prior numbers, extremes, and tracking type.
  * This could be used for a day, week, month, year, or any arbitrary period.
  */
-export function getCalendarData(numbers: number[], priorNumbers: number[] | undefined, extremes: StatsExtremes | undefined, tracking: Tracking) {
-  const stats = computeNumberStats(numbers);
-  const priorStats = computeNumberStats(priorNumbers ?? []);
-  const deltas = stats ? computeStatsDeltas(stats, priorStats) : undefined;
-  const percents = stats ? computeStatsPercents(stats, priorStats) : undefined;
-  const valenceStats = { stats, deltas }[getValenceSource(tracking)];
+export function getCalendarData<T extends TimePeriod>(
+  data: PeriodAggregateData<T> | null | undefined,
+  extremes: StatsExtremes | undefined,
+  tracking: Tracking,
+) {
+  const stats = data?.stats;
+  const deltas = data?.deltas;
+  const percents = data?.percents;
+  const valenceStats = stats ? { stats, deltas }[getValenceSource(tracking)] : undefined;
   const primaryMetric = stats ? getPrimaryMetricFromStats(stats, tracking) : undefined;
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
   const primaryMetricDelta = deltas && deltas[getPrimaryMetric(tracking)];
   const primaryMetricPercent = percents && percents[getPrimaryMetric(tracking)];
   const primaryValenceMetric = (stats && getValenceMetricFromData({ stats, deltas }, tracking));
-  const hasData = numbers.length > 0;
+  const hasData = (data?.numbers?.length ?? 0) > 0;
   return {
     stats,
     valenceStats,

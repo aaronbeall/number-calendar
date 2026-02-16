@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useDatasetContext } from '@/context/DatasetContext';
 import AchievementBadgeIcon from '@/features/achievements/AchievementBadgeIcon';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
-import type { DateKey, DayKey, MonthKey, Tracking, Valence, WeekKey, YearKey } from '@/features/db/localdb';
+import type { DateKey, DateKeyByPeriod, DayKey, MonthKey, TimePeriod, Tracking, Valence, WeekKey, YearKey } from '@/features/db/localdb';
 import { useAllDays } from '@/features/db/useDayEntryData';
 import { useNotes } from '@/features/db/useNotesData';
 import { NotesDisplay } from '@/features/notes/NotesDisplay';
@@ -15,7 +15,9 @@ import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } 
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
 import { getCompletedAchievementsByDateKey, type CompletedAchievementResult } from '@/lib/goals';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
-import { computeNumberStats } from '@/lib/stats';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import type { StatsExtremes } from '@/lib/stats';
+import { computeNumberStats, computePeriodDerivedStats, emptyStats } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
@@ -126,6 +128,32 @@ const PeriodAchievements = React.memo(function PeriodAchievements({ achievements
       </PopoverContent>
     </Popover>
   );
+});
+
+type PanelProps = {
+  isOpen: boolean;
+  title: string;
+  data: PeriodAggregateData<'day' | 'week' | 'month' | 'year'>;
+  priorData?: PeriodAggregateData<'day' | 'week' | 'month' | 'year'>;
+  extremes?: StatsExtremes;
+  daysData?: Record<DayKey, PeriodAggregateData<'day'>>;
+  dateKey: DateKey;
+};
+
+const createEmptyAggregate = <T extends TimePeriod>(
+  dateKey: DateKeyByPeriod<T>,
+  period: T,
+): PeriodAggregateData<T> => ({
+  dateKey,
+  period,
+  numbers: [],
+  stats: emptyStats(),
+  deltas: emptyStats(),
+  percents: {},
+  cumulatives: emptyStats(),
+  cumulativeDeltas: emptyStats(),
+  cumulativePercents: {},
+  extremes: undefined,
 });
 
 PeriodAchievements.displayName = 'PeriodAchievements';
@@ -619,15 +647,15 @@ export function Timeline() {
     return getChartData(chartNumbers, dataset.tracking);
   }, [allTimeNumbers, dataset.tracking]);
 
-  const [panelProps, setPanelProps] = useState({
+  const [panelProps, setPanelProps] = useState<PanelProps>(() => ({
     isOpen: false,
     title: '',
-    numbers: [] as number[],
-    priorNumbers: undefined as number[] | undefined,
-    extremes: undefined,
-    daysData: undefined as Record<DayKey, number[]> | undefined,
+    data: createEmptyAggregate(todayKey as DateKeyByPeriod<'day'>, 'day'),
+    priorData: undefined as PeriodAggregateData<'day' | 'week' | 'month' | 'year'> | undefined,
+    extremes: undefined as StatsExtremes | undefined,
+    daysData: undefined as Record<DayKey, PeriodAggregateData<'day'>> | undefined,
     dateKey: todayKey as DateKey,
-  });
+  }));
 
   const latestKey = useMemo(() => {
     for (const entry of allDays) {
@@ -858,18 +886,32 @@ export function Timeline() {
     return dayKeys.reduce((acc, dayKey) => {
       const numbers = dayMap.get(dayKey);
       if (numbers && numbers.length > 0) {
-        acc[dayKey] = numbers;
+        const derived = computePeriodDerivedStats(numbers, null, null);
+        acc[dayKey] = {
+          dateKey: dayKey,
+          period: 'day',
+          numbers,
+          ...derived,
+          extremes: undefined,
+        };
       }
       return acc;
-    }, {} as Record<DayKey, number[]>);
+    }, {} as Record<DayKey, PeriodAggregateData<'day'>>);
   }, [dayMap]);
 
   const handleOpenEntry = useCallback((entry: TimelineEntry) => {
+    const derived = computePeriodDerivedStats(entry.numbers, null, null);
     setPanelProps({
       isOpen: true,
       title: getPanelTitleForEntry(entry),
-      numbers: entry.numbers,
-      priorNumbers: undefined,
+      data: {
+        dateKey: entry.dateKey as DateKeyByPeriod<'day' | 'week' | 'month' | 'year'>,
+        period: entry.kind,
+        numbers: entry.numbers,
+        ...derived,
+        extremes: undefined,
+      },
+      priorData: undefined,
       extremes: undefined,
       daysData: getDaysDataForEntry(entry),
       dateKey: entry.dateKey,

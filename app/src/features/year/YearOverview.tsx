@@ -2,12 +2,12 @@ import React, { useMemo } from 'react';
 import { getValueForValence } from '@/lib/valence';
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { dateToDayKey } from '@/lib/friendly-date';
-import { getPrimaryMetric, getValenceValueForNumber } from '@/lib/tracking';
-import { computeNumberStats } from '@/lib/stats';
+import { getPrimaryMetricFromStats, getValenceValueForNumber } from '@/lib/tracking';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
 
 export interface YearOverviewProps {
   year: number;
-  data: Record<DayKey, number[]>;
+  dayDataByKey: Record<DayKey, PeriodAggregateData<'day'>>;
   currentMonth: number;
   onMonthClick: (month: number) => void;
   valence: Valence;
@@ -21,7 +21,7 @@ const monthNames = [
 
 export const YearOverview: React.FC<YearOverviewProps> = ({ 
   year, 
-  data, 
+  dayDataByKey, 
   currentMonth, 
   onMonthClick,
   valence,
@@ -45,8 +45,9 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month - 1, day);
         const dateKey = dateToDayKey(date);
-        const numbers = data[dateKey] || [];
-        const value = computeNumberStats(numbers)?.[getPrimaryMetric(tracking)] ?? 0;
+        const dayData = dayDataByKey[dateKey];
+        const numbers = dayData?.numbers ?? [];
+        const value = dayData ? getPrimaryMetricFromStats(dayData.stats, tracking) : 0;
         const isFuture = date > today;
         const hasData = numbers.length > 0;
         const valenceValue = hasData
@@ -57,7 +58,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
       }
     }
     return result;
-  }, [year, data, tracking]);
+  }, [year, dayDataByKey, tracking]);
 
   // Helper to get color for a dot
   const getDotColor = (valenceValue: number, isFuture: boolean, hasData: boolean) => {

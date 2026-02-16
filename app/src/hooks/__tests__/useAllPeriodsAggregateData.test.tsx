@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { DayEntry } from '@/features/db/localdb';
 import { convertDateKey } from '@/lib/friendly-date';
-import { useAllCalendarData } from '../useAllCalendarData';
+import { useAllPeriodsAggregateData } from '../useAllPeriodsAggregateData';
 
 let datasetId = 'dataset-1';
 let allDays: DayEntry[] = [];
@@ -35,7 +35,7 @@ describe('useAllCalendarData', () => {
       makeEntry('2025-02-10', [5, 6]),
     ];
 
-    const { result } = renderHook(() => useAllCalendarData());
+    const { result } = renderHook(() => useAllPeriodsAggregateData());
 
     const monthKey2024 = convertDateKey('2024-11-15', 'month');
     const monthKey2025 = convertDateKey('2025-02-10', 'month');
@@ -58,7 +58,7 @@ describe('useAllCalendarData', () => {
 
     allDays = [dayA, dayB, dayC, dayD];
 
-    const { result, rerender } = renderHook(() => useAllCalendarData());
+    const { result, rerender } = renderHook(() => useAllPeriodsAggregateData());
 
     const first = result.current;
     const prevDayRefs = first.days;
@@ -109,7 +109,7 @@ describe('useAllCalendarData', () => {
 
     allDays = [dayA, dayB];
 
-    const { result, rerender } = renderHook(() => useAllCalendarData());
+    const { result, rerender } = renderHook(() => useAllPeriodsAggregateData());
 
     const first = result.current;
     const weekKey = convertDateKey(dayA.date, 'week');
@@ -139,7 +139,7 @@ describe('useAllCalendarData', () => {
 
     allDays = [dayA, dayB, dayC];
 
-    const { result, rerender } = renderHook(() => useAllCalendarData());
+    const { result, rerender } = renderHook(() => useAllPeriodsAggregateData());
 
     const first = result.current;
     const prevDayRefs = first.days;

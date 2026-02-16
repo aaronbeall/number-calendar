@@ -79,6 +79,36 @@ export const keysOf = <T extends object>(obj: T) =>
   Object.keys(obj) as (keyof T)[];
 
 /**
+ * Convert an array into a record keyed by a selector.
+ */
+export const arrayToRecord = <T, K extends string | number | symbol, V = T>(
+  items: T[],
+  getKey: (item: T) => K,
+  getValue: (item: T) => V = (item) => item,
+): Record<K, V> => {
+  const record = {} as Record<K, V>;
+  for (const item of items) {
+    record[getKey(item)] = getValue(item);
+  }
+  return record;
+};
+
+/**
+ * Convert an array into a map keyed by a selector.
+ */
+export const arrayToMap = <T, K, V = T>(
+  items: T[],
+  getKey: (item: T) => K,
+  getValue: (item: T) => V = (item) => item,
+): Map<K, V> => {
+  const map = new Map<K, V>();
+  for (const item of items) {
+    map.set(getKey(item), getValue(item));
+  }
+  return map;
+};
+
+/**
  * Check if a name is already taken in a collection of items
  */
 export function isNameTaken<T>(

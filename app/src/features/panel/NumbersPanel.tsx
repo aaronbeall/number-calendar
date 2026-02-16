@@ -6,7 +6,7 @@ import { NumberText } from '@/components/ui/number-text';
 import { PopoverTip, PopoverTipContent, PopoverTipTrigger } from '@/components/ui/popover-tip';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { DateKey, DayKey, Goal, Tracking, Valence } from '@/features/db/localdb';
+import type { DateKey, DayKey, Goal, TimePeriod, Tracking, Valence } from '@/features/db/localdb';
 import { AchievementDetailsDrawer } from '@/features/achievements/AchievementDetailsDrawer';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
 import { getCalendarData } from '@/lib/calendar';
@@ -14,7 +14,8 @@ import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { getDateKeyType } from '@/lib/friendly-date';
 import type { CompletedAchievementResult, GoalResults } from '@/lib/goals';
-import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, type StatsExtremes } from '@/lib/stats';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, computePeriodDerivedStats, type StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
 import { getValueForValence } from '@/lib/valence';
 import { AnimatePresence } from 'framer-motion';
@@ -30,8 +31,8 @@ export interface NumbersPanelProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  numbers: number[];
-  priorNumbers?: number[]; // previous period's numbers
+  data: PeriodAggregateData<TimePeriod>;
+  priorData?: PeriodAggregateData<TimePeriod>;
   editableNumbers?: boolean; // default false
   showExpressionInput?: boolean; // default false
   onSave?: (numbers: number[]) => void;
@@ -43,7 +44,7 @@ export interface NumbersPanelProps {
   valence: Valence;
   tracking: Tracking;
 
-  daysData?: Record<DayKey, number[]>;
+  daysData?: Record<DayKey, PeriodAggregateData<'day'>>;
   dateKey: DateKey;
   achievementResults?: CompletedAchievementResult[];
 }
@@ -53,8 +54,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   isOpen,
   onClose,
   title,
-  numbers,
-  priorNumbers,
+  data,
+  priorData,
   editableNumbers = false,
   showExpressionInput = false,
   onSave,
@@ -69,6 +70,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   achievementResults
 }) => {
   const [sortMode, setSortMode] = useState<'original' | 'asc' | 'desc'>('original');
+  const numbers = data.numbers;
+  const priorNumbers = priorData?.numbers;
 
 
   // Local state for the expression input, initialized from numbers
@@ -84,6 +87,11 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
 
   // Use parsedNumbers if available, otherwise fallback to numbers
   const displayNumbers = parsedNumbers !== null ? parsedNumbers : numbers;
+  const displayData = useMemo(() => {
+    if (parsedNumbers === null || parsedNumbers === numbers) return data;
+    const derived = computePeriodDerivedStats(parsedNumbers, priorData?.stats ?? null, priorData?.cumulatives ?? null);
+    return { ...data, numbers: parsedNumbers, ...derived };
+  }, [data, numbers, parsedNumbers, priorData]);
 
   // Use getCalendarData for all stats, deltas, extremes, valence, etc.
   const {
@@ -104,7 +112,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     isLowestMin,
     isHighestMax,
     isLowestMax
-  } = useMemo(() => getCalendarData(displayNumbers, priorNumbers, extremes, tracking), [displayNumbers, priorNumbers, extremes, tracking]);;
+  } = useMemo(() => getCalendarData(displayData, extremes, tracking), [displayData, extremes, tracking]);
 
   // Prepare items with original indices for stable mapping when sorting
   const items = useMemo(() => displayNumbers.map((value, index) => ({ value, index })), [displayNumbers]);
@@ -534,18 +542,25 @@ const AchivementItem = ({ goal, onClick }: { goal: Goal; onClick: () => void }) 
 
 interface DailyStatsProps {
   grouping: "daily" | "monthly";
-  daysData: Record<DayKey, number[]>;
+  daysData: Record<DayKey, PeriodAggregateData<'day'>>;
   valence: Valence;
   tracking: Tracking;
 }
 
 const GroupedStats: React.FC<DailyStatsProps> = ({ grouping, daysData, valence, tracking }) => {
+  const numbersByDay = useMemo(() => {
+    const result: Record<DayKey, number[]> = {};
+    for (const [key, day] of Object.entries(daysData) as [DayKey, PeriodAggregateData<'day'>][]) {
+      result[key] = day.numbers;
+    }
+    return result;
+  }, [daysData]);
   const stats = useMemo(() => {
     return {
       daily: computeDailyStats,
       monthly: computeMonthlyStats
-    }[grouping](daysData);
-  }, [daysData, grouping]);
+    }[grouping](numbersByDay);
+  }, [numbersByDay, grouping]);
 
   const extremes = useMemo(() => {
     return calculateExtremes(stats);

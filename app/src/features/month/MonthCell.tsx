@@ -5,9 +5,9 @@ import { getCalendarData } from '@/lib/calendar';
 import { getRelativeSize } from '@/lib/charts';
 import { dateToDayKey, toMonthKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
-import { computeNumberStats } from '@/lib/stats';
-import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueForNumber } from '@/lib/tracking';
+import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { CalendarDays, Trophy } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -16,9 +16,9 @@ interface MonthCellProps {
   year: number;
   month: number;
   monthName: string;
-  numbers: number[];
-  priorNumbers?: number[];
-  monthDays?: { date: Date; numbers: number[]; priorNumbers: number[] }[];
+  data: PeriodAggregateData<'month'>;
+  priorData?: PeriodAggregateData<'month'>;
+  monthDays?: { date: Date; data: PeriodAggregateData<'day'>; priorData?: PeriodAggregateData<'day'> }[];
   isCurrentMonth: boolean;
   isFutureMonth?: boolean;
   yearExtremes?: StatsExtremes;
@@ -28,7 +28,7 @@ interface MonthCellProps {
   achievementResults: CompletedAchievementResult[];
 }
 
-export function MonthCell({ year, month, monthName, numbers, priorNumbers, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking, achievementResults }: MonthCellProps) {
+export function MonthCell({ year, month, monthName, data, priorData, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking, achievementResults }: MonthCellProps) {
   const [panelOpen, setPanelOpen] = useState(false);
   
   // Use getCalendarData for all stats, deltas, extremes, valence, etc.
@@ -48,7 +48,7 @@ export function MonthCell({ year, month, monthName, numbers, priorNumbers, month
     isLowestMin,
     isHighestMax,
     isLowestMax,
-  } = useMemo(() => getCalendarData(numbers, priorNumbers, yearExtremes, tracking), [numbers, priorNumbers, yearExtremes, tracking]);
+  } = useMemo(() => getCalendarData(data, yearExtremes, tracking), [data, yearExtremes, tracking]);
   
   // Unified tile style for monthly grid, with color effect (valence-aware)
   const getColorClasses = () => {
@@ -75,9 +75,9 @@ export function MonthCell({ year, month, monthName, numbers, priorNumbers, month
   // Prepare monthData for NumbersPanel
   const monthData = useMemo(() => {
     return monthDays.reduce((acc, day) => { 
-      acc[dateToDayKey(day.date)] = day.numbers;
+      acc[dateToDayKey(day.date)] = day.data;
       return acc; 
-    }, {} as Record<DayKey, number[]>);
+    }, {} as Record<DayKey, PeriodAggregateData<'day'>>);
   }, [monthDays]);
 
   return (
@@ -106,8 +106,8 @@ export function MonthCell({ year, month, monthName, numbers, priorNumbers, month
       <NumbersPanel
         isOpen={panelOpen}
         title={`${monthName}`}
-        numbers={numbers}
-        priorNumbers={priorNumbers}
+        data={data}
+        priorData={priorData}
         daysData={monthData}
         extremes={yearExtremes}
         editableNumbers={false}
@@ -177,16 +177,13 @@ export function MonthCell({ year, month, monthName, numbers, priorNumbers, month
                 for (let d = 1; d <= lastDayOfMonth; d++) {
                   const dayObj = monthDays[d - 1];
                   const date = dayObj.date;
-                  const numbersForDay = dayObj.numbers;
-                  const priorNumbersForDay = dayObj.priorNumbers;
+                  const numbersForDay = dayObj.data.numbers;
                   const isFuture = date > today;
                   
                   // Calculate stats and primary metrics for the day
-                  const dayStats = computeNumberStats(numbersForDay);
-                  const priorStats = computeNumberStats(priorNumbersForDay);
-                  const primaryMetric = dayStats ? getPrimaryMetricFromStats(dayStats, tracking) : undefined;
-                  const priorPrimaryMetric = priorStats ? getPrimaryMetricFromStats(priorStats, tracking) : undefined;
-                  const valenceValue = getValenceValueForNumber(primaryMetric ?? 0, priorPrimaryMetric, tracking);
+                  const dayStats = dayObj.data.stats;
+                  const primaryMetric = getPrimaryMetricFromStats(dayStats, tracking);
+                  const valenceValue = getValenceValueFromData(dayObj.data, tracking);
                   
                   const scale = getRelativeSize(
                     primaryMetric ?? 0,

@@ -5,6 +5,7 @@ import type { CompletedAchievementResult } from '@/lib/goals';
 import { dateToDayKey } from '@/lib/friendly-date';
 import { getCalendarData } from '@/lib/calendar';
 import { getRelativeSize } from '@/lib/charts';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
 import { getValenceValueForNumber } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
@@ -14,17 +15,19 @@ import { NumbersPanel } from '../panel/NumbersPanel';
 
 export interface DayCellProps {
   date: Date;
-  numbers: number[];
+  data: PeriodAggregateData<'day'>;
+  priorData?: PeriodAggregateData<'day'>;
   onSave: (numbers: number[]) => void;
   monthExtremes?: StatsExtremes;
   valence: Valence;
-  priorNumbers?: number[];
   tracking: Tracking;
   achievementResults: CompletedAchievementResult[];
 }
 
-export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthExtremes, valence, priorNumbers, tracking, achievementResults }) => {
+export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave, monthExtremes, valence, tracking, achievementResults }) => {
   const [editMode, setEditMode] = useState(false);
+  const numbers = data.numbers;
+  const priorNumbers = priorData?.numbers;
 
   const isToday = date.toDateString() === new Date().toDateString();
 
@@ -46,7 +49,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
     isLowestMin,
     isHighestMax,
     isLowestMax,
-  } = useMemo(() => getCalendarData(numbers, priorNumbers, monthExtremes, tracking), [numbers, priorNumbers, monthExtremes, tracking]);
+  } = useMemo(() => getCalendarData(data, monthExtremes, tracking), [data, monthExtremes, tracking]);
   
   const count = numbers.length;
   const hasData = count > 0;
@@ -213,8 +216,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, numbers, onSave, monthEx
         isOpen={editMode}
         onClose={handleClose}
         title={date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-        numbers={numbers}
-        priorNumbers={priorNumbers}
+        data={data}
+        priorData={priorData}
         editableNumbers
         showExpressionInput
         onSave={onSave}

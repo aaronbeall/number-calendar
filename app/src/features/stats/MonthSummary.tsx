@@ -3,12 +3,12 @@ import type { Tracking, Valence } from '@/features/db/localdb';
 import { type StatsExtremes } from '@/lib/stats';
 import { getValueForValence } from '@/lib/valence';
 import { getCalendarData } from '@/lib/calendar';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { CheckCircle, Clock, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import React, { useMemo } from 'react';
 
 export interface MonthSummaryProps {
-  numbers: number[];
-  priorNumbers?: number[];
+  data: PeriodAggregateData<'month'>;
   monthName?: string;
   isCurrentMonth?: boolean;
   yearExtremes?: StatsExtremes;
@@ -16,7 +16,7 @@ export interface MonthSummaryProps {
   tracking: Tracking;
 }
 
-export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, priorNumbers, monthName, isCurrentMonth, yearExtremes, valence, tracking }) => {
+export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isCurrentMonth, yearExtremes, valence, tracking }) => {
   // Use getCalendarData for all stats, deltas, valence, etc.
   const {
     stats,
@@ -34,7 +34,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ numbers, priorNumber
     isLowestMin,
     isHighestMax,
     isLowestMax,
-  } = useMemo(() => getCalendarData(numbers, priorNumbers, yearExtremes, tracking), [numbers, priorNumbers, yearExtremes, tracking]);
+  } = useMemo(() => getCalendarData(data, yearExtremes, tracking), [data, yearExtremes, tracking]);
 
   if (!stats) return (
     <div className="text-sm text-slate-500">No data</div>

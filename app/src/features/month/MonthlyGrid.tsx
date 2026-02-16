@@ -2,23 +2,27 @@ import type { DateKey, DayKey, MonthKey, Tracking, Valence } from '@/features/db
 import { getMonthDays } from '@/lib/calendar';
 import { toMonthKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
+import { createEmptyAggregate, type PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
+import { emptyStats } from '@/lib/stats';
 import { parseISO } from 'date-fns';
 import { useMemo } from 'react';
 import { MonthCell } from './MonthCell';
 
 interface MonthlyGridProps {
   year: number;
-  yearData: Record<DayKey, number[]>;
+  dayDataByKey: Record<DayKey, PeriodAggregateData<'day'>>;
+  priorDayByKey: Record<DayKey, PeriodAggregateData<'day'> | undefined>;
+  monthDataByKey: Record<MonthKey, PeriodAggregateData<'month'>>;
+  priorMonthByKey: Record<MonthKey, PeriodAggregateData<'month'> | undefined>;
   yearExtremes?: StatsExtremes;
   onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;
-  priorNumbersMap: Record<DayKey | MonthKey, number[]>;
   achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
 }
 
-export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence, tracking, priorNumbersMap, achievementResultsByDateKey }: MonthlyGridProps) {
+export function MonthlyGrid({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, onOpenMonth, valence, tracking, achievementResultsByDateKey }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -28,32 +32,34 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
   // Memoized map of month data
   const monthDataMap = useMemo(() => {
     const map = new Map<number, {
-      all: number[];
+      data: PeriodAggregateData<'month'>;
+      priorData?: PeriodAggregateData<'month'>;
       days: {
-        date: Date; 
-        numbers: number[]; 
-        priorNumbers: number[]
-      }[]
+        date: Date;
+        data: PeriodAggregateData<'day'>;
+        priorData?: PeriodAggregateData<'day'>;
+      }[];
     }>();
 
     for (let monthNumber = 1; monthNumber <= 12; monthNumber++) {
-      const all: number[] = [];
-      const days: { date: Date; numbers: number[]; priorNumbers: number[] }[] = [];
+      const monthKey = toMonthKey(year, monthNumber);
+      const days: { date: Date; data: PeriodAggregateData<'day'>; priorData?: PeriodAggregateData<'day'> }[] = [];
       const monthDayKeys = getMonthDays(year, monthNumber);
 
       for (const dateStr of monthDayKeys) {
         const date = parseISO(dateStr);
-        const dayNumbers = yearData[dateStr] || [];
-        const dayPriorNumbers = priorNumbersMap[dateStr] || [];
-        all.push(...dayNumbers);
-        days.push({ date, numbers: dayNumbers, priorNumbers: dayPriorNumbers });
+        const dayData = dayDataByKey[dateStr] ?? createEmptyAggregate(dateStr, 'day');
+        const priorData = priorDayByKey[dateStr];
+        days.push({ date, data: dayData, priorData });
       }
 
-      map.set(monthNumber, { all, days });
+      const data = monthDataByKey[monthKey] ?? createEmptyAggregate(monthKey, 'month');
+      const priorData = priorMonthByKey[monthKey];
+      map.set(monthNumber, { data, priorData, days });
     }
 
     return map;
-  }, [yearData, year, priorNumbersMap]);
+  }, [dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, year]);
 
   const currentDate = new Date();
   const isCurrentYear = year === currentDate.getFullYear();
@@ -64,7 +70,7 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
       {monthNames.map((monthName, index) => {
         const monthNumber = index + 1;
         const monthData = monthDataMap.get(monthNumber)!;
-        const { all: monthNumbers, days: monthDays } = monthData;
+        const { data: monthAggregate, priorData, days: monthDays } = monthData;
         const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
         const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
         return (
@@ -73,8 +79,8 @@ export function MonthlyGrid({ year, yearData, yearExtremes, onOpenMonth, valence
             year={year}
             month={monthNumber}
             monthName={monthName}
-            numbers={monthNumbers}
-            priorNumbers={priorNumbersMap[toMonthKey(year, monthNumber)]}
+            data={monthAggregate}
+            priorData={priorData}
             monthDays={monthDays}
             isCurrentMonth={isCurrentMonth}
             isFutureMonth={isFutureMonth}

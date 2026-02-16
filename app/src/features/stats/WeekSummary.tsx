@@ -4,6 +4,8 @@ import type { Tracking, Valence, WeekKey } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import type { CompletedAchievementResult } from '@/lib/goals';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import type { StatsExtremes } from '@/lib/stats';
 import { getValueForValence } from '@/lib/valence';
 import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
@@ -11,17 +13,20 @@ import { NumbersPanel } from '../panel/NumbersPanel';
 import { Line, LineChart, Tooltip } from 'recharts';
 
 export interface WeekSummaryProps {
-  numbers: number[];
+  data: PeriodAggregateData<'week'>;
+  priorData?: PeriodAggregateData<'week'>;
+  monthExtremes?: StatsExtremes;
   weekNumber: number;
   isCurrentWeek?: boolean;
   valence: Valence;
   tracking: Tracking;
-  priorNumbers?: number[];
   dateKey: WeekKey;
   achievementResults: CompletedAchievementResult[];
 }
 
-export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, isCurrentWeek, valence, tracking, priorNumbers, dateKey, achievementResults }) => {
+export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, monthExtremes, weekNumber, isCurrentWeek, valence, tracking, dateKey, achievementResults }) => {
+  const numbers = data.numbers;
+  const priorNumbers = priorData?.numbers;
   if (!numbers || numbers.length === 0) return null;
 
   const [panelOpen, setPanelOpen] = useState(false);
@@ -35,7 +40,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
     primaryValenceMetric,
     isHighestPrimary,
     isLowestPrimary,
-  } = useMemo(() => getCalendarData(numbers, priorNumbers, undefined, tracking), [numbers, priorNumbers, tracking]);
+  } = useMemo(() => getCalendarData(data, monthExtremes, tracking), [data, monthExtremes, tracking]);
 
   if (!stats) return null;
   const { mean, median, min, max, count } = stats;
@@ -196,8 +201,9 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ numbers, weekNumber, i
         isOpen={panelOpen}
         onClose={() => setPanelOpen(false)}
         title={`Week ${weekNumber}`}
-        numbers={numbers}
-        priorNumbers={priorNumbers}
+        data={data}
+        priorData={priorData}
+        extremes={monthExtremes}
         editableNumbers={false}
         showExpressionInput={false}
         valence={valence}
