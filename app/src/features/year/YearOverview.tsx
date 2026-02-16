@@ -1,9 +1,9 @@
-import React, { useMemo } from 'react';
-import { getValueForValence } from '@/lib/valence';
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { dateToDayKey } from '@/lib/friendly-date';
-import { getPrimaryMetricFromStats, getValenceValueForNumber } from '@/lib/tracking';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import { getPrimaryMetricFromStats, getValenceValueFromData } from '@/lib/tracking';
+import { getValueForValence } from '@/lib/valence';
+import React, { useMemo } from 'react';
 
 export interface YearOverviewProps {
   year: number;
@@ -38,7 +38,6 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
       hasData: boolean;
       value: number;
     }>> = {};
-    let priorDayValue: number | undefined = undefined;
     for (let month = 1; month <= 12; month++) {
       const daysInMonth = new Date(year, month, 0).getDate();
       result[month] = [];
@@ -51,10 +50,9 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
         const isFuture = date > today;
         const hasData = numbers.length > 0;
         const valenceValue = hasData
-          ? getValenceValueForNumber(value, priorDayValue ?? numbers[0], tracking)
+          ? getValenceValueFromData(dayData, tracking) ?? 0
           : 0;
         result[month].push({ day, valenceValue, isFuture, hasData, value });
-        if (hasData) priorDayValue = value;
       }
     }
     return result;
