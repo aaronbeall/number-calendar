@@ -64,6 +64,8 @@ type PartialComputedCache<D extends DateKeyType, K extends keyof PeriodCache<D>>
  * - Each period cache lazily computes numbers, stats, and aggregates (deltas, percents, cumulatives, extremes).
  * - Prior-period maps provide O(1) lookups to compute deltas/cumulatives efficiently.
  * - Updates invalidate only affected period caches so unchanged periods keep stable references.
+ * 
+ * @deprecated This class is no longer used since we moved to a more hook-centric architecture, but this has slightly better performance characteristics than the current implementation in the hooks, so we may want to reuse some of its logic in the future if we find performance to be an issue.
  */
 export class CalendarData {
   // Raw data storage
