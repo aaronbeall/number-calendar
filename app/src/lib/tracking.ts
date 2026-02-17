@@ -1,6 +1,7 @@
 import type { Tracking } from "@/features/db/localdb";
 import { type NumberMetric, type NumberSource, type NumberStats, type StatsExtremes } from "./stats";
 import { capitalize } from "./utils";
+import type { FormatValueOptions } from "./friendly-numbers";
 
 /**
  * Returns the primary metric key based on tracking type.
@@ -100,12 +101,23 @@ export function getSecondaryMetricValueFromData(data: { stats: NumberStats; delt
   return sourceData?.[metric];
 }
 
+/**
+ * Returns the secondary metric label based on tracking type.
+ */
 export function getSecondaryMetricLabel(tracking: Tracking) {
   const source = getSecondaryMetricSource(tracking);
   return {
-    cumulatives: `All-time`,
+    cumulatives: 'All-time',
     deltas: 'Change',
   }[source]
+}
+
+export function getSecondaryMetricFormat(tracking: Tracking) {
+  const source = getSecondaryMetricSource(tracking);
+  return {
+    cumulatives: { },
+    deltas: { delta: true },
+  }[source] satisfies FormatValueOptions;
 }
 
 /**
@@ -126,16 +138,4 @@ export function getChangeMetricValueFromData(data: { stats: NumberStats; deltas?
   const source = getChangeMetricSource(tracking);
   const sourceData = data[source];
   return sourceData?.[metric];
-}
-
-/**
- * Returns an object containing the primary metric, valence source, secondary metric source, and change metric source based on the given tracking type.
- */
-export function getTrackingMetrics(tracking: Tracking) {
-  return {
-    primary: getPrimaryMetric(tracking),
-    valence: getValenceSource(tracking),
-    secondary: getSecondaryMetricSource(tracking),
-    change: getChangeMetricSource(tracking),
-  }
 }

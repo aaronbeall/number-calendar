@@ -12,6 +12,7 @@ export type PeriodAggregateData<T extends TimePeriod> = {
   cumulatives: NumberStats;
   cumulativeDeltas: NumberStats;
   cumulativePercents: Partial<NumberStats>;
+  /** Extreme values of the child period stats (e.g. `months` -> `daily stats`) */
   extremes?: StatsExtremes;
 };
 

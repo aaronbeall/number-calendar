@@ -3,9 +3,12 @@ import { getWeek, parseISO } from "date-fns";
 import { dateToWeekKey, parseDateKey, toDayKey, toMonthKey, toWeekKey } from "./friendly-date";
 import type { PeriodAggregateData } from "./period-aggregate";
 import type { StatsExtremes } from "./stats";
-import { getChangeMetricValueFromData, getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getSecondaryMetricLabel, getSecondaryMetricValueFromData, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
+import { getChangeMetricValueFromData, getPrimaryMetric, getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLabel, getPrimaryMetricLowFromExtremes, getSecondaryMetricFormat, getSecondaryMetricLabel, getSecondaryMetricValueFromData, getValenceValueFromData as getValenceMetricFromData, getValenceSource } from "./tracking";
 
 
+/**
+ * Returns an array of day keys for the given month and year.
+ */
 export function getMonthDays(year: number, month: number) {
   const days: DayKey[] = [];
   const lastDay = new Date(year, month, 0).getDate();
@@ -15,6 +18,9 @@ export function getMonthDays(year: number, month: number) {
   return days;
 }
 
+/**
+ * Returns an array of day keys for the given year.
+ */
 export function getYearDays(year: number): DayKey[] {
   const days: DayKey[] = [];
   for (let m = 1; m <= 12; m++) {
@@ -26,6 +32,10 @@ export function getYearDays(year: number): DayKey[] {
   return days;
 }
 
+/**
+ * Returns an array of day keys for the given week and year.
+ * Assumes week starts on Sunday and uses calendar week numbering.
+ */
 export function getWeekDays(year: number, week: number): DayKey[] {
   const days: DayKey[] = [];
   const weekKey = toWeekKey(year, week);
@@ -38,6 +48,9 @@ export function getWeekDays(year: number, week: number): DayKey[] {
   return days;
 }
 
+/**
+ * Returns an array of month keys for the given year.
+ */
 export function getYearMonths(year: number): MonthKey[] {
   const months: MonthKey[] = [];
   for (let m = 1; m <= 12; m++) {
@@ -46,6 +59,11 @@ export function getYearMonths(year: number): MonthKey[] {
   return months;
 }
 
+/**
+ * Returns an array of week keys for the given month and year.
+ * This is derived from the days in the month, so it accounts for partial weeks at the start and end of the month.
+ * Assumes week starts on Sunday and uses calendar week numbering.
+ */
 export function getMonthWeeks(year: number, month: number): WeekKey[] {
   const weeksSet = new Set<WeekKey>();
   const days = getMonthDays(year, month);
@@ -57,6 +75,11 @@ export function getMonthWeeks(year: number, month: number): WeekKey[] {
   return Array.from(weeksSet).sort() as WeekKey[];
 }
 
+/**
+ * Returns an array of week keys for the given year.
+ * This is derived from the days in the year, so it accounts for partial weeks at the start and end of the year.
+ * Assumes week starts on Sunday and uses calendar week numbering.
+ */
 export function getYearWeeks(year: number): WeekKey[] {
   const weeksSet = new Set<WeekKey>();
   const days = getYearDays(year);
@@ -88,6 +111,7 @@ export function getCalendarData<T extends TimePeriod>(
   const primaryValenceMetric = (stats && getValenceMetricFromData({ stats, deltas }, tracking));
   const secondaryMetric = (stats && getSecondaryMetricValueFromData({ stats, deltas, cumulatives: data?.cumulatives }, tracking));
   const secondaryMetricLabel = getSecondaryMetricLabel(tracking);
+  const secondaryMetricFormat = getSecondaryMetricFormat(tracking);
   const changeMetric = (stats && getChangeMetricValueFromData({ stats, deltas, percents, cumulatives: data?.cumulatives, cumulativePercents: data?.cumulativePercents }, tracking));
   const hasData = (data?.numbers?.length ?? 0) > 0;
   return {
@@ -102,6 +126,7 @@ export function getCalendarData<T extends TimePeriod>(
     primaryValenceMetric,
     secondaryMetric,
     secondaryMetricLabel,
+    secondaryMetricFormat,
     secondaryValenceMetric: secondaryMetric,
     changeMetric,
     changeValenceMetric: changeMetric,

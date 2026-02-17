@@ -12,8 +12,8 @@ import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { useAchievements } from '@/hooks/useAchievements';
 import { ChartContainer } from '@/components/ui/chart';
 import { getCalendarData, getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
-import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
+import { formatValue, type FormatValueOptions } from '@/lib/friendly-numbers';
 import { getCompletedAchievementsByDateKey, type CompletedAchievementResult } from '@/lib/goals';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
@@ -22,17 +22,17 @@ import { computeNumberStats, emptyStats } from '@/lib/stats';
 import { getPrimaryMetric, getValenceValueForNumber, getValenceValueFromData } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Ellipsis, Minus } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Ellipsis, Minus } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip as ChartTooltip} from 'recharts';
 
-type TimelineEntryKind = 'year' | 'month' | 'week' | 'day';
+type TimelineEntryKind = DateKeyType;
 
 type TimelineEntry = {
   kind: TimelineEntryKind;
   dateKey: DateKey;
   title: string;
-  data?: PeriodAggregateData<'day' | 'week' | 'month' | 'year'>;
+  data?: PeriodAggregateData<DateKeyType>;
   hasData?: boolean;
   hasNote?: boolean;
   isToday?: boolean;
@@ -177,6 +177,7 @@ function TimelineStatsRow({
   valenceStats,
   secondaryMetricLabel,
   secondaryMetric,
+  secondaryMetricFormat,
   changePercent,
 }: {
   stats: NonNullable<ReturnType<typeof computeNumberStats>>;
@@ -187,6 +188,7 @@ function TimelineStatsRow({
   valenceStats?: NonNullable<ReturnType<typeof computeNumberStats>>;
   secondaryMetricLabel: string;
   secondaryMetric?: number;
+  secondaryMetricFormat?: FormatValueOptions;
   changePercent?: number;
 }) {
   const primaryClasses = getValueForValence(primaryValenceMetric, valence, {
@@ -194,7 +196,7 @@ function TimelineStatsRow({
     bad: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300',
     neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
   });
-  const formattedChange = changePercent !== undefined
+  const formattedChangePercent = changePercent !== undefined
     ? formatValue(changePercent, { percent: true, delta: true })
     : '';
   const changeClass = getValueForValence(changePercent ?? 0, valence, {
@@ -273,10 +275,10 @@ function TimelineStatsRow({
               valenceValue={secondaryMetric ?? 0}
               valence={valence}
               className="font-semibold"
-              formatOptions={shortNumberFormat}
+              formatOptions={{ ...shortNumberFormat, signDisplay: secondaryMetricFormat?.delta ? 'exceptZero' : 'auto' }}
             />{' '}
-            { formattedChange && (
-              <span className={changeClass}>({formattedChange})</span>
+            { formattedChangePercent && (
+              <span className={changeClass}>({formattedChangePercent})</span>
             )}
           </div>
         </div>
@@ -337,6 +339,7 @@ const TimelineEntryCard = React.memo(({
     primaryValenceMetric = 0,
     secondaryMetric,
     secondaryMetricLabel,
+    secondaryMetricFormat,
     changeMetric,
   } = useMemo(
     () => getCalendarData(entry.data ?? null, entry.data?.extremes, tracking),
@@ -464,6 +467,7 @@ const TimelineEntryCard = React.memo(({
                     valenceStats={valenceStats}
                     secondaryMetricLabel={secondaryMetricLabel}
                     secondaryMetric={secondaryMetric}
+                    secondaryMetricFormat={secondaryMetricFormat}
                     changePercent={changeMetric}
                   />
                 )}
@@ -574,6 +578,7 @@ const TimelineEntryCard = React.memo(({
               valenceStats={valenceStats}
               secondaryMetricLabel={secondaryMetricLabel}
               secondaryMetric={secondaryMetric}
+              secondaryMetricFormat={secondaryMetricFormat}
               changePercent={changeMetric}
             />
           )}
