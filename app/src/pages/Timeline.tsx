@@ -11,7 +11,7 @@ import { NotesDisplay } from '@/features/notes/NotesDisplay';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { useAchievements } from '@/hooks/useAchievements';
 import { ChartContainer } from '@/components/ui/chart';
-import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
+import { getCalendarData, getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { getCompletedAchievementsByDateKey, type CompletedAchievementResult } from '@/lib/goals';
@@ -19,7 +19,7 @@ import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
 import { computeNumberStats, emptyStats } from '@/lib/stats';
-import { getChangeMetricValueFromData, getPrimaryMetric, getPrimaryMetricLabel, getSecondaryMetricLabel, getSecondaryMetricValueFromData, getValenceValueForNumber, getValenceValueFromData } from '@/lib/tracking';
+import { getPrimaryMetric, getValenceValueForNumber, getValenceValueFromData } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { ArrowDownRight, ArrowRight, ArrowUpRight, Ellipsis } from 'lucide-react';
@@ -174,6 +174,7 @@ function TimelineStatsRow({
   primaryMetric,
   primaryMetricLabel,
   primaryValenceMetric,
+  valenceStats,
   secondaryMetricLabel,
   secondaryMetric,
   changePercent,
@@ -183,6 +184,7 @@ function TimelineStatsRow({
   primaryMetric: number | undefined;
   primaryMetricLabel: string;
   primaryValenceMetric: number;
+  valenceStats?: NonNullable<ReturnType<typeof computeNumberStats>>;
   secondaryMetricLabel: string;
   secondaryMetric?: number;
   changePercent?: number;
@@ -208,7 +210,7 @@ function TimelineStatsRow({
           <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mean</div>
           <NumberText
             value={stats.mean}
-            valenceValue={primaryValenceMetric}
+            valenceValue={valenceStats?.mean ?? 0}
             valence={valence}
             className="font-mono text-xs sm:text-sm font-semibold"
             formatOptions={shortNumberFormat}
@@ -218,7 +220,7 @@ function TimelineStatsRow({
           <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Median</div>
           <NumberText
             value={stats.median}
-            valenceValue={primaryValenceMetric}
+            valenceValue={valenceStats?.median ?? 0}
             valence={valence}
             className="font-mono text-xs sm:text-sm font-semibold"
             formatOptions={shortNumberFormat}
@@ -233,7 +235,7 @@ function TimelineStatsRow({
           <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Min</div>
           <NumberText
             value={stats.min}
-            valenceValue={primaryValenceMetric}
+            valenceValue={valenceStats?.min ?? 0}
             valence={valence}
             className="font-mono text-sm font-semibold"
             formatOptions={shortNumberFormat}
@@ -243,7 +245,7 @@ function TimelineStatsRow({
           <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Max</div>
           <NumberText
             value={stats.max}
-            valenceValue={primaryValenceMetric}
+            valenceValue={valenceStats?.max ?? 0}
             valence={valence}
             className="font-mono text-sm font-semibold"
             formatOptions={shortNumberFormat}
@@ -328,15 +330,18 @@ const TimelineEntryCard = React.memo(({
   isSelected?: boolean;
 }) => {
   const stats = entry.data?.stats;
-  const primaryMetricLabel = getPrimaryMetricLabel(tracking);
-  const primaryMetricKey = getPrimaryMetric(tracking);
-  const primaryMetric = stats ? stats[primaryMetricKey] : undefined;
-  const secondaryMetricLabel = getSecondaryMetricLabel(tracking);
-  const secondaryMetric = entry.data ? getSecondaryMetricValueFromData(entry.data, tracking) : undefined;
-  const changePercent = entry.data ? getChangeMetricValueFromData(entry.data, tracking) : stats?.changePercent;
-  const primaryValenceMetric = stats
-    ? getValenceValueForNumber(primaryMetric ?? 0, undefined, tracking)
-    : 0;
+  const {
+    valenceStats,
+    primaryMetric,
+    primaryMetricLabel,
+    primaryValenceMetric = 0,
+    secondaryMetric,
+    secondaryMetricLabel,
+    changeMetric,
+  } = useMemo(
+    () => getCalendarData(entry.data ?? null, entry.data?.extremes, tracking),
+    [entry.data, tracking]
+  );
   const isDay = entry.kind === 'day';
   const isYear = entry.kind === 'year';
   const isMonth = entry.kind === 'month';
@@ -456,9 +461,10 @@ const TimelineEntryCard = React.memo(({
                     primaryMetric={primaryMetric}
                     primaryMetricLabel={primaryMetricLabel}
                     primaryValenceMetric={primaryValenceMetric}
+                    valenceStats={valenceStats}
                     secondaryMetricLabel={secondaryMetricLabel}
                     secondaryMetric={secondaryMetric}
-                    changePercent={changePercent}
+                    changePercent={changeMetric}
                   />
                 )}
               </>
@@ -565,9 +571,10 @@ const TimelineEntryCard = React.memo(({
               primaryMetric={primaryMetric}
               primaryMetricLabel={primaryMetricLabel}
               primaryValenceMetric={primaryValenceMetric}
+              valenceStats={valenceStats}
               secondaryMetricLabel={secondaryMetricLabel}
               secondaryMetric={secondaryMetric}
-              changePercent={changePercent}
+              changePercent={changeMetric}
             />
           )}
         </div>
