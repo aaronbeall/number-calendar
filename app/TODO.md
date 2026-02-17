@@ -163,3 +163,4 @@ I'm liking this one.
 - [ ] Timeline extremes not showing up
 - [ ] Editing a badge directly doesn't update the preview
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
+- [ ] URL/back button compatibility for side-panels
