@@ -5,7 +5,7 @@ import { useDatasetContext } from '@/context/DatasetContext';
 import AchievementBadgeIcon from '@/features/achievements/AchievementBadgeIcon';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
 import type { DateKey, DateKeyByPeriod, DayKey, MonthKey, TimePeriod, Tracking, Valence, WeekKey, YearKey } from '@/features/db/localdb';
-import { useAllPeriodsAggregateData } from '@/hooks/useAllPeriodsAggregateData';
+import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { useNotes } from '@/features/db/useNotesData';
 import { NotesDisplay } from '@/features/notes/NotesDisplay';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
@@ -762,6 +762,8 @@ export function Timeline() {
           }
           const { month: monthNumber } = parseMonthKey(monthKey);
           const monthAggregate = monthAggByKey.get(monthKey) ?? createEmptyAggregate(monthKey, 'month');
+          const monthHasData = monthAggregate.numbers.length > 0;
+          const monthHasNotes = getMonthDays(year, monthNumber).some((dayKey) => noteDaySet.has(dayKey));
         const monthEntry = buildEntry(
           'month',
           monthKey as MonthKey,
@@ -770,6 +772,9 @@ export function Timeline() {
         );
 
         const weekResults: { weekKey: WeekKey; weekEntry: TimelineEntry | null; dayEntries: TimelineEntry[] }[] = [];
+        if (!monthHasData && !monthHasNotes) {
+          return { monthEntry, weekEntries: [] };
+        }
         let emptyRangeStart: DayKey | null = null;
         let emptyRangeEnd: DayKey | null = null;
         let emptyRangeWeekIndex: number | null = null;
@@ -959,7 +964,6 @@ export function Timeline() {
     if (!activeYearKey) return {} as Record<MonthKey, React.ReactElement[]>;
     const year = parseInt(activeYearKey, 10);
     const result: Record<MonthKey, React.ReactElement[]> = {} as Record<MonthKey, React.ReactElement[]>;
-    let priorDayValue: number | undefined = undefined;
 
     const getDotColor = (valenceValue: number, isFuture: boolean, hasData: boolean) => {
       if (isFuture) {
@@ -998,7 +1002,6 @@ export function Timeline() {
             title={`${formatFriendlyDate(dateKey)}${hasData ? `: ${value}` : ''}`}
           />
         );
-        if (hasData) priorDayValue = value;
       }
 
       const firstDayOfWeek = new Date(year, month - 1, 1).getDay();

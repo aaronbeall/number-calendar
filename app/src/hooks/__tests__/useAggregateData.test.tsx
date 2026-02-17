@@ -3,7 +3,7 @@ import { renderHook } from '@testing-library/react';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import type { DayEntry } from '@/features/db/localdb';
 import { convertDateKey } from '@/lib/friendly-date';
-import { useAllPeriodsAggregateData } from '../useAllPeriodsAggregateData';
+import { useAllPeriodsAggregateData } from '../useAggregateData';
 
 let datasetId = 'dataset-1';
 let allDays: DayEntry[] = [];
