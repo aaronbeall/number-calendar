@@ -22,7 +22,7 @@ import { computeNumberStats, emptyStats } from '@/lib/stats';
 import { getPrimaryMetric, getValenceValueForNumber, getValenceValueFromData } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Ellipsis } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Ellipsis, Minus } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip as ChartTooltip} from 'recharts';
 
@@ -386,7 +386,7 @@ const TimelineEntryCard = React.memo(({
     : getValueForSign(primaryValenceMetric, {
         positive: ArrowUpRight,
         negative: ArrowDownRight,
-        zero: ArrowRight,
+        zero: Minus,
       });
 
   const interactiveSelector = 'button, a, input, textarea, select, [data-no-panel]';
