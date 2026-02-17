@@ -25,8 +25,8 @@ export interface NumberTextProps {
   isLowest?: boolean;
   valence?: Valence;
   className?: string;
-  positiveClassName?: string;
-  negativeClassName?: string;
+  goodClassName?: string;
+  badClassName?: string;
   neutralClassName?: string;
   placeholder?: React.ReactNode;
   formatOptions?: Intl.NumberFormatOptions;
@@ -39,20 +39,20 @@ export const NumberText: React.FC<NumberTextProps> = ({
   isLowest = false,
   valence = 'positive',
   className = '',
-  positiveClassName = 'text-green-700 dark:text-green-300',
-  negativeClassName = 'text-red-700 dark:text-red-300',
+  goodClassName = 'text-green-700 dark:text-green-300',
+  badClassName = 'text-red-700 dark:text-red-300',
   neutralClassName = 'text-slate-700 dark:text-slate-200',
   placeholder = '-',
   formatOptions,
 }) => {
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
 
-  const signClass = getValueForValence(
+  const textClass = getValueForValence(
     valenceValue ?? 0,
     valence,
     {
-      good: positiveClassName,
-      bad: negativeClassName,
+      good: goodClassName,
+      bad: badClassName,
       neutral: neutralClassName,
     }
   );
@@ -67,7 +67,7 @@ export const NumberText: React.FC<NumberTextProps> = ({
   }
 
   const text = (
-    <span className={cn(signClass, className)}>
+    <span className={cn(textClass, className)}>
       {formatted}
     </span>
   );
