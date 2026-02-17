@@ -81,6 +81,7 @@ I'm liking this one.
   - [ ] Global quick add (with options) tailored for mobile
   - [ ] Add to rollups (week, month, year) -- how to distribute?
   - [ ] Multi-line add (re-use import code)
+- [ ] Audit log (per period)
 - [ ] Prev/Next in the panel
 - [ ] Time tracking with data
 - [ ] View customization (weekly, order, etc)
@@ -152,3 +153,4 @@ I'm liking this one.
 - [ ] [Minor] Generated goal text has extra whitespace (renders fine)
 - [ ] Maintain template with created dataset for goal builder -- add way to get to generic goal builder
 - [ ] Optimization -- component memo and data calc caching
+- [ ] Can't delete note
