@@ -137,6 +137,10 @@ I'm liking this one.
 - [x] Can't delete all data on a day anymore
 - [x] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
 - [ ] Tracking=series and deltas and percents aren't very helpful, period total is already a delta, and percents should be based on cumulative change, not change from prior delta -- will need to add cumulatives source (which itself is useless for tracking=trend)
+  - [x] Add cumulative calculations to data model
+  - [ ] Show cumulative in tracking=series
+  - [ ] Expose cumulative sources in goal targets
+  - [ ] Add percent change to goal builder
 - [ ] Adding data data to new month didn't update the monthly view show a new month summary
 - [ ] Need and error boundary to catch UI errors
 - [ ] Need suggested goal weight, meaningful suggested values throughout
@@ -154,3 +158,8 @@ I'm liking this one.
 - [ ] Maintain template with created dataset for goal builder -- add way to get to generic goal builder
 - [ ] Optimization -- component memo and data calc caching
 - [ ] Can't delete note
+- [ ] Refactor achievements to use aggregate data
+- [ ] Refactor to use `formatValue()` instead of `NumberFormatter`
+- [ ] Timeline extremes not showing up
+- [ ] Editing a badge directly doesn't update the preview
+- [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
