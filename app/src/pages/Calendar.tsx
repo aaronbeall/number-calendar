@@ -13,7 +13,7 @@ import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
-import { useAllPeriodsAggregateData } from '@/hooks/useAllCalendarData';
+import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { getMonthDays } from "@/lib/calendar";
 import { toMonthKey, toYearKey } from '@/lib/friendly-date';

@@ -22,7 +22,7 @@ const makeEntry = (date: DayEntry['date'], numbers: number[]): DayEntry => ({
   datasetId,
 });
 
-describe('useAllCalendarData', () => {
+describe('useAllPeriodsAggregateData', () => {
   beforeEach(() => {
     allDays = [];
   });
