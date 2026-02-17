@@ -769,39 +769,20 @@ export function Timeline() {
           monthAggregate
         );
 
-        const weekEntries = getMonthWeeks(year, monthNumber)
-          .map((weekKey) => {
-          const { week } = parseWeekKey(weekKey);
-          const weekDays = getWeekDays(year, week);
-          const weekAggregate = weekAggByKey.get(weekKey) ?? createEmptyAggregate(weekKey, 'week');
-          const weekHasNotes = weekDays.some((day) => noteDaySet.has(day));
-          const includesMaxVisible = weekDays.includes(maxVisibleDayKey as DayKey);
-          const weekHasContent = weekAggregate.numbers.length > 0 || weekHasNotes || includesMaxVisible;
-          if (!weekHasContent) return null;
-          const weekEntry = buildEntry(
-            'week',
-            weekKey as WeekKey,
-            formatFriendlyDate(weekKey as WeekKey),
-            weekAggregate
-          );
-
-          const dayEntries: TimelineEntry[] = [];
-          const monthWeekDays = weekDays
-            .filter((dayKey) => dayKey.startsWith(toMonthKey(year, monthNumber)))
-            .filter((dayKey) => {
-              if (year !== maxVisibleYear) return true;
-              if (toMonthKey(year, monthNumber) !== maxVisibleMonthKey) return true;
-              return dayKey <= maxVisibleDayKey;
-            });
-          let emptyRangeStart: DayKey | null = null;
-          let emptyRangeEnd: DayKey | null = null;
-          const flushEmptyRange = () => {
-            if (!emptyRangeStart || !emptyRangeEnd) return;
-            const label =
-              emptyRangeStart === emptyRangeEnd
-                ? formatFriendlyDate(emptyRangeStart)
-                : formatFriendlyDate(emptyRangeStart, emptyRangeEnd);
-            dayEntries.push(
+        const weekResults: { weekKey: WeekKey; weekEntry: TimelineEntry | null; dayEntries: TimelineEntry[] }[] = [];
+        let emptyRangeStart: DayKey | null = null;
+        let emptyRangeEnd: DayKey | null = null;
+        let emptyRangeWeekIndex: number | null = null;
+        const flushEmptyRange = () => {
+          if (!emptyRangeStart || !emptyRangeEnd) return;
+          const label =
+            emptyRangeStart === emptyRangeEnd
+              ? formatFriendlyDate(emptyRangeStart)
+              : formatFriendlyDate(emptyRangeStart, emptyRangeEnd);
+          const targetIndex = emptyRangeWeekIndex ?? Math.max(0, weekResults.length - 1);
+          const target = weekResults[targetIndex];
+          if (target) {
+            target.dayEntries.push(
               buildEntry(
                 'day',
                 emptyRangeStart,
@@ -810,9 +791,37 @@ export function Timeline() {
                 { hasData: false, hasNote: false }
               )
             );
-            emptyRangeStart = null;
-            emptyRangeEnd = null;
-          };
+          }
+          emptyRangeStart = null;
+          emptyRangeEnd = null;
+          emptyRangeWeekIndex = null;
+        };
+
+        getMonthWeeks(year, monthNumber).forEach((weekKey) => {
+          const { week } = parseWeekKey(weekKey);
+          const weekDays = getWeekDays(year, week);
+          const weekAggregate = weekAggByKey.get(weekKey) ?? createEmptyAggregate(weekKey, 'week');
+          const weekHasData = weekAggregate.numbers.length > 0;
+          const weekEntry = weekHasData
+            ? buildEntry(
+                'week',
+                weekKey as WeekKey,
+                formatFriendlyDate(weekKey as WeekKey),
+                weekAggregate
+              )
+            : null;
+
+          const dayEntries: TimelineEntry[] = [];
+          const weekIndex = weekResults.length;
+          weekResults.push({ weekKey: weekKey as WeekKey, weekEntry, dayEntries });
+
+          const monthWeekDays = weekDays
+            .filter((dayKey) => dayKey.startsWith(toMonthKey(year, monthNumber)))
+            .filter((dayKey) => {
+              if (year !== maxVisibleYear) return true;
+              if (toMonthKey(year, monthNumber) !== maxVisibleMonthKey) return true;
+              return dayKey <= maxVisibleDayKey;
+            });
 
           monthWeekDays.forEach((dayKey) => {
             const dayAggregate = dayAggByKey.get(dayKey);
@@ -836,6 +845,7 @@ export function Timeline() {
               }
               if (!emptyRangeStart) {
                 emptyRangeStart = dayKey;
+                emptyRangeWeekIndex = weekIndex;
               }
               emptyRangeEnd = dayKey;
               return;
@@ -851,15 +861,22 @@ export function Timeline() {
               )
             );
           });
-          flushEmptyRange();
+        });
 
-          return { weekEntry, dayEntries: dayEntries.slice().reverse() };
-        })
-          .filter((entry): entry is { weekEntry: TimelineEntry; dayEntries: TimelineEntry[] } => Boolean(entry));
+        flushEmptyRange();
 
-          return { monthEntry, weekEntries: weekEntries.slice().reverse() };
+        const weekEntries = weekResults
+          .filter(({ weekEntry, dayEntries }) => weekEntry || dayEntries.length > 0)
+          .map(({ weekKey, weekEntry, dayEntries }) => ({
+            weekKey,
+            weekEntry,
+            dayEntries: dayEntries.slice().reverse(),
+          }))
+          .reverse();
+
+        return { monthEntry, weekEntries };
         })
-          .filter((entry): entry is { monthEntry: TimelineEntry; weekEntries: { weekEntry: TimelineEntry; dayEntries: TimelineEntry[] }[] } => Boolean(entry))
+          .filter((entry): entry is { monthEntry: TimelineEntry; weekEntries: { weekKey: WeekKey; weekEntry: TimelineEntry | null; dayEntries: TimelineEntry[] }[] } => Boolean(entry))
           .reverse();
 
       return { yearEntry, monthEntries };
@@ -1240,31 +1257,35 @@ export function Timeline() {
                       onOpen={handleOpenEntry}
                       isSelected={panelProps.isOpen && panelProps.dateKey === monthEntry.dateKey}
                     />
-                    {weekEntries.map(({ weekEntry, dayEntries }) => (
-                      <div key={weekEntry.dateKey} className="space-y-3">
-                        <TimelineEntryCard
-                          entry={weekEntry}
-                          achievements={achievementResultsByDateKey[weekEntry.dateKey] ?? []}
-                          noteText={notesByDateKey.get(weekEntry.dateKey)}
-                          valence={dataset.valence}
-                          tracking={dataset.tracking}
-                          onOpen={handleOpenEntry}
-                          isSelected={panelProps.isOpen && panelProps.dateKey === weekEntry.dateKey}
-                        />
-                        <div className="space-y-2">
-                          {dayEntries.map((dayEntry) => (
-                            <TimelineEntryCard
-                              key={dayEntry.dateKey}
-                              entry={dayEntry}
-                              achievements={achievementResultsByDateKey[dayEntry.dateKey] ?? []}
-                              noteText={notesByDateKey.get(dayEntry.dateKey)}
-                              valence={dataset.valence}
-                              tracking={dataset.tracking}
-                              onOpen={handleOpenEntry}
-                              isSelected={panelProps.isOpen && panelProps.dateKey === dayEntry.dateKey}
-                            />
-                          ))}
-                        </div>
+                    {weekEntries.map(({ weekKey, weekEntry, dayEntries }) => (
+                      <div key={weekKey} className="space-y-3">
+                        {weekEntry && (
+                          <TimelineEntryCard
+                            entry={weekEntry}
+                            achievements={achievementResultsByDateKey[weekEntry.dateKey] ?? []}
+                            noteText={notesByDateKey.get(weekEntry.dateKey)}
+                            valence={dataset.valence}
+                            tracking={dataset.tracking}
+                            onOpen={handleOpenEntry}
+                            isSelected={panelProps.isOpen && panelProps.dateKey === weekEntry.dateKey}
+                          />
+                        )}
+                        {dayEntries.length > 0 && (
+                          <div className="space-y-2">
+                            {dayEntries.map((dayEntry) => (
+                              <TimelineEntryCard
+                                key={dayEntry.dateKey}
+                                entry={dayEntry}
+                                achievements={achievementResultsByDateKey[dayEntry.dateKey] ?? []}
+                                noteText={notesByDateKey.get(dayEntry.dateKey)}
+                                valence={dataset.valence}
+                                tracking={dataset.tracking}
+                                onOpen={handleOpenEntry}
+                                isSelected={panelProps.isOpen && panelProps.dateKey === dayEntry.dateKey}
+                              />
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
