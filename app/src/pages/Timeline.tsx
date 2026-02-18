@@ -22,6 +22,7 @@ import { computeNumberStats, emptyStats } from '@/lib/stats';
 import { getPrimaryMetric, getValenceValueForNumber, getValenceValueFromData } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
+import { MetricChip } from '@/features/stats/MetricChip';
 import { ArrowDownRight, ArrowUpRight, Ellipsis, Minus } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip as ChartTooltip} from 'recharts';
@@ -191,20 +192,6 @@ function TimelineStatsRow({
   secondaryMetricFormat?: FormatValueOptions;
   changePercent?: number;
 }) {
-  const primaryClasses = getValueForValence(primaryValenceMetric, valence, {
-    good: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300',
-    bad: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300',
-    neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
-  });
-  const formattedChangePercent = changePercent !== undefined
-    ? formatValue(changePercent, { percent: true, delta: true })
-    : '';
-  const changeClass = getValueForValence(changePercent ?? 0, valence, {
-    good: 'text-green-600 dark:text-green-400',
-    bad: 'text-red-600 dark:text-red-400',
-    neutral: 'text-slate-500 dark:text-slate-400',
-  });
-
   return (
     <div className="flex items-center gap-3 sm:gap-5 justify-end">
       <div className="hidden sm:flex items-center gap-3">
@@ -257,32 +244,16 @@ function TimelineStatsRow({
 
       <div className="hidden sm:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
 
-      <div className={cn('flex items-center gap-2 px-3 py-2 rounded font-mono font-bold', primaryClasses)}>
-        <div className="flex flex-col items-end">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-            {primaryMetricLabel}
-          </div>
-          <NumberText
-            value={primaryMetric ?? null}
-            valenceValue={primaryValenceMetric}
-            valence={valence}
-            className="text-lg sm:text-xl font-extrabold"
-          />
-          <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-            <span className="uppercase tracking-wide">{secondaryMetricLabel}</span>{' '}
-            <NumberText
-              value={secondaryMetric ?? null}
-              valenceValue={secondaryMetric ?? 0}
-              valence={valence}
-              className="font-semibold"
-              formatOptions={{ ...shortNumberFormat, signDisplay: secondaryMetricFormat?.delta ? 'exceptZero' : 'auto' }}
-            />{' '}
-            { formattedChangePercent && (
-              <span className={changeClass}>({formattedChangePercent})</span>
-            )}
-          </div>
-        </div>
-      </div>
+      <MetricChip
+        primaryMetric={primaryMetric}
+        primaryMetricLabel={primaryMetricLabel}
+        primaryValenceMetric={primaryValenceMetric}
+        secondaryMetric={secondaryMetric}
+        secondaryMetricLabel={secondaryMetricLabel}
+        secondaryMetricFormat={secondaryMetricFormat}
+        changePercent={changePercent}
+        valence={valence}
+      />
     </div>
   );
 }

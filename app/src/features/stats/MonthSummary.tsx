@@ -3,10 +3,10 @@ import type { Tracking, Valence } from '@/features/db/localdb';
 import { type StatsExtremes } from '@/lib/stats';
 import { getValueForValence } from '@/lib/valence';
 import { getCalendarData } from '@/lib/calendar';
-import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { CheckCircle, Clock, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import React, { useMemo } from 'react';
+import { MetricChip } from './MetricChip';
 
 export interface MonthSummaryProps {
   data: PeriodAggregateData<'month'>;
@@ -29,8 +29,6 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isC
     secondaryMetricLabel,
     secondaryMetricFormat,
     changeMetric,
-    isHighestPrimary,
-    isLowestPrimary,
     isHighestMean,
     isLowestMean,
     isHighestMedian,
@@ -116,37 +114,16 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isC
           <div className="hidden sm:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
 
           {/* Primary metric (most prominent, right-most, own container) */}
-          <div className={`flex items-center gap-3 px-5 py-4 rounded-lg font-mono font-black shadow-lg dark:shadow-xl ${getValueForValence(primaryValenceMetric, valence, {
-            good: 'bg-green-200 dark:bg-green-950 text-green-700 dark:text-green-300 shadow-green-200/50 dark:shadow-green-900/50',
-            bad: 'bg-red-200 dark:bg-red-950 text-red-700 dark:text-red-300 shadow-red-200/50 dark:shadow-red-900/50',
-            neutral: 'bg-slate-300 dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-slate-200/50 dark:shadow-slate-900/50',
-          })}`}>
-            <div className="flex flex-col items-end">
-              <div className="text-[11px] uppercase tracking-wide text-slate-600 dark:text-slate-400 font-bold">{primaryMetricLabel}</div>
-              <NumberText value={primaryMetric} valenceValue={primaryValenceMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} valence={valence} className="text-2xl sm:text-3xl font-black tracking-tight" />
-              {secondaryMetric !== undefined && (
-                <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 mt-1">
-                  <span className="uppercase tracking-wide">{secondaryMetricLabel}</span>{' '}
-                  <NumberText
-                    value={secondaryMetric ?? null}
-                    valenceValue={secondaryMetric ?? 0}
-                    valence={valence}
-                    className="font-semibold"
-                    formatOptions={{ ...shortNumberFormat, signDisplay: secondaryMetricFormat?.delta ? 'exceptZero' : 'auto' }}
-                  />{' '}
-                  {changeMetric !== undefined && (
-                    <span className={getValueForValence(changeMetric ?? 0, valence, {
-                      good: 'text-green-600 dark:text-green-400',
-                      bad: 'text-red-600 dark:text-red-400',
-                      neutral: 'text-slate-500 dark:text-slate-400',
-                    })}>
-                      ({formatValue(changeMetric, { percent: true, delta: true })})
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <MetricChip
+            primaryMetric={primaryMetric}
+            primaryMetricLabel={primaryMetricLabel}
+            primaryValenceMetric={primaryValenceMetric}
+            secondaryMetric={secondaryMetric}
+            secondaryMetricLabel={secondaryMetricLabel}
+            secondaryMetricFormat={secondaryMetricFormat}
+            changePercent={changeMetric}
+            valence={valence}
+          />
         </div>
       </div>
     </div>
