@@ -1,6 +1,6 @@
 
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
-import { endOfWeek, format, getWeek, isValid, parse, parseISO, startOfWeek } from 'date-fns';
+import { endOfWeek, format, getWeek, getWeekYear, isValid, parse, parseISO, startOfWeek } from 'date-fns';
 
 export type DateKeyType = 'day' | 'week' | 'month' | 'year';
 
@@ -37,7 +37,7 @@ export function dateToDayKey(date: Date): DayKey {
   return toDayKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
 }
 export function dateToWeekKey(date: Date): WeekKey {
-  return toWeekKey(date.getFullYear(), getWeek(date));
+  return toWeekKey(getWeekYear(date), getWeek(date));
 }
 export function dateToMonthKey(date: Date): MonthKey {
   return toMonthKey(date.getFullYear(), date.getMonth() + 1);
@@ -148,10 +148,10 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
 }
 
 /**
- * Converts an ISO week string (YYYY-Www) to the corresponding date string (YYYY-MM-DD) of the Monday of that week.
+ * Converts a local week string (YYYY-Www) to the corresponding ISO date string (YYYY-MM-DD) of the Sunday of that week.
  */
-function weekToISODate(week: WeekKey): string {
-  // Parse 'YYYY-Www' as ISO week and return the Sunday of that week
+function weekKeyToISODate(week: WeekKey): string {
+  // Parse 'YYYY-Www' as local week (requires useAdditionalWeekYearTokens) and return the Sunday of that week
   const date = parse(week, "YYYY-'W'ww", new Date(), { useAdditionalWeekYearTokens: true });
   const first = startOfWeek(date);
   return format(first, 'yyyy-MM-dd'); 
@@ -169,7 +169,7 @@ export function parseDateKey(key: DateKey): Date {
     return parseISO(key);
   }
   if (isWeekKey(key)) {
-    return parseISO(weekToISODate(key));
+    return parseISO(weekKeyToISODate(key));
   }
   if (isMonthKey(key)) {
     return parseISO(`${key}-01`);

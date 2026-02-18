@@ -13,6 +13,7 @@ import {
   toYearKey,
   parseWeekKey,
   getDateKeyType,
+  dateToWeekKey,
 } from '../friendly-date';
 
 describe('formatDateAsKey', () => {
@@ -366,5 +367,31 @@ describe('edge cases', () => {
     const key = formatDateAsKey(utcDate, 'day');
     // Should be consistent because we use ISO format
     expect(key).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('should do round-trip for dateToWeekKey at year boundaries', () => {
+    // Test dates at year boundaries where week year may differ from calendar year
+    // These dates will reveal the bug if getFullYear() is used when getWeekYear() is needed
+    const boundaryDates = [
+      new Date('2024-01-01'), // Early January - might be in week of previous year
+      new Date('2024-12-30'), // Late December - might be in week of next year
+      new Date('2024-12-31'),
+      new Date('2025-01-01'),
+      new Date('2025-12-31'),
+    ];
+
+    boundaryDates.forEach(date => {
+      const weekKey = dateToWeekKey(date);
+      const parsedDate = parseDateKey(weekKey);
+      
+      // The parsed date should be in the same week as the original
+      // Check by verifying they're within 6 days of each other and both are the same day of week
+      const daysDiff = Math.abs(
+        (parsedDate.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+      );
+      
+      expect(daysDiff).toBeLessThanOrEqual(6);
+      expect(parsedDate.getDay()).toBe(0); // Should be Sunday (start of week)
+    });
   });
 });
