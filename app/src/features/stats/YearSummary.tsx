@@ -1,7 +1,6 @@
 import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
-import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';

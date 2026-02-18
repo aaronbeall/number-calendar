@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 type MetricChipProps = {
   primaryMetric: number | undefined;
   primaryMetricLabel: string;
-  primaryValenceMetric: number;
+  primaryValenceMetric: number | undefined;
   secondaryMetric?: number;
   secondaryMetricLabel: string;
   secondaryMetricFormat?: FormatValueOptions;
