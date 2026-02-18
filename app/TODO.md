@@ -6,10 +6,13 @@ I'm liking this one.
 - [x] Numeric formatting
 - [x] Manage multiple datasets
   - [x] Duplicate dataset
+  - [ ] Favorite/pin dataset
 - [x] Achievements
   - [x] Show achievements in numbers panel
-  - [ ] Achievement unlocked interstitial
+  - [x] Achievement unlocked interstitial
   - [ ] Show achievements on calendar
+  - [ ] Favorite/pin achievements
+  - [ ] Duplicate achievement
 - [x] Milestones
   - [ ] Next milestone progress bar
 - [ ] Streaks
@@ -20,16 +23,20 @@ I'm liking this one.
   - [ ] Records timeline
   - [ ] Records calendar
   - [ ] Show records on calendar
-- [x] Notifications on new Records/Achievements/Streaks
+  - [ ] Records timeline playback
+- [x] Notifications on new Achievements
+  - [ ] Records notifications
 - [ ] Onboarding
   - [ ] Example datasets
   - [ ] Create dataset from template (Weightloss, P&L, Diet, etc)
 - [ ] App preferences
 - [x] Data import
   - [ ] Option to skip conflicting data
-  - [ ] Detect totals columns and auto-deselect
+  - [ ] Detect totals/derived columns and auto-deselect
   - [ ] Import dataset (with name, settings, etc)
 - [x] Data export
+  - [ ] Include notes
+  - [ ] Export/import achievements
 - [ ] Data settings
   - [x] Which is better (valence): higher, lower, etc
     - [ ] Range-bound valence: above, below, inside, outside
@@ -84,19 +91,30 @@ I'm liking this one.
   - [ ] Multi-line add (re-use import code)
 - [ ] Audit log (per period)
 - [ ] Prev/Next in the panel
-- [ ] Time tracking with data
-- [ ] View customization (weekly, order, etc)
-- [ ] Preserve dates for numbers in numbers panel (tooltip, display by date)
-- [ ] Cell tooltips (consise number panel info)
+- [ ] Timestamp date with number entries (requires stable re-parsing)
+- [ ] View customization (weekly, order, display metric, valence, etc)
+- [ ] Calendar cell tooltips (consise number panel info)
 - [ ] Growth projections
 - [ ] Search
-- [ ] Filter by expression
+- [ ] Filter by expression (re-use goal-builder)
 - [ ] Custom analytics queries (expose generic `stats.ts` API)
 - [ ] Add tags (on day/month/week/year)
 - [ ] Add ratings (on day/month/week/year)
 - [ ] Tooltips on extremes, ex "January Best"
 - [ ] Highlight min/max in editable numbers badge
 - [ ] Number dictionary by data type (ex "calories", lookup calories for food)
+- [x] Timeline view
+  - [x] Show chronology of data from most recent to least recent
+  - [x] Synced side-navigator with dots and micro charts
+  - [ ] Search/filter
+  - [ ] Highlight achievements, records
+- [ ] Analytics view
+  - [ ] Date range selector
+  - [ ] Graph, with custom metric plotting
+  - [ ] Donut chart, with custom condition buckets
+  - [ ] Histogram
+  - [ ] Conditional data filtering
+  - [ ] Customize view and save
 
 ## Product
 - [x] Dark mode
@@ -167,3 +185,4 @@ I'm liking this one.
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
 - [ ] URL/back button compatibility for side-panels
 - [ ] Format series with spaces, ie `5 +10 -20`
+- [ ] `NumberText` should have tooltips (full number, high/low explanation)
