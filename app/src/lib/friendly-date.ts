@@ -155,12 +155,13 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
  * The 'YYYY' part is the calendar year, which may differ from the week year in cases where the week overlaps two years.
  * For example, '2025-W01' represents the week starting on Sunday, December 30, 2024 and ending on Saturday, January 5, 2025. The week start date calendar year is 2024, but the week year for that week is 2025, because the majority of the week falls in 2025.
  * In order to preserve round-trip integrity we need to use the week year when parsing the week, which requires the useAdditionalWeekYearTokens option in date-fns. 
+ * It's possible to have different week keys that represent the same week if the calendar year and week year differ (e.g. '2024-W52' and '2025-W01' both represent the week of December 30, 2024 - January 5, 2025).
  */
 function weekKeyToISODate(week: WeekKey): string {
   // Parse 'YYYY-Www' as local week (requires useAdditionalWeekYearTokens) and return the Sunday of that week
   const date = parse(week, "YYYY-'W'ww", new Date(), { useAdditionalWeekYearTokens: true });
   const first = startOfWeek(date);
-  return format(first, 'yyyy-MM-dd'); 
+  return format(first, 'yyyy-MM-dd');
 }
 
 /**
