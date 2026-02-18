@@ -15,6 +15,7 @@ I'm liking this one.
 - [ ] Streaks
 - [x] Targets
   - [ ] Valence from targets
+  - [ ] Target/Milestone on calendar
 - [x] Records
   - [ ] Records timeline
   - [ ] Records calendar
@@ -92,6 +93,7 @@ I'm liking this one.
 - [ ] Filter by expression
 - [ ] Custom analytics queries (expose generic `stats.ts` API)
 - [ ] Add tags (on day/month/week/year)
+- [ ] Add ratings (on day/month/week/year)
 - [ ] Tooltips on extremes, ex "January Best"
 - [ ] Highlight min/max in editable numbers badge
 - [ ] Number dictionary by data type (ex "calories", lookup calories for food)
@@ -164,3 +166,4 @@ I'm liking this one.
 - [ ] Editing a badge directly doesn't update the preview
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
 - [ ] URL/back button compatibility for side-panels
+- [ ] Format series with spaces, ie `5 +10 -20`
