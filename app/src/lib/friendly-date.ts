@@ -153,8 +153,8 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
  * Note about week keys: The 'YYYY-Www' format represents a local week, where the week number is based on the local calendar. 
  * For now we use the default locale: the week starts on Sunday and ends on Saturday. 
  * The 'YYYY' part is the calendar year, which may differ from the week year in cases where the week overlaps two years.
- * For example, '2024-W01' represents the week starting on Sunday, December 30, 2024 and ending on Saturday, January 5, 2025. The calendar year is 2024, but the week year for that week is 2025, because the majority of the week falls in 2025.
- * In order to preserve round-trip integrity we need to use the week year when parsing, which requires the useAdditionalWeekYearTokens option in date-fns. 
+ * For example, '2025-W01' represents the week starting on Sunday, December 30, 2024 and ending on Saturday, January 5, 2025. The week start date calendar year is 2024, but the week year for that week is 2025, because the majority of the week falls in 2025.
+ * In order to preserve round-trip integrity we need to use the week year when parsing the week, which requires the useAdditionalWeekYearTokens option in date-fns. 
  */
 function weekKeyToISODate(week: WeekKey): string {
   // Parse 'YYYY-Www' as local week (requires useAdditionalWeekYearTokens) and return the Sunday of that week
