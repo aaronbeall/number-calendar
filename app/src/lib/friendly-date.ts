@@ -61,7 +61,7 @@ export function convertDateKey(dateKey: DateKey, targetType: DateKeyType): DateK
 
 /**
  * Formats a date, week, month, or range in a friendly way.
- * - For ISO week (YYYY-Www): returns the date range (e.g. Nov 24–30, 2025)
+ * - For week (YYYY-Www): returns the date range (e.g. Nov 24–30, 2025)
  * - For week ranges (YYYY-Www → YYYY-Www): returns the start day of the first week to the end day of the last week
  * - For month: returns 'Month YYYY'
  * - For day: returns 'MMM d, yyyy'
@@ -149,6 +149,12 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
 
 /**
  * Converts a local week string (YYYY-Www) to the corresponding ISO date string (YYYY-MM-DD) of the Sunday of that week.
+ * 
+ * Note about week keys: The 'YYYY-Www' format represents a local week, where the week number is based on the local calendar. 
+ * For now we use the default locale: the week starts on Sunday and ends on Saturday. 
+ * The 'YYYY' part is the calendar year, which may differ from the week year in cases where the week overlaps two years.
+ * For example, '2024-W01' represents the week starting on Sunday, December 30, 2024 and ending on Saturday, January 5, 2025. The calendar year is 2024, but the week year for that week is 2025, because the majority of the week falls in 2025.
+ * In order to preserve round-trip integrity we need to use the week year when parsing, which requires the useAdditionalWeekYearTokens option in date-fns. 
  */
 function weekKeyToISODate(week: WeekKey): string {
   // Parse 'YYYY-Www' as local week (requires useAdditionalWeekYearTokens) and return the Sunday of that week
