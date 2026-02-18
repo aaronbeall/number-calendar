@@ -13,7 +13,7 @@ import { useAchievements } from '@/hooks/useAchievements';
 import { ChartContainer } from '@/components/ui/chart';
 import { getCalendarData, getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
-import { formatValue, type FormatValueOptions } from '@/lib/friendly-numbers';
+import type { FormatValueOptions } from '@/lib/friendly-numbers';
 import { getCompletedAchievementsByDateKey, type CompletedAchievementResult } from '@/lib/goals';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
