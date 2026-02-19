@@ -91,6 +91,7 @@ I'm liking this one.
   - [ ] Multi-line add (re-use import code)
 - [ ] Audit log (per period)
 - [ ] Prev/Next in the panel
+- [ ] Day breakdown/links in numbers panel (week/month/year)
 - [ ] Timestamp date with number entries (requires stable re-parsing)
 - [ ] View customization (weekly, order, display metric, valence, etc)
 - [ ] Calendar cell tooltips (consise number panel info)
@@ -179,7 +180,7 @@ I'm liking this one.
 - [ ] Optimization -- component memo and data calc caching
 - [ ] Can't delete note
 - [ ] Refactor achievements to use aggregate data
-- [ ] Refactor to use `formatValue()` instead of `NumberFormatter`
+- [x] Refactor to use `formatValue()` instead of `NumberFormatter`
 - [ ] Timeline extremes not showing up
 - [ ] Editing a badge directly doesn't update the preview
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
