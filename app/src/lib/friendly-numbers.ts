@@ -158,7 +158,7 @@ export function formatFriendlyNumber(value: number | [number, number], options: 
 }
 
 /**
- * Helper to format values for display in goal titles and descriptions,
+ * Helper to format numeric values for display in the UI,
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
 export function formatValue(num: number | undefined, { short = false, percent = false, delta = false, decimals }: FormatValueOptions = {}): string {
