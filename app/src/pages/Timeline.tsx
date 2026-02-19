@@ -24,7 +24,7 @@ import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { MetricChip } from '@/features/stats/MetricChip';
 import { ArrowDownRight, ArrowUpRight, Ellipsis, Minus } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Line, LineChart, Tooltip as ChartTooltip} from 'recharts';
 
 type TimelineEntryKind = DateKeyType;
@@ -640,6 +640,7 @@ export function Timeline() {
   const todayDate = useMemo(() => new Date(), []);
   const [activeMonthKey, setActiveMonthKey] = useState<MonthKey | null>(null);
   const [activeYearKey, setActiveYearKey] = useState<YearKey | null>(null);
+  const navScrollRef = useRef<HTMLDivElement | null>(null);
 
   const allTimeNumbers = useMemo(() => {
     return periodDays
@@ -888,6 +889,31 @@ export function Timeline() {
     return () => observer.disconnect();
   }, [entriesByYear]);
 
+  useEffect(() => {
+    if (!activeMonthKey && !activeYearKey) return;
+    const navContainer = navScrollRef.current;
+    if (!navContainer) return;
+    const monthTarget = activeMonthKey
+      ? navContainer.querySelector<HTMLElement>(`[data-nav-month-key="${activeMonthKey}"]`)
+      : null;
+    const yearTarget = activeYearKey
+      ? navContainer.querySelector<HTMLElement>(`[data-nav-year-key="${activeYearKey}"]`)
+      : null;
+    const target = monthTarget ?? yearTarget;
+    if (!target) return;
+
+    const containerRect = navContainer.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const outOfView =
+      targetRect.top < containerRect.top || targetRect.bottom > containerRect.bottom;
+
+    if (outOfView) {
+      requestAnimationFrame(() => {
+        target.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      });
+    }
+  }, [activeMonthKey, activeYearKey]);
+
   const getPanelTitleForEntry = useCallback((entry: TimelineEntry) => {
     if (entry.kind === 'year') {
       return `${entry.title} Year Summary`;
@@ -1061,144 +1087,151 @@ export function Timeline() {
                 </ChartContainer>
               </div>
             )}
-            {entriesByYear.map(({ yearEntry, monthEntries }) => {
-              const stats = yearEntry.data?.stats;
-              const primaryMetric = stats ? stats[getPrimaryMetric(dataset.tracking)] : 0;
-              const primaryValenceMetric = stats
-                ? getValenceValueForNumber(primaryMetric ?? 0, undefined, dataset.tracking)
-                : 0;
-              const yearNumbers = yearEntry.data?.numbers ?? [];
-              const yearChartNumbers = getChartNumbers(yearNumbers, undefined, dataset.tracking);
-              const yearChartData = getChartData(yearChartNumbers, dataset.tracking);
-              const isActiveYear = activeYearKey === yearEntry.dateKey;
-              const badgeClasses = getValueForValence(primaryValenceMetric, dataset.valence, {
-                good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
-                bad: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
-                neutral: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
-              });
+            <div
+              ref={navScrollRef}
+              className="max-h-[calc(100vh-16rem)] space-y-3 overflow-y-auto pr-2"
+            >
+              {entriesByYear.map(({ yearEntry, monthEntries }) => {
+                const stats = yearEntry.data?.stats;
+                const primaryMetric = stats ? stats[getPrimaryMetric(dataset.tracking)] : 0;
+                const primaryValenceMetric = stats
+                  ? getValenceValueForNumber(primaryMetric ?? 0, undefined, dataset.tracking)
+                  : 0;
+                const yearNumbers = yearEntry.data?.numbers ?? [];
+                const yearChartNumbers = getChartNumbers(yearNumbers, undefined, dataset.tracking);
+                const yearChartData = getChartData(yearChartNumbers, dataset.tracking);
+                const isActiveYear = activeYearKey === yearEntry.dateKey;
+                const badgeClasses = getValueForValence(primaryValenceMetric, dataset.valence, {
+                  good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
+                  bad: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
+                  neutral: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                });
 
-              return (
-                <div key={yearEntry.dateKey} className="space-y-2">
-                  <a
-                    href={`#year-${yearEntry.dateKey}`}
-                    onClick={() => setActiveYearKey(yearEntry.dateKey as YearKey)}
-                    className={cn(
-                      'block rounded-lg border px-3 py-2 text-sm shadow-sm transition',
-                      isActiveYear
-                        ? 'border-blue-300/80 bg-blue-50/80 dark:border-blue-400/40 dark:bg-blue-950/40'
-                        : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700'
-                    )}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="text-base font-semibold text-slate-700 dark:text-slate-100">
-                        {yearEntry.title}
-                      </div>
-                      <div className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', badgeClasses)}>
-                        <NumberText
-                          value={primaryMetric}
-                          valenceValue={primaryValenceMetric}
-                          valence={dataset.valence}
-                          formatOptions={shortNumberFormat}
-                        />
-                      </div>
-                    </div>
-                    <div className="text-[11px] text-slate-400">{yearEntry.data?.stats.count ?? 0} entries</div>
-                    {yearChartData.length > 1 && (
-                      <ChartContainer
-                        config={{ numbers: { color: getValueForValence(primaryValenceMetric, dataset.valence, {
-                          good: '#22c55e',
-                          bad: '#ef4444',
-                          neutral: '#3b82f6',
-                        }) } }}
-                        className="mt-2 h-8 w-full"
-                      >
-                        <LineChart width={180} height={32} data={yearChartData} margin={{ top: 6, right: 0, left: 0, bottom: 4 }}>
-                          <Line
-                            type="monotone"
-                            dataKey="y"
-                            stroke={getValueForValence(primaryValenceMetric, dataset.valence, {
-                              good: '#22c55e',
-                              bad: '#ef4444',
-                              neutral: '#3b82f6',
-                            })}
-                            strokeWidth={2}
-                            dot={false}
-                            isAnimationActive={false}
+                return (
+                  <div key={yearEntry.dateKey} className="space-y-2">
+                    <a
+                      href={`#year-${yearEntry.dateKey}`}
+                      data-nav-year-key={yearEntry.dateKey}
+                      onClick={() => setActiveYearKey(yearEntry.dateKey as YearKey)}
+                      className={cn(
+                        'block rounded-lg border px-3 py-2 text-sm shadow-sm transition',
+                        isActiveYear
+                          ? 'border-blue-300/80 bg-blue-50/80 dark:border-blue-400/40 dark:bg-blue-950/40'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700'
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-base font-semibold text-slate-700 dark:text-slate-100">
+                          {yearEntry.title}
+                        </div>
+                        <div className={cn('rounded-full px-2 py-0.5 text-xs font-semibold', badgeClasses)}>
+                          <NumberText
+                            value={primaryMetric}
+                            valenceValue={primaryValenceMetric}
+                            valence={dataset.valence}
+                            formatOptions={shortNumberFormat}
                           />
-                          <ChartTooltip
-                            cursor={{
-                              fill: getValueForValence(primaryValenceMetric, dataset.valence, {
-                                good: 'rgba(16,185,129,0.08)',
-                                bad: 'rgba(239,68,68,0.08)',
-                                neutral: 'rgba(59,130,246,0.08)',
-                              }),
-                            }}
-                            content={renderTimelineChartTooltip(dataset.valence)}
-                          />
-                        </LineChart>
-                      </ChartContainer>
-                    )}
-                  </a>
-                  {isActiveYear && (
-                    <div className="space-y-2 border-l border-slate-200 pl-3 dark:border-slate-800">
-                      {monthEntries.map(({ monthEntry }) => {
-                        const isActiveMonth = activeMonthKey === monthEntry.dateKey;
-                        const monthDots = activeYearMonthDots[monthEntry.dateKey as MonthKey] ?? [];
-                        const monthStats = monthEntry.data?.stats;
-                        const monthPrimaryMetric = monthStats ? monthStats[getPrimaryMetric(dataset.tracking)] : 0;
-                        const monthPrimaryValence = monthStats
-                          ? getValenceValueForNumber(monthPrimaryMetric ?? 0, undefined, dataset.tracking)
-                          : 0;
-                        const monthBadgeClasses = getValueForValence(monthPrimaryValence, dataset.valence, {
-                          good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
-                          bad: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
-                          neutral: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
-                        });
-                        return (
-                          <a
-                            key={monthEntry.dateKey}
-                            href={`#month-${monthEntry.dateKey}`}
-                            className={cn(
-                              'relative flex gap-2 rounded-md px-2 py-1 transition',
-                              isActiveMonth
-                                ? 'bg-blue-50/70 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200'
-                                : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900/40'
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                'mt-1 h-2 w-2 rounded-full border',
-                                isActiveMonth
-                                  ? 'border-blue-500 bg-blue-500'
-                                  : 'border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900'
-                              )}
+                        </div>
+                      </div>
+                      <div className="text-[11px] text-slate-400">{yearEntry.data?.stats.count ?? 0} entries</div>
+                      {yearChartData.length > 1 && (
+                        <ChartContainer
+                          config={{ numbers: { color: getValueForValence(primaryValenceMetric, dataset.valence, {
+                            good: '#22c55e',
+                            bad: '#ef4444',
+                            neutral: '#3b82f6',
+                          }) } }}
+                          className="mt-2 h-8 w-full"
+                        >
+                          <LineChart width={180} height={32} data={yearChartData} margin={{ top: 6, right: 0, left: 0, bottom: 4 }}>
+                            <Line
+                              type="monotone"
+                              dataKey="y"
+                              stroke={getValueForValence(primaryValenceMetric, dataset.valence, {
+                                good: '#22c55e',
+                                bad: '#ef4444',
+                                neutral: '#3b82f6',
+                              })}
+                              strokeWidth={2}
+                              dot={false}
+                              isAnimationActive={false}
                             />
-                            <div className="flex min-w-0 flex-1 flex-col gap-1">
-                              <div className="flex items-center justify-between gap-2">
-                                <div className={cn('text-xs font-medium', isActiveMonth && 'font-semibold')}>
-                                  {monthEntry.title}
+                            <ChartTooltip
+                              cursor={{
+                                fill: getValueForValence(primaryValenceMetric, dataset.valence, {
+                                  good: 'rgba(16,185,129,0.08)',
+                                  bad: 'rgba(239,68,68,0.08)',
+                                  neutral: 'rgba(59,130,246,0.08)',
+                                }),
+                              }}
+                              content={renderTimelineChartTooltip(dataset.valence)}
+                            />
+                          </LineChart>
+                        </ChartContainer>
+                      )}
+                    </a>
+                    {isActiveYear && (
+                      <div className="space-y-2 border-l border-slate-200 pl-3 dark:border-slate-800">
+                        {monthEntries.map(({ monthEntry }) => {
+                          const isActiveMonth = activeMonthKey === monthEntry.dateKey;
+                          const monthDots = activeYearMonthDots[monthEntry.dateKey as MonthKey] ?? [];
+                          const monthStats = monthEntry.data?.stats;
+                          const monthPrimaryMetric = monthStats ? monthStats[getPrimaryMetric(dataset.tracking)] : 0;
+                          const monthPrimaryValence = monthStats
+                            ? getValenceValueForNumber(monthPrimaryMetric ?? 0, undefined, dataset.tracking)
+                            : 0;
+                          const monthBadgeClasses = getValueForValence(monthPrimaryValence, dataset.valence, {
+                            good: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200',
+                            bad: 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200',
+                            neutral: 'bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200',
+                          });
+                          return (
+                            <a
+                              key={monthEntry.dateKey}
+                              href={`#month-${monthEntry.dateKey}`}
+                              data-nav-month-key={monthEntry.dateKey}
+                              className={cn(
+                                'relative flex gap-2 rounded-md px-2 py-1 transition',
+                                isActiveMonth
+                                  ? 'bg-blue-50/70 text-blue-700 dark:bg-blue-950/40 dark:text-blue-200'
+                                  : 'text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-900/40'
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'mt-1 h-2 w-2 rounded-full border',
+                                  isActiveMonth
+                                    ? 'border-blue-500 bg-blue-500'
+                                    : 'border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900'
+                                )}
+                              />
+                              <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className={cn('text-xs font-medium', isActiveMonth && 'font-semibold')}>
+                                    {monthEntry.title}
+                                  </div>
+                                  <div className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', monthBadgeClasses)}>
+                                    <NumberText
+                                      value={monthPrimaryMetric}
+                                      valenceValue={monthPrimaryValence}
+                                      valence={dataset.valence}
+                                      formatOptions={shortNumberFormat}
+                                    />
+                                  </div>
                                 </div>
-                                <div className={cn('rounded-full px-2 py-0.5 text-[10px] font-semibold', monthBadgeClasses)}>
-                                  <NumberText
-                                    value={monthPrimaryMetric}
-                                    valenceValue={monthPrimaryValence}
-                                    valence={dataset.valence}
-                                    formatOptions={shortNumberFormat}
-                                  />
+                                <div className="grid grid-cols-7 gap-0.5 w-fit">
+                                  {monthDots}
                                 </div>
                               </div>
-                              <div className="grid grid-cols-7 gap-0.5 w-fit">
-                                {monthDots}
-                              </div>
-                            </div>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                            </a>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </aside>
 
