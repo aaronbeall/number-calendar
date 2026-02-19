@@ -61,10 +61,10 @@ I'm liking this one.
   - [x] Daily
   - [x] Monthly
   - [ ] Weekly
-- [ ] Calendar options
-  - [ ] Heatmap
+- [ ] Display options
+  - [ ] Heatmap mode (valence coloring based on magnitude)
   - [ ] Show/hide week summaries
-  - [ ] Weeks across months
+  - [ ] Calculat weeks across months
   - [x] Short format numbers (10K, 1M, etc)
   - [ ] Customize displayed stats
 - [ ] Full math support, ex `1+(100/23)`
@@ -119,7 +119,8 @@ I'm liking this one.
 
 ## Product
 - [x] Dark mode
-- [x] Promo landing page
+- [x] Landing page
+  - [ ] Improve landing page with screenshots, videos
 - [ ] Mobile friendly
 - [ ] PWA
 - [ ] App store
@@ -131,7 +132,6 @@ I'm liking this one.
 - [ ] Copyright/EULA/authorship
 - [x] About
 - [x] Routing (deep linking)
-- [ ] Sharing
 - [ ] Premium features
   - [ ] No ads
   - [ ] Number of datasets
@@ -139,8 +139,9 @@ I'm liking this one.
   - [ ] Data Syncing (via Dropbox)
   - [ ] Data export/import
   - [ ] Data integrations
-  - [ ] Insights/Reporting
+  - [ ] Advanced Insights/Reporting
   - [ ] Combined dataset
+  - [ ] Sharing via jsonbin
 
 ## Issues
 - [x] System color mode doesn't match light/dark selection
@@ -166,25 +167,26 @@ I'm liking this one.
 - [ ] Need and error boundary to catch UI errors
 - [ ] Need suggested goal weight, meaningful suggested values throughout
 - [ ] Edit badge from numbers panel doesn't work -- replace with "Manage Achievements"
-- [ ] Expand Range based achievements
-- [ ] Count and average achievements
+- [ ] Add more Range based achievements to goal builder
+- [x] Count and average achievements
 - [ ] "First Win" is kinda broken -- fix or remove
 - [ ] Delete note confirmation disappears -- replace menu item with button
 - [ ] Changing passed data can shift streaks/multi-count achievements, triggering their notification -- may need to use number id -- partial mitigation by obnly norifiying on current period changes
 - [ ] Overlapping same category achievements (X-day streak, X-target, etc) should be stacked
 - [ ] Refactor to use unified data manager instead of individual data hooks
 - [ ] Dashboard month trend delta (valence) is wrong, but after opening the data is right -- needs priors
-- [ ] Updating goal requirements should replace title/description/label, use word boundaries and formatted matchers
+- [ ] Updating goal requirements should replace title/description/label, use word boundaries (fixes current number replacement bug) and formatted matchers
 - [ ] [Minor] Generated goal text has extra whitespace (renders fine)
 - [ ] Maintain template with created dataset for goal builder -- add way to get to generic goal builder
 - [ ] Optimization -- component memo and data calc caching
-- [ ] Can't delete note
+- [ ] Can't delete note (reverts to value)
 - [ ] Refactor achievements to use aggregate data
 - [x] Refactor to use `formatValue()` instead of `NumberFormatter`
 - [ ] Timeline extremes not showing up
 - [ ] Editing a badge directly doesn't update the preview
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
-- [ ] URL/back button compatibility for side-panels
+- [x] URL/back button compatibility for side-panels
 - [x] Format series with spaces, ie `5 +10 -20`
 - [ ] `NumberText` should have tooltips (full number, high/low explanation)
 - [ ] Sorting of achievements/targets/milestones should use goal values
+- [ ] `=` parsng doesn't work at the beginning of expression (its redundant, but should be allowed)

@@ -8,8 +8,8 @@ import { getDatasetIcon } from '@/lib/dataset-icons';
 import { toDayKey, toMonthKey } from '@/lib/friendly-date';
 import { getPrimaryMetric, getValenceValueForNumber } from '@/lib/tracking';
 import { getRelativeTime } from '@/lib/utils';
-import { getValueForValence } from '@/lib/valence';
-import { ArrowRight, BarChart as BarChartIcon, Copy, Download, MoreVertical, Settings, TrendingUp, Upload } from 'lucide-react';
+import { getValueForGood, getValueForValence } from '@/lib/valence';
+import { Activity, ArrowRight, ChartNoAxesColumn, ChartNoAxesColumnDecreasing, ChartNoAxesColumnIncreasing, Copy, Download, MoreVertical, Settings, TrendingDown, TrendingUp, Upload } from 'lucide-react';
 import { useMemo } from 'react';
 import { Line, LineChart, ResponsiveContainer } from 'recharts';
 
@@ -147,10 +147,21 @@ export function DatasetCard({
   });
   const dataKey = (dataset.tracking === 'series' ? 'cumulativeTotal' : 'current') satisfies keyof typeof stats['data'][number];
   const tracking = dataset.tracking;
-  const TagIcon = tracking === 'trend' ? TrendingUp : BarChartIcon;
-  const badgeColor = tracking === 'trend' 
-    ? 'bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-sm shadow-emerald-500/50'
-    : 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-500/50';
+  const TagIcon = useMemo(() => {
+    if (tracking === 'trend') {
+      return getValueForGood(dataset.valence, {
+        positive: TrendingUp,
+        negative: TrendingDown,
+        neutral: Activity,
+      });
+    }
+    return getValueForGood(dataset.valence, {
+      positive: ChartNoAxesColumnIncreasing,
+      negative: ChartNoAxesColumnDecreasing,
+      neutral: ChartNoAxesColumn,
+    });
+  }, [dataset.valence, tracking]);
+  const badgeColor = 'bg-slate-100/80 text-slate-600 border border-slate-200 shadow-sm shadow-slate-200/50 dark:bg-slate-800/60 dark:text-slate-200 dark:border-slate-700 dark:shadow-none';
   
   return (
     <div
