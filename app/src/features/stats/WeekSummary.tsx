@@ -11,7 +11,7 @@ import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lu
 import React, { useMemo } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { Line, LineChart, Tooltip } from 'recharts';
-import { useSearchParamState } from '@/hooks/useSearchParamState';
+import { useSidePanelState } from '@/lib/search-params';
 
 export interface WeekSummaryProps {
   data: PeriodAggregateData<'week'>;
@@ -30,7 +30,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
   const priorNumbers = priorData?.numbers;
   if (!numbers || numbers.length === 0) return null;
 
-  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
+  const [panelView, setPanelView] = useSidePanelState();
   const panelOpen = typeof panelView === 'string' && panelView === dateKey;
 
   // Use getCalendarData for all stats, deltas, valence, etc. (no extremes for week)

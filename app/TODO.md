@@ -193,3 +193,4 @@ I'm liking this one.
 - [ ] Daily micro dots need to have a limit
 - [x] Priors/deltas not working correctly, null days count as 0, should be skipped over
 - [ ] Perfect Week "All entries are uptrend" is not taking into account prior week delta (refactoring to aggregate data would probably fix this)
+- [ ] Add routing for Daily/Monthly view, maybe `?year=2025&month=06` (daily) and `?year=2025` (yearly)

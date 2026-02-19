@@ -25,6 +25,7 @@ import { parseISO } from 'date-fns';
 import { CalendarCheck2, CalendarDays, CalendarOff, ChevronDown, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useSwipe } from '@/hooks/useSwipe';
+import { useSidePanelState } from '@/lib/search-params';
 
 export function Calendar({
   dataset,
@@ -49,7 +50,7 @@ export function Calendar({
   const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
   const today = new Date();
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
-  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
+  const [panelView, setPanelView] = useSidePanelState();
   const [showYearOverview, setShowYearOverview] = useState(false);
   const builderTemplateId = typeof builderOpen === 'string' && builderOpen ? builderOpen : undefined;
   
