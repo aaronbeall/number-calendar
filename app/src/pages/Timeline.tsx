@@ -890,6 +890,9 @@ const YearNavItem = React.memo(function YearNavItem({
 
 YearNavItem.displayName = 'YearNavItem';
 
+// Stable empty array to prevent memo breaking on every render
+const EMPTY_ACHIEVEMENTS: CompletedAchievementResult[] = [];
+
 export function Timeline() {
   const { dataset } = useDatasetContext();
   const { days: periodDays, weeks: periodWeeks, months: periodMonths, years: periodYears, alltime: alltimeAggregate } = useAllPeriodsAggregateData();
@@ -1212,8 +1215,9 @@ export function Timeline() {
     return entry.title;
   }, []);
 
-  const getDaysDataForEntry = useCallback((entry: TimelineEntry) => {
-    if (entry.kind === 'day') return undefined;
+  // Memoize getDaysDataForEntry without dayAggByKey dependency to keep handleOpenEntry stable
+  const getDaysDataByEntryKind = useCallback((entry: TimelineEntry): { dayKeys: DayKey[] } => {
+    if (entry.kind === 'day') return { dayKeys: [] };
 
     let dayKeys: DayKey[] = [];
     if (entry.kind === 'year') {
@@ -1226,7 +1230,11 @@ export function Timeline() {
       const { year, week } = parseWeekKey(entry.dateKey as WeekKey);
       dayKeys = getWeekDays(year, week);
     }
+    return { dayKeys };
+  }, []);
 
+  // Separate function that builds daysData from the dateKeys, called at panel open time
+  const buildDaysDataFromKeys = useCallback((dayKeys: DayKey[]): Record<DayKey, PeriodAggregateData<'day'>> => {
     return dayKeys.reduce((acc, dayKey) => {
       const aggregate = dayAggByKey.get(dayKey);
       if (aggregate && aggregate.numbers.length > 0) {
@@ -1238,16 +1246,32 @@ export function Timeline() {
 
   const handleOpenEntry = useCallback((entry: TimelineEntry) => {
     const data = entry.data ?? createEmptyAggregate(entry.dateKey as DateKeyByPeriod<'day' | 'week' | 'month' | 'year'>, entry.kind);
+    const { dayKeys } = getDaysDataByEntryKind(entry);
     setPanelProps({
       isOpen: true,
       title: getPanelTitleForEntry(entry),
       data,
       priorData: undefined,
       extremes: undefined,
-      daysData: getDaysDataForEntry(entry),
+      daysData: dayKeys.length > 0 ? buildDaysDataFromKeys(dayKeys) : undefined,
       dateKey: entry.dateKey,
     });
-  }, [getDaysDataForEntry, getPanelTitleForEntry]);
+  }, [getDaysDataByEntryKind, getPanelTitleForEntry, buildDaysDataFromKeys]);
+
+  // Memoize isSelected states to prevent memo breaking
+  const selectedEntryKey = panelProps.isOpen ? panelProps.dateKey : null;
+  const isSelectedByEntryKey = useMemo(() => {
+    const map = new Map<DateKey, boolean>();
+    if (!selectedEntryKey) return map;
+    
+    // Mark entry as selected
+    map.set(selectedEntryKey, true);
+    return map;
+  }, [selectedEntryKey]);
+
+  const getIsSelected = useCallback((dateKey: DateKey) => {
+    return isSelectedByEntryKey.get(dateKey) ?? false;
+  }, [isSelectedByEntryKey]);
 
   const activeYearMonthDots = useMemo(() => {
     if (!activeYearKey) return {} as Record<MonthKey, React.ReactElement[]>;
@@ -1357,12 +1381,12 @@ export function Timeline() {
                 <TimelineDividerHeading title={yearEntry.title} className="text-slate-500 dark:text-slate-400" />
                 <TimelineEntryCard
                   entry={yearEntry}
-                  achievements={achievementResultsByDateKey[yearEntry.dateKey] ?? []}
+                  achievements={achievementResultsByDateKey[yearEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                   noteText={notesByDateKey.get(yearEntry.dateKey)}
                   valence={dataset.valence}
                   tracking={dataset.tracking}
                   onOpen={handleOpenEntry}
-                  isSelected={panelProps.isOpen && panelProps.dateKey === yearEntry.dateKey}
+                  isSelected={getIsSelected(yearEntry.dateKey)}
                 />
                 {monthEntries.map(({ monthEntry, weekEntries }) => (
                   <div
@@ -1376,24 +1400,24 @@ export function Timeline() {
                     )}
                     <TimelineEntryCard
                       entry={monthEntry}
-                      achievements={achievementResultsByDateKey[monthEntry.dateKey] ?? []}
+                      achievements={achievementResultsByDateKey[monthEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                       noteText={notesByDateKey.get(monthEntry.dateKey)}
                       valence={dataset.valence}
                       tracking={dataset.tracking}
                       onOpen={handleOpenEntry}
-                      isSelected={panelProps.isOpen && panelProps.dateKey === monthEntry.dateKey}
+                      isSelected={getIsSelected(monthEntry.dateKey)}
                     />
                     {weekEntries.map(({ weekKey, weekEntry, dayEntries }) => (
                       <div key={weekKey} className="space-y-3">
                         {weekEntry && (
                           <TimelineEntryCard
                             entry={weekEntry}
-                            achievements={achievementResultsByDateKey[weekEntry.dateKey] ?? []}
+                            achievements={achievementResultsByDateKey[weekEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                             noteText={notesByDateKey.get(weekEntry.dateKey)}
                             valence={dataset.valence}
                             tracking={dataset.tracking}
                             onOpen={handleOpenEntry}
-                            isSelected={panelProps.isOpen && panelProps.dateKey === weekEntry.dateKey}
+                            isSelected={getIsSelected(weekEntry.dateKey)}
                           />
                         )}
                         {dayEntries.length > 0 && (
@@ -1402,12 +1426,12 @@ export function Timeline() {
                               <TimelineEntryCard
                                 key={dayEntry.dateKey}
                                 entry={dayEntry}
-                                achievements={achievementResultsByDateKey[dayEntry.dateKey] ?? []}
+                                achievements={achievementResultsByDateKey[dayEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                                 noteText={notesByDateKey.get(dayEntry.dateKey)}
                                 valence={dataset.valence}
                                 tracking={dataset.tracking}
                                 onOpen={handleOpenEntry}
-                                isSelected={panelProps.isOpen && panelProps.dateKey === dayEntry.dateKey}
+                                isSelected={getIsSelected(dayEntry.dateKey)}
                               />
                             ))}
                           </div>
