@@ -15,6 +15,12 @@ export interface NumberStats {
   range: number; // max - min
   change: number; // last - first
   changePercent: number; // (last - first) / first * 100
+  mode: number; // most frequently occurring value
+  slope: number; // (last - first) / count
+  midrange: number; // (max + min) / 2
+  variance: number; // average of squared differences from the mean
+  standardDeviation: number; // square root of variance
+  interquartileRange: number; // difference between 75th and 25th percentiles
 }
 
 // Key type for NumberStats
@@ -42,7 +48,41 @@ export function computeNumberStats(numbers: number[]): NumberStats | null {
   const range = max - min;
   const change = last - first;
   const changePercent = first !== 0 ? (change / Math.abs(first)) * 100 : 0;
-  return { count, total, mean, median, min, max, first, last, range, change, changePercent };
+
+  // Calculate distribution metrics
+  // Mode: most frequently occurring value
+  const frequencyMap = new Map<number, number>();
+  for (const num of numbers) {
+    frequencyMap.set(num, (frequencyMap.get(num) ?? 0) + 1);
+  }
+  let mode = sorted[0];
+  let maxFreq = 0;
+  for (const [value, freq] of frequencyMap.entries()) {
+    if (freq > maxFreq) {
+      maxFreq = freq;
+      mode = value;
+    }
+  }
+
+  // Slope: average change per entry (last - first) / count
+  const slope = count > 1 ? change / (count - 1) : 0;
+
+  // Midrange: average of min and max
+  const midrange = (min + max) / 2;
+
+  // Variance: average of squared differences from the mean
+  const squaredDiffs = numbers.map(num => Math.pow(num - mean, 2));
+  const variance = squaredDiffs.reduce((a, b) => a + b, 0) / count;
+
+  // Standard deviation: square root of variance
+  const standardDeviation = Math.sqrt(variance);
+
+  // Interquartile range: 75th percentile - 25th percentile
+  const q1Index = Math.floor(count * 0.25);
+  const q3Index = Math.floor(count * 0.75);
+  const interquartileRange = sorted[q3Index] - sorted[q1Index];
+
+  return { count, total, mean, median, min, max, first, last, range, change, changePercent, mode, slope, midrange, variance, standardDeviation, interquartileRange };
 }
 
 /**
@@ -167,6 +207,18 @@ export function calculateExtremes(stats: NumberStats[]): StatsExtremes | undefin
     lowestChangePercent: Math.min(...stats.map(s => s.changePercent)),
     highestRange: Math.max(...stats.map(s => s.range)),
     lowestRange: Math.min(...stats.map(s => s.range)),
+    highestMode: Math.max(...stats.map(s => s.mode)),
+    lowestMode: Math.min(...stats.map(s => s.mode)),
+    highestSlope: Math.max(...stats.map(s => s.slope)),
+    lowestSlope: Math.min(...stats.map(s => s.slope)),
+    highestMidrange: Math.max(...stats.map(s => s.midrange)),
+    lowestMidrange: Math.min(...stats.map(s => s.midrange)),
+    highestVariance: Math.max(...stats.map(s => s.variance)),
+    lowestVariance: Math.min(...stats.map(s => s.variance)),
+    highestStandardDeviation: Math.max(...stats.map(s => s.standardDeviation)),
+    lowestStandardDeviation: Math.min(...stats.map(s => s.standardDeviation)),
+    highestInterquartileRange: Math.max(...stats.map(s => s.interquartileRange)),
+    lowestInterquartileRange: Math.min(...stats.map(s => s.interquartileRange)),
   }
 }
 
@@ -254,8 +306,14 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, { label: string; descript
   first: { label: 'Open', description: 'First value at the start of the period' },
   last: { label: 'Close', description: 'Last value at the end of the period' },
   range: { label: 'Range', description: 'Difference between max and min values' },
-  change: { label: 'Change', description: 'Difference between first and last values' },
-  changePercent: { label: 'Change (%)', description: 'Percentage change from first to last value' },
+  change: { label: 'Difference', description: 'Difference between first and last values' },
+  changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value' },
+  mode: { label: 'Mode', description: 'Most frequently occurring value in the period' },
+  slope: { label: 'Slope', description: 'Average change per entry (rate of change)' },
+  midrange: { label: 'Midrange', description: 'Average of the minimum and maximum values' },
+  variance: { label: 'Variance', description: 'Measure of spread around the mean' },
+  standardDeviation: { label: 'Std Dev', description: 'Square root of variance (spread around mean)' },
+  interquartileRange: { label: 'IQR', description: 'Range between 25th and 75th percentiles' },
 };
 
 
@@ -270,9 +328,9 @@ export function getMetricDescription(metric: NumberMetric): string {
 export const METRIC_SOURCES_DISPLAY_INFO: Record<NumberSource, { label: string; description: string }> = {
   stats: { label: 'Value', description: 'Actual recorded value for a time period' },
   deltas: { label: 'Delta', description: 'Change from prior time period' },
-  percents: { label: 'Percentage', description: 'Percentage change from prior time period' },
-  cumulatives: { label: 'Cumulative', description: 'Cumulative value from beginning to the time period' },
-  cumulativePercents: { label: 'Cumulative Percentage', description: 'Percentage change from prior time period cumulative value' },
+  percents: { label: 'Change (%)', description: 'Percentage change from prior time period' },
+  cumulatives: { label: 'Cumulative Value', description: 'Cumulative value from beginning to the time period' },
+  cumulativePercents: { label: 'Cumulative Change (%)', description: 'Percentage change from prior time period\'s cumulative' },
 };
 
 export function getMetricSourceDisplayName(source: NumberSource): string {
@@ -296,5 +354,11 @@ export function emptyStats(): NumberStats {
     range: 0,
     change: 0,
     changePercent: 0,
+    mode: 0,
+    slope: 0,
+    midrange: 0,
+    variance: 0,
+    standardDeviation: 0,
+    interquartileRange: 0,
   };
 }
