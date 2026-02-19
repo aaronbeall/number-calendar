@@ -1,5 +1,6 @@
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { buildPriorAggregateMap, createEmptyAggregate } from '@/lib/period-aggregate';
+import { describe, expect, it } from 'vitest';
 
 const makeDayAggregate = (dateKey: PeriodAggregateData<'day'>['dateKey'], numbers: number[]): PeriodAggregateData<'day'> => {
   const aggregate = createEmptyAggregate(dateKey, 'day');
