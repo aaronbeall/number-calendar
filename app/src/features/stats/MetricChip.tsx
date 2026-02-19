@@ -53,6 +53,7 @@ export const MetricChip = ({
               valenceValue={primaryValenceMetric}
               valence={valence}
               className="text-lg sm:text-xl font-extrabold"
+              short
             />
             <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
               <NumberText

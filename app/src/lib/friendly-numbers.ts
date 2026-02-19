@@ -167,6 +167,10 @@ export function formatValue(num: number | undefined, { short = false, percent = 
   let value = num;
   if (short) {
     options = { ...options, notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 };
+    // If the absolute value is over 0, round to integer to avoid cases like `120.4`
+    if (Math.abs(value) > 0) {
+      value = Math.round(value);
+    }
   }
   if (percent) {
     options = { ...options, style: 'percent', maximumFractionDigits: 1 };

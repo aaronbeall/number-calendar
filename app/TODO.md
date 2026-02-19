@@ -187,3 +187,4 @@ I'm liking this one.
 - [ ] URL/back button compatibility for side-panels
 - [ ] Format series with spaces, ie `5 +10 -20`
 - [ ] `NumberText` should have tooltips (full number, high/low explanation)
+- [ ] Sorting of achievements/targets/milestones should use goal values

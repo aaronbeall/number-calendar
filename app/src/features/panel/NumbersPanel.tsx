@@ -384,9 +384,9 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                             delta
                           />
                         </span>
-                        {percent !== undefined && !isNaN(percent as number) && (
+                        {percent !== undefined && !isNaN(percent) && (
                           <span className="text-[11px] text-slate-400 font-mono font-medium">
-                            {formatValue(percent! / 100, { delta: true, percent: true, decimals: 0 })}
+                            {formatValue(percent / 100, { delta: true, percent: true, decimals: 0 })}
                           </span>
                         )}
                       </div>

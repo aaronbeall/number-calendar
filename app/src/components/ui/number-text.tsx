@@ -3,9 +3,9 @@ import { Trophy, Skull, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Valence } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
-import { formatValue, type FormatValueOptions } from '@/lib/friendly-numbers';
+import { formatValue, type FormatValueOptions, type NumberDisplayOptions } from '@/lib/friendly-numbers';
 
-export interface NumberTextProps extends FormatValueOptions {
+export interface NumberTextProps extends FormatValueOptions, NumberDisplayOptions {
   value: number | null | undefined;
   valenceValue?: number | null | undefined;
   isHighest?: boolean;
@@ -33,6 +33,7 @@ export const NumberText: React.FC<NumberTextProps> = ({
   percent = false,
   delta = false,
   decimals,
+  currency
 }) => {
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
 
@@ -47,11 +48,24 @@ export const NumberText: React.FC<NumberTextProps> = ({
   );
   let formatted: React.ReactNode;
   if (isFiniteNumber) {
-    // If the absolute value is over 0, round to integer
-    const roundedValue = Math.abs(value) > 0 ? Math.round(value) : value;
-    formatted = formatValue(roundedValue, { short, percent, delta, decimals });
+    formatted = formatValue(value, { short, percent, delta, decimals });
   } else {
     formatted = placeholder;
+  }
+
+  // If using currency, split the decimal part (cents) and render with smaller font size
+  if (currency && isFiniteNumber) {
+    const [integerPart, decimalPart] = String(formatted).split('.');
+    formatted = (
+      <>
+        {integerPart}
+        {decimalPart !== undefined && (
+          <span className="text-xs align-top opacity-70">
+            .{decimalPart}
+          </span>
+        )}
+      </>
+    );
   }
 
   const text = (
