@@ -209,73 +209,96 @@ function DatasetsLanding({
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
       {/* Modern Header */}
       <header className="border-b border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-lg sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-8 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-3 sm:py-4">
+          {/* Top row: Logo, Search (desktop), and icon buttons */}
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Logo and Brand */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
               <img
                 src={LogoIcon}
                 alt="Numbers Go Up"
-                className="w-10 h-10 transition-transform hover:scale-105"
+                className="w-8 sm:w-10 h-8 sm:h-10 flex-shrink-0 transition-transform hover:scale-105"
               />
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight hover:underline cursor-pointer text-blue-700 dark:text-blue-300" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-semibold tracking-tight text-blue-700 dark:text-blue-300 truncate" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
                   Numbers Go Up
                 </h1>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
                   A calendar for numberphiles
                 </p>
               </div>
             </div>
 
-            {/* Search and Actions */}
-            <div className="flex items-center gap-4">
+            {/* Search on desktop (top row) */}
+            <div className="hidden sm:flex items-center relative max-w-xs flex-1 px-2">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search datasets..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 transition-all"
+              />
+            </div>
+
+            {/* Right side actions */}
+            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
               <Link
                 to="?intro"
                 className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
                 aria-label="View intro"
               >
-                <Home className="w-5 h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
+                <Home className="w-4 sm:w-5 h-4 sm:h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
               </Link>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search datasets..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 transition-all"
-                />
-              </div>
               <button
                 type="button"
                 onClick={onOpenCreate}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
+                className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors flex-shrink-0 sm:hidden"
+                aria-label="Create new dataset"
               >
                 <Plus className="w-4 h-4" />
-                New Dataset
+              </button>
+              <button
+                type="button"
+                onClick={onOpenCreate}
+                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
+              >
+                <Plus className="w-4 h-4" />
+                <span>New</span>
               </button>
               <ThemeToggle />
               <SettingsMenu />
               <UserMenu />
             </div>
           </div>
+
+          {/* Bottom row: Search (mobile only) */}
+          <div className="relative sm:hidden mt-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search datasets..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-indigo-400 transition-all"
+            />
+          </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 w-full max-w-7xl mx-auto px-8 py-8">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">Your Dashboard</h2>
-            <p className="text-slate-600 dark:text-slate-400">
+      <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="w-full sm:w-auto">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1">Your Dashboard</h2>
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400">
               {filteredDatasets.length} {filteredDatasets.length === 1 ? 'dataset' : 'datasets'} • Showing data for {new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-sm text-slate-600 dark:text-slate-300">Sort:</span>
             <Select value={sortBy} onValueChange={(value) => setSortBy(value as 'created' | 'updated')}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-32 sm:w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
