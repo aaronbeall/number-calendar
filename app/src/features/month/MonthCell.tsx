@@ -1,4 +1,4 @@
-import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
+import { NumberText } from '@/components/ui/number-text';
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { getCalendarData } from '@/lib/calendar';
@@ -137,7 +137,7 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
               isLowest={!!isLowestPrimary}
               className="text-3xl font-bold"
               valence={valence}
-              formatOptions={shortNumberFormat}
+              short
             />
             <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {isHighestCount ? (
@@ -248,7 +248,7 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
                 isHighest={!!isHighestMean}
                 isLowest={!!isLowestMean}
                 className="font-semibold text-sm"
-                formatOptions={shortNumberFormat}
+                short
                 valence={valence}
               />
             </div>
@@ -262,7 +262,7 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
                 isHighest={!!isHighestMedian}
                 isLowest={!!isLowestMedian}
                 className="font-semibold text-sm"
-                formatOptions={shortNumberFormat}
+                short
                 valence={valence}
               />
             </div>
@@ -276,7 +276,7 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
                 isHighest={!!isHighestMin}
                 isLowest={!!isLowestMin}
                 className="font-semibold text-sm"
-                formatOptions={shortNumberFormat}
+                short
                 valence={valence}
               />
             </div>
@@ -290,7 +290,7 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
                 isHighest={!!isHighestMax}
                 isLowest={!!isLowestMax}
                 className="font-semibold text-sm"
-                formatOptions={shortNumberFormat}
+                short
                 valence={valence}
               />
             </div>

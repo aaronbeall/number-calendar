@@ -1,13 +1,14 @@
-import React, { useMemo, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, BarChart, Bar, Cell } from 'recharts';
-import type { DayKey, Valence } from '@/features/db/localdb';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { LineChart as LineChartIcon, BarChart as BarChartIcon } from 'lucide-react';
-import { getValueForValence } from '@/lib/valence';
+import type { DayKey, Valence } from '@/features/db/localdb';
 import { getMonthDays, getYearDays } from '@/lib/calendar';
-import { parseISO } from 'date-fns';
 import { dateToDayKey } from '@/lib/friendly-date';
+import { formatValue } from '@/lib/friendly-numbers';
+import { getValueForValence } from '@/lib/valence';
+import { parseISO } from 'date-fns';
+import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 type TrendChartMode = 'trend' | 'change';
 type TrendGroup = 'daily' | 'monthly';
@@ -266,11 +267,11 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                           {parseISO(p.x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
                         <div className="font-semibold" style={{ color: deltaColor }}>
-                          {p.value}
+                          {formatValue(p.value)}
                         </div>
                         <div className="font-mono text-sm">
                           <span style={{ color: deltaColor }}>
-                            {new Intl.NumberFormat(undefined, { signDisplay: 'always' }).format(p.delta)}
+                            {formatValue(p.delta, { delta: true })}
                           </span>
                         </div>
                       </div>
@@ -369,7 +370,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                           {parseISO(p.x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </div>
                         <span style={{ color: deltaColor, fontWeight: 600, fontSize: 16 }}>
-                          {new Intl.NumberFormat(undefined, { signDisplay: 'always' }).format(p.delta)}
+                          {formatValue(p.delta, { delta: true })}
                         </span>
                       </div>
                     );

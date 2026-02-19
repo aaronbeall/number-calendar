@@ -176,6 +176,111 @@ describe('formatValue', () => {
     expect(formatValue(-10, { delta: true })).toBe('-10');
     expect(formatValue(0, { delta: true })).toBe('0');
   });
+
+  describe('decimals option', () => {
+    it('uses default of 2 decimal places when decimals is not specified', () => {
+      expect(formatValue(1.234)).toBe('1.23');
+      expect(formatValue(0.12345)).toBe('0.12');
+      expect(formatValue(100.5)).toBe('100.5');
+    });
+
+    it('respects explicit decimal place specification', () => {
+      expect(formatValue(1.234, { decimals: 0 })).toBe('1');
+      expect(formatValue(1.234, { decimals: 1 })).toBe('1.2');
+      expect(formatValue(1.234, { decimals: 3 })).toBe('1.234');
+      expect(formatValue(0.12345, { decimals: 4 })).toBe('0.1235');
+    });
+
+    it('handles decimals: 0 correctly', () => {
+      expect(formatValue(1.9, { decimals: 0 })).toBe('2');
+      expect(formatValue(100.5, { decimals: 0 })).toBe('101');
+      expect(formatValue(0.5, { decimals: 0 })).toBe('1');
+    });
+
+    it('uses auto decimals when decimals is "auto"', () => {
+      // 0.1234 -> roundToClean(0.1234, 3) = 0.123 (3 sig figs) -> 3 decimal places
+      expect(formatValue(0.1234, { decimals: 'auto' })).toBe('0.123');
+      
+      // 0.056789 -> roundToClean(0.056789, 3) = 0.0568 -> 4 decimal places
+      expect(formatValue(0.056789, { decimals: 'auto' })).toBe('0.0568');
+      
+      // 1.2345 -> roundToClean(1.2345, 3) = 1.23 -> 2 decimal places
+      expect(formatValue(1.2345, { decimals: 'auto' })).toBe('1.23');
+      
+      // 123.456 -> roundToClean(123.456, 3) = 123 -> 0 decimal places
+      expect(formatValue(123.456, { decimals: 'auto' })).toBe('123');
+      
+      // 0.5678 -> roundToClean(0.5678, 3) = 0.568 -> 3 decimal places
+      expect(formatValue(0.5678, { decimals: 'auto' })).toBe('0.568');
+    });
+
+    it('auto decimals works with negative numbers', () => {
+      expect(formatValue(-0.1234, { decimals: 'auto' })).toBe('-0.123');
+      expect(formatValue(-1.2345, { decimals: 'auto' })).toBe('-1.23');
+      expect(formatValue(-123.456, { decimals: 'auto' })).toBe('-123');
+    });
+
+    it('auto decimals with percent formatting', () => {
+      // When percent is applied, value becomes num/100, then we apply roundToClean(value, 3)
+      // 12.34 -> 0.1234 (for percent) -> roundToClean(0.1234, 3) = 0.123 (3 decimals)
+      expect(formatValue(12.34, { percent: true, decimals: 'auto' })).toBe('12.34%');
+      
+      // 5.6789 -> 0.056789 -> roundToClean(0.056789, 3) = 0.0568 (4 decimals) -> 5.68%
+      expect(formatValue(5.6789, { percent: true, decimals: 'auto' })).toBe('5.6789%');
+      
+      // 0.5678 -> 0.0056789 -> rounds to 0.00568 (5 decimals) -> 0.568%
+      expect(formatValue(0.5678, { percent: true, decimals: 'auto' })).toBe('0.5678%');
+    });
+
+    it('auto decimals with delta formatting', () => {
+      expect(formatValue(10.1234, { delta: true, decimals: 'auto' })).toBe('+10.1');
+      expect(formatValue(-0.1234, { delta: true, decimals: 'auto' })).toBe('-0.123');
+      expect(formatValue(0.1234, { delta: true, decimals: 'auto' })).toBe('+0.123');
+    });
+
+    it('auto decimals with percent and delta formatting', () => {
+      expect(formatValue(12.34, { percent: true, delta: true, decimals: 'auto' })).toBe('+12.34%');
+      expect(formatValue(-5.6789, { percent: true, delta: true, decimals: 'auto' })).toBe('-5.6789%');
+    });
+
+    it('short notation ignores decimals option', () => {
+      // Short format has its own maximumFractionDigits: 1
+      expect(formatValue(1500, { short: true, decimals: 3 })).toBe('1.5K');
+      expect(formatValue(1234, { short: true, decimals: 'auto' })).toBe('1.2K');
+    });
+
+    it('auto decimals handles zero', () => {
+      expect(formatValue(0, { decimals: 'auto' })).toBe('0');
+    });
+
+    it('auto decimals handles very large numbers', () => {
+      // 1234567 -> roundToClean(1234567, 3) = 1230000 -> 0 decimal places
+      // Note: The rounding only affects decimal places displayed, not the number itself
+      expect(formatValue(1234567, { decimals: 'auto' })).toBe('1,234,567');
+    });
+
+    it('auto decimals handles very small numbers', () => {
+      // 0.0001234 -> roundToClean(0.0001234, 3) = 0.000123 -> 6 decimal places
+      expect(formatValue(0.0001234, { decimals: 'auto' })).toBe('0.000123');
+    });
+
+    it('decimals option works in combination with delta', () => {
+      expect(formatValue(10, { delta: true, decimals: 2 })).toBe('+10');
+      expect(formatValue(10.567, { delta: true, decimals: 2 })).toBe('+10.57');
+      expect(formatValue(-0.1, { delta: true, decimals: 1 })).toBe('-0.1');
+    });
+
+    it('decimals option works in combination with percent', () => {
+      expect(formatValue(50.556, { percent: true, decimals: 1 })).toBe('50.6%');
+      expect(formatValue(0.1234, { percent: true, decimals: 0 })).toBe('0%');
+    });
+
+    it('decimals option works in combination with short and percent', () => {
+      // Short format takes precedence for max fraction digits, and both use compact notation
+      // 1234.567 as percent -> 12.34567 (for formatting) -> with compact notation = 1.23K%
+      expect(formatValue(1234.567, { short: true, percent: true })).toBe('1.2K%');
+    });
+  });
 });
 
 describe('formatRange', () => {

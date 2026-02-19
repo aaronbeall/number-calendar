@@ -1,4 +1,4 @@
-import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
+import { NumberText } from '@/components/ui/number-text';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useDatasetContext } from '@/context/DatasetContext';
@@ -202,7 +202,7 @@ function TimelineStatsRow({
             valenceValue={valenceStats?.mean ?? 0}
             valence={valence}
             className="font-mono text-xs sm:text-sm font-semibold"
-            formatOptions={shortNumberFormat}
+            short
           />
         </div>
         <div className="text-right">
@@ -212,7 +212,7 @@ function TimelineStatsRow({
             valenceValue={valenceStats?.median ?? 0}
             valence={valence}
             className="font-mono text-xs sm:text-sm font-semibold"
-            formatOptions={shortNumberFormat}
+            short
           />
         </div>
       </div>
@@ -227,7 +227,7 @@ function TimelineStatsRow({
             valenceValue={valenceStats?.min ?? 0}
             valence={valence}
             className="font-mono text-sm font-semibold"
-            formatOptions={shortNumberFormat}
+            short
           />
         </div>
         <div className="text-right">
@@ -237,7 +237,7 @@ function TimelineStatsRow({
             valenceValue={valenceStats?.max ?? 0}
             valence={valence}
             className="font-mono text-sm font-semibold"
-            formatOptions={shortNumberFormat}
+            short
           />
         </div>
       </div>
@@ -271,12 +271,12 @@ const renderTimelineChartTooltip = (valence: Valence) => ({
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
         <div style={{ fontWeight: 600, fontSize: 14 }}>
-          <NumberText value={value} valenceValue={valenceValue} valence={valence} formatOptions={format ?? undefined} />
+          <NumberText value={value} valenceValue={valenceValue} valence={valence} {...format} />
         </div>
         {secondaryValue !== undefined && secondaryValue !== null ? (
           <div style={{ fontSize: 12, opacity: 0.7 }}>
             {secondaryLabel && <span className="mr-1">{secondaryLabel}</span>}
-            <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} formatOptions={secondaryFormat ?? undefined} />
+            <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} {...secondaryFormat} />
           </div>
         ) : null}
       </div>
@@ -653,7 +653,7 @@ const AllTimeTrendChart = React.memo(function AllTimeTrendChart({
             value={allTimePrimaryMetric}
             valenceValue={allTimePrimaryValence}
             valence={valence}
-            formatOptions={shortNumberFormat}
+            short
           />
         </span>
       </div>
@@ -747,7 +747,7 @@ const MonthNavItem = React.memo(function MonthNavItem({
               value={monthPrimaryMetric}
               valenceValue={monthPrimaryValence}
               valence={dataset.valence}
-              formatOptions={shortNumberFormat}
+              short
             />
           </div>
         </div>
@@ -839,7 +839,7 @@ const YearNavItem = React.memo(function YearNavItem({
               value={primaryMetric}
               valenceValue={primaryValenceMetric}
               valence={dataset.valence}
-              formatOptions={shortNumberFormat}
+              short
             />
           </div>
         </div>

@@ -123,31 +123,75 @@ export type NumberDisplayOptions = {
 
 export type FormatValueOptions = { 
   /** If true, use compact notation (e.g. 1.2K instead of 1200) */
-  short?: boolean; 
+  short?: boolean;
   /** If true, format as percentage (e.g. 12.3 -> "12.3%") */
-  percent?: boolean; 
+  percent?: boolean;
   /** If true, format as a delta with sign (e.g. +5, -3) */
   delta?: boolean;
+  /** 
+   * Control decimal places:
+   * - "auto": Round to 3 significant figures (e.g., 0.1234 -> 0.123, 123.456 -> 123)
+   * - number: Maximum fractional digits (e.g., 2 -> 12.34)
+   * - Default is 2, or "auto" if short is true
+   */
+  decimals?: 'auto' | number;
 };
+
+/**
+ * Helper to format numbers for display in the UI, with options for shortening, percent formatting, and delta formatting (with signs).
+ * Can also handle formatting ranges when given a tuple of [min, max], applying the same formatting to both numbers and using an appropriate separator (en dash for regular ranges, arrow for deltas or ranges with negatives).
+ * E.g.
+ *   formatFriendlyNumber(1234, { short: true }) -> "1.2K"
+ *   formatFriendlyNumber(0.05678, { percent: true, short: true }) -> "5.7%"
+ *   formatFriendlyNumber(-0.0345, { percent: true, delta: true }) -> "-3.45%"
+ *   formatFriendlyNumber([1000, 5000], { short: true }) -> "1K–5K"
+ *   formatFriendlyNumber([-500, 200], { delta: true }) -> "-500 → 200"
+ *   formatFriendlyNumber([0.01, 0.05], { percent: true }) -> "1%–5%"
+ *   formatFriendlyNumber([0.01, 0.05], { percent: true, delta: true }) -> "1% → 5%"
+ *   formatFriendlyNumber([0.01, 0.05], { percent: true, delta: true, short: true }) -> "1% → 5%"
+ */
+export function formatFriendlyNumber(value: number | [number, number], options: FormatValueOptions = {}): string {
+  if (Array.isArray(value)) {
+    return formatRange(value, options);
+  }
+  return formatValue(value, options);
+}
 
 /**
  * Helper to format values for display in goal titles and descriptions,
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
-export function formatValue(num: number | undefined, { short = false, percent = false, delta = false }: FormatValueOptions = {}): string {
+export function formatValue(num: number | undefined, { short = false, percent = false, delta = false, decimals }: FormatValueOptions = {}): string {
   if (num === undefined || isNaN(num)) return '';
   let options: Intl.NumberFormatOptions = {};
   let value = num;
   if (short) {
-    options = { notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 };
+    options = { ...options, notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 };
   }
   if (percent) {
-    options = { ...options, style: 'percent', maximumFractionDigits: 2 };
+    options = { ...options, style: 'percent', maximumFractionDigits: 1 };
     value = num / 100;
   }
   if (delta) {
     options = { ...options, signDisplay: 'exceptZero' };
   }
+  
+  // Handle decimal places
+  const decimalOption = decimals ?? options.maximumFractionDigits ?? 2;
+  if (decimalOption === 'auto') {
+    // Don't apply `auto` to short because it will round off decimals based on pre-shortened value (e.g. 1234 -> 1.2K with 1 decimal place, but with `auto` it sees no decimals in the original number and we'd get "1K")
+    if (!short) {
+      // Round to 3 significant figures and extract decimal places
+      const rounded = roundToClean(value, 3);
+      const roundedStr = rounded.toString();
+      const decimalMatch = roundedStr.match(/\.(\d+)/);
+      const maxFractionDigits = decimalMatch ? decimalMatch[1].length : 0;
+      options = { ...options, maximumFractionDigits: maxFractionDigits };
+    }
+  } else {
+    options = { ...options, maximumFractionDigits: decimalOption };
+  }
+  
   return new Intl.NumberFormat('en-US', options).format(value);
 }
 

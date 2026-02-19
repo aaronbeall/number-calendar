@@ -3,22 +3,9 @@ import { Trophy, Skull, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Valence } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
+import { formatValue, type FormatValueOptions } from '@/lib/friendly-numbers';
 
-// Compact number formatting, e.g., 1.2K, 3.4M
-export const shortNumberFormat: Intl.NumberFormatOptions = {
-  notation: 'compact',
-  compactDisplay: 'short',
-  maximumFractionDigits: 1,
-};
-
-// Default formatting: thousands separators, 0-2 fractional digits.
-const defaultNumberFormat: Intl.NumberFormatOptions = {
-  useGrouping: true,
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-};
-
-export interface NumberTextProps {
+export interface NumberTextProps extends FormatValueOptions {
   value: number | null | undefined;
   valenceValue?: number | null | undefined;
   isHighest?: boolean;
@@ -29,7 +16,6 @@ export interface NumberTextProps {
   badClassName?: string;
   neutralClassName?: string;
   placeholder?: React.ReactNode;
-  formatOptions?: Intl.NumberFormatOptions;
 }
 
 export const NumberText: React.FC<NumberTextProps> = ({
@@ -43,7 +29,10 @@ export const NumberText: React.FC<NumberTextProps> = ({
   badClassName = 'text-red-700 dark:text-red-300',
   neutralClassName = 'text-slate-700 dark:text-slate-200',
   placeholder = '-',
-  formatOptions,
+  short = false,
+  percent = false,
+  delta = false,
+  decimals,
 }) => {
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
 
@@ -58,10 +47,9 @@ export const NumberText: React.FC<NumberTextProps> = ({
   );
   let formatted: React.ReactNode;
   if (isFiniteNumber) {
-    // If the abslute value is over 0, round to integer
+    // If the absolute value is over 0, round to integer
     const roundedValue = Math.abs(value) > 0 ? Math.round(value) : value;
-    const merged = formatOptions ? { ...defaultNumberFormat, ...formatOptions } : defaultNumberFormat;
-    formatted = new Intl.NumberFormat(undefined, merged).format(roundedValue);
+    formatted = formatValue(roundedValue, { short, percent, delta, decimals });
   } else {
     formatted = placeholder;
   }

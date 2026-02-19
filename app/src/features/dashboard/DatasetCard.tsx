@@ -238,7 +238,7 @@ export function DatasetCard({
                 valenceValue={primaryValenceValue}
                 valence={dataset.valence}
                 className="text-2xl font-bold"
-                formatOptions={{ notation: 'compact', compactDisplay: 'short', maximumFractionDigits: 1 }}
+                short
               />
             </div>
             <div className="text-xs space-y-0.5">
@@ -249,7 +249,8 @@ export function DatasetCard({
                   valenceValue={primaryMetricDelta}
                   valence={dataset.valence}
                   className="text-xs"
-                  formatOptions={{ notation: 'compact', compactDisplay: 'short', signDisplay: 'always', maximumFractionDigits: 1 }}
+                  short
+                  delta
                 />
               </div>
               <div className="flex justify-between">
@@ -260,7 +261,9 @@ export function DatasetCard({
                   valence={dataset.valence}
                   className="text-xs"
                   placeholder="0%"
-                  formatOptions={{ style: 'percent', notation: 'compact', compactDisplay: 'short', signDisplay: 'always', minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                  short
+                  percent
+                  delta
                 />
               </div>
             </div>
@@ -273,7 +276,7 @@ export function DatasetCard({
                 valenceValue={averageValenceValue}
                 valence={dataset.valence}
                 className="text-2xl font-bold"
-                formatOptions={{ notation: 'compact', compactDisplay: 'short', maximumSignificantDigits: 1 }}
+                short
               />
             </div>
             <div className="text-xs space-y-0.5">
@@ -284,7 +287,8 @@ export function DatasetCard({
                   valenceValue={averageDelta}
                   valence={dataset.valence}
                   className="text-xs"
-                  formatOptions={{ notation: 'compact', compactDisplay: 'short', signDisplay: 'always', maximumFractionDigits: 1 }}
+                  short
+                  delta
                 />
               </div>
               <div className="flex justify-between">
@@ -295,7 +299,9 @@ export function DatasetCard({
                   valence={dataset.valence}
                   className="text-xs"
                   placeholder="0%"
-                  formatOptions={{ style: 'percent', notation: 'compact', compactDisplay: 'short', signDisplay: 'always', minimumFractionDigits: 1, maximumFractionDigits: 1 }}
+                  short
+                  percent
+                  delta
                 />
               </div>
             </div>

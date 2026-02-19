@@ -1,13 +1,14 @@
 import type { Tracking } from "@/features/db/localdb";
+import type { FormatValueOptions } from "./friendly-numbers";
 
 export interface NumbersChartDataPoint {
   x: number;
   y: number;
   value: number;
   valenceValue: number;
-  format?: { signDisplay: 'always' };
+  format?: FormatValueOptions;
   secondaryValue?: number;
-  secondaryFormat?: { signDisplay: 'always' };
+  secondaryFormat?: FormatValueOptions;
   secondaryLabel: string;
 }
 
@@ -33,7 +34,7 @@ export function getChartData(numbers: number[], tracking: Tracking): NumbersChar
         y: sum, // cumulative
         value: n,
         valenceValue: n,
-        format: { signDisplay: 'always' },
+        format: { delta: true },
         secondaryValue: sum, // cumulative
         secondaryLabel: 'Total',
       };
@@ -48,7 +49,7 @@ export function getChartData(numbers: number[], tracking: Tracking): NumbersChar
         value: n,
         valenceValue: delta ?? 0,
         secondaryValue: delta,
-        secondaryFormat: { signDisplay: 'always' },
+        secondaryFormat: { delta: true },
         secondaryLabel: 'Delta',
       };
     });

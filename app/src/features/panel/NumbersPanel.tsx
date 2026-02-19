@@ -1,22 +1,25 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChartContainer } from '@/components/ui/chart';
-import { Textarea } from '@/components/ui/textarea';
 import { NumberText } from '@/components/ui/number-text';
 import { PopoverTip, PopoverTipContent, PopoverTipTrigger } from '@/components/ui/popover-tip';
 import { CopyButton } from '@/components/ui/shadcn-io/copy-button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import type { DateKey, DayKey, Goal, TimePeriod, Tracking, Valence } from '@/features/db/localdb';
-import { AchievementDetailsDrawer } from '@/features/achievements/AchievementDetailsDrawer';
+import { Textarea } from '@/components/ui/textarea';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
+import { AchievementDetailsDrawer } from '@/features/achievements/AchievementDetailsDrawer';
+import type { DateKey, DayKey, Goal, TimePeriod, Tracking, Valence } from '@/features/db/localdb';
+import { NotesEditor } from '@/features/notes/NotesEditor';
 import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { getDateKeyType } from '@/lib/friendly-date';
+import { formatValue } from '@/lib/friendly-numbers';
 import type { CompletedAchievementResult, GoalResults } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, computePeriodDerivedStats, type StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
+import { adjectivize, capitalize, cn } from '@/lib/utils';
 import { getValueForValence } from '@/lib/valence';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpDown, ArrowUpToLine } from "lucide-react";
@@ -24,8 +27,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { AddNumberEditor } from './AddNumberEditor';
 import { EditableNumberBadge } from './EditableNumberBadge';
-import { adjectivize, capitalize, cn } from '@/lib/utils';
-import { NotesEditor } from '@/features/notes/NotesEditor';
 
 export interface NumbersPanelProps {
   isOpen: boolean;
@@ -325,31 +326,31 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                         valenceValue={deltas[getPrimaryMetric(tracking)]}
                         valence={valence}
                         className="text-xs font-mono font-semibold"
-                        formatOptions={{ signDisplay: 'always' }}
+                        delta
                       />
                     </span>
                     {percents[getPrimaryMetric(tracking)] !== undefined && !isNaN(percents[getPrimaryMetric(tracking)] as number) && (
                       <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
-                        {new Intl.NumberFormat(undefined, { style: 'percent', signDisplay: 'always', maximumFractionDigits: 0 }).format(percents[getPrimaryMetric(tracking)]! / 100)}
+                        {formatValue(percents[getPrimaryMetric(tracking)]! / 100, { delta: true, percent: true, decimals: 0 })}
                       </span>
                     )}
                   </div>
                 )}
                 {/* If no deltas and trend mode, show stats.change and stats.changePercent -- OBSOLETE now that deltas have built in fallback behavior */}
                 {/* {!deltas && tracking === 'trend' && stats && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+                  <div className=\"flex items-center gap-1 mt-1\">
+                    <span className=\"inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700\">
                       <NumberText
                         value={stats.change}
                         valenceValue={stats.change}
                         valence={valence}
-                        className="text-xs font-mono font-semibold"
-                        formatOptions={{ signDisplay: 'always' }}
+                        className=\"text-xs font-mono font-semibold\"
+                        delta
                       />
                     </span>
                     {typeof stats.changePercent === 'number' && !isNaN(stats.changePercent) && (
                       <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
-                        {new Intl.NumberFormat(undefined, { signDisplay: 'always', maximumFractionDigits: 1 }).format(stats.changePercent)}%
+                        {formatValue(stats.changePercent / 100, { delta: true, percent: true, decimals: 1 })}
                       </span>
                     )}
                   </div>
@@ -380,12 +381,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                             valenceValue={delta}
                             valence={valence}
                             className="text-xs font-mono font-semibold"
-                            formatOptions={{ signDisplay: 'always' }}
+                            delta
                           />
                         </span>
                         {percent !== undefined && !isNaN(percent as number) && (
                           <span className="text-[11px] text-slate-400 font-mono font-medium">
-                            {new Intl.NumberFormat(undefined, { style: 'percent', signDisplay: 'always', maximumFractionDigits: 0 }).format(percent! / 100)}
+                            {formatValue(percent! / 100, { delta: true, percent: true, decimals: 0 })}
                           </span>
                         )}
                       </div>
@@ -456,12 +457,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                         return (
                           <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                             <div style={{ fontWeight: 600, fontSize: 14 }}>
-                              <NumberText value={value} valenceValue={valenceValue} valence={valence} formatOptions={format ?? undefined} />
+                              <NumberText value={value} valenceValue={valenceValue} valence={valence} {...format} />
                             </div>
                             {secondaryValue !== undefined && secondaryValue !== null ? (
                               <div style={{ fontSize: 12, opacity: 0.7 }}>
                                 {secondaryLabel && <span className="mr-1">{secondaryLabel}</span>}
-                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} formatOptions={secondaryFormat ?? undefined} />
+                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} {...secondaryFormat} />
                               </div>
                             ) : null}
                           </div>

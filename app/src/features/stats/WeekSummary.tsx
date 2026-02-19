@@ -1,5 +1,5 @@
 import { ChartContainer } from '@/components/ui/chart';
-import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
+import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence, WeekKey } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
@@ -137,12 +137,12 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
                         return (
                           <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                             <div style={{ fontWeight: 600, fontSize: 14 }}>
-                              <NumberText value={value} valenceValue={valenceValue} valence={valence} formatOptions={format} />
+                              <NumberText value={value} valenceValue={valenceValue} valence={valence} {...format} />
                             </div>
                             {secondaryValue !== undefined && secondaryValue !== null ? (
                               <div style={{ fontSize: 12, opacity: 0.7 }}>
                                 {secondaryLabel && <span className=" text-slate-500 dark:text-slate-400 mr-1">{secondaryLabel}</span>}
-                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} formatOptions={secondaryFormat} />
+                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} {...secondaryFormat} />
                               </div>
                             ) : null}
                           </div>
@@ -162,11 +162,11 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
           <div className="hidden sm:flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mean</div>
-              <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={shortNumberFormat} />
+              <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Median</div>
-              <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" formatOptions={shortNumberFormat} />
+              <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
             </div>
           </div>
 
@@ -176,11 +176,11 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
           <div className="hidden md:flex items-center gap-3">
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Min</div>
-              <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" formatOptions={shortNumberFormat} />
+              <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
             </div>
             <div className="text-right">
               <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Max</div>
-              <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" formatOptions={shortNumberFormat} />
+              <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
             </div>
           </div>
 

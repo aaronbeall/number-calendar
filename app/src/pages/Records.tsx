@@ -1,9 +1,10 @@
 import { PageHeader } from '@/components/PageHeader';
 import type { DateKey, Valence } from '@/features/db/localdb';
+import { formatValue } from '@/lib/friendly-numbers';
 import { Award, CalendarDays, Flame, Skull, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
-import { useAllDays } from '../features/db/useDayEntryData';
 import { useDatasets } from '../features/db/useDatasetData';
+import { useAllDays } from '../features/db/useDayEntryData';
 import { formatFriendlyDate, parseDateKey } from '../lib/friendly-date';
 import { calculateRecordsForValence } from '../lib/records';
 
@@ -231,7 +232,7 @@ function RecordCard(props: RecordCardProps) {
     borderColor = 'border-slate-200 dark:border-slate-700';
     bgColor = 'bg-slate-50/50 dark:bg-slate-900/50';
   } else {
-    displayValue = Intl.NumberFormat().format(type == 'streak' ? props.length : props.value)
+    displayValue = formatValue(type == 'streak' ? props.length : props.value);
     displayDate = type === 'streak'
       ? formatFriendlyDate(props.start, props.end)
       : formatFriendlyDate(date);

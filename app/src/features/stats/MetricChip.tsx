@@ -1,4 +1,4 @@
-import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
+import { NumberText } from '@/components/ui/number-text';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Valence } from '@/features/db/localdb';
 import { formatValue, type FormatValueOptions } from '@/lib/friendly-numbers';
@@ -60,7 +60,8 @@ export const MetricChip = ({
                 valenceValue={secondaryMetric ?? 0}
                 valence={valence}
                 className="font-semibold"
-                formatOptions={{ ...shortNumberFormat, signDisplay: secondaryMetricFormat?.delta ? 'exceptZero' : 'auto' }}
+                short
+                {...secondaryMetricFormat}
               />{' '}
               {formattedChangePercent && (
                 <span className={changeClass}>({formattedChangePercent})</span>
@@ -88,7 +89,7 @@ export const MetricChip = ({
                 value={secondaryMetric ?? null}
                 valenceValue={secondaryMetric ?? 0}
                 valence={valence}
-                formatOptions={{ signDisplay: secondaryMetricFormat?.delta ? 'exceptZero' : 'auto' }}
+                {...secondaryMetricFormat}
               />
             </span>
             {formattedChangePercent && (

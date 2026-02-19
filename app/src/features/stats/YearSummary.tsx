@@ -1,4 +1,4 @@
-import { NumberText, shortNumberFormat } from '@/components/ui/number-text';
+import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
@@ -77,7 +77,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
                 valenceValue={primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-lg font-bold"
-                formatOptions={shortNumberFormat}
+                short
               />
             </div>
             <div className="text-right">
@@ -87,7 +87,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
                 valenceValue={primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-lg font-bold"
-                formatOptions={shortNumberFormat}
+                short
               />
             </div>
           </div>
@@ -103,7 +103,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
                 valenceValue={primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-base font-bold"
-                formatOptions={shortNumberFormat}
+                short
               />
             </div>
             <div className="text-right">
@@ -113,7 +113,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
                 valenceValue={primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-base font-bold"
-                formatOptions={shortNumberFormat}
+                short
               />
             </div>
           </div>

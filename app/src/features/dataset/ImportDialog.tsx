@@ -7,12 +7,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { dateToDayKey } from '@/lib/friendly-date';
-import { detectDelimiter, generateDayEntries, getParsedColumns, getHeadersAndRows, parseCellValue, parseCSV, parseDateString, parseJSON, validateImport, type ColumnType, type MergeStrategy, type ParsedData, getRowSelection } from '@/lib/importing';
+import { formatValue } from '@/lib/friendly-numbers';
+import { detectDelimiter, generateDayEntries, getHeadersAndRows, getParsedColumns, getRowSelection, parseCellValue, parseCSV, parseDateString, parseJSON, validateImport, type ColumnType, type MergeStrategy, type ParsedData } from '@/lib/importing';
 import { AlertCircle, Clipboard, Eraser, File, FileJson, Info, Table, Upload } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { DayEntry, DayKey } from '../db/localdb';
-import { useAllDays, useSaveDay } from '../db/useDayEntryData';
 import { useDataset } from '../db/useDatasetData';
+import { useAllDays, useSaveDay } from '../db/useDayEntryData';
 
 interface ImportDialogProps {
   open: boolean;
@@ -524,7 +525,7 @@ export function ImportDialog({ open, onOpenChange, datasetId }: ImportDialogProp
                                           ) : col.type === 'numeric' && (typeof parsed === 'number' || Array.isArray(parsed)) ? (
                                             (Array.isArray(parsed) ? parsed : [parsed]).map((num, idx) => (
                                               <code key={idx} className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-xs font-mono">
-                                                {new Intl.NumberFormat('en-US').format(num)}
+                                                {formatValue(num)}
                                               </code>
                                             ))
                                           ) : (
