@@ -10,6 +10,7 @@ import { useNotes } from '@/features/db/useNotesData';
 import { NotesDisplay } from '@/features/notes/NotesDisplay';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { useAchievements } from '@/hooks/useAchievements';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { ChartContainer } from '@/components/ui/chart';
 import { getCalendarData, getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
@@ -923,6 +924,7 @@ export function Timeline() {
   const [activeMonthKey, setActiveMonthKey] = useState<MonthKey | null>(null);
   const [activeYearKey, setActiveYearKey] = useState<YearKey | null>(null);
   const navScrollRef = useRef<HTMLDivElement | null>(null);
+  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
 
   const allTimeNumbers = useMemo(() => {
     return periodDays
@@ -946,15 +948,6 @@ export function Timeline() {
     return getChartData(chartNumbers, dataset.tracking);
   }, [allTimeNumbers, dataset.tracking]);
 
-  const [panelProps, setPanelProps] = useState<PanelProps>(() => ({
-    isOpen: false,
-    title: '',
-    data: createEmptyAggregate(todayKey as DateKeyByPeriod<'day'>, 'day'),
-    priorData: undefined as PeriodAggregateData<'day' | 'week' | 'month' | 'year'> | undefined,
-    extremes: undefined as StatsExtremes | undefined,
-    daysData: undefined as Record<DayKey, PeriodAggregateData<'day'>> | undefined,
-    dateKey: todayKey as DateKey,
-  }));
 
   const latestKey = useMemo(() => {
     for (const entry of periodDays) {
@@ -1147,6 +1140,25 @@ export function Timeline() {
     });
   }, [dayAggByKey, monthAggByKey, noteDaySet, weekAggByKey, yearAggByKey, years, maxVisibleDayKey]);
 
+  const entriesByDateKey = useMemo(() => {
+    const map = new Map<DateKey, TimelineEntry>();
+    entriesByYear.forEach(({ yearEntry, monthEntries }) => {
+      map.set(yearEntry.dateKey, yearEntry);
+      monthEntries.forEach(({ monthEntry, weekEntries }) => {
+        map.set(monthEntry.dateKey, monthEntry);
+        weekEntries.forEach(({ weekEntry, dayEntries }) => {
+          if (weekEntry) {
+            map.set(weekEntry.dateKey, weekEntry);
+          }
+          dayEntries.forEach((dayEntry) => {
+            map.set(dayEntry.dateKey, dayEntry);
+          });
+        });
+      });
+    });
+    return map;
+  }, [entriesByYear]);
+
   useEffect(() => {
     const monthNodes = Array.from(document.querySelectorAll<HTMLElement>('[data-month-key]'));
     if (monthNodes.length === 0) return;
@@ -1245,9 +1257,32 @@ export function Timeline() {
   }, [dayAggByKey]);
 
   const handleOpenEntry = useCallback((entry: TimelineEntry) => {
+    setPanelView(entry.dateKey);
+  }, [setPanelView]);
+
+  const panelProps = useMemo<PanelProps>(() => {
+    const fallback: PanelProps = {
+      isOpen: false,
+      title: '',
+      data: createEmptyAggregate(todayKey as DateKeyByPeriod<'day'>, 'day'),
+      priorData: undefined,
+      extremes: undefined,
+      daysData: undefined,
+      dateKey: todayKey as DateKey,
+    };
+
+    if (typeof panelView !== 'string' || !panelView) {
+      return fallback;
+    }
+
+    const entry = entriesByDateKey.get(panelView as DateKey);
+    if (!entry) {
+      return fallback;
+    }
+
     const data = entry.data ?? createEmptyAggregate(entry.dateKey as DateKeyByPeriod<'day' | 'week' | 'month' | 'year'>, entry.kind);
     const { dayKeys } = getDaysDataByEntryKind(entry);
-    setPanelProps({
+    return {
       isOpen: true,
       title: getPanelTitleForEntry(entry),
       data,
@@ -1255,11 +1290,11 @@ export function Timeline() {
       extremes: undefined,
       daysData: dayKeys.length > 0 ? buildDaysDataFromKeys(dayKeys) : undefined,
       dateKey: entry.dateKey,
-    });
-  }, [getDaysDataByEntryKind, getPanelTitleForEntry, buildDaysDataFromKeys]);
+    };
+  }, [buildDaysDataFromKeys, entriesByDateKey, getDaysDataByEntryKind, getPanelTitleForEntry, panelView, todayKey]);
 
   // Memoize isSelected states to prevent memo breaking
-  const selectedEntryKey = panelProps.isOpen ? panelProps.dateKey : null;
+  const selectedEntryKey = typeof panelView === 'string' ? (panelView as DateKey) : null;
   const isSelectedByEntryKey = useMemo(() => {
     const map = new Map<DateKey, boolean>();
     if (!selectedEntryKey) return map;
@@ -1449,8 +1484,10 @@ export function Timeline() {
         {...panelProps}
         valence={dataset.valence}
         tracking={dataset.tracking}
-        achievementResults={achievementResultsByDateKey[panelProps.dateKey] ?? []}
-        onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
+        achievementResults={achievementResultsByDateKey[panelProps.dateKey] ?? EMPTY_ACHIEVEMENTS}
+        onClose={() => {
+          setPanelView(null);
+        }}
       />
     </div>
   );

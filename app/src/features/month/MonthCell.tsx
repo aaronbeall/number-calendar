@@ -10,7 +10,8 @@ import type { StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { CalendarDays, Trophy } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 
 interface MonthCellProps {
   year: number;
@@ -29,7 +30,9 @@ interface MonthCellProps {
 }
 
 export function MonthCell({ year, month, monthName, data, priorData, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking, achievementResults }: MonthCellProps) {
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
+  const monthKey = toMonthKey(year, month);
+  const panelOpen = typeof panelView === 'string' && panelView === monthKey;
   
   // Use getCalendarData for all stats, deltas, extremes, valence, etc.
   const {
@@ -82,7 +85,7 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
 
   return (
     <div
-      onClick={isFutureMonth ? undefined : () => setPanelOpen(true)}
+      onClick={isFutureMonth ? undefined : () => setPanelView(monthKey)}
       className={`h-full
         relative p-4 rounded-lg transition-all duration-200 shadow-sm dark:shadow-md
         ${isFutureMonth ? ghostClasses : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'}
@@ -114,14 +117,14 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
         showExpressionInput={false}
         actionLabel={"Open daily view"}
         actionOnClick={() => {
-          setPanelOpen(false);
+          setPanelView(null);
           onOpenMonth(month);
         }}
         actionIcon={<CalendarDays className="h-4 w-4" />}
-        onClose={() => setPanelOpen(false)}
+        onClose={() => setPanelView(null)}
         valence={valence}
         tracking={tracking}
-        dateKey={toMonthKey(year, month)}
+        dateKey={monthKey}
         achievementResults={achievementResults}
       />
 

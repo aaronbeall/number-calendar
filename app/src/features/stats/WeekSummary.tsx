@@ -8,9 +8,10 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
 import { getValueForValence } from '@/lib/valence';
 import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { Line, LineChart, Tooltip } from 'recharts';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 
 export interface WeekSummaryProps {
   data: PeriodAggregateData<'week'>;
@@ -29,7 +30,8 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
   const priorNumbers = priorData?.numbers;
   if (!numbers || numbers.length === 0) return null;
 
-  const [panelOpen, setPanelOpen] = useState(false);
+  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
+  const panelOpen = typeof panelView === 'string' && panelView === dateKey;
 
   // Use getCalendarData for all stats, deltas, valence, etc. (no extremes for week)
   const {
@@ -98,7 +100,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
     <div className={`relative rounded-md ${bgClasses} ${borderClasses} shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg transition-shadow ${selectedRing}`} aria-label="Weekly summary">
       <div
         className="w-full flex items-stretch gap-3 sm:gap-5 px-3 py-2 cursor-pointer"
-        onClick={() => setPanelOpen(true)}
+        onClick={() => setPanelView(dateKey)}
         tabIndex={0}
         role="button"
         aria-label={`Show week ${weekNumber} details`}
@@ -199,7 +201,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
       </div>
       <NumbersPanel
         isOpen={panelOpen}
-        onClose={() => setPanelOpen(false)}
+        onClose={() => setPanelView(null)}
         title={`Week ${weekNumber}`}
         data={data}
         priorData={priorData}

@@ -6,7 +6,7 @@ import { MonthChart } from '@/features/chart/MonthChart';
 import { TrendChart } from '@/features/chart/TrendChart';
 import YearChart from '@/features/chart/YearChart';
 import { DailyGrid } from '@/features/day/DailyGrid';
-import type { Dataset, DateKey, DayKey, TimePeriod } from '@/features/db/localdb';
+import type { Dataset, DateKey, DayKey, MonthKey, TimePeriod, YearKey } from '@/features/db/localdb';
 import { useSaveDay } from '@/features/db/useDayEntryData';
 import { MonthlyGrid } from '@/features/month/MonthlyGrid';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
@@ -16,7 +16,7 @@ import { YearOverview } from '@/features/year/YearOverview';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { getMonthDays } from "@/lib/calendar";
-import { toMonthKey, toYearKey } from '@/lib/friendly-date';
+import { parseDateKey, parseMonthKey, toMonthKey, toYearKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
 import { buildPriorAggregateMap, createEmptyAggregate, type PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
@@ -45,19 +45,11 @@ export function Calendar({
   const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
   const today = new Date();
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
+  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
   const builderTemplateId = typeof builderOpen === 'string' && builderOpen ? builderOpen : undefined;
   
   // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
-  const [panelProps, setPanelProps] = useState<PanelProps>(() => ({
-    isOpen: false,
-    title: '',
-    data: createEmptyAggregate(toMonthKey(year, month), 'month'),
-    priorData: undefined,
-    extremes: undefined,
-    daysData: undefined,
-    dateKey: toMonthKey(year, month),
-  }));
 
   const { days, weeks, months, years } = useAllPeriodsAggregateData();
   const saveDayMutation = useSaveDay();
@@ -80,8 +72,6 @@ export function Calendar({
     }));
   }, [monthDayKeys, dayDataByKey, priorDayDataByKey]);
 
-  const monthDaysData = useMemo(() => arrayToRecord(monthDays, (day) => day.data.dateKey, (day) => day.data), [monthDays]);
-
   // Aggregate data for weeks, months, years
   const monthDataByKey = useMemo(() => arrayToRecord(months, (item) => item.dateKey), [months]);
   const priorMonthDataByKey = useMemo(() => buildPriorAggregateMap(months), [months]);
@@ -99,6 +89,70 @@ export function Calendar({
 
   const monthNames = ["January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"];
+
+  const buildMonthDaysDataForKey = useCallback((monthKeyValue: MonthKey) => {
+    const { year: keyYear, month: keyMonth } = parseMonthKey(monthKeyValue);
+    const dayKeys = getMonthDays(keyYear, keyMonth);
+    return dayKeys.reduce((acc, dayKey) => {
+      acc[dayKey] = dayDataByKey[dayKey] ?? createEmptyAggregate(dayKey, 'day');
+      return acc;
+    }, {} as Record<DayKey, PeriodAggregateData<'day'>>);
+  }, [dayDataByKey]);
+
+  const buildYearDaysDataForKey = useCallback((yearKeyValue: YearKey) => {
+    const yearPrefix = `${parseDateKey(yearKeyValue).getFullYear()}-`;
+    return Object.entries(dayDataByKey).reduce((acc, [dayKey, dayData]) => {
+      if (dayKey.startsWith(yearPrefix)) {
+        acc[dayKey as DayKey] = dayData;
+      }
+      return acc;
+    }, {} as Record<DayKey, PeriodAggregateData<'day'>>);
+  }, [dayDataByKey]);
+
+  const panelProps = useMemo<PanelProps>(() => {
+    const fallback: PanelProps = {
+      isOpen: false,
+      title: '',
+      data: createEmptyAggregate(monthKey, 'month'),
+      priorData: undefined,
+      extremes: undefined,
+      daysData: undefined,
+      dateKey: monthKey,
+    };
+
+    if (typeof panelView !== 'string' || !panelView) {
+      return fallback;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(monthDataByKey, panelView)) {
+      const monthKeyValue = panelView as MonthKey;
+      const { month: keyMonth } = parseMonthKey(monthKeyValue);
+      return {
+        isOpen: true,
+        title: `${monthNames[keyMonth - 1]}`,
+        data: monthDataByKey[monthKeyValue],
+        priorData: priorMonthDataByKey[monthKeyValue],
+        extremes: yearExtremes,
+        daysData: buildMonthDaysDataForKey(monthKeyValue),
+        dateKey: monthKeyValue,
+      };
+    }
+
+    if (Object.prototype.hasOwnProperty.call(yearDataByKey, panelView)) {
+      const yearKeyValue = panelView as YearKey;
+      return {
+        isOpen: true,
+        title: `${parseDateKey(yearKeyValue).getFullYear()} Year Summary`,
+        data: yearDataByKey[yearKeyValue],
+        extremes: undefined,
+        priorData: undefined,
+        daysData: buildYearDaysDataForKey(yearKeyValue),
+        dateKey: yearKeyValue,
+      };
+    }
+
+    return fallback;
+  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, yearDataByKey, yearExtremes]);
 
   // Precompute year-level data maps for quick access in YearOverview and MonthlyGrid
   const yearDayDataByKey = useMemo(
@@ -262,15 +316,8 @@ export function Calendar({
             {/* Monthly Stats Section */}
             <div className="mt-8 mb-6">
               <div onClick={() => {
-                setPanelProps({
-                  isOpen: true,
-                  title: `${monthNames[month - 1]}`,
-                  data: monthAggregate,
-                  priorData: priorMonthDataByKey[monthKey],
-                  extremes: yearExtremes,
-                  daysData: monthDaysData,
-                  dateKey: toMonthKey(year, month),
-                });
+                const dateKey = toMonthKey(year, month);
+                setPanelView(dateKey);
               }} className="cursor-pointer">
               <MonthSummary 
                 data={monthAggregate}
@@ -324,15 +371,8 @@ export function Calendar({
             {/* Year Summary */}
             <div className="mt-8 mb-6">
               <div onClick={() => {
-                setPanelProps({
-                  isOpen: true,
-                  title: `${year} Year Summary`,
-                  data: yearAggregate,
-                  extremes: undefined,
-                  priorData: undefined,
-                  daysData: yearDayDataByKey,
-                  dateKey: toYearKey(year),
-                });
+                const dateKey = toYearKey(year);
+                setPanelView(dateKey);
               }} className="cursor-pointer">
                 <YearSummary 
                   data={yearAggregate}
@@ -369,7 +409,9 @@ export function Calendar({
         valence={dataset.valence}
         tracking={dataset.tracking}
         achievementResults={getAchievementsForDateKey(panelProps.dateKey)}
-        onClose={() => setPanelProps(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => {
+          setPanelView(null);
+        }}
       />
     </div>
   );

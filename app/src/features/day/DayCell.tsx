@@ -10,8 +10,9 @@ import { type StatsExtremes } from '@/lib/stats';
 import { getValenceValueForNumber } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { Skull, TrendingDown, TrendingUp, TrendingUpDown, Trophy } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
+import { useSearchParamState } from '@/hooks/useSearchParamState';
 
 export interface DayCellProps {
   date: Date;
@@ -25,7 +26,9 @@ export interface DayCellProps {
 }
 
 export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave, monthExtremes, valence, tracking, achievementResults }) => {
-  const [editMode, setEditMode] = useState(false);
+  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
+  const dayKey = dateToDayKey(date);
+  const isPanelOpen = typeof panelView === 'string' && panelView === dayKey;
   const numbers = data.numbers;
   const priorNumbers = priorData?.numbers;
 
@@ -79,7 +82,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
   }
 
   function handleClose(): void {
-    setEditMode(false);
+    setPanelView(null);
   }
 
   return (
@@ -87,8 +90,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
       <div
         className={`p-3 h-full flex flex-col rounded-lg transition-all duration-200 shadow-sm dark:shadow-md ${
           isFuture ? '' : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'
-        } hover:shadow-md dark:hover:shadow-lg ${editMode ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : ''} ${bgColor} ${ghostClasses}`}
-        onClick={isFuture ? undefined : () => setEditMode(true)}
+        } hover:shadow-md dark:hover:shadow-lg ${isPanelOpen ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : ''} ${bgColor} ${ghostClasses}`}
+        onClick={isFuture ? undefined : () => setPanelView(dayKey)}
         tabIndex={isFuture ? -1 : 0}
         role="button"
         aria-label={`Edit day ${date.getDate()}`}
@@ -213,7 +216,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
         )}
       </div>
       <NumbersPanel
-        isOpen={editMode}
+        isOpen={isPanelOpen}
         onClose={handleClose}
         title={date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
         data={data}
@@ -224,7 +227,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
         extremes={monthExtremes}
         valence={valence}
         tracking={tracking}
-        dateKey={dateToDayKey(date)}
+        dateKey={dayKey}
         achievementResults={achievementResults}
       />
     </div>
