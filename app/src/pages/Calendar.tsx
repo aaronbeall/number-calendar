@@ -22,8 +22,9 @@ import { buildPriorAggregateMap, createEmptyAggregate, type PeriodAggregateData 
 import { type StatsExtremes } from '@/lib/stats';
 import { arrayToRecord } from '@/lib/utils';
 import { parseISO } from 'date-fns';
-import { CalendarCheck2, CalendarDays, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
+import { CalendarCheck2, CalendarDays, CalendarOff, ChevronDown, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useSwipe } from '@/hooks/useSwipe';
 
 export function Calendar({
   dataset,
@@ -49,7 +50,14 @@ export function Calendar({
   const today = new Date();
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
   const [panelView, setPanelView] = useSearchParamState<string>('view', null);
+  const [showYearOverview, setShowYearOverview] = useState(false);
   const builderTemplateId = typeof builderOpen === 'string' && builderOpen ? builderOpen : undefined;
+  
+  // Swipe/drag detection for calendar navigation
+  const { handleSwipeStart, handleSwipeEnd, getAnimationStyle } = useSwipe({
+    onSwipeLeft: goToNext,
+    onSwipeRight: goToPrevious,
+  });
   
   // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
@@ -217,113 +225,157 @@ export function Calendar({
           {/* Navigation Header */}
           <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="max-w-4xl mx-auto px-4 py-3">
-              <div className="flex items-center gap-4">
-            {/* View Toggle */}
-            <ToggleGroup
-              type="single"
-              value={view}
-              onValueChange={(v: string | null) => {
-                if (v === 'daily' || v === 'monthly') {
-                  setView(v);
-                }
-              }}
-              size="sm"
-            >
-              <ToggleGroupItem value="daily" aria-label="Daily View">
-                <CalendarDays className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Daily</span>
-              </ToggleGroupItem>
-              <ToggleGroupItem value="monthly" aria-label="Monthly View">
-                <Grid3X3 className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Monthly</span>
-              </ToggleGroupItem>
-            </ToggleGroup>
-            
-            {/* Today Button */}
-            <Button 
-              variant="outline"
-              size="sm"
-              onClick={goToToday}
-              className="gap-1 h-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
-            >
-              <CalendarCheck2 className="h-3 w-3 text-slate-700 dark:text-blue-300" />
-              <span className="text-slate-700 dark:text-blue-300 hidden sm:inline">Today</span>
-            </Button>
-            
-            {/* Date Navigation */}
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={goToPrevious}
-                className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+            {/* View Toggle and Controls */}
+            <div className="flex items-center gap-4">
+              {/* Left: Desktop - Toggle + Today | Mobile - Month + Chevron */}
+              <div className="hidden sm:flex items-center gap-4">
+                <ToggleGroup
+                  type="single"
+                  value={view}
+                  onValueChange={(v: string | null) => {
+                    if (v === 'daily' || v === 'monthly') {
+                      setView(v);
+                    }
+                  }}
+                  size="sm"
+                >
+                  <ToggleGroupItem value="daily" aria-label="Daily View">
+                    <CalendarDays className="h-4 w-4 mr-1" />
+                    <span>Daily</span>
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="monthly" aria-label="Monthly View">
+                    <Grid3X3 className="h-4 w-4 mr-1" />
+                    <span>Monthly</span>
+                  </ToggleGroupItem>
+                </ToggleGroup>
+                
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  onClick={goToToday}
+                  className="gap-1 h-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 px-3"
+                  title="Today"
+                >
+                  <CalendarCheck2 className="h-4 w-4 text-slate-700 dark:text-blue-300" />
+                  <span>Today</span>
+                </Button>
+              </div>
+
+              {/* Mobile: Month + Chevron on left */}
+              <button
+                onClick={() => setShowYearOverview(!showYearOverview)}
+                className="sm:hidden flex items-center gap-2 font-semibold text-slate-700 dark:text-blue-200 transition-colors"
               >
-                <ChevronLeft className="h-4 w-4 text-slate-700 dark:text-blue-300" />
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={goToNext}
-                className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
-              >
-                <ChevronRight className="h-4 w-4 text-slate-700 dark:text-blue-300" />
-              </Button>
-            </div>
-            
-            {/* Current Month/Year */}
-            <div className="text-lg font-semibold text-slate-700">
-              <span className="text-slate-700 dark:text-blue-200">
+                <span className="text-lg">
+                  {view === 'daily' ? `${monthNames[month - 1]}${year !== today.getFullYear() ? ` ${year}` : ''}` : `${year}`}
+                </span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showYearOverview ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Desktop: Navigation Buttons + Month/Year in center */}
+              <div className="hidden sm:flex items-center gap-1">
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={goToPrevious}
+                  className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  title="Previous month"
+                >
+                  <ChevronLeft className="h-4 w-4 text-slate-700 dark:text-blue-300" />
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  onClick={goToNext}
+                  className="h-8 w-8 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
+                  title="Next month"
+                >
+                  <ChevronRight className="h-4 w-4 text-slate-700 dark:text-blue-300" />
+                </Button>
+              </div>
+
+              {/* Desktop: Month/Year display */}
+              <span className="hidden sm:inline font-semibold text-slate-700 dark:text-blue-200">
                 {view === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
               </span>
+              
+              {/* Spacer */}
+              <div className="flex-1" />
+              
+              {/* Right: Mobile - Today icon + Hide Weekends icon | Desktop - Hide Weekends text button */}
+              <div className="flex items-center gap-1">
+                {/* Mobile: Today icon only */}
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  onClick={goToToday}
+                  className="sm:hidden h-8 w-8 text-slate-700 dark:text-slate-200"
+                  title="Today"
+                >
+                  <CalendarCheck2 className="h-4 w-4 text-slate-700 dark:text-blue-300" />
+                </Button>
+
+                {/* Hide Weekends: Icon on mobile, text on desktop */}
+                {view === 'daily' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowWeekends(v => !v)}
+                    aria-pressed={showWeekends}
+                    title={showWeekends ? "Hide weekends" : "Show weekends"}
+                    className="h-8 text-slate-700 dark:text-slate-200 p-1 sm:px-3"
+                  >
+                    <CalendarOff className={`h-4 w-4 ${showWeekends ? "text-slate-400 dark:text-slate-500" : "text-blue-500 dark:text-blue-300"}`} />
+                    <span className="hidden sm:inline ml-1">{showWeekends ? "Hide weekends" : "Show weekends"}</span>
+                  </Button>
+                )}
+              </div>
             </div>
-            
-            {/* Weekend Toggle (Daily view only) */}
-            {view === 'daily' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowWeekends(v => !v)}
-                aria-pressed={showWeekends}
-                title={showWeekends ? "Hide weekends" : "Show weekends"}
-                className="gap-1 h-8 text-slate-700 dark:text-slate-200"
-              >
-                <CalendarOff className={`h-4 w-4 ${showWeekends ? "text-slate-400 dark:text-slate-500" : "text-blue-500 dark:text-blue-300"}`} />
-                <span className="text-slate-700 dark:text-blue-300 hidden sm:inline">{showWeekends ? "Hide weekends" : "Show weekends"}</span>
-              </Button>
-            )}
           </div>
-        </div>
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto p-4 space-y-6">
+      <div className="max-w-4xl mx-auto p-4 space-y-6 overflow-hidden">
         {view === 'daily' ? (
           <>
-            {/* Year Overview */}
-            <YearOverview
-              year={year}
-              dayDataByKey={yearDayDataByKey}
-              currentMonth={month}
-              onMonthClick={setMonth}
-              valence={dataset.valence}
-              tracking={dataset.tracking}
-            />
+            {/* Year Overview - Always shown on large screens, collapsible on mobile */}
+            <div className={`transition-all duration-300 overflow-hidden -mx-4 px-4 sm:mx-0 sm:px-0 ${showYearOverview ? 'max-h-96 sm:max-h-none' : 'max-h-0 sm:max-h-none'}`}>
+              <YearOverview
+                year={year}
+                dayDataByKey={yearDayDataByKey}
+                currentMonth={month}
+                onMonthClick={(newMonth) => {
+                  setMonth(newMonth);
+                }}
+                onYearChange={(newYear) => {
+                  setYear(newYear);
+                }}
+                valence={dataset.valence}
+                tracking={dataset.tracking}
+              />
+            </div>
 
-            {/* Calendar Grid */}
-            <DailyGrid
-              year={year}
-              month={month}
-              showWeekends={showWeekends}
-              monthDays={monthDays}
-              weekDataByKey={weekDataByKey}
-              priorWeekByKey={priorWeekDataByKey}
-              valence={dataset.valence}
-              tracking={dataset.tracking}
-              monthExtremes={monthExtremes}
-              achievementResultsByDateKey={achievementResultsByDateKey}
-              onSaveDay={handleSaveDay}
-            />
+            {/* Calendar Grid with Swipe Support */}
+            <div 
+              onTouchStart={handleSwipeStart}
+              onTouchEnd={handleSwipeEnd}
+              style={getAnimationStyle()}
+            >
+              <DailyGrid
+                year={year}
+                month={month}
+                showWeekends={showWeekends}
+                monthDays={monthDays}
+                weekDataByKey={weekDataByKey}
+                priorWeekByKey={priorWeekDataByKey}
+                valence={dataset.valence}
+                tracking={dataset.tracking}
+                monthExtremes={monthExtremes}
+                achievementResultsByDateKey={achievementResultsByDateKey}
+                onSaveDay={handleSaveDay}
+              />
+            </div>
             
             {/* Monthly Stats Section */}
             <div className="mt-8 mb-6">
@@ -362,17 +414,23 @@ export function Calendar({
           </>
         ) : (
           <>
-            {/* Monthly Grid */}
-            <MonthlyGrid
-              year={year}
-              dayDataByKey={yearDayDataByKey}
-              priorDayByKey={priorDayDataByKey}
-              monthDataByKey={monthDataByKey}
-              priorMonthByKey={priorMonthDataByKey}
-              yearExtremes={yearExtremes}
-              valence={dataset.valence}
-              tracking={dataset.tracking}
-            />
+            {/* Monthly Grid with Swipe Support */}
+            <div 
+              onTouchStart={handleSwipeStart}
+              onTouchEnd={handleSwipeEnd}
+              style={getAnimationStyle()}
+            >
+              <MonthlyGrid
+                year={year}
+                dayDataByKey={yearDayDataByKey}
+                priorDayByKey={priorDayDataByKey}
+                monthDataByKey={monthDataByKey}
+                priorMonthByKey={priorMonthDataByKey}
+                yearExtremes={yearExtremes}
+                valence={dataset.valence}
+                tracking={dataset.tracking}
+              />
+            </div>
 
             {/* Year Summary */}
             <div className="mt-8 mb-6">

@@ -3,6 +3,7 @@ import { dateToDayKey } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetricFromStats, getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
+import { useSwipe } from '@/hooks/useSwipe';
 import React, { useMemo } from 'react';
 
 export interface YearOverviewProps {
@@ -12,6 +13,7 @@ export interface YearOverviewProps {
   onMonthClick: (month: number) => void;
   valence: Valence;
   tracking: Tracking;
+  onYearChange?: (newYear: number) => void;
 }
 
 const monthNames = [
@@ -25,9 +27,15 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
   currentMonth, 
   onMonthClick,
   valence,
-  tracking
+  tracking,
+  onYearChange
 }) => {
   const today = new Date();
+
+  const { handleSwipeStart, handleSwipeEnd, getAnimationStyle } = useSwipe({
+    onSwipeLeft: () => onYearChange?.(year + 1),
+    onSwipeRight: () => onYearChange?.(year - 1),
+  });
 
   // Memoize all dot data for the year: { [month]: [{ day, color, valenceValue, isFuture, hasData, value }] }
   const dotDataByMonth = useMemo(() => {
@@ -137,8 +145,13 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-6 shadow-sm dark:shadow-md">
-      <div className="grid grid-cols-12 gap-2 justify-items-center">
+    <div 
+      className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-6 shadow-sm dark:shadow-md"
+      style={getAnimationStyle()}
+      onTouchStart={handleSwipeStart}
+      onTouchEnd={handleSwipeEnd}
+    >
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 justify-items-center">
         {Array.from({ length: 12 }, (_, i) => renderMonth(i + 1))}
       </div>
     </div>
