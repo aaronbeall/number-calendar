@@ -151,11 +151,11 @@ export function detectExpressionTrackingFormat(expr: string): Tracking | null {
 }
 
 /**
- * Formats an array of numbers for series mode: e.g. "35+21-76+2000"
+ * Formats an array of numbers for series mode: e.g. "35 +21 -76 +2000"
  */
 export function buildSeriesExpressionFromNumbers(nums: number[]): string {
   if (!nums.length) return '';
-  return nums.reduce((acc, n, i) => (i === 0 ? `${n}` : `${acc}${n >= 0 ? '+' : ''}${n}`), '');
+  return nums.reduce((acc, n, i) => (i === 0 ? `${n}` : `${acc} ${n >= 0 ? '+' : ''}${n}`), '');
 }
 
 /**
