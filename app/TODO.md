@@ -192,3 +192,4 @@ I'm liking this one.
 - [ ] `=` parsng doesn't work at the beginning of expression (its redundant, but should be allowed)
 - [ ] Daily micro dots need to have a limit
 - [x] Priors/deltas not working correctly, null days count as 0, should be skipped over
+- [ ] Perfect Week "All entries are uptrend" is not taking into account prior week delta (refactoring to aggregate data would probably fix this)
