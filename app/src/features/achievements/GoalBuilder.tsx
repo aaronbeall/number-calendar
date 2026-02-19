@@ -82,8 +82,10 @@ export function GoalBuilder({ value, onChange, tracking }: GoalBuilderProps) {
               )}
             </SelectValue>
           </SelectTrigger>
-          <SelectContent>
-            {entriesOf(METRICS).map(([key, { label, description }]) => {
+          <SelectContent className="max-h-60">
+            {entriesOf(METRICS)
+              .filter(([key]) => tracking !== 'trend' || key !== 'total')
+              .map(([key, { label, description }]) => {
               const isPrimary = tracking && key === getPrimaryMetric(tracking);
               return (
                 <SelectItem key={key} value={key}>
@@ -116,7 +118,9 @@ export function GoalBuilder({ value, onChange, tracking }: GoalBuilderProps) {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {entriesOf(SOURCES).map(([key, { label, description }]) => (
+              {entriesOf(SOURCES)
+                .filter(([key]) => tracking !== 'trend' || (key !== 'cumulatives' && key !== 'cumulativePercents'))
+                .map(([key, { label, description }]) => (
                 <SelectItem key={key} value={key}>
                   <div className="flex flex-col">
                     <span className="font-medium">{label}</span>
