@@ -185,6 +185,6 @@ I'm liking this one.
 - [ ] Editing a badge directly doesn't update the preview
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
 - [ ] URL/back button compatibility for side-panels
-- [ ] Format series with spaces, ie `5 +10 -20`
+- [x] Format series with spaces, ie `5 +10 -20`
 - [ ] `NumberText` should have tooltips (full number, high/low explanation)
 - [ ] Sorting of achievements/targets/milestones should use goal values
