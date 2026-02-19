@@ -167,4 +167,20 @@ describe('useAllPeriodsAggregateData', () => {
     expect(nextMonthByKey.get(monthKeyFeb)?.stats.total).toBe(7);
     expect(nextMonthByKey.get(monthKeyMar)?.cumulatives.total).toBe(11);
   });
+
+  it('uses the last populated day for deltas when a day has no numbers', () => {
+    const dayA = makeEntry('2024-11-01', [5]);
+    const dayB = makeEntry('2024-11-02', []);
+    const dayC = makeEntry('2024-11-03', [8]);
+
+    allDays = [dayA, dayB, dayC];
+
+    const { result } = renderHook(() => useAllPeriodsAggregateData());
+
+    const dayByKey = new Map(result.current.days.map((day) => [day.dateKey, day]));
+    const dayCData = dayByKey.get(dayC.date)!;
+
+    expect(dayCData.deltas.total).toBe(3);
+    expect(dayCData.deltas.last).toBe(3);
+  });
 });

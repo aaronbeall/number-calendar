@@ -36,8 +36,13 @@ export const buildPriorAggregateMap = <T extends DateKeyType>(
   items: PeriodAggregateData<T>[],
 ): Record<DateKeyByPeriod<T>, PeriodAggregateData<T> | undefined> => {
   const record = {} as Record<DateKeyByPeriod<T>, PeriodAggregateData<T> | undefined>;
+  let lastPopulated: PeriodAggregateData<T> | undefined;
   for (let i = 0; i < items.length; i += 1) {
-    record[items[i].dateKey] = i > 0 ? items[i - 1] : undefined;
+    const item = items[i];
+    record[item.dateKey] = lastPopulated;
+    if (item.numbers.length > 0) {
+      lastPopulated = item;
+    }
   }
   return record;
 };

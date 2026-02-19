@@ -190,3 +190,5 @@ I'm liking this one.
 - [ ] `NumberText` should have tooltips (full number, high/low explanation)
 - [ ] Sorting of achievements/targets/milestones should use goal values
 - [ ] `=` parsng doesn't work at the beginning of expression (its redundant, but should be allowed)
+- [ ] Daily micro dots need to have a limit
+- [x] Priors/deltas not working correctly, null days count as 0, should be skipped over

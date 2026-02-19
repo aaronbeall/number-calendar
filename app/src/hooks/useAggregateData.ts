@@ -106,11 +106,27 @@ export function useAllPeriodsAggregateData(): AllPeriodsAggregateData {
       : (prevCache?.dayData ?? []);
 
     if (hasChanges) {
+      let lastPopulatedDay: PeriodAggregateData<'day'> | null = null;
+      if (dayStartIndex > 0) {
+        for (let i = dayStartIndex - 1; i >= 0; i -= 1) {
+          const priorDay = dayData[i];
+          if (priorDay && priorDay.numbers.length > 0) {
+            lastPopulatedDay = priorDay;
+            break;
+          }
+        }
+      }
+
       for (let i = dayStartIndex; i < sortedAllDays.length; i += 1) {
         const entry = sortedAllDays[i];
-        const prior = i > 0 ? dayData[i - 1] : null;
         const numbers = entry.numbers ?? [];
-        dayData.push(computePeriodData(entry.date, 'day', numbers, prior));
+        const prior = lastPopulatedDay;
+        const aggregate = computePeriodData(entry.date, 'day', numbers, prior);
+        dayData.push(aggregate);
+
+        if (numbers.length > 0) {
+          lastPopulatedDay = aggregate;
+        }
       }
     }
 
