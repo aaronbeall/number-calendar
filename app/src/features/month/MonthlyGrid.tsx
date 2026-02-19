@@ -1,7 +1,6 @@
-import type { DateKey, DayKey, MonthKey, Tracking, Valence } from '@/features/db/localdb';
+import type { DayKey, MonthKey, Tracking, Valence } from '@/features/db/localdb';
 import { getMonthDays } from '@/lib/calendar';
 import { toMonthKey } from '@/lib/friendly-date';
-import type { CompletedAchievementResult } from '@/lib/goals';
 import { createEmptyAggregate, type PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
 import { parseISO } from 'date-fns';
@@ -15,13 +14,11 @@ interface MonthlyGridProps {
   monthDataByKey: Record<MonthKey, PeriodAggregateData<'month'>>;
   priorMonthByKey: Record<MonthKey, PeriodAggregateData<'month'> | undefined>;
   yearExtremes?: StatsExtremes;
-  onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;
-  achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
 }
 
-export function MonthlyGrid({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, onOpenMonth, valence, tracking, achievementResultsByDateKey }: MonthlyGridProps) {
+export function MonthlyGrid({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, valence, tracking }: MonthlyGridProps) {
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
@@ -69,7 +66,7 @@ export function MonthlyGrid({ year, dayDataByKey, priorDayByKey, monthDataByKey,
       {monthNames.map((monthName, index) => {
         const monthNumber = index + 1;
         const monthData = monthDataMap.get(monthNumber)!;
-        const { data: monthAggregate, priorData, days: monthDays } = monthData;
+        const { data: monthAggregate, days: monthDays } = monthData;
         const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
         const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
         return (
@@ -79,15 +76,12 @@ export function MonthlyGrid({ year, dayDataByKey, priorDayByKey, monthDataByKey,
             month={monthNumber}
             monthName={monthName}
             data={monthAggregate}
-            priorData={priorData}
             monthDays={monthDays}
             isCurrentMonth={isCurrentMonth}
             isFutureMonth={isFutureMonth}
             yearExtremes={yearExtremes}
-            onOpenMonth={onOpenMonth}
             valence={valence}
             tracking={tracking}
-            achievementResults={achievementResultsByDateKey[toMonthKey(year, monthNumber)] ?? []}
           />
         );
       })}

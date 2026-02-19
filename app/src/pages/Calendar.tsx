@@ -23,7 +23,7 @@ import { type StatsExtremes } from '@/lib/stats';
 import { arrayToRecord } from '@/lib/utils';
 import { parseISO } from 'date-fns';
 import { CalendarCheck2, CalendarDays, CalendarOff, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 
 export function Calendar({
   dataset,
@@ -37,6 +37,9 @@ export function Calendar({
     title: string;
     data: PeriodAggregateData<TimePeriod>;
     priorData?: PeriodAggregateData<TimePeriod>;
+    actionLabel?: string;
+    actionOnClick?: () => void;
+    actionIcon?: ReactNode;
     extremes?: StatsExtremes;
     daysData?: Record<DayKey, PeriodAggregateData<'day'>>;
     dateKey: DateKey;
@@ -120,26 +123,35 @@ export function Calendar({
       dateKey: monthKey,
     };
 
-    if (typeof panelView !== 'string' || !panelView) {
+    const panelViewKey = typeof panelView === 'number' ? String(panelView) : panelView;
+    if (typeof panelViewKey !== 'string' || !panelViewKey) {
       return fallback;
     }
 
-    if (Object.prototype.hasOwnProperty.call(monthDataByKey, panelView)) {
-      const monthKeyValue = panelView as MonthKey;
-      const { month: keyMonth } = parseMonthKey(monthKeyValue);
+    if (Object.prototype.hasOwnProperty.call(monthDataByKey, panelViewKey)) {
+      const monthKeyValue = panelViewKey as MonthKey;
+      const { month: keyMonth, year: keyYear } = parseMonthKey(monthKeyValue);
       return {
         isOpen: true,
         title: `${monthNames[keyMonth - 1]}`,
         data: monthDataByKey[monthKeyValue],
         priorData: priorMonthDataByKey[monthKeyValue],
+        actionLabel: 'Open daily view',
+        actionOnClick: () => {
+          setPanelView(null);
+          setView('daily');
+          setYear(keyYear);
+          setMonth(keyMonth);
+        },
+        actionIcon: <CalendarDays className="h-4 w-4" />,
         extremes: yearExtremes,
         daysData: buildMonthDaysDataForKey(monthKeyValue),
         dateKey: monthKeyValue,
       };
     }
 
-    if (Object.prototype.hasOwnProperty.call(yearDataByKey, panelView)) {
-      const yearKeyValue = panelView as YearKey;
+    if (Object.prototype.hasOwnProperty.call(yearDataByKey, panelViewKey)) {
+      const yearKeyValue = panelViewKey as YearKey;
       return {
         isOpen: true,
         title: `${parseDateKey(yearKeyValue).getFullYear()} Year Summary`,
@@ -152,7 +164,7 @@ export function Calendar({
     }
 
     return fallback;
-  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, yearDataByKey, yearExtremes]);
+  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, setMonth, setPanelView, setView, setYear, yearDataByKey, yearExtremes]);
 
   // Precompute year-level data maps for quick access in YearOverview and MonthlyGrid
   const yearDayDataByKey = useMemo(
@@ -358,14 +370,8 @@ export function Calendar({
               monthDataByKey={monthDataByKey}
               priorMonthByKey={priorMonthDataByKey}
               yearExtremes={yearExtremes}
-              onOpenMonth={(monthNumber) => {
-                setView('daily');
-                setYear(year);
-                setMonth(monthNumber);
-              }}
               valence={dataset.valence}
               tracking={dataset.tracking}
-              achievementResultsByDateKey={achievementResultsByDateKey}
             />
 
             {/* Year Summary */}

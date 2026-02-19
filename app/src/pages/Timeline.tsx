@@ -1271,11 +1271,12 @@ export function Timeline() {
       dateKey: todayKey as DateKey,
     };
 
-    if (typeof panelView !== 'string' || !panelView) {
+    const panelViewKey = typeof panelView === 'number' ? String(panelView) : panelView;
+    if (typeof panelViewKey !== 'string' || !panelViewKey) {
       return fallback;
     }
 
-    const entry = entriesByDateKey.get(panelView as DateKey);
+    const entry = entriesByDateKey.get(panelViewKey as DateKey);
     if (!entry) {
       return fallback;
     }
@@ -1294,7 +1295,7 @@ export function Timeline() {
   }, [buildDaysDataFromKeys, entriesByDateKey, getDaysDataByEntryKind, getPanelTitleForEntry, panelView, todayKey]);
 
   // Memoize isSelected states to prevent memo breaking
-  const selectedEntryKey = typeof panelView === 'string' ? (panelView as DateKey) : null;
+  const selectedEntryKey = typeof panelView === 'number' ? (String(panelView) as DateKey) : typeof panelView === 'string' ? (panelView as DateKey) : null;
   const isSelectedByEntryKey = useMemo(() => {
     const map = new Map<DateKey, boolean>();
     if (!selectedEntryKey) return map;

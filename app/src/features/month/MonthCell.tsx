@@ -1,15 +1,13 @@
 import { NumberText } from '@/components/ui/number-text';
-import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
-import { NumbersPanel } from '@/features/panel/NumbersPanel';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
 import { getRelativeSize } from '@/lib/charts';
-import { dateToDayKey, toMonthKey } from '@/lib/friendly-date';
-import type { CompletedAchievementResult } from '@/lib/goals';
+import { toMonthKey } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimaryMetricLowFromExtremes, getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { CalendarDays, Trophy } from 'lucide-react';
+import { Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 
@@ -18,18 +16,15 @@ interface MonthCellProps {
   month: number;
   monthName: string;
   data: PeriodAggregateData<'month'>;
-  priorData?: PeriodAggregateData<'month'>;
   monthDays?: { date: Date; data: PeriodAggregateData<'day'>; priorData?: PeriodAggregateData<'day'> }[];
   isCurrentMonth: boolean;
   isFutureMonth?: boolean;
   yearExtremes?: StatsExtremes;
-  onOpenMonth: (monthNumber: number) => void;
   valence: Valence;
   tracking: Tracking;
-  achievementResults: CompletedAchievementResult[];
 }
 
-export function MonthCell({ year, month, monthName, data, priorData, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, onOpenMonth, valence, tracking, achievementResults }: MonthCellProps) {
+export function MonthCell({ year, month, monthName, data, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, valence, tracking }: MonthCellProps) {
   const [panelView, setPanelView] = useSearchParamState<string>('view', null);
   const monthKey = toMonthKey(year, month);
   const panelOpen = typeof panelView === 'string' && panelView === monthKey;
@@ -75,14 +70,6 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
   // Highlight if panel is open
   const isSelected = panelOpen;
 
-  // Prepare monthData for NumbersPanel
-  const monthData = useMemo(() => {
-    return monthDays.reduce((acc, day) => { 
-      acc[dateToDayKey(day.date)] = day.data;
-      return acc; 
-    }, {} as Record<DayKey, PeriodAggregateData<'day'>>);
-  }, [monthDays]);
-
   return (
     <div
       onClick={isFutureMonth ? undefined : () => setPanelView(monthKey)}
@@ -105,29 +92,6 @@ export function MonthCell({ year, month, monthName, data, priorData, monthDays =
           />
         )}
       </div>
-      {/* NumbersPanel for this month */}
-      <NumbersPanel
-        isOpen={panelOpen}
-        title={`${monthName}`}
-        data={data}
-        priorData={priorData}
-        daysData={monthData}
-        extremes={yearExtremes}
-        editableNumbers={false}
-        showExpressionInput={false}
-        actionLabel={"Open daily view"}
-        actionOnClick={() => {
-          setPanelView(null);
-          onOpenMonth(month);
-        }}
-        actionIcon={<CalendarDays className="h-4 w-4" />}
-        onClose={() => setPanelView(null)}
-        valence={valence}
-        tracking={tracking}
-        dateKey={monthKey}
-        achievementResults={achievementResults}
-      />
-
       {/* Stats grid */}
       {stats && stats.count > 0 ? (
         <div className="space-y-3">
