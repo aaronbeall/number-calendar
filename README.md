@@ -11,6 +11,7 @@ A calendar app for showing numbers (P&amp;L, etc) with aggregations, visualizati
 * Shows statstical aggregations, like weekly and monthly total, median, mean, min, max, etc
 * Numbers are displayed with visual semantics based on data preferences, such as positive is good (shown green) and negative is bad (shown red)
 * Charts and visualizations
+* Goal system for tracking milestones, periodic targets (daily/weekly/etc), and other achievements
 * Light and dark mode support
 * Mobile friendly
 * All data is stored locally (no server storage), sync data with robust import and export abilities
