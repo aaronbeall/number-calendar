@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Toaster } from '@/components/ui/sonner';
 import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Award, Bell, CalendarIcon, Download, Flag, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User } from 'lucide-react';
+import { Award, Bell, CalendarDays, CalendarIcon, Download, Flag, Grid3X3, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
@@ -18,7 +18,6 @@ import {
   BrowserRouter as Router,
   Routes,
   useLocation,
-  useMatch,
   useNavigate,
   useParams,
 } from 'react-router-dom';
@@ -272,16 +271,12 @@ function AppHeader({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { getDefaultExportDateRange } = useCalendar();
+  const { setMode, getDefaultExportDateRange } = useCalendar();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const { milestones, targets, achievements, new: newResults } = achievementResults;
   const [overlayAchievements, setOverlayAchievements] = useState<NewAchievementResult[]>([]);
   const [overlayOpen, setOverlayOpen] = useState(false);
-  
-  // Check if currently on the calendar view (index route of dataset)
-  const calendarMatch = useMatch(`/dataset/${currentDataset.id}`);
-  const isOnCalendar = calendarMatch !== null;
 
   const getDatasetPath = (datasetId: string) => {
     const basePath = `/dataset/${currentDataset.id}`;
@@ -347,17 +342,27 @@ function AppHeader({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
-                {!isOnCalendar && (
-                  <>
-                    <DropdownMenuItem className="gap-2" asChild>
-                      <Link to={currentDataset ? `/dataset/${currentDataset.id}` : '#'}>
-                        <CalendarIcon className="h-4 w-4" />
-                        Calendar
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
+                <DropdownMenuItem className="gap-2 hidden sm:flex" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}` : '#'}>
+                    <CalendarIcon className="h-4 w-4" />
+                    Calendar
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2 sm:hidden" onClick={() => setMode('daily')}>
+                  <CalendarDays className="h-4 w-4" />
+                  Daily
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2 sm:hidden" onClick={() => setMode('monthly')}>
+                  <Grid3X3 className="h-4 w-4" />
+                  Monthly
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/timeline` : '#'}>
+                    <List className="h-4 w-4" />
+                    Timeline
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem className="gap-2" asChild>
                   <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
                     <Flag className="h-4 w-4" />
@@ -395,12 +400,6 @@ function AppHeader({
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}/records` : '#'}>
                     <Award className="h-4 w-4" />
                     Records
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/timeline` : '#'}>
-                    <List className="h-4 w-4" />
-                    Timeline
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="gap-2 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border border-purple-200 rounded-md mx-1 my-1 dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-900 dark:border-slate-700 dark:hover:from-slate-700 dark:hover:to-slate-800" onClick={() => setShowAIInsights(true)}>
