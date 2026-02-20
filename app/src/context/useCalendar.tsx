@@ -1,38 +1,25 @@
-import React, { createContext, useContext, useState } from 'react';
 import { getMonthDays } from '@/lib/calendar';
 import { convertDateKey, toDayKey } from '@/lib/friendly-date';
 import type { DayKey, MonthKey } from '@/features/db/localdb';
+import { useCalendarParams } from '@/lib/search-params';
 
-type CalendarView = 'daily' | 'monthly';
+export type CalendarMode = 'daily' | 'monthly';
 
 export interface DateRange {
   startDate: MonthKey | DayKey;
   endDate: MonthKey | DayKey;
 }
 
-interface CalendarContextType {
-  view: CalendarView;
-  setView: (view: CalendarView) => void;
-  year: number;
-  setYear: (year: number | ((prev: number) => number)) => void;
-  month: number;
-  setMonth: (month: number | ((prev: number) => number)) => void;
-  getDefaultExportDateRange: (exportType?: 'daily' | 'monthly' | 'entries') => DateRange;
-  goToToday: () => void;
-  goToPrevious: () => void;
-  goToNext: () => void;
-}
-
-const CalendarContext = createContext<CalendarContextType | undefined>(undefined);
-
-export function CalendarProvider({ children }: { children: React.ReactNode }) {
+/**
+ * Hook for calendar navigation state and methods
+ * Wraps useCalendarState with additional navigation helpers
+ */
+export function useCalendar() {
+  const { mode, setMode, year, setYear, month, setMonth } = useCalendarParams();
   const today = new Date();
-  const [view, setView] = useState<CalendarView>('daily');
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
 
   const getDefaultExportDateRange = (exportType: 'daily' | 'monthly' | 'entries' = 'daily'): DateRange => {
-    const rangeGetters: Record<CalendarView, Record<'daily' | 'monthly' | 'entries', () => DateRange>> = {
+    const rangeGetters: Record<CalendarMode, Record<'daily' | 'monthly' | 'entries', () => DateRange>> = {
       'daily': {
         'daily': () => {
           const daysOfMonth = getMonthDays(year, month);
@@ -86,7 +73,7 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
         }
       }
     };
-    return rangeGetters[view][exportType]();
+    return rangeGetters[mode][exportType]();
   };
 
   const goToToday = () => {
@@ -95,48 +82,30 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
   };
 
   const goToPrevious = () => {
-    ({
-      'daily': () => {
-        if (month === 1) {
-          setYear(y => y - 1);
-          setMonth(12);
-        } else {
-          setMonth(m => m - 1);
-        }
-      },
-      'monthly': () => {
-        setYear(y => y - 1);
+    if (mode === 'daily') {
+      if (month === 1) {
+        setYear(year - 1);
+        setMonth(12);
+      } else {
+        setMonth(month - 1);
       }
-    })[view]();
+    } else {
+      setYear(year - 1);
+    }
   };
 
   const goToNext = () => {
-    ({
-      'daily': () => {
-        if (month === 12) {
-          setYear(y => y + 1);
-          setMonth(1);
-        } else {
-          setMonth(m => m + 1);
-        }
-      },
-      'monthly': () => {
-        setYear(y => y + 1);
+    if (mode === 'daily') {
+      if (month === 12) {
+        setYear(year + 1);
+        setMonth(1);
+      } else {
+        setMonth(month + 1);
       }
-    })[view]();
+    } else {
+      setYear(year + 1);
+    }
   };
 
-  return (
-    <CalendarContext.Provider value={{ view, setView, year, setYear, month, setMonth, getDefaultExportDateRange, goToToday, goToPrevious, goToNext }}>
-      {children}
-    </CalendarContext.Provider>
-  );
-}
-
-export function useCalendarContext() {
-  const context = useContext(CalendarContext);
-  if (!context) {
-    throw new Error('useCalendarContext must be used within CalendarProvider');
-  }
-  return context;
+  return { mode, setMode, year, setYear, month, setMonth, getDefaultExportDateRange, goToToday, goToPrevious, goToNext };
 }

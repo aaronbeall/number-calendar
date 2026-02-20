@@ -27,7 +27,7 @@ import { ErrorState } from './components/PageStates';
 import { useTheme } from './components/ThemeProvider';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
-import { CalendarProvider, useCalendarContext } from './context/CalendarContext';
+import { useCalendar } from './context/useCalendar';
 import { DatasetProvider } from './context/DatasetContext';
 import { AchievementToast } from './features/achievements/AchievementToast';
 import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
@@ -127,15 +127,13 @@ function AppLayout() {
         <Route path="targets" element={<Targets />} />
         <Route path="achievements" element={<Achievements />} />
         <Route path="dataset/:datasetId/*" element={
-          <CalendarProvider>
-            <DatasetLayout
-              datasets={datasets}
-              onOpenCreate={handleOpenCreate}
-              onOpenEdit={handleOpenEdit}
-              onOpenImport={handleOpenImport}
-              onOpenExport={handleOpenExport}
-            />
-          </CalendarProvider>
+          <DatasetLayout
+            datasets={datasets}
+            onOpenCreate={handleOpenCreate}
+            onOpenEdit={handleOpenEdit}
+            onOpenImport={handleOpenImport}
+            onOpenExport={handleOpenExport}
+          />
         } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -274,7 +272,7 @@ function AppHeader({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { getDefaultExportDateRange } = useCalendarContext();
+  const { getDefaultExportDateRange } = useCalendar();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const { milestones, targets, achievements, new: newResults } = achievementResults;

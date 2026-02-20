@@ -10,7 +10,7 @@ import { useNotes } from '@/features/db/useNotesData';
 import { NotesDisplay } from '@/features/notes/NotesDisplay';
 import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { useAchievements } from '@/hooks/useAchievements';
-import { useSidePanelState } from '@/lib/search-params';
+import { useSidePanelParam } from '@/lib/search-params';
 import { ChartContainer } from '@/components/ui/chart';
 import { getCalendarData, getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate, isDayKey, parseDateKey, parseMonthKey, parseWeekKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
@@ -924,7 +924,7 @@ export function Timeline() {
   const [activeMonthKey, setActiveMonthKey] = useState<MonthKey | null>(null);
   const [activeYearKey, setActiveYearKey] = useState<YearKey | null>(null);
   const navScrollRef = useRef<HTMLDivElement | null>(null);
-  const [panelView, setPanelView] = useSidePanelState();
+  const [panelView, setPanelView] = useSidePanelParam();
 
   const allTimeNumbers = useMemo(() => {
     return periodDays

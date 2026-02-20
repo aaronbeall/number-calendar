@@ -9,7 +9,7 @@ import { getPrimaryMetricFromStats, getPrimaryMetricHighFromExtremes, getPrimary
 import { getValueForValence } from '@/lib/valence';
 import { Trophy } from 'lucide-react';
 import { useMemo } from 'react';
-import { useSidePanelState } from '@/lib/search-params';
+import { useSidePanelParam } from '@/lib/search-params';
 
 interface MonthCellProps {
   year: number;
@@ -25,7 +25,7 @@ interface MonthCellProps {
 }
 
 export function MonthCell({ year, month, monthName, data, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, valence, tracking }: MonthCellProps) {
-  const [panelView, setPanelView] = useSidePanelState();
+  const [panelView, setPanelView] = useSidePanelParam();
   const monthKey = toMonthKey(year, month);
   const panelOpen = typeof panelView === 'string' && panelView === monthKey;
   

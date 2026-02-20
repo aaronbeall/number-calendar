@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useCalendarContext } from '@/context/CalendarContext';
 import { GoalBuilderDialog } from '@/features/achievements/GoalBuilderDialog';
 import { MonthChart } from '@/features/chart/MonthChart';
 import { TrendChart } from '@/features/chart/TrendChart';
@@ -25,7 +24,8 @@ import { parseISO } from 'date-fns';
 import { CalendarCheck2, CalendarDays, CalendarOff, ChevronDown, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useSwipe } from '@/hooks/useSwipe';
-import { useSidePanelState } from '@/lib/search-params';
+import { useSidePanelParam } from '@/lib/search-params';
+import { useCalendar } from '@/context/useCalendar';
 
 export function Calendar({
   dataset,
@@ -47,10 +47,10 @@ export function Calendar({
     dateKey: DateKey;
   };
 
-  const { view, setView, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendarContext();
+  const { mode, setMode, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendar();
   const today = new Date();
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
-  const [panelView, setPanelView] = useSidePanelState();
+  const [panelView, setPanelView] = useSidePanelParam();
   const [showYearOverview, setShowYearOverview] = useState(false);
   const builderTemplateId = typeof builderOpen === 'string' && builderOpen ? builderOpen : undefined;
   
@@ -148,7 +148,7 @@ export function Calendar({
         actionLabel: 'Open daily view',
         actionOnClick: () => {
           setPanelView(null);
-          setView('daily');
+          setMode('daily');
           setYear(keyYear);
           setMonth(keyMonth);
         },
@@ -173,7 +173,7 @@ export function Calendar({
     }
 
     return fallback;
-  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, setMonth, setPanelView, setView, setYear, yearDataByKey, yearExtremes]);
+  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, setMonth, setPanelView, setMode, setYear, yearDataByKey, yearExtremes]);
 
   // Precompute year-level data maps for quick access in YearOverview and MonthlyGrid
   const yearDayDataByKey = useMemo(
@@ -232,10 +232,10 @@ export function Calendar({
               <div className="hidden sm:flex items-center gap-4">
                 <ToggleGroup
                   type="single"
-                  value={view}
+                  value={mode}
                   onValueChange={(v: string | null) => {
                     if (v === 'daily' || v === 'monthly') {
-                      setView(v);
+                      setMode(v);
                     }
                   }}
                   size="sm"
@@ -268,7 +268,7 @@ export function Calendar({
                 className="sm:hidden flex items-center gap-2 font-semibold text-slate-700 dark:text-blue-200 transition-colors"
               >
                 <span className="text-lg">
-                  {view === 'daily' ? `${monthNames[month - 1]}${year !== today.getFullYear() ? ` ${year}` : ''}` : `${year}`}
+                  {mode === 'daily' ? `${monthNames[month - 1]}${year !== today.getFullYear() ? ` ${year}` : ''}` : `${year}`}
                 </span>
                 <ChevronDown className={`h-4 w-4 transition-transform ${showYearOverview ? 'rotate-180' : ''}`} />
               </button>
@@ -298,7 +298,7 @@ export function Calendar({
 
               {/* Desktop: Month/Year display */}
               <span className="hidden sm:inline font-semibold text-slate-700 dark:text-blue-200">
-                {view === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
+                {mode === 'daily' ? `${monthNames[month - 1]} ${year}` : `${year}`}
               </span>
               
               {/* Spacer */}
@@ -318,7 +318,7 @@ export function Calendar({
                 </Button>
 
                 {/* Hide Weekends: Icon on mobile, text on desktop */}
-                {view === 'daily' && (
+                {mode === 'daily' && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -338,7 +338,7 @@ export function Calendar({
 
       {/* Main Content */}
       <div className="max-w-4xl mx-auto p-4 space-y-6 overflow-hidden">
-        {view === 'daily' ? (
+        {mode === 'daily' ? (
           <>
             {/* Year Overview - Always shown on large screens, collapsible on mobile */}
             <div className={`transition-all duration-300 overflow-hidden -mx-4 px-4 sm:mx-0 sm:px-0 ${showYearOverview ? 'max-h-96 sm:max-h-none' : 'max-h-0 sm:max-h-none'}`}>
