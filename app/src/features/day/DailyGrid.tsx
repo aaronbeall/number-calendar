@@ -31,9 +31,9 @@ interface WeekdayHeadersProps {
 }
 
 const WeekdayHeaders = memo(({ weekdays }: WeekdayHeadersProps) => (
-  <div className={`grid gap-2 pb-2 ${weekdays.length === 7 ? 'grid-cols-7' : 'grid-cols-5'}`}>
+  <div className={`grid gap-1 md:gap-2 pb-1 md:pb-2 ${weekdays.length === 7 ? 'grid-cols-7' : 'grid-cols-5'}`}>
     {weekdays.map(day => (
-      <div key={day} className="text-center text-sm font-medium text-slate-500 uppercase tracking-wide">
+      <div key={day} className="text-center text-[10px] md:text-sm font-medium text-slate-500 uppercase tracking-wide">
         {day}
       </div>
     ))}
@@ -231,7 +231,7 @@ export const DailyGrid = memo(({
       <WeekdayHeaders weekdays={weekdays} />
 
       {/* Calendar grid rendered by weeks with summary per week */}
-      <div className={`grid gap-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
+      <div className={`grid gap-1 md:gap-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
         {weeks.map((week, wi) => (
           <Fragment key={`week-${wi}`}>
             {week.days.map((date, di) => {

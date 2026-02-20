@@ -76,7 +76,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
     <div
       onClick={isFutureMonth ? undefined : () => setDate(monthKey, true)}
       className={`h-full
-        relative p-4 rounded-lg transition-all duration-200 shadow-sm dark:shadow-md
+        relative p-2 md:p-4 rounded-lg transition-all duration-200 shadow-sm dark:shadow-md
         ${isFutureMonth ? ghostClasses : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'}
         ${!isFutureMonth ? getColorClasses() : ''}
         ${isSelected ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : ''}
@@ -85,7 +85,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
       aria-disabled={isFutureMonth}
     >
       {/* Month name */}
-      <div className={`text-sm font-semibold mb-3 text-center relative ${isCurrentMonth ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
+      <div className={`text-xs md:text-sm font-semibold mb-2 md:mb-3 text-center relative ${isCurrentMonth ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-200'}`}>
         {monthName}
         {isCurrentMonth && (
           <span
@@ -96,7 +96,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
       </div>
       {/* Stats grid */}
       {stats && stats.count > 0 ? (
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3">
           {/* Primary metric - Most important metric, centered and prominent */}
           <div className="text-center">
             <NumberText
@@ -104,15 +104,15 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
               valenceValue={primaryValenceMetric}
               isHighest={!!isHighestPrimary}
               isLowest={!!isLowestPrimary}
-              className="text-3xl font-bold"
+              className="text-2xl md:text-3xl font-bold"
               valence={valence}
               short
             />
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-[7px] md:text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
               {isHighestCount ? (
                 <div className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">
                   <div title="Most entries">
-                    <Trophy className="h-2.5 w-2.5 text-slate-600 dark:text-slate-400" />
+                    <Trophy className="h-2 md:h-2.5 w-2 md:w-2.5 text-slate-600 dark:text-slate-400" />
                   </div>
                   <span>{stats.count} {stats.count === 1 ? 'entry' : 'entries'}</span>
                 </div>
@@ -206,9 +206,9 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
           <div className="border-t border-slate-200 dark:border-slate-700/50" />
 
           {/* Stats grid - Compact 2x2 layout */}
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+          <div className="grid grid-cols-2 gap-x-2 md:gap-x-3 gap-y-1 md:gap-y-2 text-xs">
             <div className="text-center">
-              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+              <div className="text-[7px] md:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Mean
               </div>
               <NumberText
@@ -216,13 +216,13 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 valenceValue={valenceStats?.mean ?? primaryValenceMetric}
                 isHighest={!!isHighestMean}
                 isLowest={!!isLowestMean}
-                className="font-semibold text-sm"
+                className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
               />
             </div>
             <div className="text-center">
-              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+              <div className="text-[7px] md:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Median
               </div>
               <NumberText
@@ -230,13 +230,13 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 valenceValue={valenceStats?.median ?? primaryValenceMetric}
                 isHighest={!!isHighestMedian}
                 isLowest={!!isLowestMedian}
-                className="font-semibold text-sm"
+                className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
               />
             </div>
             <div className="text-center">
-              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+              <div className="text-[7px] md:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Min
               </div>
               <NumberText
@@ -244,13 +244,13 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 valenceValue={valenceStats?.min ?? primaryValenceMetric}
                 isHighest={!!isHighestMin}
                 isLowest={!!isLowestMin}
-                className="font-semibold text-sm"
+                className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
               />
             </div>
             <div className="text-center">
-              <div className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
+              <div className="text-[7px] md:text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
                 Max
               </div>
               <NumberText
@@ -258,7 +258,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 valenceValue={valenceStats?.max ?? primaryValenceMetric}
                 isHighest={!!isHighestMax}
                 isLowest={!!isLowestMax}
-                className="font-semibold text-sm"
+                className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
               />

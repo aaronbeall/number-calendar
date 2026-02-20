@@ -109,7 +109,7 @@ export const MonthlyGrid = memo(({ year, dayDataByKey, priorDayByKey, monthDataB
   const currentMonth = currentDate.getMonth() + 1;
 
   return (
-    <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-3 md:grid-cols-4 gap-2 md:gap-4">
       {monthNames.map((monthName, index) => {
         const monthNumber = index + 1;
         const monthData = monthDataMap.get(monthNumber)!;

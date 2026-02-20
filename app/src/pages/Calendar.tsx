@@ -248,11 +248,11 @@ export function Calendar({
 
           {/* Navigation Header */}
           <nav className="sticky top-0 z-40 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-800 shadow-sm">
-          <div className="max-w-4xl mx-auto px-4 py-3">
+          <div className="max-w-4xl mx-auto px-2 py-2 md:px-4 md:py-3">
             {/* View Toggle and Controls */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 md:gap-4">
               {/* Left: Desktop - Toggle + Today | Mobile - Month + Chevron */}
-              <div className="hidden sm:flex items-center gap-4">
+              <div className="hidden sm:flex items-center gap-2 md:gap-4">
                 <ToggleGroup
                   type="single"
                   value={mode}
@@ -293,7 +293,7 @@ export function Calendar({
               </button>
 
               {/* Desktop: Navigation Buttons + Month/Year in center */}
-              <div className="hidden sm:flex items-center gap-1">
+              <div className="hidden sm:flex items-center gap-0.5 md:gap-1">
                 <Button 
                   variant="outline" 
                   size="icon"
@@ -324,7 +324,7 @@ export function Calendar({
               <div className="flex-1" />
               
               {/* Right: Mobile - Today icon + Hide Weekends icon | Desktop - Hide Weekends text button */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5 md:gap-1">
                 {/* Mobile: Today icon only */}
                 <Button 
                   variant="ghost"
@@ -356,7 +356,7 @@ export function Calendar({
       </nav>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto p-4 space-y-6 overflow-hidden">
+      <div className="max-w-4xl mx-auto p-2 md:p-4 space-y-3 md:space-y-6 overflow-hidden">
         {mode === 'daily' ? (
           <>
             {/* Year Overview - Always shown on large screens, collapsible on mobile */}
@@ -394,7 +394,7 @@ export function Calendar({
             </div>
             
             {/* Monthly Stats Section */}
-            <div className="mt-8 mb-6">
+            <div className="mt-4 md:mt-8 mb-3 md:mb-6">
               <MonthSummary 
                 data={monthAggregate}
                 monthName={monthNames[month - 1]} 
@@ -457,7 +457,7 @@ export function Calendar({
             </div>
 
             {/* Year Summary */}
-            <div className="mt-8 mb-6">
+            <div className="mt-4 md:mt-8 mb-3 md:mb-6">
               <YearSummary 
                 data={yearAggregate}
                 yearName={`${year}`} 
@@ -470,7 +470,7 @@ export function Calendar({
             </div>
 
             {/* Year Chart Section */}
-            <div className="space-y-4 mb-6">
+            <div className="space-y-4 mb-3 md:mb-6">
               {dataset.tracking === 'trend' ? (
                 <TrendChart
                   year={year}

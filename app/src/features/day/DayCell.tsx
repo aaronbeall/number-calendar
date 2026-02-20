@@ -88,7 +88,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
   return (
     <div className="relative h-full">
       <div
-        className={`p-3 h-full flex flex-col rounded-lg transition-all duration-200 shadow-sm dark:shadow-md ${
+        className={`p-2 md:p-3 h-full flex flex-col rounded-lg transition-all duration-200 shadow-sm dark:shadow-md ${
           isFuture ? '' : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'
         } hover:shadow-md dark:hover:shadow-lg ${isPanelOpen ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : ''} ${bgColor} ${ghostClasses}`}
         onClick={isFuture ? undefined : () => setPanelView(dayKey)}
@@ -97,10 +97,10 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
         aria-label={`Edit day ${date.getDate()}`}
         aria-disabled={isFuture}
       >
-        <div className="flex items-start mb-2">
+        <div className="flex items-start mb-1 md:mb-2">
           {showExtremesBadge && (
             <div
-              className={`flex items-center gap-1 text-[10px] font-mono font-medium px-0 py-0 ${
+              className={`flex items-center gap-1 text-[8px] md:text-[10px] font-mono font-medium px-0 py-0 ${
                 mixedExtremes
                   ? 'text-slate-500 dark:text-slate-400'
                   : getValueForValence(
@@ -146,7 +146,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
               )}
             </div>
           )}
-          <div className={`ml-auto text-sm font-bold flex items-center justify-end ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
+          <div className={`ml-auto text-xs md:text-sm font-bold flex items-center justify-end ${isToday ? 'text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-300'}`}>
             <span className="inline-flex items-center justify-end gap-1">
               <span>{date.getDate()}</span>
               {isToday && (
@@ -160,26 +160,26 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
         </div>
 
         {hasData && (
-          <div className="flex-1 flex flex-col gap-2 text-xs">
+          <div className="flex-1 flex flex-col gap-1 md:gap-2 text-xs">
             {/* Primary metric (total or mean) */}
-            <div className={`w-full px-3 py-1 rounded text-center flex items-center justify-center gap-1.5`}>
+            <div className={`w-full px-2 md:px-3 py-0.5 md:py-1 rounded text-center flex items-center justify-center gap-1`}>
               <NumberText
                 value={primaryMetric}
                 valenceValue={primaryValenceMetric}
                 isHighest={!!isHighestPrimary}
                 isLowest={!!isLowestPrimary}
                 valence={valence}
-                className="font-mono font-bold text-lg"
+                className="font-mono font-bold text-base md:text-lg"
                 short
               />
             </div>
 
             {/* Entry count */}
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 text-center flex items-center justify-center gap-1">
+            <div className="text-[8px] md:text-[10px] text-slate-500 dark:text-slate-400 text-center flex items-center justify-center gap-1">
               {isHighestCount ? (
-                <div className="flex items-center gap-1 px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">
+                <div className="flex items-center gap-1 px-1 md:px-1.5 py-0.5 rounded border bg-slate-50/40 dark:bg-slate-800/40 border-slate-200/40 dark:border-slate-700/40">
                   <div title="Most entries">
-                    <Trophy className="h-2.5 w-2.5 text-slate-600 dark:text-slate-400" />
+                    <Trophy className="h-2 md:h-2.5 w-2 md:w-2.5 text-slate-600 dark:text-slate-400" />
                   </div>
                   <span>{count} {count === 1 ? 'entry' : 'entries'}</span>
                 </div>
@@ -189,7 +189,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
             </div>
 
             {/* Micro dots visualization - Shows composition */}
-            <div className="flex flex-wrap gap-1 justify-center items-center min-h-[16px] px-1">
+            <div className="flex flex-wrap gap-0.5 md:gap-1 justify-center items-center min-h-[12px] md:min-h-[16px] px-1">
               {numbers.map((num, idx) => {
                 const scale = getNormalizedMagnitude(num, { min: monthExtremes?.lowestMin, max: monthExtremes?.highestMax }, 0.4, 1);
                 const size = scale * 8; // Base size 8px, scaled down to ~3.2px min
