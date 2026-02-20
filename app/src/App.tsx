@@ -271,12 +271,28 @@ function AppHeader({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setMode, getDefaultExportDateRange } = useCalendar();
+  const { mode, setMode, getDefaultExportDateRange } = useCalendar();
   const { bg: datasetBg, text: datasetText } = getSeededColorTheme(currentDataset.id);
   const [showAIInsights, setShowAIInsights] = useState(false);
   const { milestones, targets, achievements, new: newResults } = achievementResults;
   const [overlayAchievements, setOverlayAchievements] = useState<NewAchievementResult[]>([]);
   const [overlayOpen, setOverlayOpen] = useState(false);
+
+  // Determine current page for active state styling
+  const currentPage = useMemo(() => {
+    const basePath = `/dataset/${currentDataset.id}`;
+    const path = location.pathname;
+    if (path === basePath || path === `${basePath}/`) return 'calendar';
+    if (path.startsWith(`${basePath}/timeline`)) return 'timeline';
+    if (path.startsWith(`${basePath}/milestones`)) return 'milestones';
+    if (path.startsWith(`${basePath}/targets`)) return 'targets';
+    if (path.startsWith(`${basePath}/achievements`)) return 'achievements';
+    if (path.startsWith(`${basePath}/records`)) return 'records';
+    return null;
+  }, [location.pathname, currentDataset.id]);
+
+  const activeStyles = 'dark:border-blue-400 bg-blue-50 dark:bg-blue-950/30 font-semibold text-blue-700 dark:text-blue-300 pointer-events-none';
+  const inactiveStyles = 'hover:bg-slate-100 dark:hover:bg-slate-800';
 
   const getDatasetPath = (datasetId: string) => {
     const basePath = `/dataset/${currentDataset.id}`;
@@ -342,28 +358,38 @@ function AppHeader({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuItem className="gap-2 hidden sm:flex" asChild>
+                <DropdownMenuItem className={`gap-2 hidden sm:flex ${currentPage === 'calendar' ? activeStyles : inactiveStyles}`} asChild>
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}` : '#'}>
                     <CalendarIcon className="h-4 w-4" />
                     Calendar
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2 sm:hidden" onClick={() => setMode('daily')}>
+                <DropdownMenuItem className={`gap-2 sm:hidden ${currentPage === 'calendar' && mode === 'daily' ? activeStyles : inactiveStyles}`} onClick={() => {
+                  setMode('daily');
+                  if (currentPage !== 'calendar') {
+                    navigate(currentDataset ? `/dataset/${currentDataset.id}` : '#');
+                  }
+                }}>
                   <CalendarDays className="h-4 w-4" />
                   Daily
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2 sm:hidden" onClick={() => setMode('monthly')}>
+                <DropdownMenuItem className={`gap-2 sm:hidden ${currentPage === 'calendar' && mode === 'monthly' ? activeStyles : inactiveStyles}`} onClick={() => {
+                  setMode('monthly');
+                  if (currentPage !== 'calendar') {
+                    navigate(currentDataset ? `/dataset/${currentDataset.id}` : '#');
+                  }
+                }}>
                   <Grid3X3 className="h-4 w-4" />
                   Monthly
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" asChild>
+                <DropdownMenuItem className={`gap-2 ${currentPage === 'timeline' ? activeStyles : inactiveStyles}`} asChild>
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}/timeline` : '#'}>
                     <List className="h-4 w-4" />
                     Timeline
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2" asChild>
+                <DropdownMenuItem className={`gap-2 ${currentPage === 'milestones' ? activeStyles : inactiveStyles}`} asChild>
                   <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
                     <Flag className="h-4 w-4" />
                     <span className="flex-1">Milestones</span>
@@ -374,7 +400,7 @@ function AppHeader({
                     )}
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" asChild>
+                <DropdownMenuItem className={`gap-2 ${currentPage === 'targets' ? activeStyles : inactiveStyles}`} asChild>
                   <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/targets` : '#'}>
                     <Target className="h-4 w-4" />
                     <span className="flex-1">Targets</span>
@@ -385,7 +411,7 @@ function AppHeader({
                     )}
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" asChild>
+                <DropdownMenuItem className={`gap-2 ${currentPage === 'achievements' ? activeStyles : inactiveStyles}`} asChild>
                   <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
                     <Trophy className="h-4 w-4" />
                     <span className="flex-1">Achievements</span>
@@ -396,7 +422,7 @@ function AppHeader({
                     )}
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" asChild>
+                <DropdownMenuItem className={`gap-2 ${currentPage === 'records' ? activeStyles : inactiveStyles}`} asChild>
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}/records` : '#'}>
                     <Award className="h-4 w-4" />
                     Records
