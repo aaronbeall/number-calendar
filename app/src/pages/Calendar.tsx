@@ -465,6 +465,7 @@ export function Calendar({
                 tracking={dataset.tracking}
                 isPanelOpen={isYearSummaryOpen}
                 onSelect={handleYearSummarySelect}
+                achievementResults={achievementResultsByDateKey[yearKey] ?? []}
               />
             </div>
 

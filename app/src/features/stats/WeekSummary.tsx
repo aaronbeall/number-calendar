@@ -190,11 +190,11 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
 
           {/* Primary metric (most prominent, right-most, own container) */}
           <div className={`flex items-center gap-2 px-3 py-2 rounded font-mono font-bold ${getValueForValence(primaryValenceMetric, valence, {
-            good: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300',
-            bad: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300',
-            neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
+            good: 'bg-emerald-200/70 dark:bg-emerald-900/70 text-emerald-700 dark:text-emerald-200',
+            bad: 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-700 dark:text-rose-200',
+            neutral: 'bg-slate-200/50 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200',
           })}`}>
-            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">{primaryMetricLabel}</div>
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400/80">{primaryMetricLabel}</div>
             <NumberText value={primaryMetric} valenceValue={primaryValenceMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} valence={valence} className="text-lg sm:text-xl font-extrabold" />
           </div>
         </div>

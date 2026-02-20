@@ -4,8 +4,12 @@ import { getCalendarData } from '@/lib/calendar';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { MetricChip } from './MetricChip';
+import AchievementBadge from '@/features/achievements/AchievementBadge';
+import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
+import type { CompletedAchievementResult } from '@/lib/goals';
+import { cn } from '@/lib/utils';
 
 interface YearSummaryProps {
   data: PeriodAggregateData<'year'>;
@@ -14,9 +18,11 @@ interface YearSummaryProps {
   tracking: Tracking;
   isPanelOpen?: boolean;
   onSelect?: () => void;
+  achievementResults?: CompletedAchievementResult[];
 }
 
-export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = false, onSelect }: YearSummaryProps) {
+export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = false, onSelect, achievementResults = [] }: YearSummaryProps) {
+  const [hoveredAchievementId, setHoveredAchievementId] = useState<string | null>(null);
   const { stats, valenceStats, primaryMetric, primaryMetricLabel, primaryValenceMetric, secondaryMetric, secondaryMetricLabel, secondaryMetricFormat, changeMetric } = useMemo(
     () => getCalendarData(data, undefined, tracking),
     [data, tracking]
@@ -67,8 +73,42 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
           })}`}>
             <IconComponent className="h-5 w-5" />
           </div>
-          <div>
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">{yearName}</h3>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">{yearName}</h3>
+              {achievementResults.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {achievementResults.map(({ goal, achievement }) => (
+                    <PopoverTip key={achievement.id}>
+                      <PopoverTipTrigger asChild>
+                        <button
+                          type="button"
+                          className="flex items-center justify-center rounded-md p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                          aria-label={goal.title}
+                          onMouseEnter={() => setHoveredAchievementId(achievement.id)}
+                          onMouseLeave={() => setHoveredAchievementId(null)}
+                        >
+                          <AchievementBadge badge={goal.badge} size="small" animate={hoveredAchievementId === achievement.id} floating={false} className={cn(
+                            hoveredAchievementId === achievement.id && "scale-120 z-10",
+                            "transition-transform"
+                          )} />
+                        </button>
+                      </PopoverTipTrigger>
+                      <PopoverTipContent>
+                        <div className="text-xs font-semibold text-slate-900 dark:text-slate-50">
+                          {goal.title}
+                        </div>
+                        {goal.description && (
+                          <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+                            {goal.description}
+                          </div>
+                        )}
+                      </PopoverTipContent>
+                    </PopoverTip>
+                  ))}
+                </div>
+              )}
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400">{stats.count} entries</p>
           </div>
         </div>

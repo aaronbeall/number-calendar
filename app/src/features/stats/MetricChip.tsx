@@ -27,9 +27,9 @@ export const MetricChip = ({
   valence,
 }: MetricChipProps) => {
   const primaryClasses = getValueForValence(primaryValenceMetric, valence, {
-    good: 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300',
-    bad: 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300',
-    neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200',
+    good: 'bg-emerald-200/70 dark:bg-emerald-900/70 text-emerald-700 dark:text-emerald-200',
+    bad: 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-700 dark:text-rose-200',
+    neutral: 'bg-slate-200/50 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200',
   });
   const formattedChangePercent = changePercent !== undefined
     ? formatValue(changePercent, { percent: true, delta: true })
