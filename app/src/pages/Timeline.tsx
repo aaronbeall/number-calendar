@@ -1210,10 +1210,20 @@ export function Timeline() {
 
   const handleYearNavClick = useCallback((dateKey: DateKey) => {
     setActiveYearKey(dateKey as YearKey);
+    // Scroll timeline to the year
+    const element = document.querySelector<HTMLElement>(`[data-year-key="${dateKey}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, []);
 
   const handleMonthNavClick = useCallback((dateKey: DateKey) => {
     setActiveMonthKey(dateKey as MonthKey);
+    // Scroll timeline to the month
+    const element = document.querySelector<HTMLElement>(`[data-month-key="${dateKey}"]`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }, []);
 
   const getPanelTitleForEntry = useCallback((entry: TimelineEntry) => {

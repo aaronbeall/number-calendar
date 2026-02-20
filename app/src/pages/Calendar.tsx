@@ -471,7 +471,6 @@ export function Calendar({
               <YearSummary 
                 data={yearAggregate}
                 yearName={`${year}`} 
-                isCurrentYear={year === today.getFullYear()}
                 valence={dataset.valence}
                 tracking={dataset.tracking}
                 isPanelOpen={isYearSummaryOpen}

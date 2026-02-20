@@ -10,14 +10,13 @@ import { MetricChip } from './MetricChip';
 interface YearSummaryProps {
   data: PeriodAggregateData<'year'>;
   yearName: string;
-  isCurrentYear: boolean;
   valence: Valence;
   tracking: Tracking;
   isPanelOpen?: boolean;
   onSelect?: () => void;
 }
 
-export function YearSummary({ data, yearName, isCurrentYear, valence, tracking, isPanelOpen = false, onSelect }: YearSummaryProps) {
+export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = false, onSelect }: YearSummaryProps) {
   const { stats, valenceStats, primaryMetric, primaryMetricLabel, primaryValenceMetric, secondaryMetric, secondaryMetricLabel, secondaryMetricFormat, changeMetric } = useMemo(
     () => getCalendarData(data, undefined, tracking),
     [data, tracking]
