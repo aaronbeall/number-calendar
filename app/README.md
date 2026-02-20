@@ -1,108 +1,52 @@
-# React + TypeScript + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
 # Number Calendar
 
-A modern, elegant calendar app for tracking daily numbers with beautiful visualizations and statistics.
+Data tracking and visualization app with statistical analysis, goals, and achievements.
 
-## Features
+## Stack
 
-* **Calendar Grid View** - Clean monthly calendar with previous, next, and today navigation
-* **Day Number Entry** - Click any day to add numbers like "1+2-5" which get parsed into series data `[1, 2, -5]`
-* **Smart Statistics** - Display weekly and monthly totals, median, mean, min, max
-* **Color-Coded Numbers** - Positive numbers in green, negative numbers in red throughout the UI
-* **Interactive Charts** - Bar graph below calendar with Serial or Cumulative view toggle
-* **Local Storage** - Data persisted locally using IndexedDB
-* **Modern UI** - Built with Tailwind CSS and ShadCN UI components for a polished experience
+- React 19
+- TypeScript
+- Vite
+- Tailwind CSS
+- ShadCN UI
+- Tanstack Query
+- IndexedDB
 
-## Tech Stack
+## Dev
 
-- **React 19** with TypeScript
-- **Vite** for fast development and building
-- **Tailwind CSS** for utility-first styling
-- **ShadCN UI** for high-quality, accessible components
-- **Lucide React** for beautiful icons
-- **IndexedDB** via `idb` for local data persistence
-- **Feature-based architecture** for clean code organization
-
-## Getting Started
-
-### Development
 ```bash
 npm install
 npm run dev
 ```
 
-### Production Build
-```bash
-npm run build
-npm run preview
-```
+## Key Features
 
-## Usage
-
-1. **Navigate** between months using the arrow buttons or click "Today" to return to current month
-2. **Add Numbers** by clicking on any day and entering expressions like `10+5-2`
-3. **View Stats** in the weekly and monthly statistics sections below the calendar
-4. **Toggle Chart** between Serial (daily totals) and Cumulative (running totals) views
-5. **Data Persistence** - All your data is automatically saved locally
+- Calendar grid with daily number entry
+- Mobile friendly
+- Numeric expression parsing for entry: `1+2-5` → `[1, 2, -5]`)
+- `Datasets` with `tracking` mode and `valence` to appriopriately render semantics of the data
+  - `tracking=series`: Data represents a series of accumulated numbers (`[25, -5, 72, 120]` → `152`)
+  - `tracking=trend`: Data is tracking a single value over time (`[120, 121, 122, 121, 122]`)
+  - `valence=positive`: Numbers are "good" when they are positive or trending higher, "bad" when negative or trending lower (e.g. P&L)
+  - `valence=negative`: Numbers are "good" when they are negative or trending lower, "bad" when positive or trending higher (e.g. Weight Loss)
+  - `valence=neutral`: Numbers don't have intrinsic directional value (may have range bound value, handled by goal system)
+- Statistical aggregations (day/week/month/year/all-time), including averages, range, sum (total), deltas, cumulatives, extremes, etc
+  - "Stats" represent the direct aggregation in a period's number set (mean, median, min, max, etc)
+  - "Source" represents derived stats from multiple aggregations (deltas, cumulatives, etc)
+  - Each dataset has a "primary metric" and "valence source" to determine what the main statistic to show (series=total, trend=close) and what determines it is good or not (series=total, trend=delta)
+- Interactive line charts with valence-based coloring
+- Goal system with achievements and badges
+  - `Goal` is a generic model with requirement conditions, styling, and goal type categorization:
+    - `Milestones` are one-time goals
+    - `Targets` are period repeating goals (daily/weekly/monthly/yearly)
+    - `Goals` (aka "Achievements") are any goal (could take the structure of a milestone or target but aren't presented to the user as such)
+  - `Achievement`/`AchievementResult` -- an instance of an accomplished goal
+- Notes and meta data for any period
+- Friendly template drivien builders (datasets, goals, etc)
+- Import/export (CSV, JSON)
+- Local-first
+- IndexedDB persistence
 
 ## Architecture
 
-The app follows a clean, feature-based folder structure:
-
-```
-src/
-├── components/ui/          # Reusable UI components (Button, Input, Badge)
-├── features/
-│   ├── calendar/          # Calendar grid component
-│   ├── day/               # Day cell with number input
-│   ├── stats/             # Statistics display
-│   ├── chart/             # Chart visualization
-│   └── db/                # IndexedDB utilities
-├── lib/                   # Utility functions
-└── App.tsx               # Main application
-```
-
-## License
-
-MIT License
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Feature-based structure with context providers for dataset management and calendar state.
