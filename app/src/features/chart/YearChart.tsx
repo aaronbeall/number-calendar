@@ -2,8 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
+import { formatValue } from '@/lib/friendly-numbers';
 import type { DayKey, Valence } from '@/features/db/localdb';
-import { parseDayKey, toDayKey } from '@/lib/friendly-date';
+import { parseDayKey, toDayKey, formatFriendlyDate } from '@/lib/friendly-date';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
 import { entriesOf } from '@/lib/utils';
@@ -138,17 +139,14 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, valence })
                 dataKey="label"
                 tickFormatter={d => {
                   if (group === 'monthly') return d;
-                  const parts = d.split('-');
-                  const month = monthNames[parseInt(parts[1], 10) - 1];
-                  const day = parseInt(parts[2], 10);
-                  return `${month} ${day}`;
+                  return formatFriendlyDate(d as any);
                 }}
                 fontSize={12}
                 minTickGap={20}
                 stroke={axisColor}
                 tick={{ fill: axisColor }}
               />
-              <YAxis fontSize={12} domain={['dataMin', 'dataMax']} stroke={axisColor} tick={{ fill: axisColor }} />
+              <YAxis fontSize={12} domain={['dataMin', 'dataMax']} stroke={axisColor} tick={{ fill: axisColor }} tickFormatter={(value) => formatValue(value, { short: true })} />
               <Tooltip
                 cursor={{ fill: 'rgba(16,185,129,0.08)' }}
                 content={({ active, payload, label }) => {
@@ -158,16 +156,20 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, valence })
                     const color = getValueForValence(value, valence, barColors);
                     let formattedDate = '';
                     if (group === 'monthly') {
-                      formattedDate = label;
+                      // label is month name like 'Jan', 'Feb', etc.
+                      const monthIndex = monthNames.indexOf(label);
+                      if (monthIndex >= 0) {
+                        const monthKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+                        formattedDate = formatFriendlyDate(monthKey as any);
+                      }
                     } else {
                       // label is 'YYYY-MM-DD'
-                      const date = new Date(label);
-                      formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      formattedDate = formatFriendlyDate(label as any);
                     }
                     return (
                       <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{formattedDate}</div>
-                        <span style={{ color, fontWeight: 600, fontSize: 16 }}>{value}</span>
+                        <span style={{ color, fontWeight: 600, fontSize: 16 }}>{formatValue(value)}</span>
                       </div>
                     );
                   }

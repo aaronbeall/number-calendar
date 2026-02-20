@@ -2,7 +2,7 @@ import { useTheme } from '@/components/ThemeProvider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { DayKey, Valence } from '@/features/db/localdb';
 import { getMonthDays, getYearDays } from '@/lib/calendar';
-import { dateToDayKey } from '@/lib/friendly-date';
+import { dateToDayKey, formatFriendlyDate } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { getValueForValence } from '@/lib/valence';
 import { parseISO } from 'date-fns';
@@ -247,7 +247,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                   tick={{ fill: axisColor }}
                 />
               )}
-              <YAxis fontSize={12} domain={['dataMin', 'dataMax']} stroke={axisColor} tick={{ fill: axisColor }} />
+              <YAxis fontSize={12} domain={['dataMin', 'dataMax']} stroke={axisColor} tick={{ fill: axisColor }} tickFormatter={(value) => formatValue(value, { short: true })} />
               <Tooltip
                 cursor={{
                   fill: getValueForValence(overallChange, valence, {
@@ -264,7 +264,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                     return (
                       <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          {parseISO(p.x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {formatFriendlyDate(p.x as any)}
                         </div>
                         <div className="font-semibold" style={{ color: deltaColor }}>
                           {formatValue(p.value)}
@@ -356,6 +356,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                 ]}
                 stroke={axisColor}
                 tick={{ fill: axisColor }}
+                tickFormatter={(value) => formatValue(value, { short: true })}
               />
               <Tooltip
                 cursor={{ fill: 'rgba(16,185,129,0.08)' }}
@@ -367,7 +368,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                     return (
                       <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          {parseISO(p.x).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          {formatFriendlyDate(p.x as any)}
                         </div>
                         <span style={{ color: deltaColor, fontWeight: 600, fontSize: 16 }}>
                           {formatValue(p.delta, { delta: true })}
