@@ -22,4 +22,6 @@ A calendar app for showing numbers (P&amp;L, etc) with aggregations, visualizati
 
 <img width="347" height="393" alt="image" src="https://github.com/user-attachments/assets/7b5de302-c320-406e-8494-fbd7808034b9" />
 
+<img width="885" height="189" alt="image" src="https://github.com/user-attachments/assets/bffadd0b-a559-40fc-97cf-529cf35b7ff6" />
+
 <img width="915" height="802" alt="image" src="https://github.com/user-attachments/assets/c749adc4-f3b5-49a1-a974-c34574a71ffa" />
