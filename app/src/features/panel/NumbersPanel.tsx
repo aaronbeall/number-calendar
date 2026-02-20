@@ -37,10 +37,6 @@ export interface NumbersPanelProps {
   editableNumbers?: boolean; // default false
   showExpressionInput?: boolean; // default false
   onSave?: (numbers: number[]) => void;
-  // Optional action button displayed in the header (right side)
-  actionLabel?: string;
-  actionOnClick?: () => void;
-  actionIcon?: React.ReactNode;
   extremes?: StatsExtremes;
   valence: Valence;
   tracking: Tracking;
@@ -60,9 +56,6 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   editableNumbers = false,
   showExpressionInput = false,
   onSave,
-  actionLabel,
-  actionOnClick,
-  actionIcon,
   extremes,
   valence,
   tracking,
@@ -175,20 +168,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
       <SheetContent className="w-full max-w-md flex flex-col" disableEscapeClose>
         <SheetHeader>
-          <div className="flex items-center justify-between gap-3 pr-8">
-            <div>
-              <SheetTitle className={'text-slate-700'}>
-                {title}
-              </SheetTitle>
-              {stats && (
-                <div className="text-xs text-slate-500">{stats.count} entries</div>
-              )}
-            </div>
-            {actionLabel && actionOnClick && (
-              <Button variant="outline" size="sm" className="gap-1 h-8" onClick={actionOnClick}>
-                {actionIcon}
-                {actionLabel}
-              </Button>
+          <div>
+            <SheetTitle className={'text-slate-700'}>
+              {title}
+            </SheetTitle>
+            {stats && (
+              <div className="text-xs text-slate-500">{stats.count} entries</div>
             )}
           </div>
         </SheetHeader>

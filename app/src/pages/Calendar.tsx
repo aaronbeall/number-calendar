@@ -23,7 +23,7 @@ import { type StatsExtremes } from '@/lib/stats';
 import { arrayToRecord } from '@/lib/utils';
 import { parseISO } from 'date-fns';
 import { CalendarCheck2, CalendarDays, CalendarOff, ChevronDown, ChevronLeft, ChevronRight, Grid3X3 } from 'lucide-react';
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSwipe } from '@/hooks/useSwipe';
 import { useSidePanelParam } from '@/lib/search-params';
 import { useCalendar } from '@/context/useCalendar';
@@ -40,15 +40,12 @@ export function Calendar({
     title: string;
     data: PeriodAggregateData<TimePeriod>;
     priorData?: PeriodAggregateData<TimePeriod>;
-    actionLabel?: string;
-    actionOnClick?: () => void;
-    actionIcon?: ReactNode;
     extremes?: StatsExtremes;
     daysData?: Record<DayKey, PeriodAggregateData<'day'>>;
     dateKey: DateKey;
   };
 
-  const { mode, setMode, year, setYear, month, setMonth, setDate, goToToday, goToPrevious, goToNext } = useCalendar();
+  const { mode, setMode, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendar();
   const today = new Date();
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
   const [panelView, setPanelView] = useSidePanelParam();
@@ -141,19 +138,12 @@ export function Calendar({
 
     if (Object.prototype.hasOwnProperty.call(monthDataByKey, panelViewKey)) {
       const monthKeyValue = panelViewKey as MonthKey;
-      const { month: keyMonth, year: keyYear } = parseMonthKey(monthKeyValue);
+      const { month: keyMonth } = parseMonthKey(monthKeyValue);
       return {
         isOpen: true,
         title: `${monthNames[keyMonth - 1]}`,
         data: monthDataByKey[monthKeyValue],
         priorData: priorMonthDataByKey[monthKeyValue],
-        actionLabel: 'Open daily view',
-        actionOnClick: () => {
-          setPanelView(null);
-          setMode('daily');
-          setDate(toMonthKey(keyYear, keyMonth));
-        },
-        actionIcon: <CalendarDays className="h-4 w-4" />,
         extremes: yearExtremes,
         daysData: buildMonthDaysDataForKey(monthKeyValue),
         dateKey: monthKeyValue,
@@ -174,7 +164,7 @@ export function Calendar({
     }
 
     return fallback;
-  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, setDate, setPanelView, setMode, yearDataByKey, yearExtremes]);
+  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, yearDataByKey, yearExtremes]);
 
   // Precompute year-level data maps for quick access in YearOverview and MonthlyGrid
   const yearDayDataByKey = useMemo(
