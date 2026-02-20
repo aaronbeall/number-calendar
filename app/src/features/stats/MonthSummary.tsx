@@ -15,9 +15,11 @@ export interface MonthSummaryProps {
   yearExtremes?: StatsExtremes;
   valence: Valence;
   tracking: Tracking;
+  isPanelOpen?: boolean;
+  onSelect?: () => void;
 }
 
-export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isCurrentMonth, yearExtremes, valence, tracking }) => {
+export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isCurrentMonth, yearExtremes, valence, tracking, isPanelOpen = false, onSelect }) => {
   // Use getCalendarData for all stats, deltas, valence, etc.
   const {
     stats,
@@ -67,8 +69,16 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isC
     });
   };
 
+  const selectedRing = isPanelOpen ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : '';
+
   return (
-    <div className={`rounded-lg ${bgClasses} ${bottomBorderClasses} shadow-lg dark:shadow-xl`} aria-label="Monthly summary">
+    <div 
+      className={`rounded-lg ${bgClasses} ${bottomBorderClasses} shadow-lg dark:shadow-xl ${selectedRing} ${onSelect ? 'cursor-pointer hover:shadow-xl dark:hover:shadow-2xl transition-shadow' : ''}`}
+      onClick={onSelect}
+      role={onSelect ? 'button' : undefined}
+      tabIndex={onSelect ? 0 : undefined}
+      aria-label="Monthly summary"
+    >
       <div className="w-full flex items-center justify-between gap-3 sm:gap-6 px-4 py-3">
         {/* Month Label - Header Style */}
         <div className="flex-shrink-0">

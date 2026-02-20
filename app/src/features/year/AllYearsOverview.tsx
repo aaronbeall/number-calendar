@@ -6,7 +6,7 @@ import { getValueForValence } from '@/lib/valence';
 import { formatValue } from '@/lib/friendly-numbers';
 import { getNormalizedMagnitude } from '@/lib/charts';
 import { useSwipe } from '@/hooks/useSwipe';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, memo } from 'react';
 
 export interface AllYearsOverviewProps {
   monthDataByKey: Record<MonthKey, PeriodAggregateData<'month'>>;
@@ -21,13 +21,151 @@ const monthNames = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
-export const AllYearsOverview: React.FC<AllYearsOverviewProps> = ({
+interface MonthDotProps {
+  monthNum: number;
+  color: string;
+  scale: number;
+  monthData: PeriodAggregateData<'month'> | undefined;
+  tracking: Tracking;
+}
+
+const MonthDot = memo(({ monthNum, color, scale, monthData, tracking }: MonthDotProps) => {
+  const hasData = monthData && monthData.numbers.length > 0;
+  const value = hasData ? getPrimaryMetricFromStats(monthData.stats, tracking) : 0;
+  const formattedValue = hasData ? formatValue(value) : '—';
+  const baseSizePx = 12;
+  const sizedPx = baseSizePx * scale;
+
+  return (
+    <div
+      className="flex items-center justify-center w-3 h-3"
+      title={`${monthNames[monthNum - 1]}${hasData ? `: ${formattedValue}` : ''}`}
+    >
+      <div
+        className={`rounded-full ${color} transition-all duration-200`}
+        style={{ 
+          width: `${sizedPx}px`, 
+          height: `${sizedPx}px`,
+        }}
+      />
+    </div>
+  );
+});
+MonthDot.displayName = 'MonthDot';
+
+interface MonthGridProps {
+  year: number;
+  monthDataByKey: Record<MonthKey, PeriodAggregateData<'month'>>;
+  getMonthColorAndScale: (monthKey: MonthKey) => { color: string; scale: number };
+  today: Date;
+  tracking: Tracking;
+}
+
+const MonthGrid = memo(({ year, monthDataByKey, getMonthColorAndScale, today, tracking }: MonthGridProps) => {
+  return (
+    <div className="grid grid-cols-4 gap-3 place-items-center">
+      {Array.from({ length: 12 }, (_, monthIndex) => {
+        const monthNum = monthIndex + 1;
+        const monthKey = toMonthKey(year, monthNum);
+        const isFutureMonth = year === today.getFullYear() && monthNum > today.getMonth() + 1;
+        const { color, scale } = isFutureMonth
+          ? { color: 'bg-slate-200 dark:bg-slate-700/40', scale: 0.4 }
+          : getMonthColorAndScale(monthKey);
+        const monthData = monthDataByKey[monthKey];
+
+        return (
+          <MonthDot
+            key={monthNum}
+            monthNum={monthNum}
+            color={color}
+            scale={scale}
+            monthData={monthData}
+            tracking={tracking}
+          />
+        );
+      })}
+    </div>
+  );
+});
+MonthGrid.displayName = 'MonthGrid';
+
+const EmptyMonthGrid = memo(() => (
+  <div className="grid grid-cols-4 gap-3 place-items-center">
+    {Array.from({ length: 12 }).map((_, i) => (
+      <div
+        key={i}
+        className="flex items-center justify-center w-3 h-3"
+      >
+        <div
+          className="rounded-full bg-slate-300 dark:bg-slate-600/50"
+          style={{ width: '2px', height: '2px' }}
+        />
+      </div>
+    ))}
+  </div>
+));
+EmptyMonthGrid.displayName = 'EmptyMonthGrid';
+
+interface YearButtonProps {
+  year: number;
+  isCurrentYear: boolean;
+  hasYearData: boolean;
+  isFutureYear: boolean;
+  monthDataByKey: Record<MonthKey, PeriodAggregateData<'month'>>;
+  today: Date;
+  getMonthColorAndScale: (monthKey: MonthKey) => { color: string; scale: number };
+  onYearClick: (year: number) => void;
+  yearButtonRef: (el: HTMLButtonElement | null) => void;
+  tracking: Tracking;
+}
+
+const YearButton = memo(({
+  year,
+  isCurrentYear,
+  hasYearData,
+  isFutureYear,
+  monthDataByKey,
+  today,
+  getMonthColorAndScale,
+  onYearClick,
+  yearButtonRef,
+  tracking,
+}: YearButtonProps) => {
+  return (
+    <button
+      ref={yearButtonRef}
+      onClick={() => onYearClick(year)}
+      className={`flex flex-col items-center space-y-2 p-3 rounded-lg transition-all duration-200 flex-shrink-0 min-w-max
+        ${isCurrentYear ? 'ring-2 ring-blue-400/80 ring-offset-1 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900 bg-blue-50 dark:bg-blue-950/20' : ''}
+        hover:scale-105 hover:shadow-md dark:hover:shadow-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer`}
+      title={`${year}`}
+    >
+      <div className={`text-sm font-semibold ${isCurrentYear ? 'text-blue-700 dark:text-blue-300' : hasYearData && !isFutureYear ? 'text-slate-700 dark:text-slate-300' : 'text-slate-300 dark:text-slate-700'}`}>
+        {year}
+      </div>
+      {hasYearData && !isFutureYear ? (
+        <MonthGrid
+          year={year}
+          monthDataByKey={monthDataByKey}
+          getMonthColorAndScale={getMonthColorAndScale}
+          today={today}
+          tracking={tracking}
+        />
+      ) : (
+        <EmptyMonthGrid />
+      )}
+    </button>
+  );
+});
+YearButton.displayName = 'YearButton';
+
+export const AllYearsOverview = memo(({
   monthDataByKey,
   currentYear,
   onYearClick,
   valence,
   tracking,
-}) => {
+}: AllYearsOverviewProps) => {
   const today = new Date();
   const yearButtonsRef = useRef<Map<number, HTMLButtonElement>>(new Map());
 
@@ -102,7 +240,7 @@ export const AllYearsOverview: React.FC<AllYearsOverviewProps> = ({
   }, [monthDataByKey, tracking]);
 
   // Helper to get color class and scale for a month dot based on valence magnitude
-  const getMonthColorAndScale = (monthKey: MonthKey): { color: string; scale: number } => {
+  const getMonthColorAndScale = useCallback((monthKey: MonthKey): { color: string; scale: number } => {
     const monthData = monthDataByKey[monthKey];
     if (!monthData || monthData.numbers.length === 0) {
       return { color: 'bg-slate-300 dark:bg-slate-700/40', scale: 0.4 };
@@ -118,88 +256,7 @@ export const AllYearsOverview: React.FC<AllYearsOverviewProps> = ({
     });
     
     return { color, scale };
-  };
-
-  const renderYear = (year: number) => {
-    const isCurrentYear = year === currentYear;
-    const isFutureYear = year > today.getFullYear();
-    const hasYearData = availableYears.includes(year);
-
-    return (
-      <button
-        ref={(el) => {
-          if (el) {
-            yearButtonsRef.current.set(year, el);
-          }
-        }}
-        key={year}
-        onClick={() => onYearClick(year)}
-        className={`flex flex-col items-center space-y-2 p-3 rounded-lg transition-all duration-200 flex-shrink-0 min-w-max
-          ${isCurrentYear ? 'ring-2 ring-blue-400/80 ring-offset-1 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900 bg-blue-50 dark:bg-blue-950/20' : ''}
-          hover:scale-105 hover:shadow-md dark:hover:shadow-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer`}
-        title={`${year}`}
-      >
-        <div className={`text-sm font-semibold ${isCurrentYear ? 'text-blue-700 dark:text-blue-300' : hasYearData && !isFutureYear ? 'text-slate-700 dark:text-slate-300' : 'text-slate-300 dark:text-slate-700'}`}>
-          {year}
-        </div>
-        {hasYearData && !isFutureYear ? (
-          <div className="grid grid-cols-4 gap-3 place-items-center">
-            {Array.from({ length: 12 }, (_, monthIndex) => {
-              const monthNum = monthIndex + 1;
-              const monthKey = toMonthKey(year, monthNum);
-              const isFutureMonth = year === today.getFullYear() && monthNum > today.getMonth() + 1;
-              const { color, scale } = isFutureMonth
-                ? { color: 'bg-slate-200 dark:bg-slate-700/40', scale: 0.4 }
-                : getMonthColorAndScale(monthKey);
-              const monthData = monthDataByKey[monthKey];
-              const hasData = monthData && monthData.numbers.length > 0;
-              const value = hasData ? getPrimaryMetricFromStats(monthData.stats, tracking) : 0;
-              const formattedValue = hasData ? formatValue(value) : '—';
-              const baseSizePx = 12;
-              const sizedPx = baseSizePx * scale;
-
-              return (
-                <div
-                  key={monthNum}
-                  className="flex items-center justify-center w-3 h-3"
-                  title={`${monthNames[monthNum - 1]} ${year}${hasData ? `: ${formattedValue}` : ''}`}
-                >
-                  <div
-                    className={`rounded-full ${color} transition-all duration-200`}
-                    style={{ 
-                      width: `${sizedPx}px`, 
-                      height: `${sizedPx}px`,
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="relative flex items-center justify-center">
-            <div className="grid grid-cols-4 gap-3 place-items-center">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-center w-3 h-3"
-                >
-                  <div
-                    className="rounded-full bg-slate-300 dark:bg-slate-600/50"
-                    style={{ width: '2px', height: '2px' }}
-                  />
-                </div>
-              ))}
-            </div>
-            {/* <div className="absolute inset-0 flex items-center justify-center">
-              <span className="px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">
-                No Data
-              </span>
-            </div> */}
-          </div>
-        )}
-      </button>
-    );
-  };
+  }, [monthDataByKey, tracking, minAbsValence, maxAbsValence, valence]);
 
   return (
     <div
@@ -209,8 +266,33 @@ export const AllYearsOverview: React.FC<AllYearsOverviewProps> = ({
       onTouchEnd={handleSwipeEnd}
     >
       <div className="flex gap-6">
-        {allYears.map((year) => renderYear(year))}
+        {allYears.map((year) => {
+          const isCurrentYear = year === currentYear;
+          const isFutureYear = year > today.getFullYear();
+          const hasYearData = availableYears.includes(year);
+
+          return (
+            <YearButton
+              key={year}
+              year={year}
+              isCurrentYear={isCurrentYear}
+              hasYearData={hasYearData}
+              isFutureYear={isFutureYear}
+              monthDataByKey={monthDataByKey}
+              today={today}
+              getMonthColorAndScale={getMonthColorAndScale}
+              onYearClick={onYearClick}
+              yearButtonRef={(el) => {
+                if (el) {
+                  yearButtonsRef.current.set(year, el);
+                }
+              }}
+              tracking={tracking}
+            />
+          );
+        })}
       </div>
     </div>
   );
-};
+}) as React.FC<AllYearsOverviewProps>;
+AllYearsOverview.displayName = 'AllYearsOverview';

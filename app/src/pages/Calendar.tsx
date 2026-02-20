@@ -214,6 +214,38 @@ export function Calendar({
     [achievementResultsByDateKey]
   );
 
+  // Selection state for MonthSummary and YearSummary
+  const isMonthSummaryOpen = String(panelView) === monthKey;
+  const isYearSummaryOpen = String(panelView) === yearKey;
+
+  const handleMonthSummarySelect = useCallback(() => {
+    setPanelView(monthKey);
+  }, [monthKey, setPanelView]);
+
+  const handleYearSummarySelect = useCallback(() => {
+    setPanelView(yearKey);
+  }, [yearKey, setPanelView]);
+
+  // View mode handler
+  const handleModeChange = useCallback((v: string | null) => {
+    if (v === 'daily' || v === 'monthly') {
+      setMode(v);
+    }
+  }, [setMode]);
+
+  // Year/Month navigation handlers
+  const handleYearOverviewMonthClick = useCallback((newMonth: number) => {
+    setMonth(newMonth);
+  }, [setMonth]);
+
+  const handleYearOverviewYearChange = useCallback((newYear: number) => {
+    setYear(newYear);
+  }, [setYear]);
+
+  const handleAllYearsOverviewYearClick = useCallback((selectedYear: number) => {
+    setYear(selectedYear);
+  }, [setYear]);
+
   return (
     <div className="min-h-screen">
       <GoalBuilderDialog
@@ -234,11 +266,7 @@ export function Calendar({
                 <ToggleGroup
                   type="single"
                   value={mode}
-                  onValueChange={(v: string | null) => {
-                    if (v === 'daily' || v === 'monthly') {
-                      setMode(v);
-                    }
-                  }}
+                  onValueChange={handleModeChange}
                   size="sm"
                 >
                   <ToggleGroupItem value="daily" aria-label="Daily View">
@@ -347,12 +375,8 @@ export function Calendar({
                 year={year}
                 dayDataByKey={yearDayDataByKey}
                 currentMonth={month}
-                onMonthClick={(newMonth) => {
-                  setMonth(newMonth);
-                }}
-                onYearChange={(newYear) => {
-                  setYear(newYear);
-                }}
+                onMonthClick={handleYearOverviewMonthClick}
+                onYearChange={handleYearOverviewYearChange}
                 valence={dataset.valence}
                 tracking={dataset.tracking}
               />
@@ -381,10 +405,6 @@ export function Calendar({
             
             {/* Monthly Stats Section */}
             <div className="mt-8 mb-6">
-              <div onClick={() => {
-                const dateKey = toMonthKey(year, month);
-                setPanelView(dateKey);
-              }} className="cursor-pointer">
               <MonthSummary 
                 data={monthAggregate}
                 monthName={monthNames[month - 1]} 
@@ -392,8 +412,9 @@ export function Calendar({
                 yearExtremes={yearExtremes}
                 valence={dataset.valence}
                 tracking={dataset.tracking}
+                isPanelOpen={isMonthSummaryOpen}
+                onSelect={handleMonthSummarySelect}
               />
-              </div>
             </div>
 
             {/* Chart Section */}
@@ -421,9 +442,7 @@ export function Calendar({
               <AllYearsOverview
                 monthDataByKey={monthDataByKey}
                 currentYear={year}
-                onYearClick={(selectedYear) => {
-                  setYear(selectedYear);
-                }}
+                onYearClick={handleAllYearsOverviewYearClick}
                 valence={dataset.valence}
                 tracking={dataset.tracking}
               />
@@ -449,18 +468,15 @@ export function Calendar({
 
             {/* Year Summary */}
             <div className="mt-8 mb-6">
-              <div onClick={() => {
-                const dateKey = toYearKey(year);
-                setPanelView(dateKey);
-              }} className="cursor-pointer">
-                <YearSummary 
-                  data={yearAggregate}
-                  yearName={`${year}`} 
-                  isCurrentYear={year === today.getFullYear()}
-                  valence={dataset.valence}
-                  tracking={dataset.tracking}
-                />
-              </div>
+              <YearSummary 
+                data={yearAggregate}
+                yearName={`${year}`} 
+                isCurrentYear={year === today.getFullYear()}
+                valence={dataset.valence}
+                tracking={dataset.tracking}
+                isPanelOpen={isYearSummaryOpen}
+                onSelect={handleYearSummarySelect}
+              />
             </div>
 
             {/* Year Chart Section */}

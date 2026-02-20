@@ -5,7 +5,7 @@ import { dateToWeekKey, formatDateAsKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
-import { useMemo } from 'react';
+import { useCallback, useMemo, memo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 import { WeekSummary } from '../stats/WeekSummary';
 import { DayCell } from './DayCell';
@@ -24,11 +24,107 @@ interface DailyGridProps {
   achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
 }
 
-
 const allWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+interface WeekdayHeadersProps {
+  weekdays: string[];
+}
 
-export const DailyGrid: React.FC<DailyGridProps> = ({
+const WeekdayHeaders = memo(({ weekdays }: WeekdayHeadersProps) => (
+  <div className={`grid gap-2 px-2 ${weekdays.length === 7 ? 'grid-cols-7' : 'grid-cols-5'}`}>
+    {weekdays.map(day => (
+      <div key={day} className="text-center text-sm font-medium text-slate-500 uppercase tracking-wide">
+        {day}
+      </div>
+    ))}
+  </div>
+));
+WeekdayHeaders.displayName = 'WeekdayHeaders';
+
+interface DayCellWrapperProps {
+  date: Date;
+  dayData: { date: Date; data: PeriodAggregateData<'day'>; priorData?: PeriodAggregateData<'day'> };
+  monthExtremes?: StatsExtremes;
+  valence: Valence;
+  tracking: Tracking;
+  onSaveDay: (date: DayKey, numbers: number[]) => void;
+  achievementResults: CompletedAchievementResult[];
+}
+
+const DayCellWrapper = memo(({
+  date,
+  dayData,
+  monthExtremes,
+  valence,
+  tracking,
+  onSaveDay,
+  achievementResults,
+}: DayCellWrapperProps) => {
+  const key = formatDateAsKey(date, 'day');
+  const handleSave = useCallback((nums: number[]) => {
+    onSaveDay(key, nums);
+  }, [onSaveDay, key]);
+
+  return (
+    <div className="transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl">
+      <DayCell
+        date={date}
+        data={dayData.data}
+        priorData={dayData.priorData}
+        onSave={handleSave}
+        monthExtremes={monthExtremes}
+        valence={valence}
+        tracking={tracking}
+        achievementResults={achievementResults}
+      />
+    </div>
+  );
+});
+DayCellWrapper.displayName = 'DayCellWrapper';
+
+interface WeekSummaryWrapperProps {
+  weekData: PeriodAggregateData<'week'>;
+  priorWeekData?: PeriodAggregateData<'week'>;
+  monthExtremes?: StatsExtremes;
+  weekNumber: number;
+  isCurrentWeek: boolean;
+  valence: Valence;
+  tracking: Tracking;
+  weekDateKey: WeekKey;
+  achievementResults: CompletedAchievementResult[];
+  colSpan: number;
+}
+
+const WeekSummaryWrapper = memo(({
+  weekData,
+  priorWeekData,
+  monthExtremes,
+  weekNumber,
+  isCurrentWeek,
+  valence,
+  tracking,
+  weekDateKey,
+  achievementResults,
+  colSpan,
+}: WeekSummaryWrapperProps) => (
+  <div className={colSpan === 7 ? 'col-span-7' : 'col-span-5'}>
+    <WeekSummary
+      data={weekData}
+      priorData={priorWeekData}
+      monthExtremes={monthExtremes}
+      weekNumber={weekNumber}
+      isCurrentWeek={isCurrentWeek}
+      valence={valence}
+      tracking={tracking}
+      dateKey={weekDateKey}
+      achievementResults={achievementResults}
+    />
+  </div>
+));
+WeekSummaryWrapper.displayName = 'WeekSummaryWrapper';
+
+
+export const DailyGrid = memo(({
   year,
   month,
   monthDays,
@@ -40,8 +136,7 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
   tracking,
   onSaveDay,
   achievementResultsByDateKey,
-}) => {
-
+}: DailyGridProps) => {
   const { firstDay, weekdays, gridDays } = useMemo(() => {
     // Calculdate days in month
     const firstDay = new Date(year, month - 1, 1);
@@ -126,16 +221,14 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
     return weeks;
   }, [weekDataByKey, priorWeekByKey, gridDays, firstDay, weekdays, month]);
 
+  const handleSaveDay = useCallback((date: DayKey, numbers: number[]) => {
+    onSaveDay(date, numbers);
+  }, [onSaveDay]);
+
   return (
     <>
       {/* Weekday headers */}
-      <div className={`grid gap-2 px-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
-        {weekdays.map(day => (
-          <div key={day} className="text-center text-sm font-medium text-slate-500 uppercase tracking-wide">
-            {day}
-          </div>
-        ))}
-      </div>
+      <WeekdayHeaders weekdays={weekdays} />
 
       {/* Calendar grid rendered by weeks with summary per week */}
       <div className={`grid gap-2 p-2 ${showWeekends ? 'grid-cols-7' : 'grid-cols-5'}`}>
@@ -149,39 +242,38 @@ export const DailyGrid: React.FC<DailyGridProps> = ({
               const dayData = monthDayMap.get(key);
               if (!dayData) return null;
               return (
-                <div key={formatDateAsKey(date, 'day')} className="transition-all duration-200 cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl">
-                  <DayCell
-                    date={date}
-                    data={dayData.data}
-                    priorData={dayData.priorData}
-                    onSave={nums => onSaveDay(key, nums)}
-                    monthExtremes={monthExtremes}
-                    valence={valence}
-                    tracking={tracking}
-                    achievementResults={achievementResultsByDateKey[key] ?? []}
-                  />
-                </div>
+                <DayCellWrapper
+                  key={key}
+                  date={date}
+                  dayData={dayData}
+                  monthExtremes={monthExtremes}
+                  valence={valence}
+                  tracking={tracking}
+                  onSaveDay={handleSaveDay}
+                  achievementResults={achievementResultsByDateKey[key] ?? []}
+                />
               );
             })}
             {/* Week summary below the week */}
             {week.weekData && week.weekData.numbers.length > 0 && week.weekDateKey && (
-              <div className={showWeekends ? 'col-span-7' : 'col-span-5'}>
-                <WeekSummary
-                  data={week.weekData}
-                  priorData={week.priorWeekData}
-                  monthExtremes={monthExtremes}
-                  weekNumber={week.weekNumber}
-                  isCurrentWeek={week.isCurrentWeek}
-                  valence={valence}
-                  tracking={tracking}
-                  dateKey={week.weekDateKey}
-                  achievementResults={achievementResultsByDateKey[week.weekDateKey] ?? []}
-                />
-              </div>
+              <WeekSummaryWrapper
+                key={`week-summary-${wi}`}
+                weekData={week.weekData}
+                priorWeekData={week.priorWeekData}
+                monthExtremes={monthExtremes}
+                weekNumber={week.weekNumber}
+                isCurrentWeek={week.isCurrentWeek}
+                valence={valence}
+                tracking={tracking}
+                weekDateKey={week.weekDateKey}
+                achievementResults={achievementResultsByDateKey[week.weekDateKey] ?? []}
+                colSpan={showWeekends ? 7 : 5}
+              />
             )}
           </Fragment>
         ))}
       </div>
     </>
   );
-};
+}) as React.FC<DailyGridProps>;
+DailyGrid.displayName = 'DailyGrid';

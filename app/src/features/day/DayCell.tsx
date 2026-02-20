@@ -1,18 +1,18 @@
 
 import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
-import type { CompletedAchievementResult } from '@/lib/goals';
-import { dateToDayKey } from '@/lib/friendly-date';
 import { getCalendarData } from '@/lib/calendar';
 import { getNormalizedMagnitude } from '@/lib/charts';
+import { dateToDayKey } from '@/lib/friendly-date';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
 import { getValenceValueForNumber } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { Skull, TrendingDown, TrendingUp, TrendingUpDown, Trophy } from 'lucide-react';
 import React, { useMemo } from 'react';
+import { useSidePanelParam } from '../../lib/search-params';
 import { NumbersPanel } from '../panel/NumbersPanel';
-import { useSearchParamState } from '@/hooks/useSearchParamState';
 
 export interface DayCellProps {
   date: Date;
@@ -26,7 +26,7 @@ export interface DayCellProps {
 }
 
 export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave, monthExtremes, valence, tracking, achievementResults }) => {
-  const [panelView, setPanelView] = useSearchParamState<string>('view', null);
+  const [panelView, setPanelView] = useSidePanelParam();
   const dayKey = dateToDayKey(date);
   const isPanelOpen = typeof panelView === 'string' && panelView === dayKey;
   const numbers = data.numbers;

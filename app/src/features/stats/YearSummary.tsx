@@ -13,10 +13,12 @@ interface YearSummaryProps {
   isCurrentYear: boolean;
   valence: Valence;
   tracking: Tracking;
+  isPanelOpen?: boolean;
+  onSelect?: () => void;
 }
 
-export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }: YearSummaryProps) {
-  const { stats, primaryMetric, primaryMetricLabel, primaryValenceMetric, secondaryMetric, secondaryMetricLabel, secondaryMetricFormat, changeMetric } = useMemo(
+export function YearSummary({ data, yearName, isCurrentYear, valence, tracking, isPanelOpen = false, onSelect }: YearSummaryProps) {
+  const { stats, valenceStats, primaryMetric, primaryMetricLabel, primaryValenceMetric, secondaryMetric, secondaryMetricLabel, secondaryMetricFormat, changeMetric } = useMemo(
     () => getCalendarData(data, undefined, tracking),
     [data, tracking]
   );
@@ -33,13 +35,11 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
   });
 
   // Color classes for background
-  const bgClasses = isCurrentYear
-    ? getValueForValence(primaryValenceMetric, valence, {
-        good: 'bg-gradient-to-r from-white to-blue-50 dark:from-[#232a26] dark:to-[#1a3a2a]',
-        bad: 'bg-gradient-to-r from-white to-red-50 dark:from-[#232a26] dark:to-[#3a1a1a]',
-        neutral: 'bg-gradient-to-r from-white to-slate-50 dark:from-[#232a26] dark:to-slate-800',
-      })
-    : 'bg-white dark:bg-[#232a26]';
+  const bgClasses = getValueForValence(primaryValenceMetric, valence, {
+    good: 'bg-gradient-to-r from-white to-emerald-100 dark:from-slate-900 dark:to-emerald-950',
+    bad: 'bg-gradient-to-r from-white to-rose-100 dark:from-slate-900 dark:to-rose-950',
+    neutral: 'bg-gradient-to-r from-white to-slate-100 dark:from-slate-900 dark:to-slate-700',
+  });
 
   // Color classes for bottom border
   const bottomBorderClasses = getValueForValence(primaryValenceMetric, valence, {
@@ -48,8 +48,16 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
     neutral: 'border-b-4 border-slate-400 dark:border-slate-600',
   });
 
+  const selectedRing = isPanelOpen ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : '';
+
   return (
-  <div className={`${bgClasses} ${bottomBorderClasses} rounded-lg shadow-lg dark:shadow-xl p-6`}>
+  <div 
+    className={`${bgClasses} ${bottomBorderClasses} rounded-lg shadow-lg dark:shadow-xl p-6 ${selectedRing} ${onSelect ? 'cursor-pointer hover:shadow-xl dark:hover:shadow-2xl transition-shadow' : ''}`}
+    onClick={onSelect}
+    role={onSelect ? 'button' : undefined}
+    tabIndex={onSelect ? 0 : undefined}
+    aria-label="Year summary"
+  >
   <div className="flex items-center justify-between gap-4">
         {/* Left: Year name and entries */}
         <div className="flex items-center gap-3">
@@ -74,7 +82,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
               <NumberText
                 value={stats.mean ?? null}
-                valenceValue={primaryValenceMetric}
+                valenceValue={valenceStats?.mean ?? primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-lg font-bold"
                 short
@@ -84,7 +92,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
               <NumberText
                 value={stats.median ?? null}
-                valenceValue={primaryValenceMetric}
+                valenceValue={valenceStats?.median ?? primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-lg font-bold"
                 short
@@ -100,7 +108,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
               <NumberText
                 value={stats.min}
-                valenceValue={primaryValenceMetric}
+                valenceValue={valenceStats?.min ?? primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-base font-bold"
                 short
@@ -110,7 +118,7 @@ export function YearSummary({ data, yearName, isCurrentYear, valence, tracking }
               <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
               <NumberText
                 value={stats.max}
-                valenceValue={primaryValenceMetric}
+                valenceValue={valenceStats?.max ?? primaryValenceMetric}
                 valence={valence}
                 className="font-mono text-base font-bold"
                 short

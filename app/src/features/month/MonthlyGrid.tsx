@@ -4,7 +4,7 @@ import { toMonthKey } from '@/lib/friendly-date';
 import { createEmptyAggregate, type PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
 import { parseISO } from 'date-fns';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { MonthCell } from './MonthCell';
 
 interface MonthlyGridProps {
@@ -18,12 +18,58 @@ interface MonthlyGridProps {
   tracking: Tracking;
 }
 
-export function MonthlyGrid({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, valence, tracking }: MonthlyGridProps) {
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
+const monthNames = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
 
+interface MonthCellWrapperProps {
+  year: number;
+  monthNumber: number;
+  monthName: string;
+  monthData: {
+    data: PeriodAggregateData<'month'>;
+    priorData?: PeriodAggregateData<'month'>;
+    days: {
+      date: Date;
+      data: PeriodAggregateData<'day'>;
+      priorData?: PeriodAggregateData<'day'>;
+    }[];
+  };
+  yearExtremes?: StatsExtremes;
+  valence: Valence;
+  tracking: Tracking;
+  isCurrentMonth: boolean;
+  isFutureMonth: boolean;
+}
+
+const MonthCellWrapper = memo(({
+  year,
+  monthNumber,
+  monthName,
+  monthData,
+  yearExtremes,
+  valence,
+  tracking,
+  isCurrentMonth,
+  isFutureMonth,
+}: MonthCellWrapperProps) => (
+  <MonthCell
+    year={year}
+    month={monthNumber}
+    monthName={monthName}
+    data={monthData.data}
+    monthDays={monthData.days}
+    isCurrentMonth={isCurrentMonth}
+    isFutureMonth={isFutureMonth}
+    yearExtremes={yearExtremes}
+    valence={valence}
+    tracking={tracking}
+  />
+));
+MonthCellWrapper.displayName = 'MonthCellWrapper';
+
+export const MonthlyGrid = memo(({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, valence, tracking }: MonthlyGridProps) => {
 
   // Memoized map of month data
   const monthDataMap = useMemo(() => {
@@ -60,31 +106,31 @@ export function MonthlyGrid({ year, dayDataByKey, priorDayByKey, monthDataByKey,
   const currentDate = new Date();
   const isCurrentYear = year === currentDate.getFullYear();
   const isFutureYear = year > currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
 
   return (
     <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
       {monthNames.map((monthName, index) => {
         const monthNumber = index + 1;
         const monthData = monthDataMap.get(monthNumber)!;
-        const { data: monthAggregate, days: monthDays } = monthData;
-        const isCurrentMonth = isCurrentYear && monthNumber === currentDate.getMonth() + 1;
-        const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentDate.getMonth() + 1);
+        const isCurrentMonth = isCurrentYear && monthNumber === currentMonth;
+        const isFutureMonth = isFutureYear || (isCurrentYear && monthNumber > currentMonth);
         return (
-          <MonthCell
+          <MonthCellWrapper
             key={monthNumber}
             year={year}
-            month={monthNumber}
+            monthNumber={monthNumber}
             monthName={monthName}
-            data={monthAggregate}
-            monthDays={monthDays}
-            isCurrentMonth={isCurrentMonth}
-            isFutureMonth={isFutureMonth}
+            monthData={monthData}
             yearExtremes={yearExtremes}
             valence={valence}
             tracking={tracking}
+            isCurrentMonth={isCurrentMonth}
+            isFutureMonth={isFutureMonth}
           />
         );
       })}
     </div>
   );
-}
+}) as React.FC<MonthlyGridProps>;
+MonthlyGrid.displayName = 'MonthlyGrid';

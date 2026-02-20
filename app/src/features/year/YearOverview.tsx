@@ -4,7 +4,7 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetricFromStats, getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { useSwipe } from '@/hooks/useSwipe';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo, memo } from 'react';
 
 export interface YearOverviewProps {
   year: number;
@@ -21,15 +21,106 @@ const monthNames = [
   'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
 ];
 
-export const YearOverview: React.FC<YearOverviewProps> = ({ 
-  year, 
-  dayDataByKey, 
-  currentMonth, 
+interface DayDotProps {
+  day: number;
+  month: number;
+  year: number;
+  color: string;
+  hasData: boolean;
+  value: number;
+}
+
+const DayDot = memo(({ day, month, year, color, hasData, value }: DayDotProps) => (
+  <div
+    key={day}
+    className={`w-1 h-1 rounded-full ${color} transition-all duration-200`}
+    title={`${monthNames[month - 1]} ${day}, ${year}${hasData ? `: ${value}` : ''}`}
+  />
+));
+DayDot.displayName = 'DayDot';
+
+interface MonthCardProps {
+  month: number;
+  year: number;
+  isCurrentMonth: boolean;
+  dotData: Array<{ day: number; valenceValue: number; isFuture: boolean; hasData: boolean; value: number }>;
+  getDotColor: (valenceValue: number, isFuture: boolean, hasData: boolean) => string;
+  onMonthClick: (month: number) => void;
+}
+
+const MonthCard = memo(({
+  month,
+  year,
+  isCurrentMonth,
+  dotData,
+  getDotColor,
+  onMonthClick,
+}: MonthCardProps) => {
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
+  const lastDayOfWeek = new Date(year, month, 0).getDay();
+  const padStart = firstDayOfWeek;
+  const padEnd = 6 - lastDayOfWeek;
+
+  return (
+    <div
+      key={month}
+      className={`flex flex-col items-center space-y-1 cursor-pointer transition-all duration-200 p-2
+        ${isCurrentMonth ? 'ring-2 ring-blue-400/80 ring-offset-1 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900 rounded-lg' : ''}
+        hover:bg-slate-100 dark:hover:bg-slate-900 hover:shadow-sm dark:hover:shadow-md hover:scale-105 rounded-lg`}
+      onClick={() => onMonthClick(month)}
+    >
+      <div className={`text-xs font-medium ${isCurrentMonth ? 'text-blue-700 dark:text-blue-300 font-semibold' : 'text-slate-600 dark:text-slate-300'}`}>
+        {monthNames[month - 1]}
+      </div>
+      <div className="grid grid-cols-7 gap-0.5 w-fit">
+        {/* Leading padding */}
+        {Array.from({ length: padStart }, (_, i) => (
+          <div
+            key={`pad-start-${i}`}
+            className="w-1 h-1 rounded-full opacity-0"
+            aria-hidden
+          />
+        ))}
+        {/* Day dots */}
+        {Array.from({ length: daysInMonth }, (_, i) => {
+          const dayInfo = dotData[i];
+          const color = getDotColor(dayInfo.valenceValue, dayInfo.isFuture, dayInfo.hasData);
+          return (
+            <DayDot
+              key={dayInfo.day}
+              day={dayInfo.day}
+              month={month}
+              year={year}
+              color={color}
+              hasData={dayInfo.hasData}
+              value={dayInfo.value}
+            />
+          );
+        })}
+        {/* Trailing padding */}
+        {Array.from({ length: padEnd }, (_, i) => (
+          <div
+            key={`pad-end-${i}`}
+            className="w-1 h-1 rounded-full opacity-0"
+            aria-hidden
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
+MonthCard.displayName = 'MonthCard';
+
+export const YearOverview = memo(({
+  year,
+  dayDataByKey,
+  currentMonth,
   onMonthClick,
   valence,
   tracking,
   onYearChange
-}) => {
+}: YearOverviewProps) => {
   const today = new Date();
 
   const { handleSwipeStart, handleSwipeEnd, getAnimationStyle } = useSwipe({
@@ -67,7 +158,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
   }, [year, dayDataByKey, tracking]);
 
   // Helper to get color for a dot
-  const getDotColor = (valenceValue: number, isFuture: boolean, hasData: boolean) => {
+  const getDotColor = useCallback((valenceValue: number, isFuture: boolean, hasData: boolean) => {
     if (isFuture) {
       return 'bg-slate-200 dark:bg-slate-700/40 opacity-40';
     } else if (!hasData) {
@@ -79,70 +170,7 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
         neutral: 'bg-blue-500 dark:bg-blue-800/70 opacity-90',
       });
     }
-  };
-
-  const renderMonth = (month: number) => {
-    const isCurrentMonth = month === currentMonth;
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const days: React.ReactElement[] = [];
-    const dotData = dotDataByMonth[month];
-
-    for (let i = 0; i < daysInMonth; i++) {
-      const { day, valenceValue, isFuture, hasData, value } = dotData[i];
-      const color = getDotColor(valenceValue, isFuture, hasData);
-      days.push(
-        <div
-          key={day}
-          className={`w-1 h-1 rounded-full ${color} transition-all duration-200`}
-          title={`${monthNames[month - 1]} ${day}, ${year}${hasData ? `: ${value}` : ''}`}
-        />
-      );
-    }
-
-    // Pad the start and end so dots align with weekdays (Sun-Sat)
-    const firstDayOfWeek = new Date(year, month - 1, 1).getDay(); // 0=Sun .. 6=Sat
-    const lastDayOfWeek = new Date(year, month, 0).getDay();
-    const padStart = firstDayOfWeek; // number of empty cells before day 1
-    const padEnd = 6 - lastDayOfWeek; // number of empty cells after last day
-
-    const paddedCells: React.ReactElement[] = [
-      // Leading empty cells
-      ...Array.from({ length: padStart }, (_, i) => (
-        <div
-          key={`pad-start-${month}-${i}`}
-          className="w-1 h-1 rounded-full opacity-0"
-          aria-hidden
-        />
-      )),
-      // Actual day dots
-      ...days,
-      // Trailing empty cells
-      ...Array.from({ length: padEnd }, (_, i) => (
-        <div
-          key={`pad-end-${month}-${i}`}
-          className="w-1 h-1 rounded-full opacity-0"
-          aria-hidden
-        />
-      )),
-    ];
-
-    return (
-      <div
-        key={month}
-        className={`flex flex-col items-center space-y-1 cursor-pointer transition-all duration-200 p-2
-          ${isCurrentMonth ? 'ring-2 ring-blue-400/80 ring-offset-1 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900 rounded-lg' : ''}
-          hover:bg-slate-100 dark:hover:bg-slate-900 hover:shadow-sm dark:hover:shadow-md hover:scale-105 rounded-lg`}
-        onClick={() => onMonthClick(month)}
-      >
-        <div className={`text-xs font-medium ${isCurrentMonth ? 'text-blue-700 dark:text-blue-300 font-semibold' : 'text-slate-600 dark:text-slate-300'}`}>
-          {monthNames[month - 1]}
-        </div>
-        <div className="grid grid-cols-7 gap-0.5 w-fit">
-          {paddedCells}
-        </div>
-      </div>
-    );
-  };
+  }, [valence]);
 
   return (
     <div 
@@ -152,8 +180,23 @@ export const YearOverview: React.FC<YearOverviewProps> = ({
       onTouchEnd={handleSwipeEnd}
     >
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 justify-items-center">
-        {Array.from({ length: 12 }, (_, i) => renderMonth(i + 1))}
+        {Array.from({ length: 12 }, (_, i) => {
+          const month = i + 1;
+          const isCurrentMonth = month === currentMonth;
+          return (
+            <MonthCard
+              key={month}
+              month={month}
+              year={year}
+              isCurrentMonth={isCurrentMonth}
+              dotData={dotDataByMonth[month]}
+              getDotColor={getDotColor}
+              onMonthClick={onMonthClick}
+            />
+          );
+        })}
       </div>
     </div>
   );
-};
+}) as React.FC<YearOverviewProps>;
+YearOverview.displayName = 'YearOverview';
