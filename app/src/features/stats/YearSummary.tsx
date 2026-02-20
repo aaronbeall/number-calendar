@@ -75,7 +75,11 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
           <IconComponent className="h-5 w-5" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">{yearName}</h3>
+          <h3 className={`text-5xl font-bold ${getValueForValence(primaryValenceMetric, valence, {
+            good: 'text-emerald-700 dark:text-emerald-300',
+            bad: 'text-rose-700 dark:text-rose-300',
+            neutral: 'text-slate-700 dark:text-slate-300',
+          })}`}>{yearName}</h3>
           <p className="text-xs text-slate-500 dark:text-slate-400">{stats.count} entries</p>
         </div>
       </div>
