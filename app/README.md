@@ -50,3 +50,5 @@ npm run dev
 ## Architecture
 
 Feature-based structure with context providers for dataset management and calendar state.
+
+Fix deployment
