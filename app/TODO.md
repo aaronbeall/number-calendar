@@ -132,6 +132,7 @@ I'm liking this one.
 - [ ] Copyright/EULA/authorship
 - [x] About
 - [x] Routing (deep linking)
+- [ ] Private repo/deployment
 - [ ] Premium features
   - [ ] No ads
   - [ ] Number of datasets

@@ -312,8 +312,8 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, { label: string; descript
   slope: { label: 'Slope', description: 'Average change per entry (rate of change)' },
   midrange: { label: 'Midrange', description: 'Average of the minimum and maximum values' },
   variance: { label: 'Variance', description: 'Measure of spread around the mean' },
-  standardDeviation: { label: 'Std Dev', description: 'Square root of variance (spread around mean)' },
-  interquartileRange: { label: 'IQR', description: 'Range between 25th and 75th percentiles' },
+  standardDeviation: { label: 'Standard Deviation', description: 'Square root of variance (spread around mean)' },
+  interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles' },
 };
 
 
