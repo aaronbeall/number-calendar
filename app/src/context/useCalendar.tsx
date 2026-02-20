@@ -79,12 +79,15 @@ export function useCalendar() {
     return rangeGetters[mode][exportType]();
   }, [mode, year, month]);
 
-  const setDate = useCallback((dateKey: DayKey | MonthKey | YearKey) => {
+  const setDate = useCallback((dateKey: DayKey | MonthKey | YearKey, openPanel: boolean = false) => {
     const parts = parseDateKeyToParts(dateKey);
     setSearchParams((prev) => {
       prev.set('year', String(parts.year));
       if (parts.month !== undefined) {
         prev.set('month', String(parts.month));
+      }
+      if (openPanel) {
+        prev.set('panel', dateKey);
       }
       return prev;
     });

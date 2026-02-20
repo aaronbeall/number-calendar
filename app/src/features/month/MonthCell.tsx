@@ -10,6 +10,7 @@ import { getValueForValence } from '@/lib/valence';
 import { Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSidePanelParam } from '@/lib/search-params';
+import { useCalendar } from '@/context/useCalendar';
 
 interface MonthCellProps {
   year: number;
@@ -25,7 +26,8 @@ interface MonthCellProps {
 }
 
 export function MonthCell({ year, month, monthName, data, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, valence, tracking }: MonthCellProps) {
-  const [panelView, setPanelView] = useSidePanelParam();
+  const [panelView] = useSidePanelParam();
+  const { setDate } = useCalendar();
   const monthKey = toMonthKey(year, month);
   const panelOpen = typeof panelView === 'string' && panelView === monthKey;
   
@@ -72,7 +74,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
 
   return (
     <div
-      onClick={isFutureMonth ? undefined : () => setPanelView(monthKey)}
+      onClick={isFutureMonth ? undefined : () => setDate(monthKey, true)}
       className={`h-full
         relative p-4 rounded-lg transition-all duration-200 shadow-sm dark:shadow-md
         ${isFutureMonth ? ghostClasses : 'cursor-pointer hover:scale-[1.02] hover:shadow-lg dark:hover:shadow-2xl'}
