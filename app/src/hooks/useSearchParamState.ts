@@ -75,54 +75,49 @@ export function useSearchParamState<T>(key: string, defaultValue: T | null | boo
 
   const setValue = useCallback(
     (next: T | null | boolean) => {
-      const nextParams = new URLSearchParams(searchParams);
-
-      if (next == null) {
-        nextParams.delete(key);
-        setSearchParams(nextParams);
-        return;
-      }
-
-      if (typeof next === "boolean") {
-        if (next) {
-          nextParams.set(key, "");
-        } else {
-          nextParams.delete(key);
+      setSearchParams((prev) => {
+        if (next == null) {
+          prev.delete(key);
+          return prev;
         }
-        setSearchParams(nextParams);
-        return;
-      }
 
-      if (typeof next === "number") {
-        if (Number.isFinite(next)) {
-          nextParams.set(key, String(next));
-        } else {
-          nextParams.delete(key);
+        if (typeof next === "boolean") {
+          if (next) {
+            prev.set(key, "");
+          } else {
+            prev.delete(key);
+          }
+          return prev;
         }
-        setSearchParams(nextParams);
-        return;
-      }
 
-      if (typeof next === "string") {
-        nextParams.set(key, next);
-        setSearchParams(nextParams);
-        return;
-      }
-
-      try {
-        const serialized = JSON.stringify(next);
-        if (serialized == null) {
-          nextParams.delete(key);
-        } else {
-          nextParams.set(key, serialized);
+        if (typeof next === "number") {
+          if (Number.isFinite(next)) {
+            prev.set(key, String(next));
+          } else {
+            prev.delete(key);
+          }
+          return prev;
         }
-      } catch {
-        nextParams.delete(key);
-      }
 
-      setSearchParams(nextParams);
+        if (typeof next === "string") {
+          prev.set(key, next);
+          return prev;
+        }
+
+        try {
+          const serialized = JSON.stringify(next);
+          if (serialized == null) {
+            prev.delete(key);
+          } else {
+            prev.set(key, serialized);
+          }
+        } catch {
+          prev.delete(key);
+        }
+        return prev;
+      });
     },
-    [defaultValue, key, searchParams, setSearchParams]
+    [key, setSearchParams]
   );
 
   return [value, setValue] as const;

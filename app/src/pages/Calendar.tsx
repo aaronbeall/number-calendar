@@ -48,7 +48,7 @@ export function Calendar({
     dateKey: DateKey;
   };
 
-  const { mode, setMode, year, setYear, month, setMonth, goToToday, goToPrevious, goToNext } = useCalendar();
+  const { mode, setMode, year, setYear, month, setMonth, setDate, goToToday, goToPrevious, goToNext } = useCalendar();
   const today = new Date();
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
   const [panelView, setPanelView] = useSidePanelParam();
@@ -151,8 +151,7 @@ export function Calendar({
         actionOnClick: () => {
           setPanelView(null);
           setMode('daily');
-          setYear(keyYear);
-          setMonth(keyMonth);
+          setDate(toMonthKey(keyYear, keyMonth));
         },
         actionIcon: <CalendarDays className="h-4 w-4" />,
         extremes: yearExtremes,
@@ -175,7 +174,7 @@ export function Calendar({
     }
 
     return fallback;
-  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, setMonth, setPanelView, setMode, setYear, yearDataByKey, yearExtremes]);
+  }, [buildMonthDaysDataForKey, buildYearDaysDataForKey, monthDataByKey, monthKey, monthNames, panelView, priorMonthDataByKey, setDate, setPanelView, setMode, yearDataByKey, yearExtremes]);
 
   // Precompute year-level data maps for quick access in YearOverview and MonthlyGrid
   const yearDayDataByKey = useMemo(

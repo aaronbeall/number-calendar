@@ -292,3 +292,19 @@ export function isCurrentMonth(dateKey: DateKey): boolean {
 export function isCurrentYear(dateKey: DateKey): boolean {
   return convertDateKey(dateKey, 'year') === formatDateAsKey(new Date(), 'year');
 }
+
+export function getTodayKey(): DayKey {
+  return formatDateAsKey(new Date(), 'day');
+}
+export function getCurrentWeekKey(): WeekKey {
+  return formatDateAsKey(new Date(), 'week');
+}
+export function getCurrentMonthKey(): MonthKey {
+  return formatDateAsKey(new Date(), 'month');
+}
+export function getCurrentYearKey(): YearKey {
+  return formatDateAsKey(new Date(), 'year');
+}
+export function getCurrentDateKey(type: DateKeyType): DateKey {
+  return formatDateAsKey(new Date(), type);
+}

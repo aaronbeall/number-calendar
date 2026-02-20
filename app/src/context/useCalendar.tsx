@@ -1,7 +1,9 @@
+import type { DayKey, MonthKey, YearKey } from '@/features/db/localdb';
 import { getMonthDays } from '@/lib/calendar';
-import { convertDateKey, toDayKey } from '@/lib/friendly-date';
-import type { DayKey, MonthKey } from '@/features/db/localdb';
+import { convertDateKey, getTodayKey, parseDateKeyToParts, toDayKey } from '@/lib/friendly-date';
 import { useCalendarParams } from '@/lib/search-params';
+import { useSearchParams } from 'react-router-dom';
+import { useCallback } from 'react';
 
 export type CalendarMode = 'daily' | 'monthly';
 
@@ -16,9 +18,10 @@ export interface DateRange {
  */
 export function useCalendar() {
   const { mode, setMode, year, setYear, month, setMonth } = useCalendarParams();
-  const today = new Date();
+  const [, setSearchParams] = useSearchParams();
+  const today = getTodayKey();
 
-  const getDefaultExportDateRange = (exportType: 'daily' | 'monthly' | 'entries' = 'daily'): DateRange => {
+  const getDefaultExportDateRange = useCallback((exportType: 'daily' | 'monthly' | 'entries' = 'daily'): DateRange => {
     const rangeGetters: Record<CalendarMode, Record<'daily' | 'monthly' | 'entries', () => DateRange>> = {
       'daily': {
         'daily': () => {
@@ -32,8 +35,8 @@ export function useCalendar() {
           const daysOfMonth = getMonthDays(year, month);
           const monthOnly = convertDateKey(daysOfMonth[0], 'month');
           return {
-            startDate: monthOnly as MonthKey,
-            endDate: monthOnly as MonthKey
+            startDate: monthOnly,
+            endDate: monthOnly
           };
         },
         'entries': () => {
@@ -59,8 +62,8 @@ export function useCalendar() {
           const startMonth = convertDateKey(firstDayOfYear, 'month');
           const endMonth = convertDateKey(lastDayOfYear, 'month');
           return {
-            startDate: startMonth as MonthKey,
-            endDate: endMonth as MonthKey
+            startDate: startMonth,
+            endDate: endMonth
           };
         },
         'entries': () => {
@@ -74,38 +77,46 @@ export function useCalendar() {
       }
     };
     return rangeGetters[mode][exportType]();
-  };
+  }, [mode, year, month]);
 
-  const goToToday = () => {
-    setYear(today.getFullYear());
-    setMonth(today.getMonth() + 1);
-  };
+  const setDate = useCallback((dateKey: DayKey | MonthKey | YearKey) => {
+    const parts = parseDateKeyToParts(dateKey);
+    setSearchParams((prev) => {
+      prev.set('year', String(parts.year));
+      if (parts.month !== undefined) {
+        prev.set('month', String(parts.month));
+      }
+      return prev;
+    });
+  }, [setSearchParams]);
 
-  const goToPrevious = () => {
+  const goToToday = useCallback(() => {
+    setDate(today);
+  }, [today, setDate]);
+
+  const goToPrevious = useCallback(() => {
     if (mode === 'daily') {
       if (month === 1) {
-        setYear(year - 1);
-        setMonth(12);
+        setDate(toDayKey(year - 1, 12, 1));
       } else {
-        setMonth(month - 1);
+        setDate(toDayKey(year, month - 1, 1));
       }
     } else {
-      setYear(year - 1);
+      setDate(String(year - 1) as YearKey);
     }
-  };
+  }, [mode, year, month, setDate]);
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     if (mode === 'daily') {
       if (month === 12) {
-        setYear(year + 1);
-        setMonth(1);
+        setDate(toDayKey(year + 1, 1, 1));
       } else {
-        setMonth(month + 1);
+        setDate(toDayKey(year, month + 1, 1));
       }
     } else {
-      setYear(year + 1);
+      setDate(String(year + 1) as YearKey);
     }
-  };
+  }, [mode, year, month, setDate]);
 
-  return { mode, setMode, year, setYear, month, setMonth, getDefaultExportDateRange, goToToday, goToPrevious, goToNext };
+  return { mode, setMode, year, setYear, month, setMonth, setDate, getDefaultExportDateRange, goToToday, goToPrevious, goToNext };
 }
