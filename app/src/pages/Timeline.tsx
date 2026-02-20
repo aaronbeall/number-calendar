@@ -330,9 +330,9 @@ const TimelineEntryCard = React.memo(({
     return getChartData(chartNumbers, tracking);
   }, [numbers, showMicroChart, tracking]);
   const yearClasses = getValueForValence(primaryValenceMetric, valence, {
-    good: 'border-green-400/90 bg-gradient-to-r from-green-50 via-green-100 to-green-200 shadow-[0_10px_30px_rgba(16,185,129,0.25)] dark:border-green-700/80 dark:from-[#163322] dark:via-[#1a3a2a] dark:to-[#1f4a33] dark:shadow-[0_10px_30px_rgba(16,185,129,0.35)]',
-    bad: 'border-red-400/90 bg-gradient-to-r from-red-50 via-red-100 to-red-200 shadow-[0_10px_30px_rgba(239,68,68,0.25)] dark:border-red-700/80 dark:from-[#2b1616] dark:via-[#3a1a1a] dark:to-[#4a1f1f] dark:shadow-[0_10px_30px_rgba(239,68,68,0.35)]',
-    neutral: 'border-slate-400/90 bg-gradient-to-r from-slate-50 via-slate-100 to-slate-200 shadow-[0_10px_30px_rgba(15,23,42,0.18)] dark:border-slate-600/80 dark:from-[#1a2027] dark:via-[#232a31] dark:to-[#2c333b] dark:shadow-[0_10px_30px_rgba(15,23,42,0.35)]',
+    good: 'bg-gradient-to-r from-white to-emerald-100 dark:from-slate-900 dark:to-emerald-950 border-b-4 border-green-400 dark:border-green-700 shadow-lg dark:shadow-xl',
+    bad: 'bg-gradient-to-r from-white to-rose-100 dark:from-slate-900 dark:to-rose-950 border-b-4 border-red-400 dark:border-red-700 shadow-lg dark:shadow-xl',
+    neutral: 'bg-gradient-to-r from-white to-slate-100 dark:from-slate-900 dark:to-slate-700 border-b-4 border-slate-400 dark:border-slate-600 shadow-lg dark:shadow-xl',
   });
   const monthClasses = getValueForValence(primaryValenceMetric, valence, {
     good: 'border-green-200/80 bg-green-50 dark:border-green-900/80 dark:bg-[#1a3a2a]',
@@ -500,12 +500,14 @@ const TimelineEntryCard = React.memo(({
       </div>
       <div
         className={cn(
-          'flex-1 rounded-xl border border-t-4 shadow-sm transition-shadow',
+          'flex-1 rounded-xl transition-shadow',
+          !isYear && 'border border-t-4 shadow-sm',
           isYear && 'px-6 py-5',
           isMonth && 'px-5 py-4',
           isWeek && 'px-4 py-3',
           accentClasses,
-          onOpen && 'group-hover:shadow-md',
+          onOpen && !isYear && 'group-hover:shadow-md',
+          onOpen && isYear && 'group-hover:shadow-xl dark:group-hover:shadow-2xl',
           isSelected && 'ring-2 ring-blue-400/60 ring-offset-2 ring-offset-white dark:ring-blue-300/60 dark:ring-offset-slate-900'
         )}
       >
@@ -514,8 +516,13 @@ const TimelineEntryCard = React.memo(({
             <div>
               <div
                 className={cn(
-                  'font-semibold text-slate-800 dark:text-slate-100',
-                  isYear ? 'text-2xl' : isMonth ? 'text-lg' : 'text-base'
+                  'font-semibold',
+                  isYear ? 'text-5xl font-bold' : isMonth ? 'text-lg' : 'text-base',
+                  isYear ? getValueForValence(primaryValenceMetric, valence, {
+                    good: 'text-emerald-700 dark:text-emerald-300',
+                    bad: 'text-rose-700 dark:text-rose-300',
+                    neutral: 'text-slate-700 dark:text-slate-300',
+                  }) : 'text-slate-800 dark:text-slate-100'
                 )}
               >
                 {isWeek && weekMeta ? (
