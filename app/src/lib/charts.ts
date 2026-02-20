@@ -64,14 +64,23 @@ export function getChartData(numbers: number[], tracking: Tracking): NumbersChar
   }));
 }
 
-export const getRelativeSize = (value: number, range?: { min?: number; max?: number }, minScale: number = 0.4, maxScale: number = 1): number => {
-  if (!range) return 1;
+
+
+/**
+ * Normalize absolute values to a range (default 0.1-0.9 for opacity).
+ * Takes absolute value of input, finds max magnitude across min/max, then interpolates.
+ * Useful for opacity-based emphasis where higher magnitude = more opaque.
+ */
+export const getNormalizedMagnitude = (value: number, range?: { min?: number; max?: number }, minOutput: number = 0, maxOutput: number = 1): number => {
+  if (!range) return (minOutput + maxOutput) / 2;
   const { min, max } = range;
-  if (min === undefined || max === undefined) return 1;
+  if (min === undefined || max === undefined) return (minOutput + maxOutput) / 2;
+  
   const absValue = Math.abs(value);
   const absMin = Math.abs(min);
   const absMax = Math.abs(max);
   const maxMagnitude = Math.max(absMin, absMax);
-  if (maxMagnitude === 0) return 1;
-  return minScale + (absValue / maxMagnitude) * (maxScale - minScale);
+  if (maxMagnitude === 0) return (minOutput + maxOutput) / 2;
+  
+  return minOutput + (absValue / maxMagnitude) * (maxOutput - minOutput);
 };

@@ -12,6 +12,7 @@ import { NumbersPanel } from '@/features/panel/NumbersPanel';
 import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
+import { AllYearsOverview } from '@/features/year/AllYearsOverview';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { getMonthDays } from "@/lib/calendar";
@@ -52,6 +53,7 @@ export function Calendar({
   const [builderOpen, setBuilderOpen] = useSearchParamState('goal-builder', '');
   const [panelView, setPanelView] = useSidePanelParam();
   const [showYearOverview, setShowYearOverview] = useState(false);
+  const [showYearsOverview, setShowYearsOverview] = useState(false);
   const builderTemplateId = typeof builderOpen === 'string' && builderOpen ? builderOpen : undefined;
   
   // Swipe/drag detection for calendar navigation
@@ -264,13 +266,13 @@ export function Calendar({
 
               {/* Mobile: Month + Chevron on left */}
               <button
-                onClick={() => setShowYearOverview(!showYearOverview)}
+                onClick={() => mode === 'daily' ? setShowYearOverview(!showYearOverview) : setShowYearsOverview(!showYearsOverview)}
                 className="sm:hidden flex items-center gap-2 font-semibold text-slate-700 dark:text-blue-200 transition-colors"
               >
                 <span className="text-lg">
                   {mode === 'daily' ? `${monthNames[month - 1]}${year !== today.getFullYear() ? ` ${year}` : ''}` : `${year}`}
                 </span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${showYearOverview ? 'rotate-180' : ''}`} />
+                <ChevronDown className={`h-4 w-4 transition-transform ${mode === 'daily' && showYearOverview || mode === 'monthly' && showYearsOverview ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Desktop: Navigation Buttons + Month/Year in center */}
@@ -415,6 +417,19 @@ export function Calendar({
           </>
         ) : (
           <>
+            {/* All Years Overview - Collapsible on mobile */}
+            <div className={`transition-all duration-300 overflow-hidden -mx-4 px-4 sm:mx-0 sm:px-0 ${showYearsOverview ? 'max-h-96 sm:max-h-none' : 'max-h-0 sm:max-h-none'}`}>
+              <AllYearsOverview
+                monthDataByKey={monthDataByKey}
+                currentYear={year}
+                onYearClick={(selectedYear) => {
+                  setYear(selectedYear);
+                }}
+                valence={dataset.valence}
+                tracking={dataset.tracking}
+              />
+            </div>
+
             {/* Monthly Grid with Swipe Support */}
             <div 
               onTouchStart={handleSwipeStart}

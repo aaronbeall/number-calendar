@@ -4,7 +4,7 @@ import type { Tracking, Valence } from '@/features/db/localdb';
 import type { CompletedAchievementResult } from '@/lib/goals';
 import { dateToDayKey } from '@/lib/friendly-date';
 import { getCalendarData } from '@/lib/calendar';
-import { getRelativeSize } from '@/lib/charts';
+import { getNormalizedMagnitude } from '@/lib/charts';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
 import { getValenceValueForNumber } from '@/lib/tracking';
@@ -191,7 +191,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
             {/* Micro dots visualization - Shows composition */}
             <div className="flex flex-wrap gap-1 justify-center items-center min-h-[16px] px-1">
               {numbers.map((num, idx) => {
-                const scale = getRelativeSize(num, { min: monthExtremes?.lowestMin, max: monthExtremes?.highestMax }, 0.4, 1);
+                const scale = getNormalizedMagnitude(num, { min: monthExtremes?.lowestMin, max: monthExtremes?.highestMax }, 0.4, 1);
                 const size = scale * 8; // Base size 8px, scaled down to ~3.2px min
                 const prioNum = numbers[idx - 1] ?? priorNumbers?.[priorNumbers?.length - 1];
                 const colorClass = getValueForValence(getValenceValueForNumber(num, prioNum, tracking), valence, {

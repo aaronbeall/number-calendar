@@ -1,7 +1,7 @@
 import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
-import { getRelativeSize } from '@/lib/charts';
+import { getNormalizedMagnitude } from '@/lib/charts';
 import { toMonthKey } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
@@ -152,7 +152,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                   const primaryMetric = getPrimaryMetricFromStats(dayStats, tracking);
                   const valenceValue = getValenceValueFromData(dayObj.data, tracking);
                   
-                  const scale = getRelativeSize(
+                  const scale = getNormalizedMagnitude(
                     primaryMetric ?? 0,
                     { 
                       min: yearExtremes ? getPrimaryMetricLowFromExtremes(yearExtremes, tracking) : undefined,
