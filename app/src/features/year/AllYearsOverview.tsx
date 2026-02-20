@@ -5,7 +5,6 @@ import { getValenceValueFromData, getPrimaryMetricFromStats } from '@/lib/tracki
 import { getValueForValence } from '@/lib/valence';
 import { formatValue } from '@/lib/friendly-numbers';
 import { getNormalizedMagnitude } from '@/lib/charts';
-import { useSwipe } from '@/hooks/useSwipe';
 import React, { useCallback, useEffect, useMemo, useRef, memo } from 'react';
 
 export interface AllYearsOverviewProps {
@@ -187,11 +186,6 @@ export const AllYearsOverview = memo(({
     return Array.from(years).sort((a, b) => a - b);
   }, [monthDataByKey]);
 
-  const { handleSwipeStart, handleSwipeEnd, getAnimationStyle } = useSwipe({
-    onSwipeLeft: () => {},
-    onSwipeRight: () => {},
-  });
-
   // Generate continuous year range with padding
   const allYears = useMemo(() => {
     if (availableYears.length === 0) {
@@ -261,9 +255,6 @@ export const AllYearsOverview = memo(({
   return (
     <div
       className="bg-white dark:bg-slate-900 rounded-lg p-6 mb-6 shadow-sm dark:shadow-md overflow-x-auto"
-      style={getAnimationStyle()}
-      onTouchStart={handleSwipeStart}
-      onTouchEnd={handleSwipeEnd}
     >
       <div className="flex gap-6">
         {allYears.map((year) => {
