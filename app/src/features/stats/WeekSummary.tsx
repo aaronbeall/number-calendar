@@ -99,13 +99,13 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
   return (
     <div className={`relative rounded-md ${bgClasses} ${borderClasses} shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg transition-shadow ${selectedRing}`} aria-label="Weekly summary">
       <div
-        className="w-full flex items-stretch gap-3 sm:gap-5 px-3 py-2 cursor-pointer"
+        className="w-full flex flex-row items-center justify-between gap-3 px-3 py-2 cursor-pointer"
         onClick={() => setPanelView(dateKey)}
         tabIndex={0}
         role="button"
         aria-label={`Show week ${weekNumber} details`}
       >
-        {/* TITLE (left) */}
+        {/* Title - left side */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {getStatusIcon()}
           <div className="leading-tight">
@@ -113,8 +113,9 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
             <div className="text-[10px] text-slate-500 dark:text-slate-400">{count} entries</div>
           </div>
         </div>
-        {/* CHART (middle, flex-grow) */}
-        <div className="hidden sm:flex items-center flex-1">
+
+        {/* CHART (graphic) - fills space between title and metric on all screens */}
+        <div className="flex items-center min-h-8 flex-1">
           {chartData.length > 1 && (
             <div className={`w-full h-8 rounded-md ${chartBgClasses} flex items-center justify-center px-2`} aria-label="Weekly trend mini chart">
               <ChartContainer config={{ numbers: { color: chartLineColor } }} className="w-full h-6">
@@ -158,44 +159,39 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
             </div>
           )}
         </div>
-        {/* STATS (right) */}
-        <div className="flex items-center gap-3 sm:gap-5 justify-end flex-shrink-0">
-          {/* Mean / Median (secondary) */}
-          <div className="hidden sm:flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mean</div>
-              <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Median</div>
-              <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
-            </div>
+
+        {/* Stats - hidden on small, right-aligned on large */}
+        <div className="hidden md:flex flex-row w-full md:w-auto justify-between md:justify-start gap-0 md:gap-5 md:items-center md:ml-auto">
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mean</div>
+            <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
           </div>
-
-          <div className="hidden md:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
-
-          {/* Min / Max (tertiary) */}
-          <div className="hidden md:flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Min</div>
-              <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
-            </div>
-            <div className="text-right">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Max</div>
-              <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
-            </div>
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Median</div>
+            <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
           </div>
-
           <div className="hidden md:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Min</div>
+            <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
+          </div>
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Max</div>
+            <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
+          </div>
+        </div>
 
-          {/* Primary metric (most prominent, right-most, own container) */}
-          <div className={`flex items-center gap-2 px-3 py-2 rounded font-mono font-bold ${getValueForValence(primaryValenceMetric, valence, {
+        <div className="hidden md:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
+
+        {/* Primary metric - inline on all screens */}
+        <div className="w-auto">
+          <div className={`flex items-center justify-end gap-2 px-3 py-2 rounded font-mono font-bold ${getValueForValence(primaryValenceMetric, valence, {
             good: 'bg-emerald-200/70 dark:bg-emerald-900/70 text-emerald-700 dark:text-emerald-200',
             bad: 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-700 dark:text-rose-200',
             neutral: 'bg-slate-200/50 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200',
           })}`}>
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400/80">{primaryMetricLabel}</div>
-            <NumberText value={primaryMetric} valenceValue={primaryValenceMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} valence={valence} className="text-lg sm:text-xl font-extrabold" />
+            <NumberText value={primaryMetric} valenceValue={primaryValenceMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} valence={valence} className="text-lg sm:text-xl font-extrabold" short />
           </div>
         </div>
       </div>

@@ -63,123 +63,119 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
     tabIndex={onSelect ? 0 : undefined}
     aria-label="Year summary"
   >
-  <div className="flex items-center justify-between gap-4">
-        {/* Left: Year name and entries */}
-        <div className="flex items-center gap-3">
-          <div className={`p-3 rounded-full ${getValueForValence(primaryValenceMetric, valence, {
-            good: 'bg-green-100 dark:bg-[#1a3a2a] text-green-600 dark:text-green-200',
-            bad: 'bg-red-100 dark:bg-[#3a1a1a] text-red-600 dark:text-red-200',
-            neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
-          })}`}>
-            <IconComponent className="h-5 w-5" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">{yearName}</h3>
-              {achievementResults.length > 0 && (
-                <div className="flex items-center gap-1">
-                  {achievementResults.map(({ goal, achievement }) => (
-                    <PopoverTip key={achievement.id}>
-                      <PopoverTipTrigger asChild>
-                        <button
-                          type="button"
-                          className="flex items-center justify-center rounded-md p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-                          aria-label={goal.title}
-                          onMouseEnter={() => setHoveredAchievementId(achievement.id)}
-                          onMouseLeave={() => setHoveredAchievementId(null)}
-                        >
-                          <AchievementBadge badge={goal.badge} size="small" animate={hoveredAchievementId === achievement.id} floating={false} className={cn(
-                            hoveredAchievementId === achievement.id && "scale-120 z-10",
-                            "transition-transform"
-                          )} />
-                        </button>
-                      </PopoverTipTrigger>
-                      <PopoverTipContent>
-                        <div className="text-xs font-semibold text-slate-900 dark:text-slate-50">
-                          {goal.title}
-                        </div>
-                        {goal.description && (
-                          <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
-                            {goal.description}
-                          </div>
-                        )}
-                      </PopoverTipContent>
-                    </PopoverTip>
-                  ))}
-                </div>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{stats.count} entries</p>
-          </div>
+  <div className="flex flex-col md:flex-row md:items-center gap-4">
+    {/* Title/entries and achievements - stays together on small screens */}
+    <div className="flex items-center justify-between md:justify-start gap-3 flex-shrink-0">
+      <div className="flex items-center gap-3">
+        <div className={`p-3 rounded-full ${getValueForValence(primaryValenceMetric, valence, {
+          good: 'bg-green-100 dark:bg-[#1a3a2a] text-green-600 dark:text-green-200',
+          bad: 'bg-red-100 dark:bg-[#3a1a1a] text-red-600 dark:text-red-200',
+          neutral: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300',
+        })}`}>
+          <IconComponent className="h-5 w-5" />
         </div>
-
-        {/* Right: Stats aligned to the end */}
-        <div className="hidden sm:flex items-center gap-6 ml-auto justify-end">
-          {/* Mean / Median (secondary) */}
-          <div className="hidden sm:flex items-center gap-6">
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
-              <NumberText
-                value={stats.mean ?? null}
-                valenceValue={valenceStats?.mean ?? primaryValenceMetric}
-                valence={valence}
-                className="font-mono text-lg font-bold"
-                short
-              />
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
-              <NumberText
-                value={stats.median ?? null}
-                valenceValue={valenceStats?.median ?? primaryValenceMetric}
-                valence={valence}
-                className="font-mono text-lg font-bold"
-                short
-              />
-            </div>
-          </div>
-
-          <div className="hidden md:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
-
-          {/* Min / Max (tertiary) */}
-          <div className="hidden md:flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
-              <NumberText
-                value={stats.min}
-                valenceValue={valenceStats?.min ?? primaryValenceMetric}
-                valence={valence}
-                className="font-mono text-base font-bold"
-                short
-              />
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
-              <NumberText
-                value={stats.max}
-                valenceValue={valenceStats?.max ?? primaryValenceMetric}
-                valence={valence}
-                className="font-mono text-base font-bold"
-                short
-              />
-            </div>
-          </div>
-
-          <div className="hidden sm:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
-
-          {/* Primary metric (most prominent, right-most, own container) */}
-          <MetricChip
-            primaryMetric={primaryMetric}
-            primaryMetricLabel={primaryMetricLabel}
-            primaryValenceMetric={primaryValenceMetric}
-            secondaryMetric={secondaryMetric}
-            secondaryMetricLabel={secondaryMetricLabel}
-            secondaryMetricFormat={secondaryMetricFormat}
-            changePercent={changeMetric}
-            valence={valence}
-          />
+        <div>
+          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200">{yearName}</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{stats.count} entries</p>
         </div>
       </div>
+
+      {/* Achievements (graphic) - right side on small, inline on large */}
+      {achievementResults.length > 0 && (
+        <div className="flex items-center gap-1">
+          {achievementResults.map(({ goal, achievement }) => (
+            <PopoverTip key={achievement.id}>
+              <PopoverTipTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center justify-center rounded-md p-0.5 outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+                  aria-label={goal.title}
+                  onMouseEnter={() => setHoveredAchievementId(achievement.id)}
+                  onMouseLeave={() => setHoveredAchievementId(null)}
+                >
+                  <AchievementBadge badge={goal.badge} size="small" animate={hoveredAchievementId === achievement.id} floating={false} className={cn(
+                    hoveredAchievementId === achievement.id && "scale-120 z-10",
+                    "transition-transform"
+                  )} />
+                </button>
+              </PopoverTipTrigger>
+              <PopoverTipContent>
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-50">
+                  {goal.title}
+                </div>
+                {goal.description && (
+                  <div className="mt-0.5 text-[11px] text-slate-600 dark:text-slate-300">
+                    {goal.description}
+                  </div>
+                )}
+              </PopoverTipContent>
+            </PopoverTip>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* Stats - full width on small, right-aligned on large */}
+    <div className="flex flex-row w-full md:w-auto justify-between md:justify-start gap-0 md:gap-6 md:items-center md:ml-auto">
+      <div className="flex-1 md:flex-none text-center md:text-right">
+        <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
+        <NumberText
+          value={stats.mean ?? null}
+          valenceValue={valenceStats?.mean ?? primaryValenceMetric}
+          valence={valence}
+          className="font-mono text-lg font-bold"
+          short
+        />
+      </div>
+      <div className="flex-1 md:flex-none text-center md:text-right">
+        <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
+        <NumberText
+          value={stats.median ?? null}
+          valenceValue={valenceStats?.median ?? primaryValenceMetric}
+          valence={valence}
+          className="font-mono text-lg font-bold"
+          short
+        />
+      </div>
+      <div className="hidden md:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
+      <div className="flex-1 md:flex-none text-center md:text-right">
+        <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
+        <NumberText
+          value={stats.min}
+          valenceValue={valenceStats?.min ?? primaryValenceMetric}
+          valence={valence}
+          className="font-mono text-base font-bold"
+          short
+        />
+      </div>
+      <div className="flex-1 md:flex-none text-center md:text-right">
+        <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
+        <NumberText
+          value={stats.max}
+          valenceValue={valenceStats?.max ?? primaryValenceMetric}
+          valence={valence}
+          className="font-mono text-base font-bold"
+          short
+        />
+      </div>
+    </div>
+
+    <div className="hidden md:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
+
+    {/* Primary metric - full width on small, inline on large */}
+    <div className="w-full md:w-auto">
+      <MetricChip
+        primaryMetric={primaryMetric}
+        primaryMetricLabel={primaryMetricLabel}
+        primaryValenceMetric={primaryValenceMetric}
+        secondaryMetric={secondaryMetric}
+        secondaryMetricLabel={secondaryMetricLabel}
+        secondaryMetricFormat={secondaryMetricFormat}
+        changePercent={changeMetric}
+        valence={valence}
+      />
+    </div>
+  </div>
     </div>
   );
 };

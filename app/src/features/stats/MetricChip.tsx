@@ -43,7 +43,7 @@ export const MetricChip = ({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className={cn('flex items-center gap-2 px-3 py-2 rounded font-mono font-bold', primaryClasses)}>
+        <div className={cn('flex items-center justify-end gap-2 px-3 py-2 rounded font-mono font-bold', primaryClasses)}>
           <div className="flex flex-col items-end">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
               {primaryMetricLabel}

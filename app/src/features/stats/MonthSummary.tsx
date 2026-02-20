@@ -79,51 +79,43 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isC
       tabIndex={onSelect ? 0 : undefined}
       aria-label="Monthly summary"
     >
-      <div className="w-full flex items-center justify-between gap-3 sm:gap-6 px-4 py-3">
-        {/* Month Label - Header Style */}
-        <div className="flex-shrink-0">
-          <div className="flex items-center gap-2">
-            {getStatusIcon()}
-            <div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
-                {monthName || 'Month'}
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{stats.count} entries</p>
-            </div>
+      <div className="w-full flex flex-col md:flex-row md:items-center gap-4 px-4 py-3">
+        {/* Title - no graphic for month */}
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {getStatusIcon()}
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+              {monthName || 'Month'}
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">{stats.count} entries</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 sm:gap-6">
-
-          {/* Mean / Median (secondary) */}
-          <div className="hidden sm:flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
-              <NumberText value={stats.mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} isHighest={!!isHighestMean} isLowest={!!isLowestMean} valence={valence} className="font-mono text-sm sm:text-base font-bold" short />
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
-              <NumberText value={stats.median} valenceValue={valenceStats?.median ?? primaryValenceMetric} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} valence={valence} className="font-mono text-sm sm:text-base font-bold" short />
-            </div>
+        {/* Stats - full width on small, right-aligned on large */}
+        <div className="flex flex-row w-full md:w-auto justify-between md:justify-start gap-0 md:gap-6 md:items-center md:ml-auto">
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
+            <NumberText value={stats.mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} isHighest={!!isHighestMean} isLowest={!!isLowestMean} valence={valence} className="font-mono text-sm sm:text-base font-bold" short />
           </div>
-
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
+            <NumberText value={stats.median} valenceValue={valenceStats?.median ?? primaryValenceMetric} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} valence={valence} className="font-mono text-sm sm:text-base font-bold" short />
+          </div>
           <div className="hidden md:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
-
-          {/* Min / Max (tertiary) */}
-          <div className="hidden md:flex items-center gap-4">
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
-              <NumberText value={stats.min} valenceValue={valenceStats?.min ?? primaryValenceMetric} isHighest={!!isHighestMin} isLowest={!!isLowestMin} valence={valence} className="font-mono text-base font-bold" short />
-            </div>
-            <div className="text-right">
-              <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
-              <NumberText value={stats.max} valenceValue={valenceStats?.max ?? primaryValenceMetric} isHighest={!!isHighestMax} isLowest={!!isLowestMax} valence={valence} className="font-mono text-base font-bold" short />
-            </div>
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
+            <NumberText value={stats.min} valenceValue={valenceStats?.min ?? primaryValenceMetric} isHighest={!!isHighestMin} isLowest={!!isLowestMin} valence={valence} className="font-mono text-base font-bold" short />
           </div>
+          <div className="flex-1 md:flex-none text-center md:text-right">
+            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
+            <NumberText value={stats.max} valenceValue={valenceStats?.max ?? primaryValenceMetric} isHighest={!!isHighestMax} isLowest={!!isLowestMax} valence={valence} className="font-mono text-base font-bold" short />
+          </div>
+        </div>
 
-          <div className="hidden sm:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
+        <div className="hidden md:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
 
-          {/* Primary metric (most prominent, right-most, own container) */}
+        {/* Primary metric - full width on small, inline on large */}
+        <div className="w-full md:w-auto">
           <MetricChip
             primaryMetric={primaryMetric}
             primaryMetricLabel={primaryMetricLabel}
