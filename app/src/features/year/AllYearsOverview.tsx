@@ -9,7 +9,7 @@ import React, { useCallback, useEffect, useMemo, useRef, memo } from 'react';
 
 export interface AllYearsOverviewProps {
   monthDataByKey: Record<MonthKey, PeriodAggregateData<'month'>>;
-  currentYear: number;
+  selectedYear: number;
   onYearClick: (year: number) => void;
   valence: Valence;
   tracking: Tracking;
@@ -107,7 +107,7 @@ EmptyMonthGrid.displayName = 'EmptyMonthGrid';
 
 interface YearButtonProps {
   year: number;
-  isCurrentYear: boolean;
+  isSelectedYear: boolean;
   hasYearData: boolean;
   isFutureYear: boolean;
   monthDataByKey: Record<MonthKey, PeriodAggregateData<'month'>>;
@@ -120,7 +120,7 @@ interface YearButtonProps {
 
 const YearButton = memo(({
   year,
-  isCurrentYear,
+  isSelectedYear,
   hasYearData,
   isFutureYear,
   monthDataByKey,
@@ -135,11 +135,11 @@ const YearButton = memo(({
       ref={yearButtonRef}
       onClick={() => onYearClick(year)}
       className={`flex flex-col items-center space-y-2 p-3 rounded-lg transition-all duration-200 flex-shrink-0 min-w-max
-        ${isCurrentYear ? 'ring-2 ring-blue-400/80 ring-offset-1 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900 bg-blue-50 dark:bg-blue-950/20' : ''}
+        ${isSelectedYear ? 'ring-2 ring-blue-400/80 ring-offset-1 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900 bg-blue-50 dark:bg-blue-950/20' : ''}
         hover:scale-105 hover:shadow-md dark:hover:shadow-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer`}
-      title={`${year}`}
+      title={hasYearData && !isFutureYear ? `${year}` : `${year}: No Data`}
     >
-      <div className={`text-sm font-semibold ${isCurrentYear ? 'text-blue-700 dark:text-blue-300' : hasYearData && !isFutureYear ? 'text-slate-700 dark:text-slate-300' : 'text-slate-300 dark:text-slate-700'}`}>
+      <div className={`text-sm font-semibold ${isSelectedYear ? 'text-blue-700 dark:text-blue-300' : hasYearData && !isFutureYear ? 'text-slate-700 dark:text-slate-300' : 'text-slate-300 dark:text-slate-700'}`}>
         {year}
       </div>
       {hasYearData && !isFutureYear ? (
@@ -160,21 +160,22 @@ YearButton.displayName = 'YearButton';
 
 export const AllYearsOverview = memo(({
   monthDataByKey,
-  currentYear,
+  selectedYear,
   onYearClick,
   valence,
   tracking,
 }: AllYearsOverviewProps) => {
   const today = new Date();
+  const currentYear = today.getFullYear();
   const yearButtonsRef = useRef<Map<number, HTMLButtonElement>>(new Map());
 
-  // Scroll current year into view when it changes
+  // Scroll selected year into view when it changes
   useEffect(() => {
-    const button = yearButtonsRef.current.get(currentYear);
+    const button = yearButtonsRef.current.get(selectedYear);
     if (button) {
       button.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
-  }, [currentYear]);
+  }, [selectedYear]);
 
   // Extract all available years from monthDataByKey
   const availableYears = useMemo(() => {
@@ -188,22 +189,22 @@ export const AllYearsOverview = memo(({
 
   // Generate continuous year range with padding
   const allYears = useMemo(() => {
-    if (availableYears.length === 0) {
-      // No data at all, show current year ± 1
-      const now = today.getFullYear();
-      return [now - 1, now, now + 1];
+    // Combine available years with current year (what year it is now)
+    const yearsWithData = new Set([...availableYears, currentYear]);
+    
+    if (yearsWithData.size === 0) {
+      // Fallback (shouldn't happen since currentYear is always included)
+      return [currentYear - 1, currentYear, currentYear + 1];
     }
 
-    const minYear = availableYears[0];
-    const maxYear = availableYears[availableYears.length - 1];
+    // Find min/max from years with data (including current year)
+    const sortedYears = Array.from(yearsWithData).sort((a, b) => a - b);
+    const minYear = sortedYears[0];
+    const maxYear = sortedYears[sortedYears.length - 1];
     
-    // Start with min-1 to max+1
-    let start = minYear - 1;
-    let end = maxYear + 1;
-    
-    // Ensure at least 1 year before and after currentYear
-    if (currentYear - 1 < start) start = currentYear - 1;
-    if (currentYear + 1 > end) end = currentYear + 1;
+    // Add 1 empty year before and after
+    const start = minYear - 1;
+    const end = maxYear + 1;
     
     const years: number[] = [];
     for (let year = start; year <= end; year++) {
@@ -211,7 +212,7 @@ export const AllYearsOverview = memo(({
     }
     
     return years;
-  }, [availableYears, currentYear, today]);
+  }, [availableYears, currentYear]);
 
   // Calculate global min/max of absolute valence metric for opacity normalization
   const { minAbsValence, maxAbsValence } = useMemo(() => {
@@ -258,15 +259,15 @@ export const AllYearsOverview = memo(({
     >
       <div className="flex gap-6">
         {allYears.map((year) => {
-          const isCurrentYear = year === currentYear;
-          const isFutureYear = year > today.getFullYear();
+          const isSelectedYear = year === selectedYear;
+          const isFutureYear = year > currentYear;
           const hasYearData = availableYears.includes(year);
 
           return (
             <YearButton
               key={year}
               year={year}
-              isCurrentYear={isCurrentYear}
+              isSelectedYear={isSelectedYear}
               hasYearData={hasYearData}
               isFutureYear={isFutureYear}
               monthDataByKey={monthDataByKey}

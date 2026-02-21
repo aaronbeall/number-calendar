@@ -154,7 +154,7 @@ I'm liking this one.
 - [x] [High] Hide weekends is causing June 2026 days to be wrong
 - [ ] Deleting a prior day numbers does not update deltas (changing normally it does)
 - [x] The daily grid is hard-coded to Sun-Sat week, but weekly data keys use locale weeks which may be Mon-Sun
-- [ ] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
+- [x] The Monthly view day scale is wrong, because yearExtremes is by month, not by day. Need the daily extremes for the whole year.
 - [x] Normalize UUIDs
 - [x] Week/Month/Year summaries need hover and selected state
 - [x] Can't delete all data on a day anymore
