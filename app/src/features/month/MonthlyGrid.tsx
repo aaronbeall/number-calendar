@@ -1,7 +1,7 @@
 import type { DayKey, MonthKey, Tracking, Valence } from '@/features/db/localdb';
 import { getMonthDays } from '@/lib/calendar';
 import { toMonthKey } from '@/lib/friendly-date';
-import { createEmptyAggregate, type PeriodAggregateData } from '@/lib/period-aggregate';
+import { createEmptyAggregate, type PeriodAggregateData, calculateYearDailyExtremes } from '@/lib/period-aggregate';
 import { type StatsExtremes } from '@/lib/stats';
 import { parseISO } from 'date-fns';
 import { useMemo, memo } from 'react';
@@ -37,6 +37,7 @@ interface MonthCellWrapperProps {
     }[];
   };
   yearExtremes?: StatsExtremes;
+  yearDailyExtremes?: StatsExtremes;
   valence: Valence;
   tracking: Tracking;
   isCurrentMonth: boolean;
@@ -49,6 +50,7 @@ const MonthCellWrapper = memo(({
   monthName,
   monthData,
   yearExtremes,
+  yearDailyExtremes,
   valence,
   tracking,
   isCurrentMonth,
@@ -63,6 +65,7 @@ const MonthCellWrapper = memo(({
     isCurrentMonth={isCurrentMonth}
     isFutureMonth={isFutureMonth}
     yearExtremes={yearExtremes}
+    yearDailyExtremes={yearDailyExtremes}
     valence={valence}
     tracking={tracking}
   />
@@ -70,6 +73,12 @@ const MonthCellWrapper = memo(({
 MonthCellWrapper.displayName = 'MonthCellWrapper';
 
 export const MonthlyGrid = memo(({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, valence, tracking }: MonthlyGridProps) => {
+
+  // Calculate daily extremes across all days in the year for proper dot scaling
+  const yearDailyExtremes = useMemo(() => 
+    calculateYearDailyExtremes(dayDataByKey, year),
+    [dayDataByKey, year]
+  );
 
   // Memoized map of month data
   const monthDataMap = useMemo(() => {
@@ -123,6 +132,7 @@ export const MonthlyGrid = memo(({ year, dayDataByKey, priorDayByKey, monthDataB
             monthName={monthName}
             monthData={monthData}
             yearExtremes={yearExtremes}
+            yearDailyExtremes={yearDailyExtremes}
             valence={valence}
             tracking={tracking}
             isCurrentMonth={isCurrentMonth}

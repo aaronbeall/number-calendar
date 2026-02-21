@@ -21,11 +21,12 @@ interface MonthCellProps {
   isCurrentMonth: boolean;
   isFutureMonth?: boolean;
   yearExtremes?: StatsExtremes;
+  yearDailyExtremes?: StatsExtremes;
   valence: Valence;
   tracking: Tracking;
 }
 
-export function MonthCell({ year, month, monthName, data, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, valence, tracking }: MonthCellProps) {
+export function MonthCell({ year, month, monthName, data, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, yearDailyExtremes, valence, tracking }: MonthCellProps) {
   const [panelView] = useSidePanelParam();
   const { setDate } = useCalendar();
   const monthKey = toMonthKey(year, month);
@@ -157,8 +158,8 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                   const scale = getNormalizedMagnitude(
                     primaryMetric ?? 0,
                     { 
-                      min: yearExtremes ? getPrimaryMetricLowFromExtremes(yearExtremes, tracking) : undefined,
-                      max: yearExtremes ? getPrimaryMetricHighFromExtremes(yearExtremes, tracking) : undefined
+                      min: yearDailyExtremes ? getPrimaryMetricLowFromExtremes(yearDailyExtremes, tracking) : undefined,
+                      max: yearDailyExtremes ? getPrimaryMetricHighFromExtremes(yearDailyExtremes, tracking) : undefined
                     },
                     0.6,
                     1.4
