@@ -7,7 +7,7 @@ import { useCreateGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { formatGoalTargetValue, getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
-import { capitalize, randomKeyOf } from '@/lib/utils';
+import { capitalize, randomKeyOf, escapeRegex } from '@/lib/utils';
 import { AlertTriangle, Award, Dices, Palette, Undo2 } from 'lucide-react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import AchievementBadge from './AchievementBadge';
@@ -133,20 +133,116 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
 
     const prevTarget = prevTargetRef.current;
     const nextTarget = nextGoal.target;
-    if (prevTarget) {
-      const prevLong = formatGoalTargetValue(prevTarget);
-      const prevShort = formatGoalTargetValue(prevTarget, { short: true });
-      const nextLong = formatGoalTargetValue(nextTarget);
-      const nextShort = formatGoalTargetValue(nextTarget, { short: true });
+    
+    if (prevTarget && nextTarget) {
+      // Helper to safely replace text with word boundaries for regular words
+      const safeReplaceWord = (text: string, oldValue: string, newValue: string): string => {
+        if (!oldValue || !newValue || oldValue === newValue) return text;
+        try {
+          const escaped = escapeRegex(oldValue);
+          const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+          return text.replace(regex, newValue);
+        } catch {
+          return text;
+        }
+      };
 
-      setTitle(current => current.replace(prevShort, nextShort).replace(prevLong, nextLong));
-      setDescription(current => current.replace(prevLong, nextLong).replace(prevShort, nextShort));
-      setBadge(current => {
-        if (!current.label) return current;
-        const updatedLabel = current.label.replace(prevShort, nextShort).replace(prevLong, nextLong);
-        if (updatedLabel === current.label) return current;
-        return { ...current, label: updatedLabel };
-      });
+      // Helper for formatted values that may contain special characters (no word boundaries)
+      const safeReplaceFormatted = (text: string, oldValue: string, newValue: string): string => {
+        if (!oldValue || !newValue || oldValue === newValue) return text;
+        try {
+          const escaped = escapeRegex(oldValue);
+          const regex = new RegExp(escaped, 'gi');
+          return text.replace(regex, newValue);
+        } catch {
+          return text;
+        }
+      };
+
+      // Collect all replacements needed
+      const replacements: Array<{ old: string; new: string }> = [];
+      const formattedShortPreferred: Array<{ old: string; new: string }> = [];
+      const formattedLongPreferred: Array<{ old: string; new: string }> = [];
+
+      // Add value replacements (with both long and short formats) - use formatted replace
+      const longPlaceholder = '{Value}';
+      const shortPlaceholder = '{V}';
+      const isInvalidValue = (value: string) => !value || value.toLowerCase() === 'nan';
+      const normalizeValue = (value: string, placeholder: string) =>
+        isInvalidValue(value) ? placeholder : value;
+
+      const prevLong = normalizeValue(formatGoalTargetValue(prevTarget), longPlaceholder);
+      const prevShort = normalizeValue(formatGoalTargetValue(prevTarget, { short: true }), shortPlaceholder);
+      const nextLong = normalizeValue(formatGoalTargetValue(nextTarget), longPlaceholder);
+      const nextShort = normalizeValue(formatGoalTargetValue(nextTarget, { short: true }), shortPlaceholder);
+      
+      if (prevShort !== nextShort && prevShort !== prevLong) {
+        formattedShortPreferred.push({ old: prevShort, new: nextShort });
+        formattedLongPreferred.push({ old: prevShort, new: nextLong });
+      }
+      if (prevLong !== nextLong) {
+        formattedShortPreferred.push({ old: prevLong, new: nextShort });
+        formattedLongPreferred.push({ old: prevLong, new: nextLong });
+      }
+
+      // Add condition replacements
+      if (prevTarget.condition !== nextTarget.condition) {
+        replacements.push({ old: prevTarget.condition, new: nextTarget.condition });
+      }
+
+      // Add metric replacements
+      if (prevTarget.metric !== nextTarget.metric) {
+        replacements.push({ old: prevTarget.metric, new: nextTarget.metric });
+      }
+
+      // Add source replacements
+      if (prevTarget.source !== nextTarget.source) {
+        replacements.push({ old: prevTarget.source, new: nextTarget.source });
+      }
+
+      // Add count replacements (from next goal's count)
+      if (nextGoal.count !== undefined) {
+        const prevCount = goal.count?.toString() ?? '';
+        const nextCount = nextGoal.count.toString();
+        if (prevCount && prevCount !== nextCount) {
+          replacements.push({ old: prevCount, new: nextCount });
+        }
+      }
+
+      // Add period replacements
+      if (nextGoal.timePeriod && nextGoal.timePeriod !== goal.timePeriod) {
+        const prevPeriod = goal.timePeriod ?? '';
+        const nextPeriod = nextGoal.timePeriod;
+        if (prevPeriod && prevPeriod !== nextPeriod) {
+          replacements.push({ old: prevPeriod, new: nextPeriod });
+        }
+      }
+
+      // Apply all replacements
+      let newTitle = title;
+      let newDescription = description;
+      let newBadgeLabel = badge.label ?? '';
+
+      for (const { old, new: repl } of formattedShortPreferred) {
+        newTitle = safeReplaceFormatted(newTitle, old, repl);
+        newBadgeLabel = safeReplaceFormatted(newBadgeLabel, old, repl);
+      }
+
+      for (const { old, new: repl } of formattedLongPreferred) {
+        newDescription = safeReplaceFormatted(newDescription, old, repl);
+      }
+
+      for (const { old, new: repl } of replacements) {
+        newTitle = safeReplaceWord(newTitle, old, repl);
+        newDescription = safeReplaceWord(newDescription, old, repl);
+        newBadgeLabel = safeReplaceWord(newBadgeLabel, old, repl);
+      }
+
+      setTitle(newTitle);
+      setDescription(newDescription);
+      if (badge.label) {
+        setBadge(current => ({ ...current, label: newBadgeLabel }));
+      }
     }
 
     setGoal(nextGoal);

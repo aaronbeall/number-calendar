@@ -157,3 +157,10 @@ export function sequenceFromNow() {
   let now = Date.now();
   return () => now++;
 }
+
+/**
+ * Escape special regex characters in a string to use it safely in regex patterns
+ */
+export function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
