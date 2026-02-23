@@ -123,7 +123,7 @@ export const YearOverview = memo(({
 }: YearOverviewProps) => {
   const today = new Date();
 
-  const { handleSwipeStart, handleSwipeEnd, getAnimationStyle } = useSwipe({
+  const { handleSwipeStart, handleSwipeMove, handleSwipeEnd, getAnimationStyle } = useSwipe({
     onSwipeLeft: () => onYearChange?.(year + 1),
     onSwipeRight: () => onYearChange?.(year - 1),
   });
@@ -177,6 +177,7 @@ export const YearOverview = memo(({
       className="bg-white dark:bg-slate-900 rounded-lg p-4 mb-6 shadow-sm dark:shadow-md"
       style={getAnimationStyle()}
       onTouchStart={handleSwipeStart}
+      onTouchMove={handleSwipeMove}
       onTouchEnd={handleSwipeEnd}
     >
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 justify-items-center">
