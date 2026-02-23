@@ -164,8 +164,8 @@ I'm liking this one.
   - [x] Show cumulative in tracking=series
   - [x] Expose cumulative sources in goal targets
   - [ ] Add percent change to goal builder
-- [ ] Adding data data to new month didn't update the monthly view show a new month summary
-- [ ] Need and error boundary to catch UI errors
+- [ ] Adding data to new month didn't update the monthly view show a new month summary
+- [ ] Need an error boundary to catch UI errors
 - [x] Need suggested goal weight, meaningful suggested values throughout
 - [ ] Edit badge from numbers panel doesn't work -- replace with "Manage Achievements"
 - [ ] Add more Range based achievements to goal builder

@@ -155,8 +155,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   const [adding, setAdding] = useState(false);
   const [selectedAchievementId, setSelectedAchievementId] = useAchievementDrawerParam();
   const selectedAchievement = useMemo(
-    () => achievementResults?.find((result) => result.goal.id === selectedAchievementId)?.goalResult ?? null,
-    [achievementResults, selectedAchievementId]
+    () => isOpen ? achievementResults?.find((result) => result.goal.id === selectedAchievementId)?.goalResult ?? null : null,
+    [achievementResults, selectedAchievementId, isOpen]
   );
 
   // Helper to get current total for delta mode
@@ -170,7 +170,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }} modal={false}>
+    <Sheet open={isOpen} onOpenChange={(open) => { if (!open && !selectedAchievementId) onClose(); }} modal={false}>
       <SheetContent className="w-full max-w-md flex flex-col" disableEscapeClose>
         <SheetHeader>
           <div>
