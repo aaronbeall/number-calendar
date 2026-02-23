@@ -67,6 +67,17 @@ export const adjectivize = (str: string): string => {
 }
 
 /**
+ * Returns string with appropriate indefinite article ("a" or "an") based on the first letter of the input string
+ * (e.g., "achievement" -> "an achievement", "goal" -> "a goal")
+ */
+export const indefinite = (str: string): string => {
+  const firstLetter = str.trim().charAt(0).toLowerCase();
+  const vowels = ['a', 'e', 'i', 'o', 'u'];
+  const article = vowels.includes(firstLetter) ? 'an' : 'a';
+  return `${article} ${str}`;
+}
+
+/**
  * Object.entries with key typing
  */
 export const entriesOf = <T extends object>(obj: T) =>

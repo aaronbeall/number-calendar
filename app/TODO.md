@@ -198,3 +198,4 @@ I'm liking this one.
 - [x] Add routing for Daily/Monthly view, maybe `?year=2025&month=06` (daily) and `?year=2025` (yearly)
 - [ ] Custom color selection for datasets, bring through color from templates
 - [ ] Completed goals should tell you the actual value in the period they were completed (ex for a `>1000` it should show the `1234` value or whatever it was)
+- [ ] Achievement progress only works for counts, need it to work for values as well

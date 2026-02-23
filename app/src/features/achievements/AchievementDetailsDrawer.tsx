@@ -26,7 +26,7 @@ import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatGoalTargetValue, isRangeCondition, type AchievementResult, type GoalResults } from '@/lib/goals';
 import { formatValue } from '@/lib/friendly-numbers';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
-import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
+import { adjectivize, capitalize, cn, indefinite, pluralize } from '@/lib/utils';
 import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toBlob } from 'html-to-image';
@@ -38,6 +38,7 @@ interface AchievementDetailsDrawerProps {
   onOpenChange: (open: boolean) => void;
   result: GoalResults | null;
   onEditGoal?: (result: GoalResults) => void;
+  shareOnly?: boolean;
 }
 
 type TimelineItem =
@@ -58,7 +59,7 @@ type TimelineItem =
     };
 
 const periodLabelMap: Record<Goal['timePeriod'], string> = {
-  anytime: 'One-time',
+  anytime: 'All-time',
   day: 'Daily',
   week: 'Weekly',
   month: 'Monthly',
@@ -93,7 +94,7 @@ function BadgeLabel({
   );
 }
 
-export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoal }: AchievementDetailsDrawerProps) {
+export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoal, shareOnly = false }: AchievementDetailsDrawerProps) {
   if (!result) return null;
 
   const { goal, achievements, completedCount, currentProgress, lastCompletedAt, firstCompletedAt } = result;
@@ -160,11 +161,12 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
 
       const file = new File([blob], `achievement-${goal.id}.png`, { type: blob.type || 'image/png' });
       const shareTitle = `Numbers Go Up Achievement: ${goal.title}`;
+      const period = indefinite(periodLabel.toLowerCase());
       const shareText = hasCompletions
-        ? `I just achieved a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`
+        ? `I just achieved ${period} goal in Numbers Go Up!`
         : inProgress || currentProgress > 0
-          ? `I'm working on a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`
-          : `I just set a ${periodLabel.toLowerCase()} goal in Numbers Go Up!`;
+          ? `I'm working on ${period} goal in Numbers Go Up!`
+          : `I just set $${period} goal in Numbers Go Up!`;
       const shareUrl = 'https://numbers.metamodernmonkey.com';
 
       if (navigator.canShare?.({ files: [file] })) {
@@ -209,46 +211,58 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
             >
               {!isSharing && (
                 <div className="absolute top-3 right-3">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" aria-label="Achievement settings">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                  {shareOnly ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Share achievement"
+                      onClick={handleShare}
+                      disabled={isSharing || typeof navigator === 'undefined' || typeof navigator.share !== 'function'}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="Achievement settings">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={handleShare}
+                          disabled={isSharing || typeof navigator === 'undefined' || typeof navigator.share !== 'function'}
+                        >
+                          <Share2 className="h-4 w-4" />
+                          Share
+                        </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={handleShare}
-                        disabled={isSharing || typeof navigator === 'undefined' || typeof navigator.share !== 'function'}
+                        onClick={() => onEditGoal?.(result)}
+                        disabled={!onEditGoal}
                       >
-                        <Share2 className="h-4 w-4" />
-                        Share
+                        <Pencil className="h-4 w-4" />
+                        Edit {capitalize(goal.type)}
                       </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => onEditGoal?.(result)}
-                      disabled={!onEditGoal}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit {capitalize(goal.type)}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => setBadgeEditOpen(true)}
-                      disabled={updateGoalMutation.isPending}
-                    >
-                      <Award className="h-4 w-4" />
-                      Edit Badge
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600 focus:text-red-700 dark:text-red-400 dark:focus:text-red-300"
-                      onClick={() => setDeleteOpen(true)}
-                      disabled={archiveGoalMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                      <DropdownMenuItem
+                        onClick={() => setBadgeEditOpen(true)}
+                        disabled={updateGoalMutation.isPending}
+                      >
+                        <Award className="h-4 w-4" />
+                        Edit Badge
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600 focus:text-red-700 dark:text-red-400 dark:focus:text-red-300"
+                        onClick={() => setDeleteOpen(true)}
+                        disabled={archiveGoalMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </div>
               )}
               <div className="flex flex-col items-center gap-3 text-center">

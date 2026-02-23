@@ -492,6 +492,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
           if (!open) setSelectedAchievementId(null);
         }}
         result={selectedAchievement}
+        shareOnly
       />
     </Sheet>
   );
