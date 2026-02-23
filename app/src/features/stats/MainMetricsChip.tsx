@@ -5,7 +5,7 @@ import { formatValue, type FormatValueOptions } from '@/lib/friendly-numbers';
 import { getValueForValence } from '@/lib/valence';
 import { cn } from '@/lib/utils';
 
-type MetricChipProps = {
+type MainMetricsChipProps = {
   primaryMetric: number | undefined;
   primaryMetricLabel: string;
   primaryValenceMetric: number | undefined;
@@ -16,7 +16,7 @@ type MetricChipProps = {
   valence: Valence;
 };
 
-export const MetricChip = ({
+export const MainMetricsChip = ({
   primaryMetric,
   primaryMetricLabel,
   primaryValenceMetric,
@@ -25,7 +25,7 @@ export const MetricChip = ({
   secondaryMetricFormat,
   changePercent,
   valence,
-}: MetricChipProps) => {
+}: MainMetricsChipProps) => {
   const primaryClasses = getValueForValence(primaryValenceMetric, valence, {
     good: 'bg-emerald-200/70 dark:bg-emerald-900/70 text-emerald-700 dark:text-emerald-200',
     bad: 'bg-rose-200/70 dark:bg-rose-900/70 text-rose-700 dark:text-rose-200',

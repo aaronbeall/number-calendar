@@ -6,7 +6,7 @@ import { getCalendarData } from '@/lib/calendar';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { CheckCircle, Clock, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import React, { useMemo } from 'react';
-import { MetricChip } from './MetricChip';
+import { MainMetricsChip } from './MainMetricsChip';
 
 export interface MonthSummaryProps {
   data: PeriodAggregateData<'month'>;
@@ -116,7 +116,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isC
 
         {/* Primary metric - full width on small, inline on large */}
         <div className="w-full md:w-auto">
-          <MetricChip
+          <MainMetricsChip
             primaryMetric={primaryMetric}
             primaryMetricLabel={primaryMetricLabel}
             primaryValenceMetric={primaryValenceMetric}

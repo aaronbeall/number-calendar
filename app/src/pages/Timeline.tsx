@@ -23,7 +23,7 @@ import { computeNumberStats, emptyStats } from '@/lib/stats';
 import { getPrimaryMetric, getValenceValueForNumber, getValenceValueFromData } from '@/lib/tracking';
 import { cn, pluralize } from '@/lib/utils';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
-import { MetricChip } from '@/features/stats/MetricChip';
+import { MainMetricsChip } from '@/features/stats/MainMetricsChip';
 import { ArrowDownRight, ArrowUpRight, Ellipsis, Minus } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Line, LineChart, Tooltip as ChartTooltip} from 'recharts';
@@ -245,7 +245,7 @@ function TimelineStatsRow({
 
       <div className="hidden sm:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
 
-      <MetricChip
+      <MainMetricsChip
         primaryMetric={primaryMetric}
         primaryMetricLabel={primaryMetricLabel}
         primaryValenceMetric={primaryValenceMetric}

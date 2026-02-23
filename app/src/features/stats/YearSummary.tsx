@@ -5,7 +5,7 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { MetricChip } from './MetricChip';
+import { MainMetricsChip } from './MainMetricsChip';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import type { CompletedAchievementResult } from '@/lib/goals';
@@ -168,7 +168,7 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
 
     {/* Primary metric - full width on small, inline on large */}
     <div className="w-full md:w-auto">
-      <MetricChip
+      <MainMetricsChip
         primaryMetric={primaryMetric}
         primaryMetricLabel={primaryMetricLabel}
         primaryValenceMetric={primaryValenceMetric}
