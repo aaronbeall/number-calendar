@@ -190,9 +190,10 @@ I'm liking this one.
 - [x] URL/back button compatibility for side-panels
 - [x] Format series with spaces, ie `5 +10 -20`
 - [ ] `NumberText` should have tooltips (full number, high/low explanation)
-- [ ] Sorting of achievements/targets/milestones should use goal values
+- [x] Sorting of achievements/targets/milestones should use goal values
 - [ ] `=` parsng doesn't work at the beginning of expression (its redundant, but should be allowed)
 - [ ] Daily micro dots need to have a limit
 - [x] Priors/deltas not working correctly, null days count as 0, should be skipped over
 - [ ] Perfect Week "All entries are uptrend" is not taking into account prior week delta (refactoring to aggregate data would probably fix this)
 - [x] Add routing for Daily/Monthly view, maybe `?year=2025&month=06` (daily) and `?year=2025` (yearly)
+- [ ] Custom color selection for datasets, bring through color from templates

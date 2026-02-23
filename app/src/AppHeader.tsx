@@ -1,13 +1,14 @@
 import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
 import LogoIcon from '@/assets/logo.png';
 import PatreonIcon from '@/assets/patreon.svg?react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Award, Bell, CalendarDays, CalendarIcon, Download, Flag, Grid3X3, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, Trophy, Upload, User } from 'lucide-react';
+import { Award, Bell, CalendarDays, CalendarIcon, ChartNoAxesColumn, Download, Flag, Grid3X3, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, TrendingUp, Trophy, Upload, User } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
@@ -26,6 +27,7 @@ import { getSeededColorTheme } from './lib/colors';
 import { getDatasetIcon } from './lib/dataset-icons';
 import { isCurrentWeek } from './lib/friendly-date';
 import { sortGoalResults, type AchievementResult, type GoalResults } from './lib/goals';
+import { getRelativeTime } from './lib/utils';
 
 export function AppHeader({
   currentDataset,
@@ -227,33 +229,99 @@ export function AppHeader({
                   <span className={`font-semibold truncate text-sm ${datasetText}`}>{currentDataset?.name || 'Dataset'}</span>
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide">
-                  Datasets
-                </DropdownMenuLabel>
-                {datasets.filter(ds => ds.id !== currentDataset?.id).length === 0 && (
-                  <DropdownMenuItem disabled>No other datasets</DropdownMenuItem>
-                )}
-                {datasets.filter(ds => ds.id !== currentDataset?.id).map(ds => {
-                  const Icon = getDatasetIcon(ds.icon);
-                  const { bg: dsBg, text: dsText } = getSeededColorTheme(ds.id);
-                  return (
-                    <DropdownMenuItem key={ds.id} onClick={() => navigate(getDatasetPath(ds.id))} className="gap-2">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-opacity-60 dark:bg-opacity-50 ${dsBg}`}>
-                        <Icon className={`h-3 w-3 opacity-60 ${dsText}`} />
+              <DropdownMenuContent align="start" className="w-80 max-w-[calc(100vw-1rem)]">
+                {/* Current Dataset */}
+                <div className="px-2 py-2">
+                  <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-opacity-60 dark:bg-opacity-50 ${datasetBg}`}>
+                        {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className={`h-4 w-4 opacity-60 ${datasetText}`} />; })()}
                       </div>
-                      <span className="truncate">{ds.name}</span>
-                    </DropdownMenuItem>
-                  );
-                })}
+                      <div className="flex-1 min-w-0">
+                        <div className={`text-sm font-semibold text-slate-900 dark:text-slate-100`}>
+                          {currentDataset?.name || 'Dataset'}
+                        </div>
+                        {currentDataset?.description && (
+                          <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 line-clamp-2">
+                            {currentDataset.description}
+                          </div>
+                        )}
+                        <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 italic">
+                          updated {getRelativeTime(currentDataset?.updatedAt)}
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <Badge variant="outline" className="text-[10px] gap-1 h-5">
+                            {currentDataset?.tracking === 'trend' ? (
+                              <>
+                                <TrendingUp className="h-2.5 w-2.5" />
+                                Trend
+                              </>
+                            ) : (
+                              <>
+                                <ChartNoAxesColumn className="h-2.5 w-2.5" />
+                                Series
+                              </>
+                            )}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px] gap-1 h-5">
+                            {currentDataset?.valence === 'positive' ? '↑ Higher' : currentDataset?.valence === 'negative' ? '↓ Lower' : '→ Neutral'}
+                          </Badge>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => currentDataset && onOpenEdit(currentDataset)}
+                        className="flex-shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
+                        aria-label="Edit dataset"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <DropdownMenuSeparator />
+
+                {/* Recent Datasets */}
+                <DropdownMenuLabel className="text-xs font-medium text-slate-500 uppercase tracking-wide px-2">
+                  Recent Datasets
+                </DropdownMenuLabel>
+                {(() => {
+                  const recent = datasets
+                    .filter(ds => ds.id !== currentDataset?.id)
+                    .sort((a, b) => {
+                      const aTime = typeof a.updatedAt === 'string' ? new Date(a.updatedAt).getTime() : a.updatedAt;
+                      const bTime = typeof b.updatedAt === 'string' ? new Date(b.updatedAt).getTime() : b.updatedAt;
+                      return bTime - aTime;
+                    })
+                    .slice(0, 5);
+
+                  if (recent.length === 0) {
+                    return <DropdownMenuItem disabled className="text-xs text-slate-500">No other datasets</DropdownMenuItem>;
+                  }
+
+                  return recent.map(ds => {
+                    const Icon = getDatasetIcon(ds.icon);
+                    const { bg: dsBg, text: dsText } = getSeededColorTheme(ds.id);
+                    return (
+                      <DropdownMenuItem key={ds.id} onClick={() => navigate(getDatasetPath(ds.id))} className="gap-2">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 bg-opacity-60 dark:bg-opacity-50 ${dsBg}`}>
+                          <Icon className={`h-3 w-3 opacity-60 ${dsText}`} />
+                        </div>
+                        <span className="truncate">{ds.name}</span>
+                      </DropdownMenuItem>
+                    );
+                  });
+                })()}
+
                 <DropdownMenuItem
-                  className="gap-2"
-                  onClick={() => currentDataset && onOpenEdit(currentDataset)}
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 py-1.5"
+                  onClick={() => navigate('/')}
                 >
-                  <Settings className="h-4 w-4" />
-                  Settings…
+                  View all datasets →
                 </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
+
                 <DropdownMenuItem
                   className="gap-2"
                   onClick={() => {
