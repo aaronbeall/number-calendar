@@ -116,7 +116,7 @@ export function DatasetBuilder({ onSelectTemplate, onManualMode }: DatasetBuilde
   };
 
   return (
-    <div className="flex max-h-[90vh] flex-col">
+    <div className="flex flex-col overflow-y-auto">
       <DialogHeader className="px-6 pt-6">
         <div className="flex flex-col gap-4">
           <div className="space-y-1">

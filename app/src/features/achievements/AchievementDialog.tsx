@@ -258,7 +258,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
               : `Create a new ${type} by defining its conditions, badge, title, and description.`}
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 max-h-[90vh]">
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-y-auto">
           {/* Scrollable content area */}
           <div className="flex-1 overflow-y-auto px-6 py-4">
             <div className="flex flex-col gap-6 md:flex-row md:gap-8">

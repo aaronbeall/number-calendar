@@ -859,7 +859,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 gap-0 max-w-3xl">
-        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col max-h-[90vh]">
+        <form onSubmit={(e) => e.preventDefault()} className="flex flex-col overflow-y-auto">
           <DialogHeader className="flex-shrink-0 px-6 pt-6">
             <DialogTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />

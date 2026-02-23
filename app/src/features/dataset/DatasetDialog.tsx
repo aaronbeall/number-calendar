@@ -206,7 +206,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
             onManualMode={() => setManualMode(true)}
           />
         ) : (
-          <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
+          <form onSubmit={handleSubmit} className="flex flex-col overflow-y-auto">
             <DialogHeader className="flex-shrink-0 px-6 pt-6">
               <div className="space-y-1">
                 <DialogTitle>{isEditMode ? `Edit "${dataset?.name}"` : 'Create New Dataset'}</DialogTitle>

@@ -63,9 +63,10 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
           <DialogTitle>Edit Badge</DialogTitle>
           <DialogDescription>Customize the badge appearance and label.</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-row gap-6 py-2">
-          {/* Badge Preview (left) */}
-          <div className="flex flex-col items-center gap-2 min-w-[140px]">
+        <div className="flex-1 overflow-y-auto">
+          <div className="flex flex-col md:flex-row gap-6 py-2">
+          {/* Badge Preview (top on mobile, left on desktop) */}
+          <div className="flex flex-col items-center gap-2 md:min-w-[140px]">
             <div 
               onMouseEnter={() => setAnimatePreview(true)} 
               onMouseLeave={() => setAnimatePreview(false)}
@@ -135,6 +136,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
               onChange={val => handleUpdateBadgeField('style', val)}
               label="Graphic"
             />
+          </div>
           </div>
         </div>
         <DialogFooter>
