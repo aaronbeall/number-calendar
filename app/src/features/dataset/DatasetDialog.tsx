@@ -24,7 +24,7 @@ import type { DatasetTemplate } from '@/lib/dataset-builder';
 import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
 import { cn, isNameTaken } from '@/lib/utils';
-import { LayoutTemplate, TrendingUp, BarChart3, Database, Trash2 } from 'lucide-react';
+import { LayoutTemplate, TrendingUp, BarChart3, Database, Trash2, AlertTriangle, Undo2 } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
 interface DatasetDialogProps {
@@ -193,6 +193,14 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
         navigate('/');
       }
     });
+  };
+
+  const trackingChanged = isEditMode && dataset && tracking !== dataset.tracking;
+
+  const handleRevertTracking = () => {
+    if (dataset) {
+      setTracking(dataset.tracking);
+    }
   };
 
   const showTemplateBuilder = !isEditMode && !manualMode;
@@ -544,6 +552,29 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
             )}
           </div>
           </div>{/* End scrollable content area */}
+
+            {trackingChanged && (
+              <div className="px-6 pb-3">
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800 shadow-sm dark:border-red-900/70 dark:bg-red-950/60 dark:text-red-200">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/50 dark:text-red-500">
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">
+                      Changing tracking mode affects how new data is entered and calculated, but will not convert existing data. Proceed only if you know what you are doing.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRevertTracking}
+                      className="inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-red-200 bg-white/70 px-2.5 py-1 text-[11px] font-semibold leading-none text-red-700 shadow-sm hover:border-red-300 hover:bg-white hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-200 dark:border-red-900/70 dark:bg-red-950/40 dark:text-red-100 dark:hover:border-red-700 dark:hover:bg-red-950/60 dark:focus-visible:ring-red-900/70"
+                    >
+                      <Undo2 className="h-3.5 w-3.5" />
+                      Undo
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <DialogFooter className="gap-2 flex-shrink-0 px-6 pb-6 pt-4 flex items-center justify-between">
             {!isEditMode ? (
