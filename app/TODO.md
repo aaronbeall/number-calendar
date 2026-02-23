@@ -137,12 +137,13 @@ I'm liking this one.
   - [ ] No ads
   - [ ] Number of datasets
   - [ ] AI assistance (bleh)
-  - [ ] Data Syncing (via Dropbox)
+  - [ ] Data Syncing (via Supabase, Dropbox, Jsonbin)
   - [ ] Data export/import
   - [ ] Data integrations
   - [ ] Advanced Insights/Reporting
+  - [ ] Advanced metrics (StdDev, IQR)
   - [ ] Combined dataset
-  - [ ] Sharing via jsonbin
+  - [ ] Dataset sharing
 
 ## Issues
 - [x] System color mode doesn't match light/dark selection
@@ -164,7 +165,7 @@ I'm liking this one.
   - [x] Show cumulative in tracking=series
   - [x] Expose cumulative sources in goal targets
   - [ ] Add percent change to goal builder
-- [ ] Adding data to new month didn't update the monthly view show a new month summary
+- [ ] [?] Adding data to new month didn't update the monthly view show a new month summary
 - [ ] Need an error boundary to catch UI errors
 - [x] Need suggested goal weight, meaningful suggested values throughout
 - [ ] Edit badge from numbers panel doesn't work -- replace with "Manage Achievements"

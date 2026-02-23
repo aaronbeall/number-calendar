@@ -1,4 +1,5 @@
-import { AppFooter, SettingsMenu, ThemeToggle, UserMenu } from '@/App';
+import { AppFooter } from '@/App';
+import { SettingsMenu, ThemeToggle, UserMenu } from '@/AppHeader';
 import LogoIcon from '@/assets/logo.png';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
