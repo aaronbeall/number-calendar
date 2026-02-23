@@ -249,7 +249,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] p-0 gap-0 w-full sm:max-w-2xl flex flex-col">
+      <DialogContent className="p-0 gap-0 w-full sm:max-w-2xl flex flex-col">
         <DialogHeader className="flex-shrink-0 px-6 pt-6">
           <DialogTitle>{isEditMode ? `Edit ${capitalize(type)}` : `Add ${capitalize(type)}`}</DialogTitle>
           <DialogDescription>

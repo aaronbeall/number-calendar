@@ -341,7 +341,7 @@ export function ImportDialog({ open, onOpenChange, datasetId }: ImportDialogProp
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Import to "{dataset?.name}"</DialogTitle>
           <DialogDescription>

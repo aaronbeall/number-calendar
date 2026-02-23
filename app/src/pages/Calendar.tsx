@@ -432,7 +432,7 @@ export function Calendar({
             <div className={`transition-all duration-300 overflow-hidden -mx-4 px-4 sm:mx-0 sm:px-0 ${showYearsOverview ? 'max-h-96 sm:max-h-none' : 'max-h-0 sm:max-h-none'}`}>
               <AllYearsOverview
                 monthDataByKey={monthDataByKey}
-                currentYear={year}
+                selectedYear={year}
                 onYearClick={handleAllYearsOverviewYearClick}
                 valence={dataset.valence}
                 tracking={dataset.tracking}

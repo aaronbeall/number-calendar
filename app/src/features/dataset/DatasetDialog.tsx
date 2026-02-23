@@ -199,7 +199,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) reset(); onOpenChange(o); }}>
-      <DialogContent className="max-h-[90vh] p-0 gap-0 w-full sm:max-w-3xl">
+      <DialogContent className="p-0 gap-0 w-full sm:max-w-3xl">
         {showTemplateBuilder ? (
           <DatasetBuilder
             onSelectTemplate={handleSelectTemplate}
