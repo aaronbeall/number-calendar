@@ -448,7 +448,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     typeof suggestedRangeValue?.[1] === 'number' ? `e.g. ${formatValue(suggestedRangeValue[1])}` : 'Max';
   const showTimelineInput = targetType.startsWith('alltime');
   const startingValueContainerWidth = showTimelineInput && hasStartingValueQuestion ? 'max-w-2xl' : 'max-w-md';
-  const startingValueGridCols = showTimelineInput && hasStartingValueQuestion ? 'grid-cols-2' : 'grid-cols-1';
+  const startingValueGridCols = showTimelineInput && hasStartingValueQuestion ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1';
   const startingValuePrompt = resolveText(questions?.startingValue?.prompt, 'Starting point');
   const startingValueDescription = resolveText(
     questions?.startingValue?.description,
@@ -585,10 +585,6 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       }
     }
     setPeriod(value);
-    // Reset defaults when period changes
-    // setValueType('');
-    // setGoodValueRangeMin(null);
-    // setGoodValueRangeMax(null);
     setActivePeriods(value === 'day' ? '5' : value === 'week' ? '4' : '12');
     
     // Set time period unit and default targetDays to match period
@@ -844,15 +840,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
         </div>
       );
     } else if (isValid) {
-      feedbackMessage = (
-        <div className="flex-1 px-4 animate-in fade-in duration-300">
-          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
-            <p className="text-sm text-green-700 dark:text-green-300">
-              Great! We'll create goals based on this target 🎯
-            </p>
-          </div>
-        </div>
-      );
+      feedbackMessage = null;
     }
     
     return { canProceed: isValid, feedbackMessage };
@@ -1278,8 +1266,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                     )}
                                   >
-                                    <span className="hidden sm:inline">days</span>
-                                    <span className="sm:hidden">d</span>
+                                    days
                                   </button>
                                   <button
                                     type="button"
@@ -1291,8 +1278,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                     )}
                                   >
-                                    <span className="hidden sm:inline">weeks</span>
-                                    <span className="sm:hidden">w</span>
+                                    weeks
                                   </button>
                                   <button
                                     type="button"
@@ -1304,8 +1290,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
                                     )}
                                   >
-                                    <span className="hidden sm:inline">months</span>
-                                    <span className="sm:hidden">m</span>
+                                    months
                                   </button>
                                 </div>
                               </div>
@@ -1692,7 +1677,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-4 pb-6 px-6 border-t flex-shrink-0">
-            <Button variant="ghost" onClick={handleBack} className={step === 'period' ? 'invisible pointer-events-none' : ''}>
+            <Button variant="ghost" onClick={handleBack} className={step === 'period' ? 'hidden pointer-events-none' : ''}>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
             </Button>
@@ -1700,7 +1685,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
             {/* Feedback messages */}
             {step === 'period' && activeValue && getPeriodStepValidation().feedbackMessage}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
               {step === 'starting-point' ? (
                 <>
                   <Button variant="ghost" onClick={() => handleCreate(false)} disabled={isCreating}>
