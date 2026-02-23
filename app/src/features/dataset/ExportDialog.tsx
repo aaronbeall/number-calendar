@@ -1,6 +1,6 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -161,7 +161,7 @@ export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <DialogBody className="space-y-6 py-4">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -332,7 +332,7 @@ export function ExportDialog({ open, onOpenChange, datasetId, defaultDateRange }
               {exportData.length} {exportData.length === 1 ? 'row' : 'rows'} ready to export
             </div>
           )}
-        </div>
+        </DialogBody>
 
         <DialogFooter>
           <Button variant="outline" onClick={handleClose} disabled={exporting}>

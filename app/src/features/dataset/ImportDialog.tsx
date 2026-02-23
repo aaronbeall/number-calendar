@@ -1,7 +1,7 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -353,7 +353,7 @@ export function ImportDialog({ open, onOpenChange, datasetId }: ImportDialogProp
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto space-y-4 py-4">
+        <DialogBody className="space-y-4 py-4">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -413,7 +413,7 @@ export function ImportDialog({ open, onOpenChange, datasetId }: ImportDialogProp
                 className="hidden"
               />
 
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <Button
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
@@ -595,7 +595,7 @@ export function ImportDialog({ open, onOpenChange, datasetId }: ImportDialogProp
               )}
             </div>
           )}
-        </div>
+        </DialogBody>
 
         {!importing && parsedData && overlappingDates.length > 0 && (
           <Alert className="border-orange-200 bg-orange-50 dark:border-orange-800 dark:bg-orange-950">

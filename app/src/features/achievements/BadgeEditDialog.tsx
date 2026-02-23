@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { cn, keysOf, titleCase } from '@/lib/utils';
@@ -63,7 +63,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
           <DialogTitle>Edit Badge</DialogTitle>
           <DialogDescription>Customize the badge appearance and label.</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto">
+        <DialogBody>
           <div className="flex flex-col md:flex-row gap-6 py-2">
           {/* Badge Preview (top on mobile, left on desktop) */}
           <div className="flex flex-col items-center gap-2 md:min-w-[140px]">
@@ -138,7 +138,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
             />
           </div>
           </div>
-        </div>
+        </DialogBody>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={handleCancel}>Cancel</Button>
           <Button type="button" onClick={handleSave}>{saveLabel}</Button>
