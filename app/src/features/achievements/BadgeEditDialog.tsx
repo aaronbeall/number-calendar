@@ -75,6 +75,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
               <AchievementBadge badge={draftBadge} size="large" animate={animatePreview} />
             </div>
             <div className="text-xs text-slate-500">Preview</div>
+            <div className="text-xs font-medium text-slate-700 dark:text-slate-300">"{titleCase(draftBadge.color)}"</div>
             <button
               type="button"
               className="flex items-center gap-1 text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 mt-1 mb-1"
