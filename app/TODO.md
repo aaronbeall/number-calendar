@@ -150,7 +150,7 @@ I'm liking this one.
 - [x] Chart days are off by 1 (timezone offset?)
 - [x] Chart is missing numeric formatting, rounding, etc
 - [ ] Order of numbers in months/years is not necessarily correct (sort by date first)
-- [ ] Current date is wrong when left open overnight, etc
+- [ ] [High] Current date is wrong when left open overnight, etc
 - [x] Negative year summary has green
 - [x] [High] Hide weekends is causing June 2026 days to be wrong
 - [ ] Deleting a prior day numbers does not update deltas (changing normally it does)
@@ -160,24 +160,24 @@ I'm liking this one.
 - [x] Week/Month/Year summaries need hover and selected state
 - [x] Can't delete all data on a day anymore
 - [x] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
-- [ ] Tracking=series and deltas and percents aren't very helpful, period total is already a delta, and percents should be based on cumulative change, not change from prior delta -- will need to add cumulatives source (which itself is useless for tracking=trend)
+- [ ] [High] Tracking=series and deltas and percents aren't very helpful, period total is already a delta, and percents should be based on cumulative change, not change from prior delta -- will need to add cumulatives source (which itself is useless for tracking=trend)
   - [x] Add cumulative calculations to data model
   - [x] Show cumulative in tracking=series
   - [x] Expose cumulative sources in goal targets
   - [ ] Add percent change to goal builder
 - [ ] [?] Adding data to new month didn't update the monthly view show a new month summary
 - [ ] Need an error boundary to catch UI errors
-- [x] Need suggested goal weight, meaningful suggested values throughout
+- [x] [High] Need suggested goal weight, meaningful suggested values throughout
 - [ ] Edit badge from numbers panel doesn't work -- replace with "Manage Achievements"
 - [ ] Add more Range based achievements to goal builder
 - [x] Count and average achievements
 - [ ] "First Win" is kinda broken -- fix or remove
 - [ ] Delete note confirmation disappears -- replace menu item with button
-- [ ] Changing passed data can shift streaks/multi-count achievements, triggering their notification -- may need to use number id -- partial mitigation by obnly norifiying on current period changes
-- [ ] Overlapping same category achievements (X-day streak, X-target, etc) should be stacked
+- [ ] Changing passed data can shift streaks/multi-count achievements, triggering their notification -- may need to use number id -- partial mitigation by only norifiying on current period changes
+- [ ] Overlapping same category achievements (X-day streak, X-target, etc) should be stacked in notification and only show the highest one
 - [x] Refactor to use unified data manager instead of individual data hooks
 - [ ] Dashboard month trend delta (valence) is wrong, but after opening the data is right -- needs priors
-- [ ] Updating goal requirements should replace title/description/label, use word boundaries (fixes current number replacement bug) and formatted matchers
+- [x] Updating goal requirements should replace title/description/label, use word boundaries (fixes current number replacement bug) and formatted matchers
 - [ ] [Minor] Generated goal text has extra whitespace (renders fine)
 - [ ] Maintain template with created dataset for goal builder -- add way to get to generic goal builder
 - [ ] Optimization -- component memo and data calc caching
@@ -197,3 +197,4 @@ I'm liking this one.
 - [ ] Perfect Week "All entries are uptrend" is not taking into account prior week delta (refactoring to aggregate data would probably fix this)
 - [x] Add routing for Daily/Monthly view, maybe `?year=2025&month=06` (daily) and `?year=2025` (yearly)
 - [ ] Custom color selection for datasets, bring through color from templates
+- [ ] Completed goals should tell you the actual value in the period they were completed (ex for a `>1000` it should show the `1234` value or whatever it was)
