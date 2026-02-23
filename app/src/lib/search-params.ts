@@ -20,6 +20,14 @@ export function useSidePanelParam() {
 }
 
 /**
+ * Hook to manage the achievement details drawer state via URL search params
+ * The value is the goal ID of the achievement to display
+ */
+export function useAchievementDrawerParam() {
+  return useSearchParamState<string>('achievement', null);
+}
+
+/**
  * Hook to manage the calendar view mode (daily or monthly)
  */
 export function useCalendarModeParam() {

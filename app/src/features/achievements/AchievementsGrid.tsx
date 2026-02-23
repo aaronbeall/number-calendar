@@ -1,5 +1,6 @@
 import type { Dataset } from '@/features/db/localdb';
 import type { GoalResults } from '@/lib/goals';
+import { useAchievementDrawerParam } from '@/lib/search-params';
 import { Clock, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { AchievementCard, type AchievementCardProps } from './AchievementCard';
@@ -14,7 +15,7 @@ interface AchievementsGridProps {
 }
 
 export function AchievementsGrid({ results, loading, dataset }: AchievementsGridProps) {
-  const [activeGoalId, setActiveGoalId] = useState<string | null>(null);
+  const [activeGoalId, setActiveGoalId] = useAchievementDrawerParam();
   const [editResult, setEditResult] = useState<GoalResults | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 

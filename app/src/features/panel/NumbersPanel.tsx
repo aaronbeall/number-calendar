@@ -15,8 +15,9 @@ import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { getDateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
-import type { CompletedAchievementResult, GoalResults } from '@/lib/goals';
+import type { CompletedAchievementResult } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import { useAchievementDrawerParam } from '@/lib/search-params';
 import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, computePeriodDerivedStats, type StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
 import { adjectivize, capitalize, cn } from '@/lib/utils';
@@ -152,7 +153,11 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   );
 
   const [adding, setAdding] = useState(false);
-  const [selectedAchievement, setSelectedAchievement] = useState<GoalResults | null>(null);
+  const [selectedAchievementId, setSelectedAchievementId] = useAchievementDrawerParam();
+  const selectedAchievement = useMemo(
+    () => achievementResults?.find((result) => result.goal.id === selectedAchievementId)?.goalResult ?? null,
+    [achievementResults, selectedAchievementId]
+  );
 
   // Helper to get current total for delta mode
   const currentTotal = displayNumbers.reduce((a, b) => a + b, 0);
@@ -389,11 +394,11 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 {achievementsLabel}
               </div>
               <div className="grid grid-cols-6 gap-1">
-                {achievementResults.map(({ goal, achievement, goalResult }) => (
+                {achievementResults.map(({ goal, achievement }) => (
                   <AchivementItem
                     key={achievement.id}
                     goal={goal}
-                    onClick={() => setSelectedAchievement(goalResult)}
+                    onClick={() => setSelectedAchievementId(goal.id)}
                   />
                 ))}
               </div>
@@ -484,7 +489,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
       <AchievementDetailsDrawer
         open={!!selectedAchievement}
         onOpenChange={(open) => {
-          if (!open) setSelectedAchievement(null);
+          if (!open) setSelectedAchievementId(null);
         }}
         result={selectedAchievement}
       />
