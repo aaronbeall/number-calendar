@@ -54,7 +54,7 @@ export function Calendar({
   const builderTemplateId = typeof builderOpen === 'string' && builderOpen ? builderOpen : undefined;
   
   // Swipe/drag detection for calendar navigation
-  const { handleSwipeStart, handleSwipeEnd, getAnimationStyle } = useSwipe({
+  const { handleSwipeStart, handleSwipeMove, handleSwipeEnd, getAnimationStyle } = useSwipe({
     onSwipeLeft: goToNext,
     onSwipeRight: goToPrevious,
   });
@@ -375,6 +375,7 @@ export function Calendar({
             {/* Calendar Grid with Swipe Support */}
             <div 
               onTouchStart={handleSwipeStart}
+              onTouchMove={handleSwipeMove}
               onTouchEnd={handleSwipeEnd}
               style={getAnimationStyle()}
             >
@@ -441,6 +442,7 @@ export function Calendar({
             {/* Monthly Grid with Swipe Support */}
             <div 
               onTouchStart={handleSwipeStart}
+              onTouchMove={handleSwipeMove}
               onTouchEnd={handleSwipeEnd}
               style={getAnimationStyle()}
             >
