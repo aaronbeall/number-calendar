@@ -1,5 +1,6 @@
 import type { Dataset } from '@/features/db/localdb';
 import type { GoalResults } from '@/lib/goals';
+import { sortGoalResults } from '@/lib/goals';
 import { useAchievementDrawerParam } from '@/lib/search-params';
 import { Clock, Loader2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -19,9 +20,10 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
   const [editResult, setEditResult] = useState<GoalResults | null>(null);
   const [editOpen, setEditOpen] = useState(false);
 
-  // Flatten to a single achievement per goal for grid (show the most relevant achievement)
+  // Sort results first, then flatten to a single achievement per goal for grid
   const gridItems = useMemo(() => {
-    return results.map((result): AchievementCardProps => {
+    const sortedResults = sortGoalResults(results);
+    return sortedResults.map((result): AchievementCardProps => {
       const ach = result.achievements.slice(-1)[0] ?? {};
       let firstStartedAt = undefined;
       let firstCompletedAt = undefined;
@@ -76,10 +78,6 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
       } else if (item.startedAt || item.progress) inProgress.push(item);
       else locked.push(item);
     }
-    unlocked.sort(sortAchievements);
-    inProgress.sort(sortAchievements);
-    locked.sort(sortAchievements);
-    provisional.sort(sortAchievements);
     return { unlocked, inProgress, locked, provisional };
   }, [gridItems]);
 
@@ -213,26 +211,5 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
   );
 }
 
-// Sorting function for each group
-function sortAchievements(a: AchievementCardProps, b: AchievementCardProps) {
-  // 1. completedAt (desc)
-  if (a.completedAt && b.completedAt && a.completedAt !== b.completedAt) {
-    return b.completedAt.localeCompare(a.completedAt);
-  }
-  // 2. progress percent (desc)
-  const aPct = a.progress && a.goalCount ? a.progress / a.goalCount : 0;
-  const bPct = b.progress && b.goalCount ? b.progress / b.goalCount : 0;
-  if (bPct !== aPct) return bPct - aPct;
-  // 3. type (target < milestone < goal)
-  const typeOrder = { target: 0, milestone: 1, goal: 2 };
-  if ((a.goalType && b.goalType) && typeOrder[a.goalType] !== typeOrder[b.goalType]) {
-    return typeOrder[a.goalType] - typeOrder[b.goalType];
-  }
-  // 4. createdAt (asc)
-  if (a.createdAt && b.createdAt && a.createdAt !== b.createdAt) {
-    return a.createdAt - b.createdAt;
-  }
-  return 0;
-}
-
 export default AchievementsGrid;
+
