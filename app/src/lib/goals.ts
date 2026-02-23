@@ -601,7 +601,7 @@ export function getGoalCategory(goal: Goal) {
  * 2. Time period: Anytime first, then Day, Week, Month, Year.
  * 3. Consecutive: Non-consecutive goals before consecutive.
  * 4. Count: Lower count goals before higher count.
- * 5. Completion date: Earlier completed goals before later.
+ * 5. Completion date: Recently completed goals before older.
  * 6. For in-progress goals with no completions, higher progress percentage first.
  * 7. For goals with the same valence (positive/negative), sort by target value (higher for positive, lower for negative).
  * 8. Creation date as tiebreaker (earlier first).
@@ -656,7 +656,7 @@ export function sortGoalResults(results: GoalResults[]): GoalResults[] {
     const countDiff = a.goal.count - b.goal.count;
     if (countDiff !== 0) return countDiff;
 
-    const completedDiff = completedAtKey(a).localeCompare(completedAtKey(b));
+    const completedDiff = completedAtKey(b).localeCompare(completedAtKey(a));
     if (completedDiff !== 0) return completedDiff;
 
     if (a.completedCount === 0 && b.completedCount === 0) {
@@ -669,11 +669,33 @@ export function sortGoalResults(results: GoalResults[]): GoalResults[] {
     const aValenceValue = valenceValueForGoal(a.goal);
     const bValenceValue = valenceValueForGoal(b.goal);
     if (aValence === bValence) {
-      if (aValence === 'negative') {
-        const valueDiff = bValenceValue - aValenceValue;
-        if (valueDiff !== 0) return valueDiff;
-      } else {
-        const valueDiff = aValenceValue - bValenceValue;
+      const aCompleted = a.completedCount > 0;
+      const bCompleted = b.completedCount > 0;
+      
+      // Only compare values if both are completed or both are uncompleted
+      if (aCompleted === bCompleted) {
+        let valueDiff: number;
+        
+        if (aCompleted) {
+          // For completed goals: show better values first
+          if (aValence === 'negative') {
+            // Negative: better = lower → ascending
+            valueDiff = aValenceValue - bValenceValue;
+          } else {
+            // Positive/Neutral: better = higher → descending
+            valueDiff = bValenceValue - aValenceValue;
+          }
+        } else {
+          // For uncompleted goals: show worse values first
+          if (aValence === 'negative') {
+            // Negative: worse = higher → descending
+            valueDiff = bValenceValue - aValenceValue;
+          } else {
+            // Positive/Neutral: worse = lower → ascending
+            valueDiff = aValenceValue - bValenceValue;
+          }
+        }
+        
         if (valueDiff !== 0) return valueDiff;
       }
     }
