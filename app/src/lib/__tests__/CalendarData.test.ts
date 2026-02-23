@@ -128,6 +128,12 @@ describe('CalendarData', () => {
         range: 10,
         change: 10,
         changePercent: 25,
+        interquartileRange: 10,
+        midrange: 45,
+        mode: 40,
+        slope: 10,
+        standardDeviation: 5,
+        variance: 25,
       });
       expect(dayData.deltas?.total).toBe(30);
       expect(dayData.percents?.total).toBe(50);
@@ -168,6 +174,116 @@ describe('CalendarData', () => {
       expect(day1.cumulatives.total).toBe(10);
       expect(day2.cumulatives.total).toBe(30); // 10 + 20
       expect(day3.cumulatives.total).toBe(60); // 30 + 30
+    });
+
+    test('should compute cumulativePercents as percentage change from prior cumulative', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-01,10
+        2025-01-02,20
+        2025-01-03,30
+      `);
+      
+      const day1 = calendarData.getDayData('2025-01-01');
+      const day2 = calendarData.getDayData('2025-01-02');
+      const day3 = calendarData.getDayData('2025-01-03');
+      
+      // Day 1 has no prior cumulative
+      expect(day1.cumulativePercents?.total).toBeUndefined();
+      
+      // Day 2: cumulative went from 10 to 30, that's (30-10)/10*100 = 200%
+      expect(day2.cumulativePercents?.total).toBe(200);
+      
+      // Day 3: cumulative went from 30 to 60, that's (60-30)/30*100 = 100%
+      expect(day3.cumulativePercents?.total).toBe(100);
+    });
+
+    test('should compute cumulativePercents across multiple metrics', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-01,5,10,15
+        2025-01-02,10,20,30
+      `);
+      
+      const day1 = calendarData.getDayData('2025-01-01');
+      const day2 = calendarData.getDayData('2025-01-02');
+      
+      // Day 1 cumulatives: total=30, mean=10
+      expect(day1.cumulatives.total).toBe(30);
+      expect(day1.cumulatives.mean).toBe(10);
+      
+      // Day 2 cumulatives: [priorTotal=30, 10, 20, 30] = total=90, mean=22.5
+      expect(day2.cumulatives.total).toBe(90);
+      expect(day2.cumulatives.mean).toBe(22.5);
+      
+      // Day 2 cumulativePercents: total went 30→90 = 200%, mean went 10→22.5 = 125%
+      expect(day2.cumulativePercents?.total).toBe(200);
+      expect(day2.cumulativePercents?.mean).toBe(125);
+    });
+
+    test('should handle cumulativePercents when cumulative decreases', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-01,100
+        2025-01-02,-50
+      `);
+      
+      const day1 = calendarData.getDayData('2025-01-01');
+      const day2 = calendarData.getDayData('2025-01-02');
+      
+      // Day 1: cumulative = 100
+      expect(day1.cumulatives.total).toBe(100);
+      
+      // Day 2: cumulative = 50 (100 + -50)
+      expect(day2.cumulatives.total).toBe(50);
+      
+      // cumulativePercents: (50 - 100) / 100 * 100 = -50%
+      expect(day2.cumulativePercents?.total).toBe(-50);
+    });
+
+    test('should compute cumulativePercents for weeks', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-06,10
+        2025-01-13,20
+        2025-01-20,30
+      `);
+      
+      const week1 = calendarData.getWeekData('2025-W02');
+      const week2 = calendarData.getWeekData('2025-W03');
+      const week3 = calendarData.getWeekData('2025-W04');
+      
+      // Week 1: cumulative = 10
+      expect(week1.cumulatives.total).toBe(10);
+      expect(week1.cumulativePercents?.total).toBeUndefined();
+      
+      // Week 2: cumulative = 30, cumulativePercents = (30-10)/10*100 = 200%
+      expect(week2.cumulatives.total).toBe(30);
+      expect(week2.cumulativePercents?.total).toBe(200);
+      
+      // Week 3: cumulative = 60, cumulativePercents = (60-30)/30*100 = 100%
+      expect(week3.cumulatives.total).toBe(60);
+      expect(week3.cumulativePercents?.total).toBe(100);
+    });
+
+    test('should compute cumulativePercents for months', () => {
+      const calendarData = generateMockCalendarDataFromCSV(`
+        2025-01-15,100
+        2025-02-15,50
+        2025-03-15,150
+      `);
+      
+      const month1 = calendarData.getMonthData('2025-01');
+      const month2 = calendarData.getMonthData('2025-02');
+      const month3 = calendarData.getMonthData('2025-03');
+      
+      // Month 1: cumulative = 100
+      expect(month1.cumulatives.total).toBe(100);
+      expect(month1.cumulativePercents?.total).toBeUndefined();
+      
+      // Month 2: cumulative = 150, cumulativePercents = (150-100)/100*100 = 50%
+      expect(month2.cumulatives.total).toBe(150);
+      expect(month2.cumulativePercents?.total).toBe(50);
+      
+      // Month 3: cumulative = 300, cumulativePercents = (300-150)/150*100 = 100%
+      expect(month3.cumulatives.total).toBe(300);
+      expect(month3.cumulativePercents?.total).toBe(100);
     });
 
     test('should update day data when day is modified', () => {
@@ -235,6 +351,12 @@ describe('CalendarData', () => {
         range: 20,
         change: 20,
         changePercent: 200,
+        interquartileRange: 20,
+        midrange: 20,
+        mode: 10,
+        slope: 10,
+        standardDeviation: 8.16496580927726,
+        variance: 66.66666666666667,
       });
       expect(weekData.deltas?.total).toBe(50); // 60 - 10
       expect(weekData.percents?.total).toBe(500); // (60 - 10) / 10 * 100
@@ -352,6 +474,12 @@ describe('CalendarData', () => {
         range: 20,
         change: 20,
         changePercent: 200,
+        interquartileRange: 20,
+        midrange: 20,
+        mode: 10,
+        slope: 10,
+        standardDeviation: 8.16496580927726,
+        variance: 66.66666666666667,
       });
       expect(monthData.deltas?.total).toBe(50); // 60 - 10
       expect(monthData.percents?.total).toBe(500); // (60 - 10) / 10 * 100
@@ -478,6 +606,12 @@ describe('CalendarData', () => {
         range: 20,
         change: 20,
         changePercent: 200,
+        interquartileRange: 20,
+        midrange: 20,
+        mode: 10,
+        slope: 10,
+        standardDeviation: 8.16496580927726,
+        variance: 66.66666666666667,
       });
       expect(yearData.deltas?.total).toBe(50); // 60 - 10
       expect(yearData.percents?.total).toBe(500); // (60 - 10) / 10 * 100

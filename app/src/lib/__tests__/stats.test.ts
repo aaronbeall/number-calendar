@@ -25,6 +25,12 @@ describe('stats', () => {
         range: 2,
         change: 2,
         changePercent: 200,
+        mode: 1,
+        slope: 1,
+        midrange: 2,
+        variance: 0.6666666666666666,
+        standardDeviation: 0.816496580927726,
+        interquartileRange: 2,
       });
     });
 
@@ -50,6 +56,12 @@ describe('stats', () => {
         range: 2,
         change: 2,
         changePercent: 50,
+        mode: 4,
+        slope: 2,
+        midrange: 5,
+        variance: 1,
+        standardDeviation: 1,
+        interquartileRange: 2,
       });
     });
 

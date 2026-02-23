@@ -47,6 +47,8 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
   const periodStatsCache: Partial<Record<TimePeriod, Record<DateKey, NumberStats | null>>> = {};
   const periodDeltasCache: Partial<Record<TimePeriod, Record<DateKey, Record<keyof NumberStats, number> | null>>> = {};
   const periodPercentsCache: Partial<Record<TimePeriod, Record<DateKey, Partial<NumberStats> | null>>> = {};
+  const periodCumulativesCache: Partial<Record<TimePeriod, Record<DateKey, NumberStats | null>>> = {};
+  const periodCumulativePercentsCache: Partial<Record<TimePeriod, Record<DateKey, Partial<NumberStats> | null>>> = {};
   let anytimeStats: NumberStats | null | undefined = undefined;
 
   function getPeriods(timePeriod: 'day'): DayKey[]
@@ -127,13 +129,60 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
     return percents;
   }
 
+  function getPeriodCumulatives(timePeriod: DateKeyType): Record<DateKey, NumberStats | null> {
+    if (periodCumulativesCache[timePeriod]) return periodCumulativesCache[timePeriod]!;
+    const periods = getPeriods(timePeriod);
+    const dataByPeriod = getPeriodData(timePeriod);
+    const statsByPeriod = getPeriodStats(timePeriod);
+    const cumulatives: Record<DateKey, NumberStats | null> = {};
+    let priorCumulatives: NumberStats | null = null;
+    for (const period of periods) {
+      const stats = statsByPeriod[period];
+      const numbers = dataByPeriod[period] || [];
+      if (stats) {
+        if (priorCumulatives) {
+          // Seed with prior cumulative total plus current numbers
+          const cumulativeNumbers = [priorCumulatives.total, ...numbers];
+          cumulatives[period] = computeNumberStats(cumulativeNumbers);
+        } else {
+          // First period: cumulative equals stats
+          cumulatives[period] = stats;
+        }
+        priorCumulatives = cumulatives[period];
+      } else {
+        cumulatives[period] = null;
+      }
+    }
+    periodCumulativesCache[timePeriod] = cumulatives;
+    return cumulatives;
+  }
+
+  function getPeriodCumulativePercents(timePeriod: DateKeyType): Record<DateKey, Partial<NumberStats> | null> {
+    if (periodCumulativePercentsCache[timePeriod]) return periodCumulativePercentsCache[timePeriod]!;
+    const periods = getPeriods(timePeriod);
+    const cumulativesByPeriod = getPeriodCumulatives(timePeriod);
+    const cumulativePercents: Record<DateKey, Partial<NumberStats> | null> = {};
+    let priorCumulatives: NumberStats | null = null;
+    for (const period of periods) {
+      const cumulatives = cumulativesByPeriod[period];
+      if (cumulatives) {
+        cumulativePercents[period] = computeStatsPercents(cumulatives, priorCumulatives);
+        priorCumulatives = cumulatives;
+      } else {
+        cumulativePercents[period] = null;
+      }
+    }
+    periodCumulativePercentsCache[timePeriod] = cumulativePercents;
+    return cumulativePercents;
+  }
+
   function getAnytimeStats(): NumberStats | null {
     if (anytimeStats !== undefined) return anytimeStats;
     anytimeStats = computeNumberStats(Object.values(data).flat());
     return anytimeStats;
   }
 
-  return { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getAnytimeStats };
+  return { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getPeriodCumulatives, getPeriodCumulativePercents, getAnytimeStats };
 }
 
 export type AchievementResult = Achievement & { provisional?: boolean };
@@ -191,7 +240,7 @@ export function processAchievements({
   datasetId: string;
 }): GoalResults[] {
 
-  const { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getAnytimeStats } = createPeriodCache(data);
+  const { getPeriods, getPeriodData, getPeriodStats, getPeriodDeltas, getPeriodPercents, getPeriodCumulatives, getPeriodCumulativePercents, getAnytimeStats } = createPeriodCache(data);
 
   const achievementKey = (goalId: string, startedAt?: DateKey): string => (
     `${goalId}|${startedAt ?? ''}`
@@ -218,10 +267,14 @@ export function processAchievements({
       stats: NumberStats | null | undefined,
       deltas: Record<keyof NumberStats, number> | null | undefined,
       percents: Partial<NumberStats> | null | undefined,
+      cumulatives: NumberStats | null | undefined,
+      cumulativePercents: Partial<NumberStats> | null | undefined,
     ) => {
       if (goalSource === 'stats') return stats?.[goal.target.metric];
       if (goalSource === 'deltas') return deltas?.[goal.target.metric];
       if (goalSource === 'percents') return percents?.[goal.target.metric];
+      if (goalSource === 'cumulatives') return cumulatives?.[goal.target.metric];
+      if (goalSource === 'cumulativePercents') return cumulativePercents?.[goal.target.metric];
       return undefined;
     };
 
@@ -251,7 +304,7 @@ export function processAchievements({
         ach = updateAchievement(ach, { progress: 0 });
       } else {
         const stat = getAnytimeStats();
-        const value = getMetricValue(stat, undefined, undefined);
+        const value = getMetricValue(stat, undefined, undefined, undefined, undefined);
         const met = typeof value === 'number' && evalCondition(goal.target, value);
         if (met) {
           // Find the exact day when the goal was met
@@ -265,7 +318,7 @@ export function processAchievements({
             const numbers = data[day] ?? [];
             acc.push(...numbers);
             const stats = computeNumberStats(acc);
-            const dayValue = getMetricValue(stats, undefined, undefined);
+            const dayValue = getMetricValue(stats, undefined, undefined, undefined, undefined);
             if (typeof dayValue === 'number' && evalCondition(goal.target, dayValue)) {
               completedAt = day;
             }
@@ -286,12 +339,14 @@ export function processAchievements({
       const periodStats = getPeriodStats(goal.timePeriod);
       const periodDeltas = getPeriodDeltas(goal.timePeriod);
       const periodPercents = getPeriodPercents(goal.timePeriod);
+      const periodCumulatives = getPeriodCumulatives(goal.timePeriod);
+      const periodCumulativePercents = getPeriodCumulativePercents(goal.timePeriod);
       const periodData = getPeriodData(goal.timePeriod);
       // For count=1, just check each period
       if (goal.count === 1) {
         for (const period of periods) {
           const stat = periodStats[period];
-          const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
+          const value = getMetricValue(stat, periodDeltas[period], periodPercents[period], periodCumulatives[period], periodCumulativePercents[period]);
           const met = typeof value === 'number' && evalCondition(goal.target, value);
           if (met) {
             let ach: AchievementResult = getBaseAchievement(goal.id, period);
@@ -313,7 +368,7 @@ export function processAchievements({
           const period = periods[i];
           const stat = periodStats[period];
           const numbers = periodData[period] || [];
-          const value = getMetricValue(stat, periodDeltas[period], periodPercents[period]);
+          const value = getMetricValue(stat, periodDeltas[period], periodPercents[period], periodCumulatives[period], periodCumulativePercents[period]);
           const met = typeof value === 'number' && evalCondition(goal.target, value);
           if (met) {
             if (streak.length === 0) streakStart = period;
@@ -403,7 +458,7 @@ export function isValidGoalAttributes(goal: Partial<GoalRequirements>): goal is 
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
 export function formatGoalTargetValue({ value, range, source }: GoalTarget, { short }: { short?: boolean; } = {}): string {
-  const options: FormatValueOptions = { short, percent: source === 'percents', delta: source === 'deltas' };
+  const options: FormatValueOptions = { short, percent: source === 'percents' || source === 'cumulativePercents', delta: source === 'deltas' || source === 'cumulativePercents' };
   if (range) {
     return formatRange(range, options);
   }
@@ -415,7 +470,7 @@ export function formatGoalTargetValue({ value, range, source }: GoalTarget, { sh
  * Helper to format a partial goal target value, which may be missing value or range,
  */
 function formatTargetValue({ value, range, source }: Partial<Pick<GoalTarget, 'value' | 'range' | 'source'>>, { short }: { short?: boolean; } = {}): string {
-  const options: FormatValueOptions = { short, percent: source === 'percents', delta: source === 'deltas' };
+  const options: FormatValueOptions = { short, percent: source === 'percents' || source === 'cumulativePercents', delta: source === 'deltas' || source === 'cumulativePercents' };
   if (range) {
     return formatRange(range, options);
   }
@@ -461,8 +516,8 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
     : ''
 
   let valueStr = '';
-  const delta = source === 'deltas';
-  const percent = source === 'percents';
+  const delta = source === 'deltas' || source === 'cumulativePercents' || source === 'percents';
+  const percent = source === 'percents' || source === 'cumulativePercents';
   const isRange = isRangeCondition(condition);
   if (!isRange) {
     if (value === 0) {

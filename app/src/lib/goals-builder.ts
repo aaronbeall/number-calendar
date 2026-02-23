@@ -1,13 +1,171 @@
-import type { Goal, GoalCondition, GoalTarget, Tracking, Valence } from '@/features/db/localdb';
+import type { Goal, GoalCondition, GoalTarget, Tracking, Valence, GoalRequirements } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import type { AchievementBadgeColor, AchievementBadgeIcon, AchievementBadgeStyle } from './achievements';
 import { countSignificantDigits, roundToClean } from './friendly-numbers';
 import { formatValue } from './friendly-numbers';
-import type { NumberMetric } from './stats';
+import type { NumberMetric, NumberSource } from './stats';
 import { getMetricDisplayName } from './stats';
-import { formatGoalConditionLabel } from './goals';
-import { adjectivize, capitalize, pluralize, randomValueOf, sequenceFromNow } from './utils';
+import { formatGoalConditionLabel, formatGoalTargetValue } from './goals';
+import { adjectivize, capitalize, pluralize, randomValueOf, sequenceFromNow, escapeRegex } from './utils';
 import { getValueForGood } from './valence';
+
+// Text replacement utilities for goal editing
+
+/**
+ * Safely replace text with word boundaries for regular words
+ */
+function safeReplaceWord(text: string, oldValue: string, newValue: string): string {
+  if (!oldValue || !newValue || oldValue === newValue) return text;
+  try {
+    const escaped = escapeRegex(oldValue);
+    const regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+    return text.replace(regex, newValue);
+  } catch {
+    return text;
+  }
+}
+
+/**
+ * Safely replace formatted values that may contain special characters (no word boundaries)
+ */
+function safeReplaceFormatted(text: string, oldValue: string, newValue: string): string {
+  if (!oldValue || !newValue || oldValue === newValue) return text;
+  try {
+    const escaped = escapeRegex(oldValue);
+    const regex = new RegExp(escaped, 'gi');
+    return text.replace(regex, newValue);
+  } catch {
+    return text;
+  }
+}
+
+interface TextReplacement {
+  old: string;
+  new: string;
+}
+
+interface GoalTextReplacements {
+  /** Word-based replacements for condition, metric, source, count, period */
+  wordReplacements: TextReplacement[];
+  /** Formatted value replacements preferred for short text (title, badge label) */
+  formattedShortPreferred: TextReplacement[];
+  /** Formatted value replacements preferred for long text (description) */
+  formattedLongPreferred: TextReplacement[];
+}
+
+/**
+ * Create text replacements for updating goal text when goal requirements change.
+ * This generates replacements for values, conditions, metrics, sources, counts, and periods.
+ * 
+ * @param prevGoal - The previous goal requirements
+ * @param nextGoal - The next goal requirements  
+ * @returns Object containing replacement arrays for word-based and formatted replacements
+ */
+export function createGoalTextReplacements(
+  prevGoal: Partial<GoalRequirements>,
+  nextGoal: Partial<GoalRequirements>
+): GoalTextReplacements {
+  const prevTarget = prevGoal.target;
+  const nextTarget = nextGoal.target;
+  
+  const wordReplacements: TextReplacement[] = [];
+  const formattedShortPreferred: TextReplacement[] = [];
+  const formattedLongPreferred: TextReplacement[] = [];
+
+  if (!prevTarget || !nextTarget) {
+    return { wordReplacements, formattedShortPreferred, formattedLongPreferred };
+  }
+
+  // Add value replacements (with both long and short formats) - use formatted replace
+  const longPlaceholder = '{Value}';
+  const shortPlaceholder = '{V}';
+  const isInvalidValue = (value: string) => !value || value.toLowerCase() === 'nan';
+  const normalizeValue = (value: string, placeholder: string) =>
+    isInvalidValue(value) ? placeholder : value;
+
+  const prevLong = normalizeValue(formatGoalTargetValue(prevTarget), longPlaceholder);
+  const prevShort = normalizeValue(formatGoalTargetValue(prevTarget, { short: true }), shortPlaceholder);
+  const nextLong = normalizeValue(formatGoalTargetValue(nextTarget), longPlaceholder);
+  const nextShort = normalizeValue(formatGoalTargetValue(nextTarget, { short: true }), shortPlaceholder);
+  
+  if (prevShort !== nextShort && prevShort !== prevLong) {
+    formattedShortPreferred.push({ old: prevShort, new: nextShort });
+    formattedLongPreferred.push({ old: prevShort, new: nextLong });
+  }
+  if (prevLong !== nextLong) {
+    formattedShortPreferred.push({ old: prevLong, new: nextShort });
+    formattedLongPreferred.push({ old: prevLong, new: nextLong });
+  }
+
+  // Add condition replacements
+  if (prevTarget.condition !== nextTarget.condition) {
+    wordReplacements.push({ old: prevTarget.condition, new: nextTarget.condition });
+  }
+
+  // Add metric replacements
+  if (prevTarget.metric !== nextTarget.metric) {
+    wordReplacements.push({ old: prevTarget.metric, new: nextTarget.metric });
+  }
+
+  // Add source replacements
+  if (prevTarget.source !== nextTarget.source) {
+    wordReplacements.push({ old: prevTarget.source, new: nextTarget.source });
+  }
+
+  // Add count replacements
+  if (nextGoal.count !== undefined && prevGoal.count !== undefined) {
+    const prevCount = prevGoal.count.toString();
+    const nextCount = nextGoal.count.toString();
+    if (prevCount && prevCount !== nextCount) {
+      wordReplacements.push({ old: prevCount, new: nextCount });
+    }
+  }
+
+  // Add period replacements
+  if (nextGoal.timePeriod && nextGoal.timePeriod !== prevGoal.timePeriod) {
+    const prevPeriod = prevGoal.timePeriod ?? '';
+    const nextPeriod = nextGoal.timePeriod;
+    if (prevPeriod && prevPeriod !== nextPeriod) {
+      wordReplacements.push({ old: prevPeriod, new: nextPeriod });
+    }
+  }
+
+  return { wordReplacements, formattedShortPreferred, formattedLongPreferred };
+}
+
+/**
+ * Apply goal text replacements to title, description, and badge label
+ * 
+ * @param text - Object containing title, description, and badgeLabel strings
+ * @param replacements - Replacement arrays from createGoalTextReplacements
+ * @returns Updated text object with replacements applied
+ */
+export function applyGoalTextReplacements(
+  text: { title: string; description: string; badgeLabel: string },
+  replacements: GoalTextReplacements
+): { title: string; description: string; badgeLabel: string } {
+  let { title, description, badgeLabel } = text;
+
+  // Apply formatted short replacements to title and badge label
+  for (const { old, new: repl } of replacements.formattedShortPreferred) {
+    title = safeReplaceFormatted(title, old, repl);
+    badgeLabel = safeReplaceFormatted(badgeLabel, old, repl);
+  }
+
+  // Apply formatted long replacements to description
+  for (const { old, new: repl } of replacements.formattedLongPreferred) {
+    description = safeReplaceFormatted(description, old, repl);
+  }
+
+  // Apply word replacements to all text
+  for (const { old, new: repl } of replacements.wordReplacements) {
+    title = safeReplaceWord(title, old, repl);
+    description = safeReplaceWord(description, old, repl);
+    badgeLabel = safeReplaceWord(badgeLabel, old, repl);
+  }
+
+  return { title, description, badgeLabel };
+}
 
 // User input for the goal builder
 export interface GoalBuilderInput {
@@ -16,7 +174,7 @@ export interface GoalBuilderInput {
   valence: Valence;
   period: 'day' | 'week' | 'month';
   value: number;
-  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range';
+  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range' | 'period-growth';
   valueRange?: {
     min?: number;
     max?: number;
@@ -36,7 +194,7 @@ export interface GeneratedGoals {
 // Helper to create a goal target
 function createTarget(
   metric: NumberMetric,
-  source: 'stats' | 'deltas',
+  source: NumberSource,
   condition: 'above' | 'below',
   value: number
 ): GoalTarget {
@@ -50,7 +208,7 @@ function createTarget(
 
 function createTargetFromCondition(
   metric: NumberMetric,
-  source: 'stats' | 'deltas',
+  source: NumberSource,
   condition: GoalCondition
 ): GoalTarget {
   return {
@@ -62,14 +220,20 @@ function createTargetFromCondition(
 
 // Helper to get appropriate metric and source based on value type
 function getMetricAndSource(
-  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range',
+  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range' | 'period-growth',
   goalType: 'milestone' | 'target',
   tracking: Tracking
-): { metric: NumberMetric; source: 'stats' | 'deltas' } {
+): { metric: NumberMetric; source: NumberSource } {
   if (targetType === 'period-range') {
     return {
       metric: tracking === 'trend' ? 'last' : 'total',
       source: 'stats',
+    };
+  }
+  if (targetType === 'period-growth') {
+    return {
+      metric: 'total',
+      source: 'cumulativePercents',
     };
   }
   const isTrend = targetType === 'period-change' || targetType === 'alltime-target';
@@ -97,8 +261,9 @@ function getCondition(valence: Valence, target: number): 'above' | 'below' {
 }
 
 // Helper to get the term for valence
-function getValenceTerm(targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range', valence: Valence) {
+function getValenceTerm(targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range' | 'period-growth', valence: Valence) {
   if (targetType === 'period-range') return 'In Range';
+  if (targetType === 'period-growth') return getValueForGood(valence, { positive: 'Growth', negative: 'Decline', neutral: 'Change' } as const);
   return (targetType === 'period-change' || targetType === 'alltime-target')
     ? getValueForGood(valence, { positive: 'Uptrend', negative: 'Downtrend', neutral: 'Target' } as const)
     : getValueForGood(valence, { positive: 'Positive', negative: 'Negative', neutral: 'Target' } as const);
@@ -464,6 +629,8 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
     const name = milestoneNames[idx];
     const color = colors[idx];
     const style = styles[idx];
+    const percent = source === 'percents' || source === 'cumulativePercents';
+    const delta = source === 'deltas';
 
     milestones.push({
       id: nanoid(),
@@ -471,8 +638,8 @@ function generateMilestones(input: GoalBuilderInput, baselines: BaselineValues):
       createdAt: nextCreatedAt(),
       type: 'milestone',
       title: name,
-      description: `Reach ${formatValue(value, { delta: source === 'deltas' })}${metricName}`,
-      badge: createBadge(style, color, 'flag', formatValue(value, { short: true, delta: source === 'deltas' })),
+      description: `Reach ${formatValue(value, { delta, percent })}${metricName}`,
+      badge: createBadge(style, color, 'flag', formatValue(value, { short: true, delta, percent })),
       target: createTarget(metric, source, condition, value),
       timePeriod: 'anytime',
       count: 1,
@@ -505,7 +672,13 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
     { period: 'week', value: baselines.weekTarget, color: 'sapphire' },
     { period: 'month', value: baselines.monthTarget, color: 'amethyst' },
   ];
-  const completeTerm = source === 'deltas' ? 'Achieve' : 'Reach';
+  const completeTerm = source === 'deltas' 
+    ? 'Achieve' 
+    : source === 'cumulativePercents' 
+      ? 'Grow' 
+      : 'Reach';
+  const percent = source === 'percents' || source === 'cumulativePercents';
+  const delta = source === 'deltas';
 
   periods.forEach(({ period, value, color }, idx) => {
     const adjectiveName = capitalize(adjectivize(period));
@@ -517,8 +690,8 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
       createdAt: nextCreatedAt(),
       type: 'target',
       title: `${adjectiveName} Target`,
-      description: `${completeTerm} ${formatValue(value, { delta: source === 'deltas' })} in a ${period}`,
-      badge: createBadge(style, color, 'target', formatValue(value, { short: true, delta: source === 'deltas' })),
+      description: `${completeTerm} ${formatValue(value, { delta, percent })} in a ${period}`,
+      badge: createBadge(style, color, 'target', formatValue(value, { short: true, delta, percent })),
       target: createTarget(metric, source, condition, value),
       timePeriod: period,
       count: 1,
@@ -699,7 +872,11 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
     'star_stack',
     'staryu',
   ];
-  const targetTerm = source === 'deltas' ? 'Achieve' : 'Reach';
+  const targetTerm = source === 'deltas' 
+    ? 'Achieve' 
+    : source === 'cumulativePercents' 
+      ? 'Grow' 
+      : 'Reach';
   (['day', 'week', 'month'] as const).forEach((targetPeriod, idx, periods) => {
     if (idx < periods.indexOf(period)) return; // Skip periods before user's selected period
     const targetPeriodName = capitalize(targetPeriod);

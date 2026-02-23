@@ -340,8 +340,8 @@ export function getMetricDescription(metric: NumberMetric): string {
 
 export const METRIC_SOURCES_DISPLAY_INFO: Record<NumberSource, { label: string; description: string }> = {
   stats: { label: 'Value', description: 'Actual recorded value for a time period' },
-  deltas: { label: 'Delta', description: 'Change from prior time period' },
-  percents: { label: 'Delta (%)', description: 'Percentage change from prior time period' },
+  deltas: { label: 'Delta', description: 'Difference from prior time period' },
+  percents: { label: 'Change (%)', description: 'Percentage difference from prior time period' },
   cumulatives: { label: 'Cumulative', description: 'Cumulative value from beginning to the time period' },
   cumulativePercents: { label: 'Change (%)', description: 'Percentage change from prior time period\'s cumulative' },
 };

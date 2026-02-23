@@ -201,3 +201,4 @@ I'm liking this one.
 - [ ] Completed goals should tell you the actual value in the period they were completed (ex for a `>1000` it should show the `1234` value or whatever it was)
 - [ ] Achievement progress only works for counts, need it to work for values as well
 - [ ] You should be able to navigate to the calendar location of achievements
+- [ ] Footer share link is crappy

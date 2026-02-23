@@ -68,6 +68,8 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   const numbers = data.numbers;
   const priorNumbers = priorData?.numbers;
 
+  // isOpen && console.log("Numbers", data)
+
 
   // Local state for the expression input, initialized from numbers
   const [expression, setExpression] = useState<string>(buildExpressionFromNumbers(numbers, tracking));

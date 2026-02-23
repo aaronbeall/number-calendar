@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { generateGoals, calculateBaselines, type GoalBuilderInput } from '../goals-builder';
+import { generateGoals, calculateBaselines, type GoalBuilderInput, createGoalTextReplacements, applyGoalTextReplacements } from '../goals-builder';
+import type { GoalRequirements } from '@/features/db/localdb';
 
 describe('goals-builder: Series Tracking', () => {
   const baseInput: Omit<GoalBuilderInput, 'period' | 'valueType' | 'targetDays' | 'startingValue'> = {
@@ -595,6 +596,241 @@ describe('calculateBaselines', () => {
 
       expect(result.dayTarget).toBe(0.1);
       expect(Number.isFinite(result.weekTarget)).toBe(true);
+    });
+  });
+});
+
+describe('Text Replacement Functions', () => {
+  describe('createGoalTextReplacements', () => {
+    it('should create value replacements for changed target values', () => {
+      const prevGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+      const nextGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 200 },
+        timePeriod: 'day',
+        count: 1,
+      };
+
+      const replacements = createGoalTextReplacements(prevGoal, nextGoal);
+
+      // Should have formatted replacements for the value change
+      expect(replacements.formattedShortPreferred.length).toBeGreaterThan(0);
+      expect(replacements.formattedLongPreferred.length).toBeGreaterThan(0);
+    });
+
+    it('should create word replacements for changed metric', () => {
+      const prevGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+      const nextGoal: Partial<GoalRequirements> = {
+        target: { metric: 'mean', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+
+      const replacements = createGoalTextReplacements(prevGoal, nextGoal);
+
+      const metricReplacement = replacements.wordReplacements.find(r => r.old === 'total');
+      expect(metricReplacement).toBeDefined();
+      expect(metricReplacement?.new).toBe('mean');
+    });
+
+    it('should create word replacements for changed source', () => {
+      const prevGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+      const nextGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'deltas', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+
+      const replacements = createGoalTextReplacements(prevGoal, nextGoal);
+
+      const sourceReplacement = replacements.wordReplacements.find(r => r.old === 'stats');
+      expect(sourceReplacement).toBeDefined();
+      expect(sourceReplacement?.new).toBe('deltas');
+    });
+
+    it('should create word replacements for changed condition', () => {
+      const prevGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+      const nextGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'below', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+
+      const replacements = createGoalTextReplacements(prevGoal, nextGoal);
+
+      const conditionReplacement = replacements.wordReplacements.find(r => r.old === 'above');
+      expect(conditionReplacement).toBeDefined();
+      expect(conditionReplacement?.new).toBe('below');
+    });
+
+    it('should create word replacements for changed count', () => {
+      const prevGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 5,
+      };
+      const nextGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 10,
+      };
+
+      const replacements = createGoalTextReplacements(prevGoal, nextGoal);
+
+      const countReplacement = replacements.wordReplacements.find(r => r.old === '5');
+      expect(countReplacement).toBeDefined();
+      expect(countReplacement?.new).toBe('10');
+    });
+
+    it('should create word replacements for changed time period', () => {
+      const prevGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'day',
+        count: 1,
+      };
+      const nextGoal: Partial<GoalRequirements> = {
+        target: { metric: 'total', source: 'stats', condition: 'above', value: 100 },
+        timePeriod: 'week',
+        count: 1,
+      };
+
+      const replacements = createGoalTextReplacements(prevGoal, nextGoal);
+
+      const periodReplacement = replacements.wordReplacements.find(r => r.old === 'day');
+      expect(periodReplacement).toBeDefined();
+      expect(periodReplacement?.new).toBe('week');
+    });
+
+    it('should handle missing targets gracefully', () => {
+      const prevGoal: Partial<GoalRequirements> = {
+        timePeriod: 'day',
+        count: 1,
+      };
+      const nextGoal: Partial<GoalRequirements> = {
+        timePeriod: 'week',
+        count: 1,
+      };
+
+      const replacements = createGoalTextReplacements(prevGoal, nextGoal);
+
+      expect(replacements.wordReplacements).toHaveLength(0);
+      expect(replacements.formattedShortPreferred).toHaveLength(0);
+      expect(replacements.formattedLongPreferred).toHaveLength(0);
+    });
+  });
+
+  describe('applyGoalTextReplacements', () => {
+    it('should apply formatted short replacements to title and badge label', () => {
+      const text = {
+        title: 'Reach 100 Daily',
+        description: 'Reach 100 in a day',
+        badgeLabel: '100',
+      };
+      const replacements = {
+        wordReplacements: [],
+        formattedShortPreferred: [{ old: '100', new: '200' }],
+        formattedLongPreferred: [],
+      };
+
+      const result = applyGoalTextReplacements(text, replacements);
+
+      expect(result.title).toBe('Reach 200 Daily');
+      expect(result.badgeLabel).toBe('200');
+      expect(result.description).toBe('Reach 100 in a day'); // Not affected by short format
+    });
+
+    it('should apply formatted long replacements to description', () => {
+      const text = {
+        title: 'Reach 100 Daily',
+        description: 'Reach 100 in a day',
+        badgeLabel: '100',
+      };
+      const replacements = {
+        wordReplacements: [],
+        formattedShortPreferred: [],
+        formattedLongPreferred: [{ old: '100', new: '200' }],
+      };
+
+      const result = applyGoalTextReplacements(text, replacements);
+
+      expect(result.title).toBe('Reach 100 Daily'); // Not affected
+      expect(result.badgeLabel).toBe('100'); // Not affected
+      expect(result.description).toBe('Reach 200 in a day');
+    });
+
+    it('should apply word replacements to all text', () => {
+      const text = {
+        title: 'day total Target',
+        description: 'Reach total above 100 in a day',
+        badgeLabel: 'total',
+      };
+      const replacements = {
+        wordReplacements: [
+          { old: 'day', new: 'week' },
+          { old: 'total', new: 'mean' },
+        ],
+        formattedShortPreferred: [],
+        formattedLongPreferred: [],
+      };
+
+      const result = applyGoalTextReplacements(text, replacements);
+
+      expect(result.title).toBe('week mean Target');
+      expect(result.description).toBe('Reach mean above 100 in a week');
+      expect(result.badgeLabel).toBe('mean');
+    });
+
+    it('should apply all replacement types in correct order', () => {
+      const text = {
+        title: '100 day',
+        description: 'Reach 100 in a day',
+        badgeLabel: '100',
+      };
+      const replacements = {
+        wordReplacements: [{ old: 'day', new: 'week' }],
+        formattedShortPreferred: [{ old: '100', new: '200' }],
+        formattedLongPreferred: [{ old: '100', new: '200' }],
+      };
+
+      const result = applyGoalTextReplacements(text, replacements);
+
+      expect(result.title).toBe('200 week');
+      expect(result.description).toBe('Reach 200 in a week');
+      expect(result.badgeLabel).toBe('200');
+    });
+
+    it('should handle special characters in values', () => {
+      const text = {
+        title: 'Reach +10 Daily',
+        description: 'Reach +10 in a day',
+        badgeLabel: '+10',
+      };
+      const replacements = {
+        wordReplacements: [],
+        formattedShortPreferred: [{ old: '+10', new: '+20' }],
+        formattedLongPreferred: [{ old: '+10', new: '+20' }],
+      };
+
+      const result = applyGoalTextReplacements(text, replacements);
+
+      expect(result.title).toBe('Reach +20 Daily');
+      expect(result.description).toBe('Reach +20 in a day');
+      expect(result.badgeLabel).toBe('+20');
     });
   });
 });

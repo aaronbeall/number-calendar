@@ -858,6 +858,154 @@ describe('processAchievements', () => {
     expect(result[0].completedCount).toBe(0);
     expect(result[0].currentProgress).toBe(1);
   });
+
+  it('should complete a daily goal with cumulative percent growth (source: cumulativePercents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g13',
+        datasetId,
+        createdAt: 0,
+        title: 'Daily 50% Cumulative Growth',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        target: { condition: 'above', metric: 'total', source: 'cumulativePercents', value: 50 },
+        badge: { style: 'star', icon: 'award', color: 'gold', label: '50%' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Day 1: total=100, cumulative=100
+    // Day 2: total=50, cumulative=150, cumulativePercent=(150-100)/100*100=50%
+    // Day 3: total=100, cumulative=250, cumulativePercent=(250-150)/150*100=66.67%
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [50],  // cumulative growth = 50%
+      '2025-12-03': [100], // cumulative growth = 66.67%
+    };
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
+    // Should have 2 achievements (days 2 and 3 had >50% cumulative growth)
+    expect(result[0].completedCount).toBe(2);
+    expect(result[0].achievements.length).toBe(2);
+    expect(result[0].achievements[0].completedAt).toBe('2025-12-02');
+    expect(result[0].achievements[1].completedAt).toBe('2025-12-03');
+  });
+
+  it('should not complete when cumulative percent growth is below target (source: cumulativePercents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g13b',
+        datasetId,
+        createdAt: 0,
+        title: 'Daily 100% Cumulative Growth',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        target: { condition: 'above', metric: 'total', source: 'cumulativePercents', value: 100 },
+        badge: { style: 'star', icon: 'award', color: 'gold', label: '100%' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // All days have <100% cumulative growth
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [50],  // cumulative growth = 50%
+      '2025-12-03': [75],  // cumulative growth = 50%
+    };
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
+    // Should have no achievements (all cumulative growth < 100%)
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].achievements.length).toBe(0);
+  });
+
+  it('should complete a weekly cumulative percent growth streak (source: cumulativePercents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g14',
+        datasetId,
+        createdAt: 0,
+        title: '3-Week Cumulative Growth',
+        type: 'goal',
+        timePeriod: 'week',
+        count: 3,
+        consecutive: true,
+        target: { condition: 'above', metric: 'total', source: 'cumulativePercents', value: 20 },
+        badge: { style: 'ribbon', icon: 'achievement', color: 'sapphire', label: '3wk' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Week 1: total=100, cumulative=100
+    // Week 2: total=50, cumulative=150, cumulativePercent=50%
+    // Week 3: total=60, cumulative=210, cumulativePercent=40%
+    // Week 4: total=70, cumulative=280, cumulativePercent=33.33%
+    const data = {
+      '2025-12-01': [100], // Week 1
+      '2025-12-08': [50],  // Week 2 (cumulative growth = 50%)
+      '2025-12-15': [60],  // Week 3 (cumulative growth = 40%)
+      '2025-12-22': [70],  // Week 4 (cumulative growth = 33.33%)
+    };
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
+    // Should complete a 3-week streak (weeks 2-4 all had >20% cumulative growth)
+    expect(result[0].completedCount).toBe(1);
+    expect(result[0].achievements[0].startedAt).toBe('2025-W50');
+    expect(result[0].achievements[0].completedAt).toBe('2025-W52');
+  });
+
+  it('should not complete cumulative growth streak when growth drops below threshold (source: cumulativePercents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g14b',
+        datasetId,
+        createdAt: 0,
+        title: '3-Week Cumulative 50% Growth',
+        type: 'goal',
+        timePeriod: 'week',
+        count: 3,
+        consecutive: true,
+        target: { condition: 'above', metric: 'total', source: 'cumulativePercents', value: 50 },
+        badge: { style: 'ribbon', icon: 'achievement', color: 'sapphire', label: '3wk' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Week 3 drops below 50% cumulative growth threshold
+    const data = {
+      '2025-12-01': [100], // Week 1
+      '2025-12-08': [100], // Week 2 (cumulative growth = 100%)
+      '2025-12-15': [50],  // Week 3 (cumulative growth = 25%, breaks streak)
+      '2025-12-22': [200], // Week 4 (cumulative growth = 100%)
+    };
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
+    // Should not complete because week 3 only had 25% cumulative growth
+    expect(result[0].completedCount).toBe(0);
+    expect(result[0].currentProgress).toBe(1);
+  });
+
+  it('should handle negative cumulative percent growth (source: cumulativePercents)', () => {
+    const goals: Goal[] = [
+      {
+        id: 'g15',
+        datasetId,
+        createdAt: 0,
+        title: 'Declining Cumulative',
+        type: 'goal',
+        timePeriod: 'day',
+        count: 1,
+        target: { condition: 'below', metric: 'total', source: 'cumulativePercents', value: 0 },
+        badge: { style: 'star', icon: 'award', color: 'ruby', label: 'decline' },
+      },
+    ];
+    const achievements: Achievement[] = [];
+    // Cumulative total decreases
+    const data = {
+      '2025-12-01': [100],
+      '2025-12-02': [-50], // cumulative = 50, cumulativePercent = -50%
+      '2025-12-03': [25],  // cumulative = 75, cumulativePercent = 50%
+    };
+    const result = processAchievements({ goals, priorResults: achievements, data, datasetId });
+    // Should complete only on day 2 (cumulative growth < 0%)
+    expect(result[0].completedCount).toBe(1);
+    expect(result[0].achievements.length).toBe(1);
+    expect(result[0].achievements[0].completedAt).toBe('2025-12-02');
+  });
 });
 
 describe('getSuggestedGoalContent', () => {
@@ -976,6 +1124,6 @@ describe('sortGoalResults', () => {
     ];
 
     const sorted = sortGoalResults(results).map(result => result.goal.id);
-    expect(sorted).toEqual(['m0', 'm1', 't2', 't1', 'gB', 'gC', 'gD', 'gA']);
+    expect(sorted).toEqual(['m1', 'm0', 't2', 't1', 'gB', 'gC', 'gD', 'gA']);
   });
 });
