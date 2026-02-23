@@ -10,7 +10,7 @@ import { DATASET_TEMPLATES } from '@/lib/dataset-builder';
 import { toDayKey } from '@/lib/friendly-date';
 import { convertPeriodLengthWithRounding, convertPeriodUnitWithRounding, formatValue, roundToClean } from '@/lib/friendly-numbers';
 import { formatGoalConditionLabel, getGoalCategory, isSameGoal } from '@/lib/goals';
-import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput } from '@/lib/goals-builder';
+import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput, type GoalBuilderPeriod, type GoalBuilderTarget } from '@/lib/goals-builder';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
 import { getValueForGood, isBad } from '@/lib/valence';
 import { ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
@@ -27,17 +27,15 @@ type GoalBuilderDialogProps = {
 
 type Step = 'period' | 'activity' | 'preview' | 'starting-point';
 
-type TargetType = 'period-total' | 'alltime-total' | 'period-change' | 'period-range' | 'alltime-target';
-
 export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onComplete }: GoalBuilderDialogProps) {
   const [step, setStep] = useState<Step>('period');
-  const [period, setPeriod] = useState<'day' | 'week' | 'month' | ''>('');
+  const [period, setPeriod] = useState<GoalBuilderPeriod | ''>('');
   const [targetPeriodValue, setTargetPeriodValue] = useState<string | null>(null);
   const [targetAlltimeValue, setTargetAlltimeValue] = useState<string | null>(null);
   const [targetRangeMinValue, setTargetRangeMinValue] = useState<string | null>(null);
   const [targetRangeMaxValue, setTargetRangeMaxValue] = useState<string | null>(null);
   const [startingValue, setStartingValue] = useState<string>('');
-  const [targetType, setTargetType] = useState<'' | TargetType>('');
+  const [targetType, setTargetType] = useState<'' | GoalBuilderTarget>('');
   const [targetDays, setTargetDays] = useState<string>(''); // Stored in days
   const [timePeriodUnit, setTimePeriodUnit] = useState<'days' | 'weeks' | 'months'>('days');
   const [activePeriods, setActivePeriods] = useState<string>('');
@@ -125,8 +123,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const exampleAmountLabel = formatValue(exampleAmount);
   const exampleChangeLabel = formatValue(exampleChange, { delta: true });
   const parsedStartingValue = Number.isFinite(parseFloat(startingValue)) ? parseFloat(startingValue) : undefined;
-  const isPeriodTarget = targetType === 'period-total' || targetType === 'period-change';
-  const isAllTimeTarget = targetType === 'alltime-total' || targetType === 'alltime-target';
+  const isPeriodTarget = targetType === 'period-target';
+  const isAllTimeTarget = targetType === 'alltime-target';
   const isRangeTarget = targetType === 'period-range';
   const suggestedTargetDefaults = useMemo(() => {
     if (!template?.suggestedTarget || !period || !targetType) {
@@ -168,12 +166,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     }
 
     const isPeriodChange =
-      suggestedTarget.type === 'period-change' && targetType === 'period-change' && periodMatches;
+      suggestedTarget.type === 'period-change' && targetType === 'period-target' && dataset.tracking === 'trend' && periodMatches;
     const isPeriodTotal =
-      suggestedTarget.type === 'period-target' && targetType === 'period-total' && periodMatches;
+      suggestedTarget.type === 'period-target' && targetType === 'period-target' && dataset.tracking === 'series' && periodMatches;
     const isAlltimeTarget =
-      suggestedTarget.type === 'alltime-target' &&
-      targetType === (dataset.tracking === 'series' ? 'alltime-total' : 'alltime-target');
+      suggestedTarget.type === 'alltime-target' && targetType === 'alltime-target';
 
     if (!isPeriodChange && !isPeriodTotal && !isAlltimeTarget) {
       return { periodValue: null, alltimeValue: null, rangeMin: null, rangeMax: null };
@@ -355,7 +352,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const targetTypeOptions = useMemo(() => {
     const options: Array<{
       key: 'period' | 'alltime' | 'range';
-      type: TargetType;
+      type: GoalBuilderTarget;
       label: string;
       description: string;
       icon: ReactNode;
@@ -364,7 +361,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     if (showPeriodOption) {
       options.push({
         key: 'period',
-        type: dataset.tracking === 'series' ? 'period-total' : 'period-change',
+        type: 'period-target',
         label: targetPeriodLabel,
         description: targetPeriodDescription,
         icon: dataset.tracking === 'series' ? <Hash className="w-5 h-5 text-blue-600 dark:text-blue-400" /> : <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
@@ -384,7 +381,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     if (showAlltimeOption) {
       options.push({
         key: 'alltime',
-        type: dataset.tracking === 'series' ? 'alltime-total' : 'alltime-target',
+        type: 'alltime-target',
         label: targetAlltimeLabel,
         description: targetAlltimeDescription,
         icon: dataset.tracking === 'series' ? <Trophy className="w-5 h-5 text-blue-600 dark:text-blue-400" /> : <Target className="w-5 h-5 text-blue-600 dark:text-blue-400" />,
@@ -400,15 +397,15 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       : isPeriodTarget
         ? questions?.goodValue?.period?.prompt
         : questions?.goodValue?.alltime?.prompt,
-    targetType === 'period-total'
-      ? `What's a good ${period}?`
-      : targetType === 'alltime-total'
-        ? 'What total do you want to reach?'
-        : targetType === 'period-change'
-          ? "What's good progress?"
-          : targetType === 'period-range'
-            ? `What's a good ${adjectivize(period)} range?`
-            : 'What value are you aiming for?'
+    isPeriodTarget
+      ? dataset.tracking === 'series'
+        ? `What's a good ${period}?`
+        : "What's good progress?"
+      : isAllTimeTarget
+        ? dataset.tracking === 'series'
+          ? 'What total do you want to reach?'
+          : 'What value are you aiming for?'
+        : `What's a good ${adjectivize(period)} range?`
   );
   const goodValueDescription = resolveText(
     isRangeTarget
@@ -416,15 +413,15 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       : isPeriodTarget
         ? questions?.goodValue?.period?.description
         : questions?.goodValue?.alltime?.description,
-    targetType === 'period-total'
-      ? `Enter the target total for each ${period}`
-      : targetType === 'alltime-total'
-        ? 'Enter a milestone total you want to achieve'
-        : targetType === 'period-change'
-          ? `Enter the ${adjectivize(period)} improvement that would make you proud`
-          : targetType === 'period-range'
-            ? `Enter the target range for each ${period}`
-            : 'Enter the overall target value'
+    isPeriodTarget
+      ? dataset.tracking === 'series'
+        ? `Enter the target total for each ${period}`
+        : `Enter the ${adjectivize(period)} improvement that would make you proud`
+      : isAllTimeTarget
+        ? dataset.tracking === 'series'
+          ? 'Enter a milestone total you want to achieve'
+          : 'Enter the overall target value'
+        : `Enter the target range for each ${period}`
   );
   const shouldUseSuggestedAlltimeValue =
     isAllTimeTarget && (typeof parsedStartingValue !== 'number' || parsedStartingValue === 0);
@@ -435,11 +432,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       : undefined;
   const goodValuePlaceholder = (() => {
     if (typeof suggestedGoodValue === 'number') {
-      return `e.g. ${formatValue(suggestedGoodValue, { delta: targetType === 'period-change' })}`;
+      return `e.g. ${formatValue(suggestedGoodValue, { delta: dataset.tracking === 'trend' && isPeriodTarget })}`;
     }
-    if (targetType === 'period-total') return `e.g. ${exampleAmountLabel}`;
-    if (targetType === 'period-change') return `e.g. ${exampleChangeLabel}`;
-    if (targetType === 'alltime-total') return `e.g. ${formatValue(allTimeTotalExample)}`;
+    if (isPeriodTarget) return dataset.tracking === 'series' ? `e.g. ${exampleAmountLabel}` : `e.g. ${exampleChangeLabel}`;
+    if (isAllTimeTarget) return dataset.tracking === 'series' ? `e.g. ${formatValue(allTimeTotalExample)}` : `e.g. ${formatValue(allTimeTargetExample)}`;
     return `e.g. ${formatValue(allTimeTargetExample)}`;
   })();
   const rangeMinPlaceholder =
@@ -514,7 +510,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const summaryBaselines = builderInput && !isRangeTarget ? calculateBaselines(builderInput) : null;
   const conversionLabel = (() => {
     if (!summaryBaselines || !period || !isPeriodTarget) return '';
-    const delta = targetType === 'period-change';
+    const delta = dataset.tracking === 'trend';
     if (period === 'day') {
       const parts = [
         summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { delta })} weekly` : null,
@@ -532,7 +528,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const summary90DayTotal = (() => {
     if (!summaryBaselines || !isPeriodTarget) return '';
     const total = summaryBaselines.dayTarget * 90;
-    return formatValue(total, { delta: targetType === 'period-change' });
+    return formatValue(total, { delta: dataset.tracking === 'trend' });
   })();
   const perPeriodLabel = (() => {
     if (!summaryBaselines || !period || !isAllTimeTarget) return '';
@@ -546,10 +542,10 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   })();
 
   const handleTargetTypeSelect = (
-    nextTargetType: TargetType
+    nextTargetType: GoalBuilderTarget
   ) => {
-    const nextIsAlltime = nextTargetType.startsWith('alltime');
-    const currentIsAlltime = targetType.startsWith('alltime');
+    const nextIsAlltime = nextTargetType === 'alltime-target';
+    const currentIsAlltime = targetType === 'alltime-target';
     const startValue = resolvedStartingValue;
 
     if (period && parsedDurationDays > 0 && typeof startValue === 'number' && Number.isFinite(startValue) && nextIsAlltime !== currentIsAlltime) {
@@ -577,7 +573,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     setTargetType(nextTargetType);
   };
 
-  const handlePeriodSelect = (value: 'day' | 'week' | 'month') => {
+  const handlePeriodSelect = (value: GoalBuilderPeriod) => {
     if (period && period !== value && targetPeriodValue?.trim()) {
       const convertedValue = convertPeriodUnitWithRounding(targetPeriodValue, period, value);
       if (convertedValue !== null) {
@@ -795,7 +791,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     }
     
     // Calculate valence-adjusted value
-    const isAllTime = targetType === 'alltime-total' || targetType === 'alltime-target';
+    const isAllTime = targetType === 'alltime-target';
     
     const valenceValue = isAllTime ? numValue - allTimePriorValue : numValue;
     const isWrongSign = isBad(valenceValue, dataset.valence);
@@ -831,7 +827,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     }}
                     className="underline hover:no-underline font-medium"
                   >
-                    Use {formatValue(-numValue, { delta: targetType === 'period-change' })} instead?
+                    Use {formatValue(-numValue, { delta: dataset.tracking === 'trend' })} instead?
                   </button>
                 </>
               )}
@@ -1167,7 +1163,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                           hideStepperButtons
                           className="text-center !text-2xl font-bold h-16 pr-12"
                         />
-                        {(targetType === 'period-change' || targetType === 'alltime-target') && (
+                        {dataset.tracking === 'trend' && (
                           <div className="absolute right-4 top-1/2 -translate-y-1/2">
                             {getValueForGood(dataset.valence, {
                               positive: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
@@ -1382,12 +1378,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                       {isRangeTarget
                         ? rangeConditionLabel
                         : formatValue(parseFloat(activeValue ?? ''), {
-                            delta: targetType === 'period-change'
+                            delta: dataset.tracking === 'trend'
                           })}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {targetType === 'period-total' && `${capitalize(adjectivize(period))} total`}
-                      {targetType === 'period-change' && `${capitalize(adjectivize(period))} change`}
+                      {isPeriodTarget && dataset.tracking === 'series' && `${capitalize(adjectivize(period))} total`}
+                      {isPeriodTarget && dataset.tracking === 'trend' && `${capitalize(adjectivize(period))} change`}
                       {isRangeTarget && `${capitalize(adjectivize(period))} range`}
                       {isAllTimeTarget && summaryDurationLabel}
                     </div>

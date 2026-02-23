@@ -9,15 +9,15 @@ describe('goals-builder: Series Tracking', () => {
     valence: 'positive',
     value: 100,
     activePeriods: 5, // 5 periods per parent (e.g., 5 days per week)
-    targetType: 'period-total',
+    targetType: 'period-target' as const,
   };
 
   describe('Daily Period', () => {
-    it('should generate correct goals for period-total', () => {
+    it('should generate correct goals for period', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'day',
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         startingValue: 5
       };
 
@@ -57,11 +57,11 @@ describe('goals-builder: Series Tracking', () => {
       expect(dayTarget?.target.condition).toBe('above');
     });
 
-    it('should generate correct goals for alltime-total', () => {
+    it('should generate correct goals for alltime', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'day',
-        targetType: 'alltime-total',
+        targetType: 'alltime-target' as const,
         targetDays: 90,
         startingValue: 20,
       };
@@ -103,11 +103,11 @@ describe('goals-builder: Series Tracking', () => {
   });
 
   describe('Weekly Period', () => {
-    it('should generate correct goals for period-total', () => {
+    it('should generate correct goals for period', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'week',
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         startingValue: 25,
       };
 
@@ -143,11 +143,11 @@ describe('goals-builder: Series Tracking', () => {
       expect(weekTarget?.target.condition).toBe('above');
     });
 
-    it('should generate correct goals for alltime-total', () => {
+    it('should generate correct goals for alltime', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'week',
-        targetType: 'alltime-total',
+        targetType: 'alltime-target' as const,
         targetDays: 91, // 13 weeks
         startingValue: 20,
       };
@@ -189,11 +189,11 @@ describe('goals-builder: Series Tracking', () => {
   });
 
   describe('Monthly Period', () => {
-    it('should generate correct goals for period-total', () => {
+    it('should generate correct goals for period', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'month',
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         startingValue: 12,
       };
 
@@ -230,11 +230,11 @@ describe('goals-builder: Series Tracking', () => {
       expect(monthTarget?.target.condition).toBe('above');
     });
 
-    it('should generate correct goals for alltime-total', () => {
+    it('should generate correct goals for alltime', () => {
       const input: GoalBuilderInput = {
         ...baseInput,
         period: 'month',
-        targetType: 'alltime-total',
+        targetType: 'alltime-target' as const,
         targetDays: 90, // 3 months
         startingValue: 15,
       };
@@ -285,7 +285,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 1000,
-        targetType: 'alltime-total',
+        targetType: 'alltime-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -306,7 +306,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'week',
         value: 200,
-        targetType: 'alltime-target',
+        targetType: 'alltime-target' as const,
         activePeriods: 3,
         startingValue: 50,
         targetDays: 180,
@@ -327,7 +327,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 100,
-        targetType: 'alltime-total',
+        targetType: 'alltime-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 0,
@@ -345,7 +345,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 50,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -365,7 +365,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'week',
         value: 100,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 4,
         startingValue: 0,
         targetDays: 90,
@@ -385,7 +385,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'month',
         value: 300,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 12,
         startingValue: 0,
         targetDays: 90,
@@ -405,7 +405,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 50,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 1000,
         targetDays: 90,
@@ -426,7 +426,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 25,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -448,7 +448,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 5,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 3,
         startingValue: 0,
         targetDays: 90,
@@ -469,7 +469,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 2.5,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -483,14 +483,14 @@ describe('calculateBaselines', () => {
   });
 
   describe('different value types', () => {
-    it('handles period-change value type', () => {
+    it('handles period value type', () => {
       const input: GoalBuilderInput = {
         datasetId: 'test',
         tracking: 'trend',
         valence: 'positive',
         period: 'day',
         value: 10,
-        targetType: 'period-change',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 100,
         targetDays: 90,
@@ -502,14 +502,14 @@ describe('calculateBaselines', () => {
       expect(result.weekTarget).toBe(50);
     });
 
-    it('handles period-total value type', () => {
+    it('handles period value type', () => {
       const input: GoalBuilderInput = {
         datasetId: 'test',
         tracking: 'series',
         valence: 'positive',
         period: 'week',
         value: 200,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 4,
         startingValue: 0,
         targetDays: 90,
@@ -529,7 +529,7 @@ describe('calculateBaselines', () => {
         valence: 'negative',
         period: 'day',
         value: -5,
-        targetType: 'period-change',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 100,
         targetDays: 90,
@@ -548,7 +548,7 @@ describe('calculateBaselines', () => {
         valence: 'neutral',
         period: 'day',
         value: 50,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -566,7 +566,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 10000,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,
@@ -586,7 +586,7 @@ describe('calculateBaselines', () => {
         valence: 'positive',
         period: 'day',
         value: 0.1,
-        targetType: 'period-total',
+        targetType: 'period-target' as const,
         activePeriods: 5,
         startingValue: 0,
         targetDays: 90,

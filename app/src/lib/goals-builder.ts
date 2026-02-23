@@ -9,6 +9,12 @@ import { formatGoalConditionLabel, formatGoalTargetValue } from './goals';
 import { adjectivize, capitalize, pluralize, randomValueOf, sequenceFromNow, escapeRegex } from './utils';
 import { getValueForGood } from './valence';
 
+// Target type for goal builder
+export type GoalBuilderTarget = 'period-target' | 'alltime-target' | 'period-range' | 'period-percent';
+
+// Period type for goal builder
+export type GoalBuilderPeriod = 'day' | 'week' | 'month';
+
 // Text replacement utilities for goal editing
 
 /**
@@ -172,9 +178,9 @@ export interface GoalBuilderInput {
   datasetId: string;
   tracking: Tracking;
   valence: Valence;
-  period: 'day' | 'week' | 'month';
+  period: GoalBuilderPeriod;
   value: number;
-  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range' | 'period-growth';
+  targetType: GoalBuilderTarget;
   valueRange?: {
     min?: number;
     max?: number;
@@ -220,7 +226,7 @@ function createTargetFromCondition(
 
 // Helper to get appropriate metric and source based on value type
 function getMetricAndSource(
-  targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range' | 'period-growth',
+  targetType: GoalBuilderTarget,
   goalType: 'milestone' | 'target',
   tracking: Tracking
 ): { metric: NumberMetric; source: NumberSource } {
@@ -230,23 +236,21 @@ function getMetricAndSource(
       source: 'stats',
     };
   }
-  if (targetType === 'period-growth') {
+  if (targetType === 'period-percent') {
     return {
       metric: 'total',
       source: 'cumulativePercents',
     };
   }
-  const isTrend = targetType === 'period-change' || targetType === 'alltime-target';
   
-  return isTrend
+  // For trend tracking, use 'last' metric with deltas for targets, stats for milestones
+  // For series tracking, use 'total' metric with stats source
+  return tracking === 'trend'
     ? {
-        // For Trend tracking, use 'last' metric
-        // Milestones use 'stats' source, targets use 'deltas' source
         metric: 'last',
         source: goalType === 'milestone' ? 'stats' : 'deltas'
       }
     : {
-        // For Series tracking (period-total and alltime-total), use total
         metric: 'total',
         source: 'stats',
       };
@@ -261,10 +265,10 @@ function getCondition(valence: Valence, target: number): 'above' | 'below' {
 }
 
 // Helper to get the term for valence
-function getValenceTerm(targetType: 'period-total' | 'alltime-total' | 'period-change' | 'alltime-target' | 'period-range' | 'period-growth', valence: Valence) {
-  if (targetType === 'period-range') return 'In Range';
-  if (targetType === 'period-growth') return getValueForGood(valence, { positive: 'Growth', negative: 'Decline', neutral: 'Change' } as const);
-  return (targetType === 'period-change' || targetType === 'alltime-target')
+function getValenceTerm(targetType: GoalBuilderTarget, tracking: Tracking, valence: Valence) {
+  if (targetType === 'period-range') return 'Balanced';
+  if (targetType === 'period-percent') return getValueForGood(valence, { positive: 'Growth', negative: 'Decline', neutral: 'Change' } as const);
+  return tracking === 'trend'
     ? getValueForGood(valence, { positive: 'Uptrend', negative: 'Downtrend', neutral: 'Target' } as const)
     : getValueForGood(valence, { positive: 'Positive', negative: 'Negative', neutral: 'Target' } as const);
 }
@@ -291,9 +295,9 @@ interface BaselineValues {
 export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
   const { period, value: goodValue, targetType, activePeriods, startingValue, targetDays } = input;
   if (targetType === 'period-range') {
-    throw new Error('calculateBaselines does not support period-range goals');
+    throw new Error('calculateBaselines does not support range goals');
   }
-  const isAllTime = targetType === 'alltime-total' || targetType === 'alltime-target';
+  const isAllTime = targetType === 'alltime-target';
   
   // Determine base significant digits from user input
   const baseSigDigits = countSignificantDigits(goodValue);
@@ -667,7 +671,7 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
   const nextCreatedAt = sequenceFromNow();
   
   const targets: Goal[] = [];
-  const periods: Array<{ period: 'day' | 'week' | 'month'; value: number; color: AchievementBadgeColor }> = [
+  const periods: Array<{ period: GoalBuilderPeriod; value: number; color: AchievementBadgeColor }> = [
     { period: 'day', value: baselines.dayTarget, color: 'emerald' },
     { period: 'week', value: baselines.weekTarget, color: 'sapphire' },
     { period: 'month', value: baselines.monthTarget, color: 'amethyst' },
@@ -678,7 +682,7 @@ function generateTargets(input: GoalBuilderInput, baselines: BaselineValues): Go
       ? 'Grow' 
       : 'Reach';
   const percent = source === 'percents' || source === 'cumulativePercents';
-  const delta = source === 'deltas';
+  const delta = source === 'deltas' || source === 'cumulativePercents';
 
   periods.forEach(({ period, value, color }, idx) => {
     const adjectiveName = capitalize(adjectivize(period));
@@ -709,7 +713,7 @@ function generateAchievements(input: GoalBuilderInput, baselines: BaselineValues
   const nextCreatedAt = sequenceFromNow();
 
   const achievements: Goal[] = [];
-  const valenceTerm = getValenceTerm(targetType, valence);
+  const valenceTerm = getValenceTerm(targetType, tracking, valence);
 
   // Use baseline targets for achievement calculations
   const periodTargets = {
