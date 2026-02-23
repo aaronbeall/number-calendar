@@ -317,7 +317,7 @@ export function AppHeader({
                   className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 py-1.5"
                   onClick={() => navigate('/')}
                 >
-                  View all datasets →
+                  View all datasets ({datasets.length}) →
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
