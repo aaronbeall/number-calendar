@@ -9,6 +9,22 @@ import { entriesOf } from '@/lib/utils';
 import { useState } from 'react';
 import type { GoalRequirements, GoalTarget, TimePeriod, Tracking, Valence } from '../db/localdb';
 
+// Shared filtering functions for all goal builders
+export const filterMetricsForTracking = (metric: NumberMetric, tracking?: Tracking): boolean => {
+  if (tracking === 'trend' && metric === 'total') return false;
+  return true;
+};
+
+export const filterSourcesForTracking = (source: NumberSource, tracking?: Tracking): boolean => {
+  if (tracking === 'trend') {
+    return source !== 'cumulatives' && source !== 'cumulativePercents';
+  }
+  if (tracking === 'series') {
+    return source !== 'cumulatives' && source !== 'percents';
+  }
+  return true;
+};
+
 type GoalBuilderProps = {
   value: Partial<GoalRequirements>;
   onChange: (v: Partial<GoalRequirements>) => void;
@@ -84,7 +100,7 @@ export function GoalBuilder({ value, onChange, tracking }: GoalBuilderProps) {
           </SelectTrigger>
           <SelectContent className="max-h-60">
             {entriesOf(METRICS)
-              .filter(([key]) => tracking !== 'trend' || key !== 'total')
+              .filter(([key]) => filterMetricsForTracking(key, tracking))
               .map(([key, { label, description }]) => {
               const isPrimary = tracking && key === getPrimaryMetric(tracking);
               return (
@@ -117,9 +133,9 @@ export function GoalBuilder({ value, onChange, tracking }: GoalBuilderProps) {
                 {source && SOURCES[source].label}
               </SelectValue>
             </SelectTrigger>
-            <SelectContent>
-              {entriesOf(SOURCES)
-                .filter(([key]) => tracking !== 'trend' || (key !== 'cumulatives' && key !== 'cumulativePercents'))
+          <SelectContent className="max-h-60">
+            {entriesOf(SOURCES)
+              .filter(([key]) => filterSourcesForTracking(key, tracking))
                 .map(([key, { label, description }]) => (
                 <SelectItem key={key} value={key}>
                   <div className="flex flex-col">

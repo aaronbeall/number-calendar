@@ -5,6 +5,7 @@ import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { getPrimaryMetric } from '@/lib/tracking';
+import { filterMetricsForTracking, filterSourcesForTracking } from './GoalBuilder';
 
 type MilestoneBuilderProps = {
   value: Partial<GoalRequirements>;
@@ -87,8 +88,10 @@ export function MilestoneBuilder({ value, onChange, tracking, valence }: Milesto
                   )}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                {entriesOf(METRICS).map(([key, { label, description }]) => {
+              <SelectContent className="max-h-60">
+                {entriesOf(METRICS)
+                  .filter(([key]) => filterMetricsForTracking(key, tracking))
+                  .map(([key, { label, description }]) => {
                   const isPrimary = tracking && key === getPrimaryMetric(tracking);
                   return (
                     <SelectItem key={key} value={key}>
@@ -120,8 +123,10 @@ export function MilestoneBuilder({ value, onChange, tracking, valence }: Milesto
                     {source && <span className="text-sm">{SOURCES[source].label}</span>}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
-                  {entriesOf(SOURCES).map(([key, { label, description }]) => (
+                <SelectContent className="max-h-60">
+                  {entriesOf(SOURCES)
+                    .filter(([key]) => filterSourcesForTracking(key, tracking))
+                    .map(([key, { label, description }]) => (
                     <SelectItem key={key} value={key}>
                       <div className="flex flex-col">
                         <span className="font-medium">{label}</span>

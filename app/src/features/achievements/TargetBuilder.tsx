@@ -6,6 +6,7 @@ import { METRIC_DISPLAY_INFO, METRIC_SOURCES_DISPLAY_INFO, type NumberMetric, ty
 import { getPrimaryMetric } from '@/lib/tracking';
 import { entriesOf } from '@/lib/utils';
 import type { GoalRequirements, GoalTarget, TimePeriod, Tracking, Valence } from '../db/localdb';
+import { filterMetricsForTracking, filterSourcesForTracking } from './GoalBuilder';
 
 type TargetBuilderProps = {
   value: Partial<GoalRequirements>;
@@ -144,8 +145,10 @@ export function TargetBuilder({ value, onChange, tracking, valence }: TargetBuil
                   )}
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
-                {entriesOf(METRICS).map(([key, { label, description }]) => {
+              <SelectContent className="max-h-60">
+                {entriesOf(METRICS)
+                  .filter(([key]) => filterMetricsForTracking(key, tracking))
+                  .map(([key, { label, description }]) => {
                   const isPrimary = tracking && key === getPrimaryMetric(tracking);
                   return (
                     <SelectItem key={key} value={key}>
@@ -177,8 +180,10 @@ export function TargetBuilder({ value, onChange, tracking, valence }: TargetBuil
                     {source && <span className="text-sm">{SOURCES[source].label}</span>}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
-                  {entriesOf(SOURCES).map(([key, { label, description }]) => (
+                <SelectContent className="max-h-60">
+                  {entriesOf(SOURCES)
+                    .filter(([key]) => filterSourcesForTracking(key, tracking))
+                    .map(([key, { label, description }]) => (
                     <SelectItem key={key} value={key}>
                       <div className="flex flex-col">
                         <span className="font-medium">{label}</span>

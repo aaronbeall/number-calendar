@@ -164,12 +164,13 @@ I'm liking this one.
   - [x] Add cumulative calculations to data model
   - [x] Show cumulative in tracking=series
   - [x] Expose cumulative sources in goal targets
-  - [ ] Add percent change to goal builder
+  - [ ] Add cumulatives to goal builder
+  - [ ] Update goal system to support cumulative goals
 - [ ] [?] Adding data to new month didn't update the monthly view show a new month summary
 - [ ] Need an error boundary to catch UI errors
 - [x] [High] Need suggested goal weight, meaningful suggested values throughout
-- [ ] Edit badge from numbers panel doesn't work -- replace with "Manage Achievements"
-- [ ] Add more Range based achievements to goal builder
+- [x] Edit badge from numbers panel doesn't work -- replaced with "Share"
+- [ ] Add more Range based achievements to goal builder (averages, milestones from counts, etc)
 - [x] Count and average achievements
 - [ ] "First Win" is kinda broken -- fix or remove
 - [ ] Delete note confirmation disappears -- replace menu item with button
@@ -185,7 +186,7 @@ I'm liking this one.
 - [ ] Refactor achievements to use aggregate data
 - [x] Refactor to use `formatValue()` instead of `NumberFormatter`
 - [ ] Timeline extremes not handled
-- [ ] Editing a badge directly doesn't update the preview
+- [x] Editing a badge directly doesn't update the preview
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
 - [x] URL/back button compatibility for side-panels
 - [x] Format series with spaces, ie `5 +10 -20`
@@ -199,3 +200,4 @@ I'm liking this one.
 - [ ] Custom color selection for datasets, bring through color from templates
 - [ ] Completed goals should tell you the actual value in the period they were completed (ex for a `>1000` it should show the `1234` value or whatever it was)
 - [ ] Achievement progress only works for counts, need it to work for values as well
+- [ ] You should be able to navigate to the calendar location of achievements

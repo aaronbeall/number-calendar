@@ -26,7 +26,20 @@ export interface NumberStats {
 // Key type for NumberStats
 export type NumberMetric = keyof NumberStats;
 
-// NumberStats can represent different sources: 'stats' (values), 'deltas' (change values), or 'percents' (percentage changes)
+/**
+ * Source of the metric values, which can be:
+ * - 'stats': the actual computed statistics for a period
+ * - 'deltas': the change in statistics from a prior period (current stats - prior stats)
+ * - 'percents': the percentage change in statistics from a prior period ((current - prior) / |prior| * 100)
+ * - 'cumulatives': cumulative values for a period (e.g., running total up to that period)
+ * - 'cumulativePercents': percentage change in cumulative values from a prior period
+ * 
+ * Sources presented in the UI are tailored for the tracking mode:
+ * - For 'series' tracking: 'stats', 'cumulatives', and 'cumulativePercents' are most relevant, while 'deltas' and 'percents' are nomimally relevent -- since series totals already represent changes, and a difference from period to period probably doesn't mean as much as cumulative changes
+ * - For 'trend' tracking: 'stats', 'deltas', and 'percents' are most relevant, while 'cumulatives' and 'cumulativePercents' are not helpful at all and generally never used
+ * 
+ * Note that 'cumulativeDeltas' is not included since for series the `stats` are essentially a delta, and for trend cumulatives are not helpful
+ */
 export type NumberSource = 'stats' | 'deltas' | 'percents' | 'cumulatives' | 'cumulativePercents'; //| 'averages' | 'maximums' | 'minimums';
 
 /**
@@ -328,9 +341,9 @@ export function getMetricDescription(metric: NumberMetric): string {
 export const METRIC_SOURCES_DISPLAY_INFO: Record<NumberSource, { label: string; description: string }> = {
   stats: { label: 'Value', description: 'Actual recorded value for a time period' },
   deltas: { label: 'Delta', description: 'Change from prior time period' },
-  percents: { label: 'Change (%)', description: 'Percentage change from prior time period' },
-  cumulatives: { label: 'Cumulative Value', description: 'Cumulative value from beginning to the time period' },
-  cumulativePercents: { label: 'Cumulative Change (%)', description: 'Percentage change from prior time period\'s cumulative' },
+  percents: { label: 'Delta (%)', description: 'Percentage change from prior time period' },
+  cumulatives: { label: 'Cumulative', description: 'Cumulative value from beginning to the time period' },
+  cumulativePercents: { label: 'Change (%)', description: 'Percentage change from prior time period\'s cumulative' },
 };
 
 export function getMetricSourceDisplayName(source: NumberSource): string {
