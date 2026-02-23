@@ -46,7 +46,7 @@ export default function Milestones() {
   const totalMilestones = achievementResults.length;
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8">
+    <div className="max-w-5xl mx-auto p-4 md:p-8 overflow-hidden">
       <PageHeader
         title="Milestones"
         description="Celebrate major achievements and long-term progress."

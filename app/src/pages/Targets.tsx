@@ -47,7 +47,7 @@ export default function Targets() {
     : [];
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8">
+    <div className="max-w-5xl mx-auto p-4 md:p-8 overflow-hidden">
       <PageHeader
         title="Targets"
         description="Set focused goals for specific time periods and stay on track."

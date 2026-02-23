@@ -50,7 +50,7 @@ export default function Achievements() {
     : [];
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8">
+    <div className="max-w-5xl mx-auto p-4 md:p-8 overflow-hidden">
       <PageHeader
         title="Achievements"
         description="Create goals to track your progress and celebrate wins."

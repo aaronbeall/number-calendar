@@ -91,7 +91,7 @@ export function AchievementCard({
     <div
       className={cn(
         backgroundColor,
-        'group rounded-xl border shadow-sm p-4 flex flex-col gap-2 h-full transition-all duration-300 ease-out items-center relative hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70 dark:hover:shadow-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700 overflow-hidden',
+        'group rounded-xl border shadow-sm p-4 flex flex-col gap-2 h-full transition-all duration-300 ease-out items-center relative hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/70 dark:hover:shadow-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 dark:focus-visible:ring-slate-700',
         onSelect && 'cursor-pointer',
         borderColor,
         status === 'locked' && 'opacity-60 grayscale',
