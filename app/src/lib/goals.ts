@@ -458,12 +458,7 @@ export function isValidGoalAttributes(goal: Partial<GoalRequirements>): goal is 
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
 export function formatGoalTargetValue({ value, range, source }: GoalTarget, { short }: { short?: boolean; } = {}): string {
-  const options: FormatValueOptions = { short, percent: source === 'percents' || source === 'cumulativePercents', delta: source === 'deltas' || source === 'cumulativePercents' };
-  if (range) {
-    return formatRange(range, options);
-  }
-  if (value === undefined) return '';
-  return formatValue(value, options);
+  return formatTargetValue({ value, range, source }, { short });
 }
 
 /**

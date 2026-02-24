@@ -443,8 +443,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       if (isPercentMode) return 'e.g. 10%';
       return dataset.tracking === 'series' ? `e.g. ${exampleAmountLabel}` : `e.g. ${exampleChangeLabel}`;
     }
-    if (isAllTimeTarget) return dataset.tracking === 'series' ? `e.g. ${formatValue(allTimeTotalExample)}` : `e.g. ${formatValue(allTimeTargetExample)}`;
-    return `e.g. ${formatValue(allTimeTargetExample)}`;
+    if (isAllTimeTarget) return dataset.tracking === 'series' ? `e.g. ${formatValue(allTimeTotalExample)}` : `e.g. ${formatValue(allTimeTargetExample, { delta: true })}`;
+    return `e.g. ${formatValue(allTimeTargetExample, { delta: true })}`;
   })();
   const rangeMinPlaceholder =
     typeof suggestedRangeValue?.[0] === 'number' ? `e.g. ${formatValue(suggestedRangeValue[0])}` : 'Min';
@@ -475,14 +475,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
         neutral: totalTarget,
       });
       if (Number.isFinite(exampleStart)) {
-        return `e.g. ${formatValue(roundToClean(exampleStart))}`;
+        return `e.g. ${formatValue(roundToClean(exampleStart), { delta: dataset.tracking === 'trend' })}`;
       }
     }
     if (typeof questions?.startingValue?.suggested === 'number') {
-      return `e.g. ${formatValue(questions.startingValue.suggested)}`;
+      return `e.g. ${formatValue(questions.startingValue.suggested, { delta: dataset.tracking === 'trend' })}`;
     }
     return 'e.g. 0';
-  }, [questions?.startingValue?.suggested, resolvedStartingValue, currentValue, isAllTimeTarget, resolvedAlltimeTargetValue]);
+  }, [questions?.startingValue?.suggested, resolvedStartingValue, currentValue, isAllTimeTarget, resolvedAlltimeTargetValue, dataset.tracking]);
   const timelinePrompt = resolveText(questions?.timeline.prompt, 'How long?');
   const timelineDescription = resolveText(questions?.timeline.description, 'Time to reach goal (optional)');
   const activityHeaderPrompt = resolveText(questions?.activity.prompt, 'How actively will you make progress?');
@@ -521,14 +521,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     const delta = dataset.tracking === 'trend';
     if (period === 'day') {
       const parts = [
-        summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { delta })} weekly` : null,
-        summaryBaselines.monthTarget ? `${formatValue(summaryBaselines.monthTarget, { delta })} monthly` : null,
+        summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { delta, percent: isPercentMode })} weekly` : null,
+        summaryBaselines.monthTarget ? `${formatValue(summaryBaselines.monthTarget, { delta, percent: isPercentMode })} monthly` : null,
       ].filter(Boolean);
       return `(${parts.join(', ')})`;
     }
     if (period === 'week') {
       return summaryBaselines.monthTarget
-        ? `${formatValue(summaryBaselines.monthTarget, { delta })} / month`
+        ? `${formatValue(summaryBaselines.monthTarget, { delta, percent: isPercentMode })} / month`
         : '';
     }
     return '';
@@ -536,7 +536,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const summary90DayTotal = (() => {
     if (!summaryBaselines || !isPeriodTarget) return '';
     const total = summaryBaselines.dayTarget * 90;
-    return formatValue(total, { delta: dataset.tracking === 'trend' });
+    return formatValue(total, { delta: dataset.tracking === 'trend', percent: isPercentMode });
   })();
   const perPeriodLabel = (() => {
     if (!summaryBaselines || !period || !isAllTimeTarget) return '';
@@ -546,7 +546,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
         : period === 'week'
           ? summaryBaselines.weekTarget
           : summaryBaselines.monthTarget;
-    return formatValue(perPeriodValue);
+    return formatValue(perPeriodValue, { delta: dataset.tracking === 'trend' });
   })();
 
   const handleTargetTypeSelect = (
@@ -1408,7 +1408,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                       {isRangeTarget
                         ? rangeConditionLabel
                         : formatValue(parseFloat(activeValue ?? ''), {
-                            delta: dataset.tracking === 'trend'
+                            delta: dataset.tracking === 'trend',
+                            percent: isPercentMode
                           })}
                     </div>
                     <div className="text-[11px] text-slate-500 dark:text-slate-400">
