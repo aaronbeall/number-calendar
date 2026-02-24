@@ -2,6 +2,7 @@ import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
 import PatreonIcon from '@/assets/patreon.svg?react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Share2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import {
@@ -39,9 +40,11 @@ function App() {
   const basename = import.meta.env.VITE_BASE || '/';
   return (
     <TooltipProvider delayDuration={300}>
-      <Router basename={basename}>
-        <AppLayout />
-      </Router>
+      <ErrorBoundary>
+        <Router basename={basename}>
+          <AppLayout />
+        </Router>
+      </ErrorBoundary>
       <Toaster/>
     </TooltipProvider>
   );
@@ -91,36 +94,38 @@ function AppLayout() {
   }
   return (
     <>
-      <Routes>
-        <Route index element={
-          <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
-            <Landing
+      <ErrorBoundary>
+        <Routes>
+          <Route index element={
+            <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+              <Landing
+                datasets={datasets}
+                onSelectDataset={id => navigate(`/dataset/${id}`)}
+                onOpenCreate={handleOpenCreate}
+                onOpenEdit={handleOpenEdit}
+                onOpenImport={handleOpenImport}
+                onOpenExport={(datasetId) => handleOpenExport(datasetId)}
+                onDuplicateDataset={handleOpenDuplicate}
+              />
+            </div>
+          } />
+          <Route path="milestones" element={<Milestones />} />
+          <Route path="targets" element={<Targets />} />
+          <Route path="achievements" element={<Achievements />} />
+          <Route path="dataset/:datasetId/*" element={
+            <DatasetLayout
               datasets={datasets}
-              onSelectDataset={id => navigate(`/dataset/${id}`)}
               onOpenCreate={handleOpenCreate}
               onOpenEdit={handleOpenEdit}
               onOpenImport={handleOpenImport}
-              onOpenExport={(datasetId) => handleOpenExport(datasetId)}
-              onDuplicateDataset={handleOpenDuplicate}
+              onOpenExport={handleOpenExport}
             />
-          </div>
-        } />
-        <Route path="milestones" element={<Milestones />} />
-        <Route path="targets" element={<Targets />} />
-        <Route path="achievements" element={<Achievements />} />
-        <Route path="dataset/:datasetId/*" element={
-          <DatasetLayout
-            datasets={datasets}
-            onOpenCreate={handleOpenCreate}
-            onOpenEdit={handleOpenEdit}
-            onOpenImport={handleOpenImport}
-            onOpenExport={handleOpenExport}
-          />
-        } />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
       
-      {/* Global Dialogs */}
+      {/* Global Dialogs - outside ErrorBoundary so they remain accessible even if a route crashes */}
       { datasetDialog && (
         <DatasetDialog
           open={!!datasetDialog}
@@ -216,17 +221,19 @@ function DatasetLayout({
           onOpenExport={(dateRange) => onOpenExport(dataset.id, dateRange)}
           achievementResults={achievementResults}
         />
-        <div className="flex-1 w-full">
-          <Routes>
-            <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
-            <Route path="achievements" element={<Achievements />} />
-            <Route path="targets" element={<Targets />} />
-            <Route path="milestones" element={<Milestones />} />
-            <Route path="records" element={<Records datasetId={dataset.id} />} />
-            <Route path="timeline" element={<Timeline />} />
-            <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
-          </Routes>
-        </div>
+        <ErrorBoundary variant="inline">
+          <div className="flex-1 w-full">
+            <Routes>
+              <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
+              <Route path="achievements" element={<Achievements />} />
+              <Route path="targets" element={<Targets />} />
+              <Route path="milestones" element={<Milestones />} />
+              <Route path="records" element={<Records datasetId={dataset.id} />} />
+              <Route path="timeline" element={<Timeline />} />
+              <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
+            </Routes>
+          </div>
+        </ErrorBoundary>
         <AppFooter />
       </div>
     </DatasetProvider>
