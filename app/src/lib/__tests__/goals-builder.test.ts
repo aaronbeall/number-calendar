@@ -598,6 +598,313 @@ describe('calculateBaselines', () => {
       expect(Number.isFinite(result.weekTarget)).toBe(true);
     });
   });
+
+  describe('period-percent goals (compound growth)', () => {
+    it('calculates daily percent mode with compound growth across active periods', () => {
+      // 10% daily for 5 days should compound: (1.1)^5 - 1 = 0.61051 = 61.051%
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 10, // 10%
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(10); // daily target should match input
+      // weekTarget should use compound formula: (1.1)^5 - 1 = 0.61051 * 100 = 61.051%
+      // After rounding to 2 sig digits: ~61
+      expect(result.weekTarget).toBeCloseTo(61, 0);
+      expect(Number.isFinite(result.monthTarget)).toBe(true);
+    });
+
+    it('calculates daily percent mode with 5% over 7 days (week)', () => {
+      // 5% daily for 7 days: (1.05)^7 - 1 = 0.4071 = 40.71%
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 5,
+        targetType: 'period-percent' as const,
+        activePeriods: 7, // 7 days per week
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(5);
+      // Expected: (1.05)^7 - 1 = 0.40071 * 100 = 40.71%
+      // After rounding with 2 sig digits from input: ~40-41
+      expect(result.weekTarget).toBeCloseTo(41, 0);
+    });
+
+    it('calculates weekly percent mode with compound growth across months', () => {
+      // 5% weekly for 4 weeks should compound: (1.05)^4 - 1 = 0.2155 = 21.55%
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'week',
+        value: 5,
+        targetType: 'period-percent' as const,
+        activePeriods: 4, // 4 weeks per month
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.weekTarget).toBe(5);
+      // Expected: (1.05)^4 - 1 = 0.2155 * 100 = 21.55%
+      // After rounding with 2 sig digits from input: ~22
+      expect(result.monthTarget).toBeCloseTo(22, 0);
+    });
+
+    it('compounds correctly: 10% daily for 5 days is not 50%', () => {
+      // This is the key test: verify compound growth vs simple multiplication
+      // Simple (wrong): 10% * 5 = 50%
+      // Compound (correct): (1.1)^5 - 1 ≈ 61.05%
+      const input: GoalBuilderInput = {
+        datasetId: 'test_compound_check',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 10,
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      // Should NOT be 50 (simple multiplication)
+      expect(result.weekTarget).not.toBe(50);
+      // Should be approximately 61.05 (compound)
+      expect(result.weekTarget).toBeGreaterThan(60);
+      expect(result.weekTarget).toBeLessThan(62);
+    });
+
+    it('handles very small percent values (0.5%)', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 0.5,
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(0.5);
+      // (1.005)^5 - 1 = 0.02513 = 2.513%
+      expect(result.weekTarget).toBeCloseTo(2.513, 1);
+    });
+
+    it('handles high percent values (25%)', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 25,
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(25);
+      // (1.25)^5 - 1 = 3.0518 = 305.18%
+      // After rounding: ~200+ (rounding is aggressive with 2 sig digits)
+      expect(result.weekTarget).toBeGreaterThan(150);
+      expect(result.weekTarget).toBeLessThan(400);
+    });
+
+    it('handles 100% daily percent (doubles each day)', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 100,
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(100);
+      // (2)^5 - 1 = 31 = 3100%
+      expect(result.weekTarget).toBe(3100);
+    });
+
+    it('month conversion compounds correctly for daily percent mode', () => {
+      // 10% daily for ~30 days (4.3 weeks * 7 days per week)
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 10,
+        targetType: 'period-percent' as const,
+        activePeriods: 5, // 5 days per week
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      // Month conversion: (1.1)^(5 * 4.3) - 1 = (1.1)^21.5 - 1
+      // (1.1)^21.5 ≈ 9.55, so 9.55 - 1 = 8.55 = 855%
+      // After rounding with 2 sig digits: ~680 or similar
+      expect(result.monthTarget).toBeGreaterThan(600);
+      expect(Number.isFinite(result.monthTarget)).toBe(true);
+    });
+
+    it('month conversion compounds correctly for weekly percent mode', () => {
+      // 5% weekly for 4 weeks per month
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'week',
+        value: 5,
+        targetType: 'period-percent' as const,
+        activePeriods: 4,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      // Expected: (1.05)^4 - 1 = 0.2155 * 100 = 21.55%
+      // After rounding: ~22
+      expect(result.monthTarget).toBeCloseTo(22, 0);
+    });
+
+    it('percentage baseline milestone calculation includes starting value', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 10,
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 1000,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      // baselineMilestone = startingValue + (monthTarget * 3)
+      // monthTarget ≈ 855%, so baseline ≈ 1000 + (855 * 3) = 3565
+      expect(result.baselineMilestone).toBeGreaterThan(1000);
+      expect(Number.isFinite(result.baselineMilestone)).toBe(true);
+    });
+
+    it('non-percent additive mode uses simple multiplication (not compound)', () => {
+      // Verify that non-percent period-target still uses simple multiplication
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 10,
+        targetType: 'period-target' as const, // NOT percent mode
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      // Should be simple multiplication: 10 * 5 = 50
+      expect(result.weekTarget).toBe(50);
+      expect(result.monthTarget).toBeGreaterThan(200); // 50 * 4.3
+    });
+
+    it('percent mode with zero percent (no growth)', () => {
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 0,
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      // (1)^5 - 1 = 0%
+      expect(result.dayTarget).toBe(0);
+      expect(result.weekTarget).toBeCloseTo(0, 1);
+    });
+
+    it('percent mode comparison across different compound periods', () => {
+      // Test that 10% over different timescales compounds correctly
+      const base10PercentDaily: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'series',
+        valence: 'positive',
+        period: 'day',
+        value: 10,
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 0,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(base10PercentDaily);
+      const weeklyCompound = result.weekTarget;
+
+      // (1.1)^5 ≈ 1.6105, so (1.1)^5 - 1 ≈ 0.6105 = 61.05% (rounded to ~61)
+      expect(weeklyCompound).toBeCloseTo(61, 0);
+
+      // Verify compound growth exceeds linear growth consistently
+      expect(weeklyCompound).toBeGreaterThan(10 * 5); // > 50% (linear)
+    });
+
+    it('negative percent mode growth (decay)', () => {
+      // Negative percent: losing value each period
+      const input: GoalBuilderInput = {
+        datasetId: 'test',
+        tracking: 'trend',
+        valence: 'negative',
+        period: 'day',
+        value: -10, // 10% loss daily
+        targetType: 'period-percent' as const,
+        activePeriods: 5,
+        startingValue: 100,
+        targetDays: 90,
+      };
+
+      const result = calculateBaselines(input);
+
+      expect(result.dayTarget).toBe(-10);
+      // (0.9)^5 - 1 = 0.59049 - 1 = -0.40951 = -40.951%
+      expect(result.weekTarget).toBeCloseTo(-41, 0);
+    });
+  });
 });
 
 describe('Text Replacement Functions', () => {

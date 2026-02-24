@@ -305,6 +305,7 @@ export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
     throw new Error('calculateBaselines does not support range goals');
   }
   const isAllTime = targetType === 'alltime-target';
+  const isPercentMode = targetType === 'period-percent';
   
   // Determine base significant digits from user input
   const baseSigDigits = countSignificantDigits(goodValue);
@@ -332,22 +333,36 @@ export function calculateBaselines(input: GoalBuilderInput): BaselineValues {
   } else {
     // For period-based goals
     // activePeriods represents how many of the selected period occur in the parent period
-    // e.g., if period='day' and activePeriods=3, user is active 3 days per week
+    // e.g., if period='day' and activePeriods=5, user is active 5 days per week
     
     let dayTarget: number;
     let weekTarget: number;
     let monthTarget: number;
     
     if (period === 'day') {
-      // activePeriods = days per week
       dayTarget = roundToClean(goodValue, baseSigDigits);
-      weekTarget = roundToClean(goodValue * activePeriods, baseSigDigits + 1);
-      monthTarget = roundToClean(weekTarget * WEEKS_PER_MONTH, baseSigDigits + 1);
+      
+      // For percent mode, use compound growth; for additive values, use simple multiplication
+      if (isPercentMode) {
+        // Compound: (1 + rate/100)^periods - 1, convert back to percent
+        weekTarget = roundToClean(((Math.pow(1 + goodValue / 100, activePeriods) - 1) * 100), baseSigDigits + 1);
+        monthTarget = roundToClean(((Math.pow(1 + goodValue / 100, activePeriods * WEEKS_PER_MONTH) - 1) * 100), baseSigDigits + 1);
+      } else {
+        // Simple multiplication for additive values
+        weekTarget = roundToClean(goodValue * activePeriods, baseSigDigits + 1);
+        monthTarget = roundToClean(weekTarget * WEEKS_PER_MONTH, baseSigDigits + 1);
+      }
     } else if (period === 'week') {
       // activePeriods = weeks per month
       dayTarget = roundToClean(goodValue / 7, baseSigDigits + 1);
       weekTarget = roundToClean(goodValue, baseSigDigits);
-      monthTarget = roundToClean(goodValue * activePeriods, baseSigDigits + 1);
+      
+      if (isPercentMode) {
+        // Compound: (1 + rate/100)^periods - 1, convert back to percent
+        monthTarget = roundToClean(((Math.pow(1 + goodValue / 100, activePeriods) - 1) * 100), baseSigDigits + 1);
+      } else {
+        monthTarget = roundToClean(goodValue * activePeriods, baseSigDigits + 1);
+      }
     } else {
       // period === 'month', activePeriods = months per year
       dayTarget = roundToClean(goodValue / 30, baseSigDigits + 1);
