@@ -164,8 +164,8 @@ I'm liking this one.
   - [x] Add cumulative calculations to data model
   - [x] Show cumulative in tracking=series
   - [x] Expose cumulative sources in goal targets
-  - [ ] Add cumulatives to goal builder
-  - [ ] Update goal system to support cumulative goals
+  - [x] Add cumulatives to goal builder
+  - [x] Update goal system to support cumulative goals
 - [ ] [?] Adding data to new month didn't update the monthly view show a new month summary
 - [ ] Need an error boundary to catch UI errors
 - [x] [High] Need suggested goal weight, meaningful suggested values throughout
