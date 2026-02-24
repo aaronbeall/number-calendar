@@ -61,6 +61,7 @@ export function AppHeader({
     const path = location.pathname;
     if (path === basePath || path === `${basePath}/`) return 'calendar';
     if (path.startsWith(`${basePath}/timeline`)) return 'timeline';
+    if (path.startsWith(`${basePath}/analysis`)) return 'analysis';
     if (path.startsWith(`${basePath}/milestones`)) return 'milestones';
     if (path.startsWith(`${basePath}/targets`)) return 'targets';
     if (path.startsWith(`${basePath}/achievements`)) return 'achievements';
@@ -163,6 +164,12 @@ export function AppHeader({
                   <Link to={currentDataset ? `/dataset/${currentDataset.id}/timeline` : '#'}>
                     <List className="h-4 w-4" />
                     Timeline
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem className={`gap-2 ${currentPage === 'analysis' ? activeStyles : inactiveStyles}`} asChild>
+                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/analysis` : '#'}>
+                    <ChartNoAxesColumn className="h-4 w-4" />
+                    Analysis
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />

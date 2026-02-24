@@ -1,7 +1,7 @@
 import { type Achievement, type DateKey, type DayKey, type Goal, type GoalCondition, type GoalRequirements, type GoalTarget, type GoalType, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './friendly-date';
-import { computeNumberStats, getMetricDisplayName, computeStatsDeltas, computeStatsPercents, type NumberStats } from './stats';
+import { computeCumulatives, computeNumberStats, getMetricDisplayName, computeStatsDeltas, computeStatsPercents, type NumberStats } from './stats';
 import { adjectivize, capitalize, entriesOf, keysOf, pluralize } from './utils';
 import { type FormatValueOptions, formatRange, formatValue } from './friendly-numbers';
 
@@ -141,9 +141,7 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
       const numbers = dataByPeriod[period] || [];
       if (stats) {
         if (priorCumulatives) {
-          // Seed with prior cumulative total plus current numbers
-          const cumulativeNumbers = [priorCumulatives.total, ...numbers];
-          cumulatives[period] = computeNumberStats(cumulativeNumbers);
+          cumulatives[period] = computeCumulatives(numbers, priorCumulatives);
         } else {
           // First period: cumulative equals stats
           cumulatives[period] = stats;

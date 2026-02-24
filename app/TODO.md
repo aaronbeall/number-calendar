@@ -89,6 +89,8 @@ I'm liking this one.
   - [ ] Global quick add (with options) tailored for mobile
   - [ ] Add to rollups (week, month, year) -- how to distribute?
   - [ ] Multi-line add (re-use import code)
+  - [ ] Timer/stopwatch add
+  - [ ] Slider
 - [ ] Audit log (per period)
 - [ ] Prev/Next in the panel
 - [ ] Day breakdown/links in numbers panel (week/month/year)
@@ -202,3 +204,4 @@ I'm liking this one.
 - [ ] Achievement progress only works for counts, need it to work for values as well
 - [ ] You should be able to navigate to the calendar location of achievements
 - [ ] Footer share link is crappy
+- [ ] Import needs to be done in bulk, avoid triggering redraw/events during

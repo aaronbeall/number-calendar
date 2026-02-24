@@ -2,7 +2,7 @@ import type { DateKey, DayEntry, DayKey, MonthKey, TimePeriod, WeekKey, YearKey 
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths, getYearWeeks } from "./calendar";
 import { convertDateKey, getDateKeyType, parseDateKey, parseWeekKey, type DateKeyType } from "./friendly-date";
 import type { NumberStats, StatsExtremes } from "./stats";
-import { calculateExtremes, computeNumberStats, emptyStats, computeStatsDeltas, computeStatsPercents } from "./stats";
+import { calculateExtremes, computeCumulatives, computeNumberStats, emptyStats, computeStatsDeltas, computeStatsPercents } from "./stats";
 
 export type PeriodData<P extends TimePeriod> = {
   dateKey: {
@@ -351,9 +351,7 @@ export class CalendarData {
       let cumulativeDeltas: NumberStats;
       let cumulativePercents: Partial<NumberStats>;
       if (priorCumulatives) {
-        // Seed the running total with the prior cumulative total, then add current numbers.
-        const allNumbers: number[] = [priorCumulatives.total, ...(currentCache.numbers ?? [])];
-        cumulatives = computeNumberStats(allNumbers) ?? stats;
+        cumulatives = computeCumulatives(currentCache.numbers ?? [], priorCumulatives);
         cumulativeDeltas = computeStatsDeltas(cumulatives, priorCumulatives);
         cumulativePercents = computeStatsPercents(cumulatives, priorCumulatives);
       } else {

@@ -28,6 +28,7 @@ import { useAchievements } from './hooks/useAchievements';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getCompletedAchievementsByDateKey } from './lib/goals';
 import Achievements from './pages/Achievements';
+import Analysis from './pages/Analysis';
 import { Calendar } from './pages/Calendar';
 import { Landing } from './pages/Landing';
 import Milestones from './pages/Milestones';
@@ -228,6 +229,7 @@ function DatasetLayout({
             <Routes>
               <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
               <Route path="achievements" element={<Achievements />} />
+              <Route path="analysis" element={<Analysis />} />
               <Route path="targets" element={<Targets />} />
               <Route path="milestones" element={<Milestones />} />
               <Route path="records" element={<Records datasetId={dataset.id} />} />
