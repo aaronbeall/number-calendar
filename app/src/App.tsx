@@ -34,6 +34,7 @@ import Milestones from './pages/Milestones';
 import Records from './pages/Records';
 import Targets from './pages/Targets';
 import { Timeline } from './pages/Timeline';
+import TestError from './pages/TestError';
 
 
 function App() {
@@ -112,6 +113,7 @@ function AppLayout() {
           <Route path="milestones" element={<Milestones />} />
           <Route path="targets" element={<Targets />} />
           <Route path="achievements" element={<Achievements />} />
+          <Route path="test-error" element={<TestError />} />
           <Route path="dataset/:datasetId/*" element={
             <DatasetLayout
               datasets={datasets}
@@ -230,6 +232,7 @@ function DatasetLayout({
               <Route path="milestones" element={<Milestones />} />
               <Route path="records" element={<Records datasetId={dataset.id} />} />
               <Route path="timeline" element={<Timeline />} />
+              <Route path="test-error" element={<TestError />} />
               <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
             </Routes>
           </div>
