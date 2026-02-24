@@ -237,6 +237,13 @@ function getMetricAndSource(
     };
   }
   if (targetType === 'period-percent') {
+    // Milestones should use value-based metrics
+    if (goalType === 'milestone') {
+      return tracking === 'trend'
+        ? { metric: 'last', source: 'stats' }
+        : { metric: 'total', source: 'stats' };
+    }
+    // Targets should use cumulativePercents
     return {
       metric: 'total',
       source: 'cumulativePercents',
@@ -267,7 +274,7 @@ function getCondition(valence: Valence, target: number): 'above' | 'below' {
 // Helper to get the term for valence
 function getValenceTerm(targetType: GoalBuilderTarget, tracking: Tracking, valence: Valence) {
   if (targetType === 'period-range') return 'Balanced';
-  if (targetType === 'period-percent') return getValueForGood(valence, { positive: 'Growth', negative: 'Decline', neutral: 'Change' } as const);
+  if (targetType === 'period-percent') return 'Percent change';
   return tracking === 'trend'
     ? getValueForGood(valence, { positive: 'Uptrend', negative: 'Downtrend', neutral: 'Target' } as const)
     : getValueForGood(valence, { positive: 'Positive', negative: 'Negative', neutral: 'Target' } as const);

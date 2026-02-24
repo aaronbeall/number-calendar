@@ -36,6 +36,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const [targetRangeMaxValue, setTargetRangeMaxValue] = useState<string | null>(null);
   const [startingValue, setStartingValue] = useState<string>('');
   const [targetType, setTargetType] = useState<'' | GoalBuilderTarget>('');
+  const [usePercentMode, setUsePercentMode] = useState(false);
   const [targetDays, setTargetDays] = useState<string>(''); // Stored in days
   const [timePeriodUnit, setTimePeriodUnit] = useState<'days' | 'weeks' | 'months'>('days');
   const [activePeriods, setActivePeriods] = useState<string>('');
@@ -126,6 +127,9 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const isPeriodTarget = targetType === 'period-target';
   const isAllTimeTarget = targetType === 'alltime-target';
   const isRangeTarget = targetType === 'period-range';
+  const isPercentMode = isPeriodTarget && usePercentMode;
+  // Actual target type for goal generation
+  const actualTargetType = isPercentMode ? 'period-percent' : targetType;
   const suggestedTargetDefaults = useMemo(() => {
     if (!template?.suggestedTarget || !period || !targetType) {
       return { periodValue: null, alltimeValue: null, rangeMin: null, rangeMax: null };
@@ -391,6 +395,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     return options;
   }, [dataset.tracking, showAlltimeOption, showPeriodOption, showRangeOption, targetAlltimeDescription, targetAlltimeLabel, targetPeriodDescription, targetPeriodLabel, targetRangeDescription, targetRangeLabel]);
 
+
   const goodValuePrompt = resolveText(
     isRangeTarget
       ? questions?.goodValue?.range?.prompt
@@ -432,9 +437,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       : undefined;
   const goodValuePlaceholder = (() => {
     if (typeof suggestedGoodValue === 'number') {
-      return `e.g. ${formatValue(suggestedGoodValue, { delta: dataset.tracking === 'trend' && isPeriodTarget })}`;
+      return `e.g. ${formatValue(suggestedGoodValue, { delta: dataset.tracking === 'trend' && isPeriodTarget && !isPercentMode, percent: isPercentMode })}`;
     }
-    if (isPeriodTarget) return dataset.tracking === 'series' ? `e.g. ${exampleAmountLabel}` : `e.g. ${exampleChangeLabel}`;
+    if (isPeriodTarget) {
+      if (isPercentMode) return 'e.g. 10%';
+      return dataset.tracking === 'series' ? `e.g. ${exampleAmountLabel}` : `e.g. ${exampleChangeLabel}`;
+    }
     if (isAllTimeTarget) return dataset.tracking === 'series' ? `e.g. ${formatValue(allTimeTotalExample)}` : `e.g. ${formatValue(allTimeTargetExample)}`;
     return `e.g. ${formatValue(allTimeTargetExample)}`;
   })();
@@ -482,11 +490,11 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   
   // Consolidated GoalBuilderInput creation
   const builderInput = useMemo<GoalBuilderInput | null>(() => {
-    if (!period || !targetType) return null;
+    if (!period || !targetType || !actualTargetType) return null;
     if (isStartingValueRequired && typeof parsedStartingValue !== 'number') return null;
     let valueRange;
     let value = 0;
-    if (targetType === 'period-range') {
+    if (actualTargetType === 'period-range') {
       if (!rangeCondition) return null;
       valueRange = { min: parsedRangeMin, max: parsedRangeMax };
     } else {
@@ -500,12 +508,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       period,
       value,
       valueRange,
-      targetType,
+      targetType: actualTargetType,
       activePeriods: parseFloat(activePeriods) || 1,
       startingValue: resolvedStartingValue ?? 0,
       targetDays: parsedDurationDays,
     };
-  }, [activePeriods, activeValue, resolvedStartingValue, dataset.id, dataset.tracking, dataset.valence, hasStartingValueQuestion, isStartingValueRequired, parsedRangeMax, parsedRangeMin, parsedStartingValue, period, rangeCondition, startingValue, parsedDurationDays, targetType]);
+  }, [activePeriods, activeValue, resolvedStartingValue, dataset.id, dataset.tracking, dataset.valence, hasStartingValueQuestion, isStartingValueRequired, parsedRangeMax, parsedRangeMin, parsedStartingValue, period, rangeCondition, startingValue, parsedDurationDays, actualTargetType]);
   
   const summaryBaselines = builderInput && !isRangeTarget ? calculateBaselines(builderInput) : null;
   const conversionLabel = (() => {
@@ -546,7 +554,13 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   ) => {
     const nextIsAlltime = nextTargetType === 'alltime-target';
     const currentIsAlltime = targetType === 'alltime-target';
+    const nextIsPeriodTarget = nextTargetType === 'period-target';
     const startValue = resolvedStartingValue;
+
+    // Reset percent mode when switching away from period-target
+    if (!nextIsPeriodTarget && usePercentMode) {
+      setUsePercentMode(false);
+    }
 
     if (period && parsedDurationDays > 0 && typeof startValue === 'number' && Number.isFinite(startValue) && nextIsAlltime !== currentIsAlltime) {
       if (!currentIsAlltime && nextIsAlltime && resolvedPeriodTargetValue?.trim()) {
@@ -709,6 +723,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     setTargetRangeMaxValue(null);
     setStartingValue('');
     setTargetType('');
+    setUsePercentMode(false);
     setTargetDays('');
     setTimePeriodUnit('weeks');
     setActivePeriods('');
@@ -1097,6 +1112,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
 
                   {targetType && (
                   <div className="space-y-6 animate-in fade-in duration-300">
+                  
                   {/* Good Value Input */}
                   <div className="space-y-4 max-w-md mx-auto">
                     <div className="text-center space-y-2">
@@ -1163,17 +1179,31 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                           hideStepperButtons
                           className="text-center !text-2xl font-bold h-16 pr-12"
                         />
-                        {dataset.tracking === 'trend' && (
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                            {getValueForGood(dataset.valence, {
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                          {isPercentMode ? (
+                            <span className="text-2xl font-bold text-slate-600 dark:text-slate-400">%</span>
+                          ) : dataset.tracking === 'trend' && (
+                            getValueForGood(dataset.valence, {
                               positive: <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />,
                               negative: <ArrowDown className="w-6 h-6 text-green-600 dark:text-green-400" />,
                               neutral: null,
-                            })}
-                          </div>
-                        )}
+                            })
+                          )}
+                        </div>
                       </div>
                     )}
+                    
+                    {isPeriodTarget && (
+                      <div className="text-center -mt-2">
+                        <button
+                          onClick={() => setUsePercentMode(!usePercentMode)}
+                          className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline transition-colors"
+                        >
+                          {usePercentMode ? 'Switch to fixed value' : 'Switch to % change'}
+                        </button>
+                      </div>
+                    )}
+
                   </div>
 
                   {/* Starting Value and Time Period Inputs - only show after value is entered */}
