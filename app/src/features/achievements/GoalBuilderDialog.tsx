@@ -1513,7 +1513,8 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                         title="Re-roll milestone names"
                         className="hover:bg-purple-100 dark:hover:bg-purple-950/50 text-purple-600 dark:text-purple-400"
                       >
-                        <Dices className="w-4 h-4" /> Re-roll Names
+                        <Dices className="w-4 h-4" />
+                        <span className="hidden sm:inline ml-1">Re-roll Names</span>
                       </Button>
                     <Button
                       variant="ghost"
