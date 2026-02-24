@@ -21,7 +21,7 @@ import { useAchievementDrawerParam } from '@/lib/search-params';
 import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, computePeriodDerivedStats, type StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel, getSecondaryMetricLabel, getSecondaryMetricValueFromData, getChangeMetricValueFromData, getValenceValueForNumber } from "@/lib/tracking";
 import { adjectivize, capitalize, cn } from '@/lib/utils';
-import { getValueForValence } from '@/lib/valence';
+import { getValueForSign, getValueForValence } from '@/lib/valence';
 import { AnimatePresence } from 'framer-motion';
 import { ArrowDown, ArrowDownRight, ArrowDownToLine, ArrowUp, ArrowUpDown, ArrowUpRight, ArrowUpToLine } from "lucide-react";
 import React, { useEffect, useMemo, useState } from 'react';
@@ -170,6 +170,15 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   const secondaryMetricValue = useMemo(() => getSecondaryMetricValueFromData(displayData, tracking), [displayData, tracking]);
   
   const changeMetricValue = useMemo(() => getChangeMetricValueFromData(displayData, tracking), [displayData, tracking]);
+
+  // Change metric icon with valence-aware coloring
+  const changeMetricIcon = useMemo(() => {
+    if (changeMetricValue === undefined || isNaN(changeMetricValue)) return null;
+    const Icon = getValueForSign(changeMetricValue, { positive: ArrowUpRight, negative: ArrowDownRight, zero: null });
+    if (!Icon) return null;
+    const color = getValueForValence(changeMetricValue, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' });
+    return <Icon className="w-3 h-3 flex-shrink-0 inline" style={{ color }} />;
+  }, [changeMetricValue, valence]);
 
   // Handler for add number
   const handleAddNumber = (finalNumber: number) => {
@@ -336,20 +345,10 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     ) : (
                       <div className="text-xs text-slate-400">—</div>
                     )}
-                    {changeMetricValue !== undefined && !isNaN(changeMetricValue) && (
+                    {changeMetricIcon && (
                       <span className="text-slate-600 dark:text-slate-400 font-mono text-xs">
                         (
-                        {changeMetricValue > 0 ? (
-                          <ArrowUpRight 
-                            className="w-3 h-3 flex-shrink-0 inline" 
-                            style={{ color: getValueForValence(1, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' }) }}
-                          />
-                        ) : changeMetricValue < 0 ? (
-                          <ArrowDownRight 
-                            className="w-3 h-3 flex-shrink-0 inline"
-                            style={{ color: getValueForValence(-1, valence, { good: '#ef4444', bad: '#22c55e', neutral: '#3b82f6' }) }}
-                          />
-                        ) : null}
+                        {changeMetricIcon}
                         <NumberText
                           value={changeMetricValue}
                           valenceValue={changeMetricValue}
