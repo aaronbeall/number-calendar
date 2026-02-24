@@ -131,6 +131,17 @@ export function getChangeMetricSource(tracking: Tracking) {
 }
 
 /**
+ * Returns the change metric label based on tracking type.
+ */
+export function getChangeMetricLabel(tracking: Tracking) {
+  const source = getChangeMetricSource(tracking);
+  return {
+    cumulativePercents: 'Change (%)',
+    percents: 'Change (%)',
+  }[source]
+}
+
+/**
  * Returns the change metric value from the given data based on tracking type.
  */
 export function getChangeMetricValueFromData(data: { stats: NumberStats; deltas?: NumberStats; percents?: Partial<NumberStats>; cumulatives?: NumberStats; cumulativePercents?: Partial<NumberStats> }, tracking: Tracking): number | undefined {

@@ -19,11 +19,11 @@ import type { CompletedAchievementResult } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { useAchievementDrawerParam } from '@/lib/search-params';
 import { calculateExtremes, computeDailyStats, computeMetricStats, computeMonthlyStats, computePeriodDerivedStats, type StatsExtremes } from '@/lib/stats';
-import { getPrimaryMetric, getPrimaryMetricLabel, getValenceValueForNumber } from "@/lib/tracking";
+import { getPrimaryMetric, getPrimaryMetricLabel, getSecondaryMetricLabel, getSecondaryMetricValueFromData, getChangeMetricValueFromData, getValenceValueForNumber } from "@/lib/tracking";
 import { adjectivize, capitalize, cn } from '@/lib/utils';
 import { getValueForValence } from '@/lib/valence';
 import { AnimatePresence } from 'framer-motion';
-import { ArrowDown, ArrowDownToLine, ArrowUp, ArrowUpDown, ArrowUpToLine } from "lucide-react";
+import { ArrowDown, ArrowDownRight, ArrowDownToLine, ArrowUp, ArrowUpDown, ArrowUpRight, ArrowUpToLine } from "lucide-react";
 import React, { useEffect, useMemo, useState } from 'react';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { AddNumberEditor } from './AddNumberEditor';
@@ -99,6 +99,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
     primaryMetric,
     primaryMetricLabel,
     primaryValenceMetric,
+    secondaryMetricFormat,
     isHighestPrimary,
     isLowestPrimary,
     isHighestMean,
@@ -164,13 +165,19 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   // Helper to get current total for delta mode
   const currentTotal = displayNumbers.reduce((a, b) => a + b, 0);
 
+  // Secondary and Change metrics
+  const secondaryMetricLabel = getSecondaryMetricLabel(tracking);
+  const secondaryMetricValue = useMemo(() => getSecondaryMetricValueFromData(displayData, tracking), [displayData, tracking]);
+  
+  const changeMetricValue = useMemo(() => getChangeMetricValueFromData(displayData, tracking), [displayData, tracking]);
+
   // Handler for add number
   const handleAddNumber = (finalNumber: number) => {
     onSave?.([...numbers, finalNumber]);
     setExpression(buildExpressionFromNumbers([...numbers, finalNumber], tracking));
     setAdding(false);
   };
-
+  
   return (
     <Sheet open={isOpen} onOpenChange={(open) => { if (!open && !selectedAchievementId) onClose(); }} modal={false}>
       <SheetContent className="w-full max-w-md flex flex-col" disableEscapeClose>
@@ -295,60 +302,71 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 content={`${primaryMetricLabel}: ${primaryMetric}\nMean: ${stats.mean.toFixed(1)}\nMedian: ${stats.median}\nMin: ${stats.min}\nMax: ${stats.max}`}
                 variant="ghost"
               />
-              {/* Revamped stats box: large primary metric, then grid of stats with deltas/percents */}
-              <div className="flex flex-col items-center mb-4">
-                <div
-                  className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5"
-                >
-                  {primaryMetricLabel.toUpperCase()}
+              {/* Stats display: primary metric with secondary and percent change */}
+              <div className="flex flex-col gap-4">
+                {/* Primary Metric - large centered */}
+                <div className="flex flex-col items-center">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-0.5">
+                    {primaryMetricLabel.toUpperCase()}
+                  </div>
+                  <NumberText
+                    value={primaryMetric}
+                    valenceValue={primaryValenceMetric}
+                    isHighest={!!isHighestPrimary}
+                    isLowest={!!isLowestPrimary}
+                    valence={valence}
+                    className="text-3xl font-mono font-extrabold"
+                  />
                 </div>
-                <NumberText
-                  value={primaryMetric}
-                  valenceValue={primaryValenceMetric}
-                  isHighest={!!isHighestPrimary}
-                  isLowest={!!isLowestPrimary}
-                  valence={valence}
-                  className="text-3xl font-mono font-extrabold"
-                />
-                {deltas && percents && (
-                  <div className="flex items-center gap-1 mt-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
+
+                {/* Secondary Metric with Change in parens */}
+                <div className="flex flex-col items-center">
+                  <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1">
+                    {secondaryMetricLabel}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {secondaryMetricValue !== undefined && !isNaN(secondaryMetricValue) ? (
                       <NumberText
-                        value={deltas[getPrimaryMetric(tracking)]}
-                        valenceValue={deltas[getPrimaryMetric(tracking)]}
+                        value={secondaryMetricValue}
+                        valenceValue={secondaryMetricValue}
                         valence={valence}
-                        className="text-xs font-mono font-semibold"
-                        delta
+                        className="text-base font-mono font-bold"
+                        {...secondaryMetricFormat}
                       />
-                    </span>
-                    {percents[getPrimaryMetric(tracking)] !== undefined && !isNaN(percents[getPrimaryMetric(tracking)] as number) && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
-                        {formatValue(percents[getPrimaryMetric(tracking)]!, { delta: true, percent: true, decimals: 0 })}
+                    ) : (
+                      <div className="text-xs text-slate-400">—</div>
+                    )}
+                    {changeMetricValue !== undefined && !isNaN(changeMetricValue) && (
+                      <span className="text-slate-600 dark:text-slate-400 font-mono text-xs">
+                        (
+                        {changeMetricValue > 0 ? (
+                          <ArrowUpRight 
+                            className="w-3 h-3 flex-shrink-0 inline" 
+                            style={{ color: getValueForValence(1, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' }) }}
+                          />
+                        ) : changeMetricValue < 0 ? (
+                          <ArrowDownRight 
+                            className="w-3 h-3 flex-shrink-0 inline"
+                            style={{ color: getValueForValence(-1, valence, { good: '#ef4444', bad: '#22c55e', neutral: '#3b82f6' }) }}
+                          />
+                        ) : null}
+                        <NumberText
+                          value={changeMetricValue}
+                          valenceValue={changeMetricValue}
+                          valence={valence}
+                          className="font-medium text-xs"
+                          percent
+                        />
+                        )
                       </span>
                     )}
                   </div>
-                )}
-                {/* If no deltas and trend mode, show stats.change and stats.changePercent -- OBSOLETE now that deltas have built in fallback behavior */}
-                {/* {!deltas && tracking === 'trend' && stats && (
-                  <div className=\"flex items-center gap-1 mt-1\">
-                    <span className=\"inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-mono font-semibold text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700\">
-                      <NumberText
-                        value={stats.change}
-                        valenceValue={stats.change}
-                        valence={valence}
-                        className=\"text-xs font-mono font-semibold\"
-                        delta
-                      />
-                    </span>
-                    {typeof stats.changePercent === 'number' && !isNaN(stats.changePercent) && (
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
-                        {formatValue(stats.changePercent, { delta: true, percent: true, decimals: 1 })}
-                      </span>
-                    )}
-                  </div>
-                )} */}
+                </div>
+
+                {/* Separator before other stats */}
+                <div className="border-t border-slate-200 dark:border-slate-700" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 pt-3">
                 {[
                   { label: 'Mean', value: stats.mean, valenceValue: valenceStats?.mean, isHighest: isHighestMean, isLowest: isLowestMean, delta: deltas?.mean, percent: percents?.mean },
                   { label: 'Median', value: stats.median, valenceValue: valenceStats?.median, isHighest: isHighestMedian, isLowest: isLowestMedian, delta: deltas?.median, percent: percents?.median },
