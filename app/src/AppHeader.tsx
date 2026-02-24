@@ -359,7 +359,6 @@ export function AppHeader({
           {/* Right: Controls */}
           <div className="flex items-center gap-2 flex-shrink-0 flex-1 justify-end">
             <ThemeToggle />
-            <SettingsMenu />
             <UserMenu />
           </div>
         </div>
@@ -439,58 +438,13 @@ export function ThemeToggle() {
   );
 }
 
-export function SettingsMenu() {
+export function UserMenu() {
   const { theme, setTheme } = useTheme();
   const [reduceMotion, setReduceMotion] = usePreference("reduceMotion", false);
   const [showTips, setShowTips] = usePreference("showTips", true);
-
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Preferences">
-          <Settings className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Preferences</DialogTitle>
-          <DialogDescription>Customize your experience.</DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 py-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="pref-theme" className="text-sm">Theme</Label>
-            <div className="flex items-center gap-2">
-              <Button variant={theme === 'light' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('light')}>Light</Button>
-              <Button variant={theme === 'dark' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('dark')}>Dark</Button>
-              <Button variant={theme === 'system' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('system')}>System</Button>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="pref-motion" className="text-sm">Reduce Motion</Label>
-            <Switch id="pref-motion" checked={reduceMotion} onCheckedChange={setReduceMotion} />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="pref-tips" className="text-sm">Show Tips</Label>
-            <Switch id="pref-tips" checked={showTips} onCheckedChange={setShowTips} />
-          </div>
-        </div>
-
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="default">Done</Button>
-          </DialogClose>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-export function UserMenu() {
   const [openSync, setOpenSync] = useState(false);
   const [openAbout, setOpenAbout] = useState(false);
+  const [openPreferences, setOpenPreferences] = useState(false);
   const [openSubscribe, setOpenSubscribe] = useState(false);
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -555,6 +509,10 @@ export function UserMenu() {
             This app is free. Your data stays on this device. No account required.
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem className="gap-2" onSelect={() => setOpenPreferences(true)}>
+            <Settings className="h-4 w-4 text-slate-500" />
+            Preferences
+          </DropdownMenuItem>
           <DropdownMenuItem className="gap-2" onSelect={() => setOpenSync(true)}>
             <RefreshCw className="h-4 w-4 text-slate-500" />
             Sync Data
@@ -688,6 +646,43 @@ export function UserMenu() {
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button">Close</Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preferences Dialog */}
+      <Dialog open={openPreferences} onOpenChange={setOpenPreferences}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Preferences</DialogTitle>
+            <DialogDescription>Customize your experience.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="pref-theme" className="text-sm">Theme</Label>
+              <div className="flex items-center gap-2">
+                <Button variant={theme === 'light' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('light')}>Light</Button>
+                <Button variant={theme === 'dark' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('dark')}>Dark</Button>
+                <Button variant={theme === 'system' ? 'secondary' : 'ghost'} size="sm" onClick={() => setTheme('system')}>System</Button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="pref-motion" className="text-sm">Reduce Motion</Label>
+              <Switch id="pref-motion" checked={reduceMotion} onCheckedChange={setReduceMotion} />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label htmlFor="pref-tips" className="text-sm">Show Tips</Label>
+              <Switch id="pref-tips" checked={showTips} onCheckedChange={setShowTips} />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="default">Done</Button>
             </DialogClose>
           </DialogFooter>
         </DialogContent>

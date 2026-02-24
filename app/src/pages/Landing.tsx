@@ -1,5 +1,5 @@
 import { AppFooter } from '@/App';
-import { SettingsMenu, ThemeToggle, UserMenu } from '@/AppHeader';
+import { ThemeToggle, UserMenu } from '@/AppHeader';
 import LogoIcon from '@/assets/logo.png';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
@@ -268,7 +268,6 @@ function DatasetsLanding({
                 <span>New</span>
               </button>
               <ThemeToggle />
-              <SettingsMenu />
               <UserMenu />
             </div>
           </div>
