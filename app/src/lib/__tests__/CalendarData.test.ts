@@ -210,13 +210,13 @@ describe('CalendarData', () => {
       expect(day1.cumulatives.total).toBe(30);
       expect(day1.cumulatives.mean).toBe(10);
       
-      // Day 2 cumulatives: [priorTotal=30, 10, 20, 30] = total=90, mean=22.5
+      // Day 2 cumulatives: total=90, count=6 => mean=15
       expect(day2.cumulatives.total).toBe(90);
-      expect(day2.cumulatives.mean).toBe(22.5);
+      expect(day2.cumulatives.mean).toBe(15);
       
-      // Day 2 cumulativePercents: total went 30→90 = 200%, mean went 10→22.5 = 125%
+      // Day 2 cumulativePercents: total went 30→90 = 200%, mean went 10→15 = 50%
       expect(day2.cumulativePercents?.total).toBe(200);
-      expect(day2.cumulativePercents?.mean).toBe(125);
+      expect(day2.cumulativePercents?.mean).toBe(50);
     });
 
     test('should handle cumulativePercents when cumulative decreases', () => {

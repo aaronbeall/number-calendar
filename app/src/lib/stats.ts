@@ -281,6 +281,63 @@ export type PeriodDerivedStats = {
   cumulativePercents: Partial<NumberStats>;
 };
 
+
+/**
+ * Build cumulative stats using prior cumulatives plus the current period numbers.
+ *
+ * Note: distributional metrics (median, mode, variance, standardDeviation,
+ * interquartileRange) are carried forward and are not meaningful until full
+ * historical numbers are available.
+ */
+export function computeCumulatives(
+  numbers: number[],
+  priorCumulatives: NumberStats | null,
+): NumberStats {
+  const stats = computeNumberStats(numbers) ?? emptyStats();
+  if (!priorCumulatives) return stats;
+
+  // Distributional metrics are carried forward when full history is unavailable.
+
+  const numbersTotal = numbers.reduce((sum, value) => sum + value, 0);
+  const count = priorCumulatives.count + numbers.length;
+  const total = priorCumulatives.total + numbersTotal;
+  const mean = count > 0 ? total / count : 0;
+  const hasNumbers = numbers.length > 0;
+
+  const min = hasNumbers ? Math.min(priorCumulatives.min, ...numbers) : priorCumulatives.min;
+  const max = hasNumbers ? Math.max(priorCumulatives.max, ...numbers) : priorCumulatives.max;
+  const first = priorCumulatives.count > 0 ? priorCumulatives.first : (hasNumbers ? numbers[0] : 0);
+  const last = hasNumbers ? numbers[numbers.length - 1] : priorCumulatives.last;
+  const range = max - min;
+  const change = last - first;
+  const changePercent = first !== 0 ? (change / Math.abs(first)) * 100 : 0;
+  const slope = count > 1 ? change / (count - 1) : 0;
+  const midrange = (min + max) / 2;
+
+  return {
+    count,
+    total,
+    mean,
+    median: priorCumulatives.count > 0 ? priorCumulatives.median : stats.median,
+    min,
+    max,
+    first,
+    last,
+    range,
+    change,
+    changePercent,
+    mode: priorCumulatives.count > 0 ? priorCumulatives.mode : stats.mode,
+    slope,
+    midrange,
+    variance: priorCumulatives.count > 0 ? priorCumulatives.variance : stats.variance,
+    standardDeviation: priorCumulatives.count > 0 ? priorCumulatives.standardDeviation : stats.standardDeviation,
+    interquartileRange: priorCumulatives.count > 0 ? priorCumulatives.interquartileRange : stats.interquartileRange,
+  };
+}
+
+/**
+ * Given an array of numbers for the current period, and optionally the prior period's stats and cumulatives, compute the current stats, deltas from prior, percent changes from prior, cumulatives, and cumulative deltas and percents.
+ */
 export function computePeriodDerivedStats(
   numbers: number[],
   priorStats: NumberStats | null,
@@ -289,22 +346,9 @@ export function computePeriodDerivedStats(
   const stats = computeNumberStats(numbers) ?? emptyStats();
   const deltas = computeStatsDeltas(stats, priorStats);
   const percents = computeStatsPercents(stats, priorStats);
-
-  if (!priorCumulatives) {
-    return {
-      stats,
-      deltas,
-      percents,
-      cumulatives: stats,
-      cumulativeDeltas: emptyStats(),
-      cumulativePercents: {},
-    };
-  }
-
-  const cumulativeNumbers = [priorCumulatives.total, ...numbers];
-  const cumulatives = computeNumberStats(cumulativeNumbers) ?? stats;
-  const cumulativeDeltas = computeStatsDeltas(cumulatives, priorCumulatives);
-  const cumulativePercents = computeStatsPercents(cumulatives, priorCumulatives);
+  const cumulatives = computeCumulatives(numbers, priorCumulatives);
+  const cumulativeDeltas = priorCumulatives ? computeStatsDeltas(cumulatives, priorCumulatives) : emptyStats();
+  const cumulativePercents = priorCumulatives ? computeStatsPercents(cumulatives, priorCumulatives) : {};
 
   return { stats, deltas, percents, cumulatives, cumulativeDeltas, cumulativePercents };
 }

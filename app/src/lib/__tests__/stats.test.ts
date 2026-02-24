@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateExtremes,
+  computeCumulatives,
   computeMetricStats,
   computeNumberStats,
   computePeriodDerivedStats,
@@ -145,15 +146,19 @@ describe('stats', () => {
       expect(derived.percents).toEqual(expectedPercents);
     });
 
-    it('builds cumulatives from prior total plus current numbers', () => {
+    it('builds cumulatives from prior cumulative stats and current numbers', () => {
       const priorCumulatives = computeNumberStats([6, 4])!; // total = 10
       const derived = computePeriodDerivedStats([2, 4], null, priorCumulatives);
 
-      const expectedCumulatives = computeNumberStats([priorCumulatives.total, 2, 4])!;
-      const expectedDeltas = computeStatsDeltas(expectedCumulatives, priorCumulatives);
-      const expectedPercents = computeStatsPercents(expectedCumulatives, priorCumulatives);
+      expect(derived.cumulatives.total).toBe(16);
+      expect(derived.cumulatives.count).toBe(4);
+      expect(derived.cumulatives.mean).toBe(4);
+      expect(derived.cumulatives.min).toBe(2);
+      expect(derived.cumulatives.max).toBe(6);
 
-      expect(derived.cumulatives).toEqual(expectedCumulatives);
+      const expectedDeltas = computeStatsDeltas(derived.cumulatives, priorCumulatives);
+      const expectedPercents = computeStatsPercents(derived.cumulatives, priorCumulatives);
+
       expect(derived.cumulativeDeltas).toEqual(expectedDeltas);
       expect(derived.cumulativePercents).toEqual(expectedPercents);
     });
@@ -163,6 +168,19 @@ describe('stats', () => {
       const stats = emptyStats();
       expect(derived.stats).toEqual(stats);
       expect(derived.deltas).toEqual(computeStatsDeltas(stats, null));
+    });
+  });
+
+  describe('computeCumulatives', () => {
+    it('accumulates totals and counts across periods', () => {
+      const prior = computeNumberStats([6, 4])!; // total 10, count 2
+      const cumulatives = computeCumulatives([2, 4], prior);
+
+      expect(cumulatives.total).toBe(16);
+      expect(cumulatives.count).toBe(4);
+      expect(cumulatives.mean).toBe(4);
+      expect(cumulatives.first).toBe(6);
+      expect(cumulatives.last).toBe(4);
     });
   });
 });
