@@ -6,6 +6,7 @@ import type { DayKey } from '@/features/db/localdb';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { formatFriendlyDate, toMonthKey, toYearKey, dateToDayKey, parseDateKeyToParts, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
+import { calculateExtremes, computeNumberStats, computePeriodDerivedStats } from '@/lib/stats';
 import { useMemo, useState } from 'react';
 import { subDays, startOfYear } from 'date-fns';
 import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock } from 'lucide-react';
@@ -108,6 +109,21 @@ export function Analysis() {
       count: numbers.length,
     };
   }, [daysInRange]);
+
+  // Compute stats extremes for this range
+  const dailyExtremesData = useMemo(() => {
+    const stats = daysInRange
+      .map(day => computeNumberStats(day.numbers))
+      .filter((s): s is typeof s & {} => s !== null);
+    return calculateExtremes(stats) || undefined;
+  }, [daysInRange]);
+
+  // Compute cumulatives for series tracking
+  const cumulativesData = useMemo(() => {
+    if (dataset.tracking !== 'series') return undefined;
+    const derived = computePeriodDerivedStats(aggregatedStats.dataPoints, null, null);
+    return derived.cumulatives;
+  }, [aggregatedStats.dataPoints, dataset.tracking]);
 
   // Group days by aggregation type
   const groupedData = useMemo(() => {
@@ -293,7 +309,14 @@ export function Analysis() {
         {/* Charts Grid */}
         <div className="lg:col-span-3 space-y-4">
           {/* Summary Stats */}
-          <StatsSummary stats={aggregatedStats} valence={dataset.valence} />
+          <StatsSummary
+            stats={aggregatedStats}
+            valence={dataset.valence}
+            tracking={dataset.tracking}
+            datasetId={dataset.id}
+            extremes={dailyExtremesData}
+            cumulatives={cumulativesData}
+          />
 
           {/* Trend Chart */}
           <Card className="p-4">

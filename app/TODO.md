@@ -205,3 +205,4 @@ I'm liking this one.
 - [ ] You should be able to navigate to the calendar location of achievements
 - [ ] Footer share link is crappy
 - [ ] Import needs to be done in bulk, avoid triggering redraw/events during
+- [ ] Animation polish

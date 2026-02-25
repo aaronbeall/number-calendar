@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trophy, Skull, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Valence } from '@/features/db/localdb';
@@ -16,6 +16,7 @@ export interface NumberTextProps extends FormatValueOptions, NumberDisplayOption
   badClassName?: string;
   neutralClassName?: string;
   placeholder?: React.ReactNode;
+  animated?: boolean;
 }
 
 export const NumberText: React.FC<NumberTextProps> = ({
@@ -33,9 +34,63 @@ export const NumberText: React.FC<NumberTextProps> = ({
   percent = false,
   delta = false,
   decimals,
-  currency
+  currency,
+  animated = false
 }) => {
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
+  
+  // State for animated value
+  const [displayValue, setDisplayValue] = useState(value);
+  const animationFrameRef = useRef<number | undefined>(undefined);
+  
+  // Animate number changes when animated is true
+  useEffect(() => {
+    if (!animated || !isFiniteNumber) {
+      setDisplayValue(value);
+      return;
+    }
+    
+    const startValue = typeof displayValue === 'number' && Number.isFinite(displayValue) 
+      ? displayValue 
+      : value;
+    const endValue = value;
+    
+    if (startValue === endValue) {
+      return;
+    }
+    
+    const duration = 400; // Animation duration in ms
+    const startTime = performance.now();
+    
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      // Ease-out function for smoother animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      
+      const currentValue = startValue + (endValue - startValue) * easeOutQuart;
+      setDisplayValue(currentValue);
+      
+      if (progress < 1) {
+        animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        setDisplayValue(endValue);
+      }
+    };
+    
+    animationFrameRef.current = requestAnimationFrame(animate);
+    
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [value, animated, isFiniteNumber]);
+  
+  // Use displayValue for rendering when animated, otherwise use value
+  const renderValue = animated ? displayValue : value;
+  const isRenderFinite = typeof renderValue === 'number' && Number.isFinite(renderValue);
 
   const textClass = getValueForValence(
     valenceValue ?? 0,
@@ -46,15 +101,16 @@ export const NumberText: React.FC<NumberTextProps> = ({
       neutral: neutralClassName,
     }
   );
+  
   let formatted: React.ReactNode;
-  if (isFiniteNumber) {
-    formatted = formatValue(value, { short, percent, delta, decimals });
+  if (isRenderFinite) {
+    formatted = formatValue(renderValue, { short, percent, delta, decimals });
   } else {
     formatted = placeholder;
   }
 
   // If using currency, split the decimal part (cents) and render with smaller font size
-  if (currency && isFiniteNumber) {
+  if (currency && isRenderFinite) {
     const [integerPart, decimalPart] = String(formatted).split('.');
     formatted = (
       <>
@@ -69,7 +125,7 @@ export const NumberText: React.FC<NumberTextProps> = ({
   }
 
   const text = (
-    <span className={cn(textClass, className)}>
+    <span className={cn(textClass, animated && 'transition-all duration-200', className)}>
       {formatted}
     </span>
   );
