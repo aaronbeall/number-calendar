@@ -1,4 +1,5 @@
 import type { DayKey, MonthKey } from "@/features/db/localdb";
+import { Activity, ArrowRightFromLine, ArrowRightToLine, BarChart2, BarChart3, ChevronDown, ChevronUp, Copy, FoldVertical, Hash, type LucideIcon, Maximize2, Minimize2, Percent, Plus, ScatterChart, TrendingUp, Zap } from "lucide-react";
 import { parseDayKey, toMonthKey } from "./friendly-date";
 import { capitalize, entriesOf } from "./utils";
 
@@ -353,24 +354,31 @@ export function computePeriodDerivedStats(
   return { stats, deltas, percents, cumulatives, cumulativeDeltas, cumulativePercents };
 }
 
-export const METRIC_DISPLAY_INFO: Record<NumberMetric, { label: string; description: string }> = {
-  total: { label: 'Total', description: 'Sum of all values in the period' },
-  mean: { label: 'Average', description: 'Mean of all values in the period' },
-  median: { label: 'Median', description: 'Middle value when sorted' },
-  min: { label: 'Minimum', description: 'Lowest value in the period' },
-  max: { label: 'Maximum', description: 'Highest value in the period' },
-  count: { label: 'Count', description: 'Number of data points recorded' },
-  first: { label: 'Open', description: 'First value at the start of the period' },
-  last: { label: 'Close', description: 'Last value at the end of the period' },
-  range: { label: 'Range', description: 'Difference between max and min values' },
-  change: { label: 'Difference', description: 'Difference between first and last values' },
-  changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value' },
-  mode: { label: 'Mode', description: 'Most frequently occurring value in the period' },
-  slope: { label: 'Slope', description: 'Average change per entry (rate of change)' },
-  midrange: { label: 'Midrange', description: 'Average of the minimum and maximum values' },
-  variance: { label: 'Variance', description: 'Measure of spread around the mean' },
-  standardDeviation: { label: 'Standard Deviation', description: 'Square root of variance (spread around mean)' },
-  interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles' },
+export const METRIC_DISPLAY_INFO: Record<NumberMetric, { 
+  label: string; 
+  description: string; 
+  icon: LucideIcon; 
+  delta?: boolean; // should always be formatted as delta (+/-)
+  percent?: boolean; // should always be formatted as percentage (with % sign)
+  cumulatives?: boolean // supports cumulatives appropriately
+}> = {
+  total: { label: 'Total', description: 'Sum of all values in the period', icon: Plus },
+  mean: { label: 'Average', description: 'Mean of all values in the period', icon: BarChart3 },
+  median: { label: 'Median', description: 'Middle value when sorted', icon: FoldVertical, cumulatives: false },
+  min: { label: 'Minimum', description: 'Lowest value in the period', icon: ChevronDown },
+  max: { label: 'Maximum', description: 'Highest value in the period', icon: ChevronUp },
+  count: { label: 'Count', description: 'Number of data points recorded', icon: Hash },
+  first: { label: 'Open', description: 'First value at the start of the period', icon: ArrowRightFromLine },
+  last: { label: 'Close', description: 'Last value at the end of the period', icon: ArrowRightToLine },
+  range: { label: 'Range', description: 'Difference between max and min values', icon: Minimize2, delta: true },
+  change: { label: 'Difference', description: 'Difference between first and last values', icon: TrendingUp, delta: true },
+  changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value', icon: Percent, delta: true, percent: true },
+  mode: { label: 'Mode', description: 'Most frequently occurring value in the period', icon: BarChart2, cumulatives: false },
+  slope: { label: 'Slope', description: 'Average change per entry (rate of change)', icon: Zap, delta: true },
+  midrange: { label: 'Midrange', description: 'Average of the minimum and maximum values', icon: Maximize2 },
+  variance: { label: 'Variance', description: 'Measure of spread around the mean', icon: ScatterChart, cumulatives: false },
+  standardDeviation: { label: 'Standard Deviation', description: 'Square root of variance (spread around mean)', icon: Activity, cumulatives: false },
+  interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles', icon: Copy, cumulatives: false },
 };
 
 
