@@ -2,13 +2,13 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { useAllDays } from '@/features/db/useDayEntryData';
-import type { DayKey } from '@/features/db/localdb';
+import type { DateKey } from '@/features/db/localdb';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
-import { formatFriendlyDate, toMonthKey, toYearKey, dateToDayKey, parseDateKeyToParts, parseDateKey } from '@/lib/friendly-date';
+import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
+import { formatFriendlyDate, dateToDayKey, convertDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
-import { calculateExtremes, computeNumberStats, computePeriodDerivedStats } from '@/lib/stats';
 import { useMemo, useState } from 'react';
-import { subDays, startOfYear } from 'date-fns';
+import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { AggregationBarChart } from '@/features/analysis/AggregationBarChart';
@@ -17,141 +17,92 @@ import { DistributionHistogram } from '@/features/analysis/DistributionHistogram
 import { PeriodComparisonChart } from '@/features/analysis/PeriodComparisonChart';
 import { StatsSummary } from '@/features/analysis/StatsSummary';
 
-type AggregationType = 'day' | 'week' | 'month' | 'year' | 'none';
-type PresetRange = 'all' | 'last7' | 'last30' | 'last90' | 'ytd' | 'custom';
+
 
 export function Analysis() {
   const { dataset } = useDatasetContext();
+  const aggregateData = useAllPeriodsAggregateData();
   const { data: allDays = [] } = useAllDays(dataset.id);
 
   const [aggregationType, setAggregationType] = useSearchParamState<AggregationType>('agg', 'month');
   const actualAggregationType = (typeof aggregationType === 'string' ? aggregationType : 'month') as AggregationType;
-  const [presetRange, setPresetRange] = useState<PresetRange>('last30');
-  const [customStart, setCustomStart] = useState<DayKey | ''>('');
-  const [customEnd, setCustomEnd] = useState<DayKey | ''>('');
+  const [presetRange, setPresetRange] = useState<TimeFramePreset>('last-6-months');
+  const [customStart, setCustomStart] = useState<Date>(new Date());
+  const [customEnd, setCustomEnd] = useState<Date>(new Date());
 
-  // Determine active start/end dates
+  // Get periods based on aggregation type
+  const periodsForAggregation = useMemo(() => {
+    switch (actualAggregationType) {
+      case 'day': return aggregateData.days;
+      case 'week': return aggregateData.weeks;
+      case 'month': return aggregateData.months;
+      case 'year': return aggregateData.years;
+      default: return aggregateData.months;
+    }
+  }, [actualAggregationType, aggregateData]);
+
+  // Get available time frame presets for current aggregation
+  const availablePresets = useMemo(() => 
+    getAvailablePresets(actualAggregationType),
+    [actualAggregationType]
+  );
+
+  // Ensure current preset is valid for aggregation type
+  useMemo(() => {
+    const isValid = availablePresets.some(p => p.preset === presetRange);
+    if (!isValid && availablePresets.length > 0) {
+      setPresetRange(availablePresets[0].preset);
+    }
+  }, [actualAggregationType, availablePresets]);
+
+  // Determine active time range
   const today = new Date();
-  const {
-    startDate: activeStartDate,
-    endDate: activeEndDate,
-  } = useMemo(() => {
-    if (presetRange === 'custom' && customStart && customEnd) {
-      return {
-        startDate: parseDateKey(customStart),
-        endDate: parseDateKey(customEnd),
-      };
-    }
+  const timeRange = useMemo(() => {
+    const customRange = presetRange === 'custom' ? { startDate: customStart, endDate: customEnd } : undefined;
+    return getTimeRange(presetRange, today, customRange);
+  }, [presetRange, customStart, customEnd, today]);
 
-    const end = today;
-    let start = today;
+  // Compute analysis data for selected time range
+  const analysisData = useMemo(() => 
+    computeAnalysisData(periodsForAggregation, timeRange, true),
+    [periodsForAggregation, timeRange]
+  );
 
-    if (presetRange === 'all') {
-      // Get the earliest date from allDays
-      if (allDays.length > 0) {
-        const sortedDays = [...allDays].sort((a, b) => a.date.localeCompare(b.date));
-        start = parseDateKey(sortedDays[0]!.date);
-      } else {
-        start = end;
-      }
-    } else if (presetRange === 'last7') {
-      start = subDays(end, 7);
-    } else if (presetRange === 'last30') {
-      start = subDays(end, 30);
-    } else if (presetRange === 'last90') {
-      start = subDays(end, 90);
-    } else if (presetRange === 'ytd') {
-      start = startOfYear(end);
-    }
+  const { dataPoints, stats, extremes, cumulatives, deltas, periodCount } = analysisData;
 
-    return { startDate: start, endDate: end };
-  }, [presetRange, customStart, customEnd, today, allDays]);
+  // Cumulatives only for series tracking
+  const cumulativesData = dataset.tracking === 'series' ? cumulatives : undefined;
 
-  const startDateKey = dateToDayKey(activeStartDate);
-  const endDateKey = dateToDayKey(activeEndDate);
+  // Deltas only for trend tracking
+  const deltasData = dataset.tracking === 'trend' ? deltas : undefined;
 
-  // Filter days in the selected range
+  // Filter allDays by the time range for charts
   const daysInRange = useMemo(() => {
-    return allDays.filter(
-      day => day.date >= startDateKey && day.date <= endDateKey
-    );
-  }, [allDays, startDateKey, endDateKey]);
+    const startKey = dateToDayKey(timeRange.startDate);
+    const endKey = dateToDayKey(timeRange.endDate);
+    return allDays.filter(day => day.date >= startKey && day.date <= endKey);
+  }, [allDays, timeRange]);
 
-  // Get aggregated data for the range
-  const aggregatedStats = useMemo(() => {
-    const numbers = daysInRange.flatMap(day => day.numbers);
-    if (numbers.length === 0) {
-      return {
-        dataPoints: [],
-        min: null,
-        max: null,
-        avg: null,
-        median: null,
-        count: 0,
-      };
-    }
-
-    numbers.sort((a, b) => a - b);
-    const min = numbers[0];
-    const max = numbers[numbers.length - 1];
-    const avg = numbers.reduce((a, b) => a + b, 0) / numbers.length;
-    const median =
-      numbers.length % 2 === 0
-        ? (numbers[numbers.length / 2 - 1] + numbers[numbers.length / 2]) / 2
-        : numbers[Math.floor(numbers.length / 2)];
-
-    return {
-      dataPoints: numbers,
-      min,
-      max,
-      avg,
-      median,
-      count: numbers.length,
-    };
-  }, [daysInRange]);
-
-  // Compute stats extremes for this range
-  const dailyExtremesData = useMemo(() => {
-    const stats = daysInRange
-      .map(day => computeNumberStats(day.numbers))
-      .filter((s): s is typeof s & {} => s !== null);
-    return calculateExtremes(stats) || undefined;
-  }, [daysInRange]);
-
-  // Compute cumulatives for series tracking
-  const cumulativesData = useMemo(() => {
-    if (dataset.tracking !== 'series') return undefined;
-    const derived = computePeriodDerivedStats(aggregatedStats.dataPoints, null, null);
-    return derived.cumulatives;
-  }, [aggregatedStats.dataPoints, dataset.tracking]);
-
-  // Group days by aggregation type
+  // Group days by aggregation type for AggregationBarChart
   const groupedData = useMemo(() => {
     const groups: Record<string, typeof daysInRange> = {};
-
+    
     daysInRange.forEach(day => {
-      let groupKey = '';
-      if (actualAggregationType === 'day') {
-        groupKey = day.date;
-      } else if (actualAggregationType === 'week') {
-        const date = parseDateKey(day.date);
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay()); // Sunday start
-        groupKey = dateToDayKey(weekStart);
+      let groupKey: DateKey = day.date; // DateKey union type allows all date key types
+      if (actualAggregationType === 'week') {
+        groupKey = convertDateKey(day.date, 'week');
       } else if (actualAggregationType === 'month') {
-        const parsed = parseDateKeyToParts(day.date);
-        groupKey = toMonthKey(parsed.year, parsed.month!);
+        groupKey = convertDateKey(day.date, 'month');
       } else if (actualAggregationType === 'year') {
-        const parsed = parseDateKeyToParts(day.date);
-        groupKey = toYearKey(parsed.year);
+        groupKey = convertDateKey(day.date, 'year');
       }
-
+      
       if (!groups[groupKey]) {
         groups[groupKey] = [];
       }
       groups[groupKey].push(day);
     });
-
+    
     return groups;
   }, [daysInRange, actualAggregationType]);
 
@@ -162,7 +113,7 @@ export function Analysis() {
     { value: 'year', label: 'Year', icon: CalendarClock, corner: 'rounded-br-md' },
   ] as const;
 
-  if (!dataset || allDays.length === 0) {
+  if (!dataset || aggregateData.days.length === 0) {
     return (
       <div className="max-w-6xl mx-auto p-6">
         <h1 className="text-3xl font-bold mb-2">Analysis</h1>
@@ -186,54 +137,17 @@ export function Analysis() {
               Time Frame
             </h3>
             <div className="space-y-1.5">  
-              <Button
-                variant={presetRange === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPresetRange('all')}
-                className="w-full justify-start text-xs h-8"
-              >
-                All Time
-              </Button>
-              <Button
-                variant={presetRange === 'last7' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPresetRange('last7')}
-                className="w-full justify-start text-xs h-8"
-              >
-                Last 7 days
-              </Button>
-              <Button
-                variant={presetRange === 'last30' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPresetRange('last30')}
-                className="w-full justify-start text-xs h-8"
-              >
-                Last 30 days
-              </Button>
-              <Button
-                variant={presetRange === 'last90' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPresetRange('last90')}
-                className="w-full justify-start text-xs h-8"
-              >
-                Last 90 days
-              </Button>
-              <Button
-                variant={presetRange === 'ytd' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPresetRange('ytd')}
-                className="w-full justify-start text-xs h-8"
-              >
-                Year to date
-              </Button>
-              <Button
-                variant={presetRange === 'custom' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setPresetRange('custom')}
-                className="w-full justify-start text-xs h-8"
-              >
-                Custom
-              </Button>
+              {availablePresets.map(preset => (
+                <Button
+                  key={preset.preset}
+                  variant={presetRange === preset.preset ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setPresetRange(preset.preset)}
+                  className="w-full justify-start text-xs h-8"
+                >
+                  {preset.label}
+                </Button>
+              ))}
             </div>
           </div>
 
@@ -242,15 +156,15 @@ export function Analysis() {
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Start Date</label>
               <input
                 type="date"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value as DayKey)}
+                value={dateToDayKey(customStart)}
+                onChange={(e) => setCustomStart(new Date(e.target.value))}
                 className="w-full px-2 py-1.5 text-xs border rounded bg-white dark:bg-slate-800"
               />
               <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">End Date</label>
               <input
                 type="date"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value as DayKey)}
+                value={dateToDayKey(customEnd)}
+                onChange={(e) => setCustomEnd(new Date(e.target.value))}
                 className="w-full px-2 py-1.5 text-xs border rounded bg-white dark:bg-slate-800"
               />
             </div>
@@ -291,16 +205,16 @@ export function Analysis() {
             </h3>
             <div className="space-y-1.5 text-xs">
               <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
-                <span className="text-slate-600 dark:text-slate-400">Days Tracked</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{formatValue(daysInRange.length)}</span>
+                <span className="text-slate-600 dark:text-slate-400">{actualAggregationType === 'day' ? 'Days' : actualAggregationType === 'week' ? 'Weeks' : actualAggregationType === 'month' ? 'Months' : 'Years'}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{formatValue(periodCount)}</span>
               </div>
               <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
                 <span className="text-slate-600 dark:text-slate-400">Data Points</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{formatValue(daysInRange.flatMap(d => d.numbers).length)}</span>
+                <span className="font-semibold text-slate-900 dark:text-white">{formatValue(stats?.count ?? 0)}</span>
               </div>
               <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded mt-2">
                 <div className="font-semibold text-slate-600 dark:text-slate-300 mb-1">Range</div>
-                <div>{formatFriendlyDate(dateToDayKey(activeStartDate), dateToDayKey(activeEndDate))}</div>
+                <div>{formatFriendlyDate(dateToDayKey(timeRange.startDate), dateToDayKey(timeRange.endDate))}</div>
               </div>
             </div>
           </div>
@@ -310,12 +224,13 @@ export function Analysis() {
         <div className="lg:col-span-3 space-y-4">
           {/* Summary Stats */}
           <StatsSummary
-            stats={aggregatedStats}
+            stats={stats}
             valence={dataset.valence}
             tracking={dataset.tracking}
             datasetId={dataset.id}
-            extremes={dailyExtremesData}
+            extremes={extremes}
             cumulatives={cumulativesData}
+            deltas={deltasData}
           />
 
           {/* Trend Chart */}
@@ -351,7 +266,7 @@ export function Analysis() {
               Value Distribution
             </h3>
             <DistributionHistogram
-              numbers={aggregatedStats.dataPoints}
+              numbers={dataPoints}
               valence={dataset.valence}
             />
           </Card>
@@ -364,25 +279,23 @@ export function Analysis() {
                 {dataset.valence === 'positive' ? 'Positive/Negative' : 'Beneficial/Harmful'} Breakdown
               </h3>
               <ValenceDistributionChart
-                numbers={aggregatedStats.dataPoints}
+                numbers={dataPoints}
                 valence={dataset.valence}
               />
             </Card>
           )}
 
           {/* Period Comparison */}
-          {actualAggregationType !== 'none' && (
-            <Card className="p-4">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                {actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Comparison
-              </h3>
-              <PeriodComparisonChart
-                groupedData={groupedData}
-                aggregationType={actualAggregationType}
-              />
-            </Card>
-          )}
+          <Card className="p-4">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              {actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Comparison
+            </h3>
+            <PeriodComparisonChart
+              groupedData={groupedData}
+              aggregationType={actualAggregationType}
+            />
+          </Card>
         </div>
       </div>
     </div>

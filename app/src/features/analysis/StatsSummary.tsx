@@ -7,7 +7,7 @@ import { NumberText } from '@/components/ui/number-text';
 import type { Valence } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
 import { usePreference } from '@/hooks/usePreference';
-import { computeNumberStats, METRIC_DISPLAY_INFO, type NumberMetric, type NumberStats, type StatsExtremes } from '@/lib/stats';
+import { METRIC_DISPLAY_INFO, type NumberMetric, type NumberStats, type StatsExtremes } from '@/lib/stats';
 import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import {
   Settings,
@@ -18,14 +18,7 @@ import {
 import React, { useMemo, useState } from 'react';
 
 interface StatsSummaryProps {
-  stats: {
-    dataPoints: number[];
-    min: number | null;
-    max: number | null;
-    avg: number | null;
-    median: number | null;
-    count: number;
-  };
+  stats: NumberStats | null;
   valence: Valence;
   tracking: 'series' | 'trend';
   datasetId: string;
@@ -34,15 +27,12 @@ interface StatsSummaryProps {
   deltas?: NumberStats;
 }
 
-export function StatsSummary({ stats: inputStats, valence, tracking, datasetId, extremes, cumulatives, deltas }: StatsSummaryProps) {
+export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, extremes, cumulatives, deltas }: StatsSummaryProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [originalMetrics, setOriginalMetrics] = useState<NumberMetric[] | null>(null);
   const [originalShowDeltas, setOriginalShowDeltas] = useState<boolean | null>(null);
   const [originalShowExtremes, setOriginalShowExtremes] = useState<boolean | null>(null);
   const [originalShowCumulatives, setOriginalShowCumulatives] = useState<boolean | null>(null);
-  
-  // Compute full NumberStats from dataPoints
-  const fullStats = useMemo(() => computeNumberStats(inputStats.dataPoints), [inputStats.dataPoints]);
   
   // Get primary metric
   const primaryMetric = getPrimaryMetric(tracking);
