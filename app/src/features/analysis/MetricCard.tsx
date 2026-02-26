@@ -63,118 +63,38 @@ export function MetricCard({
       : ArrowDownRight
     : ArrowRight;
 
-  if (variant === 'primary') {
-    return (
-      <Card
-        className={`p-4 transition-all ${colors.bg} ${isHovered && variant !== 'primary' ? 'scale-105' : ''}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex-1">
-            <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1">
-              {label}
-            </div>
-            <div className="text-3xl font-bold">
-              <NumberText 
-                value={value} 
-                valenceValue={value} 
-                valence={valence} 
-                short={!isHovered}
-                animated 
-              />
-            </div>
-            {deltaValue !== undefined && (
-              <div className="flex gap-2 mt-2 text-xs">
-                <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 opacity-70">
-                  <DeltaIcon className={`w-3 h-3 ${getValenceTone(deltaValue)}`} />
-                  <NumberText 
-                    value={deltaValue} 
-                    valenceValue={deltaValue} 
-                    valence={valence} 
-                    short={!isHovered}
-                    animated 
-                    delta 
-                  />
-                </div>
-              </div>
-            )}
-            {cumulativeValue !== undefined && (
-              <div className="flex gap-2 mt-2 text-xs">
-                <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 opacity-70">
-                  <NumberText 
-                    value={cumulativeValue} 
-                    valenceValue={cumulativeValue} 
-                    valence={valence} 
-                    short={!isHovered}
-                    animated 
-                  />
-                </div>
-              </div>
-            )}
-            {(high !== undefined || low !== undefined) && (
-              <div className="flex gap-2 mt-2 text-xs">
-                {high !== undefined && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">
-                    <ArrowUpToLine className={`w-3 h-3 ${getValenceTone(high)}`} />
-                    <NumberText 
-                      value={high} 
-                      valenceValue={high} 
-                      valence={valence} 
-                      short={!isHovered}
-                      animated 
-                    />
-                  </div>
-                )}
-                {low !== undefined && (
-                  <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">
-                    <ArrowDownToLine className={`w-3 h-3 ${getValenceTone(low)}`} />
-                    <NumberText 
-                      value={low} 
-                      valenceValue={low} 
-                      valence={valence} 
-                      short={!isHovered}
-                      animated 
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          {showConfigButton && onConfigClick && (
-            <Button
-              variant="outline"
-              size="icon"
-              className={`h-9 w-9 flex-shrink-0 transition-all rounded-lg border-slate-300 dark:border-slate-600 ${isConfigHovered ? 'bg-slate-100 dark:bg-slate-700 scale-110' : 'bg-white dark:bg-slate-800'}`}
-              onClick={onConfigClick}
-              onMouseEnter={() => setIsConfigHovered(true)}
-              onMouseLeave={() => setIsConfigHovered(false)}
-              title="Configure stats display"
-            >
-              <Settings className={`h-5 w-5 transition-colors ${isConfigHovered ? 'text-slate-600 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'}`} />
-            </Button>
-          )}
-        </div>
-      </Card>
-    );
-  }
+  const isPrimary = variant === 'primary';
+  const cardPadding = isPrimary ? 'p-4' : 'p-3';
+  const cardScale = !isPrimary && isHovered ? 'scale-105' : '';
+  const labelClass = isPrimary
+    ? 'text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1'
+    : 'text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium';
+  const valueClass = isPrimary ? 'text-3xl font-bold' : 'text-lg font-bold truncate';
+  const deltaWrapperClass = isPrimary ? 'flex gap-2 mt-2 text-xs' : 'flex gap-1 mt-0.5 text-[10px]';
+  const deltaChipClass = isPrimary
+    ? 'flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 opacity-70'
+    : 'inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 opacity-70';
+  const extremesWrapperClass = isPrimary ? 'flex gap-2 mt-2 text-xs' : 'flex gap-1 mt-0.5 text-[10px]';
+  const extremesChipClass = isPrimary
+    ? 'flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800'
+    : 'inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800';
+  const deltaIconClass = isPrimary ? 'w-3 h-3' : 'w-2.5 h-2.5';
 
-  // Secondary variant
   return (
     <Card
-      className={`p-3 transition-all ${colors.bg} ${isHovered ? 'scale-105' : ''}`}
+      className={`${cardPadding} transition-all ${colors.bg} ${cardScale}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-start gap-2">
-        <div className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0 opacity-60">
-          {React.createElement(METRIC_DISPLAY_INFO[metric].icon, { className: 'w-4 h-4' })}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">
-            {label}
+      <div className={isPrimary ? 'flex items-start justify-between gap-2' : 'flex items-start gap-2'}>
+        {!isPrimary && (
+          <div className="text-slate-400 dark:text-slate-500 mt-0.5 flex-shrink-0 opacity-60">
+            {React.createElement(METRIC_DISPLAY_INFO[metric].icon, { className: 'w-4 h-4' })}
           </div>
-          <div className="text-lg font-bold truncate">
+        )}
+        <div className="flex-1 min-w-0">
+          <div className={labelClass}>{label}</div>
+          <div className={valueClass}>
             <NumberText 
               value={value} 
               valenceValue={value} 
@@ -184,9 +104,9 @@ export function MetricCard({
             />
           </div>
           {deltaValue !== undefined && (
-            <div className="flex gap-1 mt-0.5 text-[10px]">
-              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 opacity-70">
-                <DeltaIcon className={`w-2.5 h-2.5 ${getValenceTone(deltaValue)}`} />
+            <div className={deltaWrapperClass}>
+              <span className={deltaChipClass}>
+                <DeltaIcon className={`${deltaIconClass} ${getValenceTone(deltaValue)}`} />
                 <NumberText 
                   value={deltaValue} 
                   valenceValue={deltaValue} 
@@ -199,8 +119,8 @@ export function MetricCard({
             </div>
           )}
           {cumulativeValue !== undefined && (
-            <div className="flex gap-1 mt-0.5 text-[10px]">
-              <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 opacity-70">
+            <div className={deltaWrapperClass}>
+              <span className={deltaChipClass}>
                 <NumberText 
                   value={cumulativeValue} 
                   valenceValue={cumulativeValue} 
@@ -212,10 +132,10 @@ export function MetricCard({
             </div>
           )}
           {(high !== undefined || low !== undefined) && (
-            <div className="flex gap-1 mt-0.5 text-[10px]">
+            <div className={extremesWrapperClass}>
               {high !== undefined && (
-                <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
-                  <ArrowUpToLine className={`w-2.5 h-2.5 ${getValenceTone(high)}`} />
+                <span className={extremesChipClass}>
+                  <ArrowUpToLine className={`${deltaIconClass} ${getValenceTone(high)}`} />
                   <NumberText 
                     value={high} 
                     valenceValue={high} 
@@ -226,8 +146,8 @@ export function MetricCard({
                 </span>
               )}
               {low !== undefined && (
-                <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
-                  <ArrowDownToLine className={`w-2.5 h-2.5 ${getValenceTone(low)}`} />
+                <span className={extremesChipClass}>
+                  <ArrowDownToLine className={`${deltaIconClass} ${getValenceTone(low)}`} />
                   <NumberText 
                     value={low} 
                     valenceValue={low} 
@@ -240,6 +160,19 @@ export function MetricCard({
             </div>
           )}
         </div>
+        {isPrimary && showConfigButton && onConfigClick && (
+          <Button
+            variant="outline"
+            size="icon"
+            className={`h-9 w-9 flex-shrink-0 transition-all rounded-lg border-slate-300 dark:border-slate-600 ${isConfigHovered ? 'bg-slate-100 dark:bg-slate-700 scale-110' : 'bg-white dark:bg-slate-800'}`}
+            onClick={onConfigClick}
+            onMouseEnter={() => setIsConfigHovered(true)}
+            onMouseLeave={() => setIsConfigHovered(false)}
+            title="Configure stats display"
+          >
+            <Settings className={`h-5 w-5 transition-colors ${isConfigHovered ? 'text-slate-600 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'}`} />
+          </Button>
+        )}
       </div>
     </Card>
   );
