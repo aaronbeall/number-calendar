@@ -15,6 +15,7 @@ import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { formatFriendlyDate, dateToDayKey, convertDateKey, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { getPrimaryMetric } from '@/lib/tracking';
@@ -28,7 +29,29 @@ import { StatsSummary } from '@/features/analysis/StatsSummary';
 import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
 import { capitalize, pluralize } from '@/lib/utils';
 
-
+function formatAggregationRange(
+  startDate: Date,
+  endDate: Date,
+  aggregation: AggregationType
+): string {
+  try {
+    switch (aggregation) {
+      case 'none':
+      case 'day':
+        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
+      case 'week':
+        return `W${format(startDate, 'ww')} '${format(startDate, 'yy')} - W${format(endDate, 'ww')} '${format(endDate, 'yy')}`;
+      case 'month':
+        return `${format(startDate, "MMM ''yy")} - ${format(endDate, "MMM ''yy")}`;
+      case 'year':
+        return `${format(startDate, 'yyyy')} - ${format(endDate, 'yyyy')}`;
+      default:
+        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
+    }
+  } catch {
+    return 'Custom range';
+  }
+}
 
 export function Analysis() {
   const { dataset } = useDatasetContext();
@@ -39,7 +62,7 @@ export function Analysis() {
 
   const [aggregationType, setAggregationType] = useSearchParamState<AggregationType>('agg', 'month');
   const actualAggregationType = (typeof aggregationType === 'string' ? aggregationType : 'month') as AggregationType;
-  const [presetRange, setPresetRange] = useState<TimeFramePreset>('last-6-months');
+  const [presetRange, setPresetRange] = useState<TimeFramePreset | null>('last-6-months');
   const [customStart, setCustomStart] = useState<Date>(new Date());
   const [customEnd, setCustomEnd] = useState<Date>(new Date());
 
@@ -57,29 +80,32 @@ export function Analysis() {
 
   // Get available time frame presets for current aggregation
   const availablePresets = useMemo(() => 
-    getAvailablePresets(actualAggregationType),
+    getAvailablePresets(actualAggregationType).filter((preset) => preset.preset !== 'custom'),
     [actualAggregationType]
   );
 
   // Ensure current preset is valid for aggregation type
   useMemo(() => {
+    if (!presetRange) return;
     const isValid = availablePresets.some(p => p.preset === presetRange);
     if (!isValid && availablePresets.length > 0) {
       setPresetRange(availablePresets[0].preset);
     }
-  }, [actualAggregationType, availablePresets]);
+  }, [actualAggregationType, availablePresets, presetRange]);
 
   // Determine active time range
   const today = new Date();
   const timeRange = useMemo(() => {
-    const customRange = presetRange === 'custom' ? { startDate: customStart, endDate: customEnd } : undefined;
-    return getTimeRange(presetRange, today, customRange);
+    if (!presetRange) {
+      return { startDate: customStart, endDate: customEnd };
+    }
+    return getTimeRange(presetRange, today);
   }, [presetRange, customStart, customEnd, today]);
 
   const handleAggregationChange = (nextAggregation: AggregationType) => {
     setAggregationType(nextAggregation);
 
-    if (presetRange !== 'custom') return;
+    if (presetRange) return;
 
     const nextPeriods = (() => {
       switch (nextAggregation) {
@@ -200,23 +226,15 @@ export function Analysis() {
           <Calendar className="w-3.5 h-3.5" />
           Time Frame
         </h3>
-        <Select value={presetRange} onValueChange={(value) => {
+        <Select key={presetRange || 'custom'} value={presetRange || ''} onValueChange={(value) => {
           const newPreset = value as TimeFramePreset;
-          if (newPreset !== 'custom') {
-            // Switching to a preset - sync custom values to match it
-            const presetTimeRange = getTimeRange(newPreset, today);
-            setCustomStart(presetTimeRange.startDate);
-            setCustomEnd(presetTimeRange.endDate);
-          } else {
-            // Switching TO custom - initialize with the current preset's range
-            const currentPresetRange = getTimeRange(presetRange, today);
-            setCustomStart(currentPresetRange.startDate);
-            setCustomEnd(currentPresetRange.endDate);
-          }
+          const presetTimeRange = getTimeRange(newPreset, today);
+          setCustomStart(presetTimeRange.startDate);
+          setCustomEnd(presetTimeRange.endDate);
           setPresetRange(newPreset);
         }}>
           <SelectTrigger className="w-full text-xs h-9 sm:h-8">
-            <SelectValue />
+            <SelectValue placeholder={formatAggregationRange(customStart, customEnd, actualAggregationType)} />
           </SelectTrigger>
           <SelectContent>
             {availablePresets.map(preset => (
@@ -228,22 +246,21 @@ export function Analysis() {
         </Select>
       </div>
 
-      {presetRange === 'custom' && (
-        <div className="pb-3 border-b">
-          <CustomRangePicker
-            tracking={dataset.tracking}
-            valence={dataset.valence}
-            aggregation={actualAggregationType}
-            allPeriods={periodsForAggregation}
-            startDate={customStart}
-            endDate={customEnd}
-            onRangeChange={(start, end) => {
-              setCustomStart(start);
-              setCustomEnd(end);
-            }}
-          />
-        </div>
-      )}
+      <div className="pb-3 border-b">
+        <CustomRangePicker
+          tracking={dataset.tracking}
+          valence={dataset.valence}
+          aggregation={actualAggregationType}
+          allPeriods={periodsForAggregation}
+          startDate={customStart}
+          endDate={customEnd}
+          onRangeChange={(start, end) => {
+            setCustomStart(start);
+            setCustomEnd(end);
+            if (presetRange) setPresetRange(null);
+          }}
+        />
+      </div>
 
       {/* Aggregation Section */}
       <div className="pb-3 border-b">
