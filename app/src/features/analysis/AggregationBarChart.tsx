@@ -1,5 +1,6 @@
 import { useTheme } from '@/components/ThemeProvider';
 import type { DayEntry, Valence, DateKey, MonthKey } from '@/features/db/localdb';
+import type { AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { getValueForValence } from '@/lib/valence';
@@ -13,9 +14,6 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-
-type AggregationType = 'day' | 'week' | 'month' | 'year' | 'none';
-
 interface AggregationBarChartProps {
   groupedData: Record<string, DayEntry[]>;
   aggregationType: AggregationType;
