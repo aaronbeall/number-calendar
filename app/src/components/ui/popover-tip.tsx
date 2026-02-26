@@ -36,11 +36,10 @@ const useIsCoarsePointer = () => {
 type PopoverTipProps = React.ComponentPropsWithoutRef<typeof Popover>
 
 const PopoverTip = ({ children, ...props }: PopoverTipProps) => {
-  const usePopover = useIsCoarsePointer()
-  const Root = usePopover ? Popover : Tooltip
+  // Always use Popover for click-only behavior (no hover)
   return (
-    <PopoverTipContext.Provider value={{ usePopover }}>
-      <Root {...props}>{children}</Root>
+    <PopoverTipContext.Provider value={{ usePopover: true }}>
+      <Popover {...props}>{children}</Popover>
     </PopoverTipContext.Provider>
   )
 }

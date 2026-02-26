@@ -1,9 +1,10 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { NumberText } from '@/components/ui/number-text';
+import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import type { NumberMetric } from '@/lib/stats';
 import type { Tracking, Valence } from '@/features/db/localdb';
-import { METRIC_DISPLAY_INFO } from '@/lib/stats';
+import { METRIC_DISPLAY_INFO, getMetricDescription } from '@/lib/stats';
 import { getValenceSource } from '@/lib/tracking';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import {
@@ -12,6 +13,8 @@ import {
   ArrowDownToLine,
   ArrowUpRight,
   ArrowDownRight,
+  HelpCircle,
+  Star,
 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -96,9 +99,77 @@ export function MetricCard({
   const cardPadding = isPrimary ? 'p-4' : 'p-3';
   const cardScale = !isPrimary && isHovered ? 'scale-105' : '';
   const labelClass = isPrimary
-    ? 'text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1'
-    : 'text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium';
+    ? 'text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium mb-1 flex items-center gap-1.5'
+    : 'text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1';
   const valueClass = isPrimary ? 'text-3xl font-bold' : 'text-lg font-bold truncate';
+  
+  // Build description content for the help popover
+  const buildHelpDescription = (): React.ReactNode => {
+    const parts: React.ReactNode[] = [];
+    const supportsCumulatives = METRIC_DISPLAY_INFO[metric].cumulatives !== false;
+    const metricInfo = METRIC_DISPLAY_INFO[metric];
+    
+    // Main metric description
+    parts.push(
+      <div key="metric" className="mb-2">
+        <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{metricInfo.label}</div>
+        <div className="text-xs text-slate-600 dark:text-slate-400">{getMetricDescription(metric)}</div>
+      </div>
+    );
+    
+    // Delta description
+    if (deltaValue !== undefined) {
+      parts.push(
+        <div key="delta" className="mb-2">
+          <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Change</div>
+          <div className="text-xs text-slate-600 dark:text-slate-400">Difference from the prior period</div>
+        </div>
+      );
+    }
+    
+    // Cumulative description
+    if (cumulativeValue !== undefined && supportsCumulatives) {
+      parts.push(
+        <div key="cumulative" className="mb-2">
+          <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Cumulative</div>
+          <div className="text-xs text-slate-600 dark:text-slate-400">Running total up to this period</div>
+        </div>
+      );
+    }
+    
+    // Extremes description
+    if (high !== undefined || low !== undefined) {
+      parts.push(
+        <div key="extremes" className="mb-2">
+          <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Extremes</div>
+          <div className="text-xs text-slate-600 dark:text-slate-400">Highest and lowest values across the range</div>
+        </div>
+      );
+    }
+    
+    // Primary tracking note
+    if (metricInfo.primary === tracking) {
+      parts.push(
+        <div key="primary" className="mb-2 flex items-start gap-2">
+          <Star className="w-3 h-3 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-600 dark:text-slate-400">
+            Primary metric for {metricInfo.primary} tracking — used as the basis for aggregate statistics
+          </div>
+        </div>
+      );
+    }
+    
+    // Note about no cumulative support
+    if (!supportsCumulatives) {
+      parts.push(
+        <div key="no-cumulative" className="text-xs text-slate-500 dark:text-slate-500 italic">
+          This metric doesn't support cumulative calculations
+        </div>
+      );
+    }
+    
+    return parts;
+  };
   const deltaWrapperClass = isPrimary ? 'flex gap-2 mt-2 text-xs' : 'flex gap-1 mt-0.5 text-[10px]';
   const deltaChipClass = isPrimary
     ? 'flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 opacity-70'
@@ -122,7 +193,19 @@ export function MetricCard({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className={labelClass}>{label}</div>
+          <div className={labelClass}>
+            <span>{label}</span>
+            <PopoverTip>
+              <PopoverTipTrigger asChild>
+                <button className="inline-flex items-center justify-center flex-shrink-0 text-slate-400 dark:text-slate-500 hover:text-slate-500 dark:hover:text-slate-400 opacity-50 hover:opacity-100 transition-all" title="Show stat description">
+                  <HelpCircle className="w-3 h-3" />
+                </button>
+              </PopoverTipTrigger>
+              <PopoverTipContent side="right" align="start" className="text-xs">
+                {buildHelpDescription()}
+              </PopoverTipContent>
+            </PopoverTip>
+          </div>
           <div className={valueClass}>
             <NumberText 
               value={value} 
@@ -166,7 +249,7 @@ export function MetricCard({
               </span>
             </div>
           )}
-          {cumulativeValue !== undefined && (
+          {cumulativeValue !== undefined && METRIC_DISPLAY_INFO[metric].cumulatives !== false && (
             <div className={deltaWrapperClass}>
               <span className={deltaChipClass}>
                 <NumberText 
