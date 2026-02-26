@@ -1,4 +1,4 @@
-import type { DayKey, MonthKey } from "@/features/db/localdb";
+import type { DayKey, MonthKey, Tracking } from "@/features/db/localdb";
 import { Activity, ArrowRightFromLine, ArrowRightToLine, BarChart2, BarChart3, ChevronDown, ChevronUp, Copy, FoldVertical, Hash, type LucideIcon, Maximize2, Minimize2, Percent, Plus, ScatterChart, TrendingUp, Zap } from "lucide-react";
 import { parseDayKey, toMonthKey } from "./friendly-date";
 import { capitalize, entriesOf } from "./utils";
@@ -360,16 +360,18 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, {
   icon: LucideIcon; 
   delta?: boolean; // should always be formatted as delta (+/-)
   percent?: boolean; // should always be formatted as percentage (with % sign)
-  cumulatives?: boolean // supports cumulatives appropriately
+  cumulatives?: boolean; // supports cumulatives appropriately
+  primary?: Tracking;
+  hide?: Tracking;
 }> = {
-  total: { label: 'Total', description: 'Sum of all values in the period', icon: Plus },
+  total: { label: 'Total', description: 'Sum of all values in the period', icon: Plus, primary: 'series', hide: 'trend' },
   mean: { label: 'Average', description: 'Mean of all values in the period', icon: BarChart3 },
   median: { label: 'Median', description: 'Middle value when sorted', icon: FoldVertical, cumulatives: false },
   min: { label: 'Minimum', description: 'Lowest value in the period', icon: ChevronDown },
   max: { label: 'Maximum', description: 'Highest value in the period', icon: ChevronUp },
   count: { label: 'Count', description: 'Number of data points recorded', icon: Hash },
   first: { label: 'Open', description: 'First value at the start of the period', icon: ArrowRightFromLine },
-  last: { label: 'Close', description: 'Last value at the end of the period', icon: ArrowRightToLine },
+  last: { label: 'Close', description: 'Last value at the end of the period', icon: ArrowRightToLine, primary: 'trend' },
   range: { label: 'Range', description: 'Difference between max and min values', icon: Minimize2, delta: true },
   change: { label: 'Difference', description: 'Difference between first and last values', icon: TrendingUp, delta: true },
   changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value', icon: Percent, delta: true, percent: true },

@@ -4,11 +4,14 @@ import { NumberText } from '@/components/ui/number-text';
 import type { NumberMetric } from '@/lib/stats';
 import type { Valence } from '@/features/db/localdb';
 import { METRIC_DISPLAY_INFO } from '@/lib/stats';
+import { getValueForValence } from '@/lib/valence';
 import {
   Settings,
   ArrowUpToLine,
   ArrowDownToLine,
-  TrendingUp,
+  ArrowUpRight,
+  ArrowDownRight,
+  ArrowRight,
 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -47,6 +50,18 @@ export function MetricCard({
 }: MetricCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isConfigHovered, setIsConfigHovered] = useState(false);
+  const getValenceTone = (value: number | null | undefined) => {
+    return getValueForValence(value ?? 0, valence, {
+      good: 'text-green-600 dark:text-green-400',
+      bad: 'text-red-600 dark:text-red-400',
+      neutral: 'text-slate-500 dark:text-slate-400',
+    });
+  };
+  const DeltaIcon = deltaValue && deltaValue !== 0
+    ? deltaValue > 0
+      ? ArrowUpRight
+      : ArrowDownRight
+    : ArrowRight;
 
   if (variant === 'primary') {
     return (
@@ -72,7 +87,7 @@ export function MetricCard({
             {deltaValue !== undefined && (
               <div className="flex gap-2 mt-2 text-xs">
                 <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800 opacity-70">
-                  <TrendingUp className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                  <DeltaIcon className={`w-3 h-3 ${getValenceTone(deltaValue)}`} />
                   <NumberText 
                     value={deltaValue} 
                     valenceValue={deltaValue} 
@@ -101,7 +116,7 @@ export function MetricCard({
               <div className="flex gap-2 mt-2 text-xs">
                 {high !== undefined && (
                   <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">
-                    <ArrowUpToLine className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                    <ArrowUpToLine className={`w-3 h-3 ${getValenceTone(high)}`} />
                     <NumberText 
                       value={high} 
                       valenceValue={high} 
@@ -113,7 +128,7 @@ export function MetricCard({
                 )}
                 {low !== undefined && (
                   <div className="flex items-center gap-1 px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">
-                    <ArrowDownToLine className="w-3 h-3 text-slate-400 dark:text-slate-500" />
+                    <ArrowDownToLine className={`w-3 h-3 ${getValenceTone(low)}`} />
                     <NumberText 
                       value={low} 
                       valenceValue={low} 
@@ -171,7 +186,7 @@ export function MetricCard({
           {deltaValue !== undefined && (
             <div className="flex gap-1 mt-0.5 text-[10px]">
               <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 opacity-70">
-                <TrendingUp className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
+                <DeltaIcon className={`w-2.5 h-2.5 ${getValenceTone(deltaValue)}`} />
                 <NumberText 
                   value={deltaValue} 
                   valenceValue={deltaValue} 
@@ -200,7 +215,7 @@ export function MetricCard({
             <div className="flex gap-1 mt-0.5 text-[10px]">
               {high !== undefined && (
                 <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
-                  <ArrowUpToLine className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
+                  <ArrowUpToLine className={`w-2.5 h-2.5 ${getValenceTone(high)}`} />
                   <NumberText 
                     value={high} 
                     valenceValue={high} 
@@ -212,7 +227,7 @@ export function MetricCard({
               )}
               {low !== undefined && (
                 <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800">
-                  <ArrowDownToLine className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
+                  <ArrowDownToLine className={`w-2.5 h-2.5 ${getValenceTone(low)}`} />
                   <NumberText 
                     value={low} 
                     valenceValue={low} 

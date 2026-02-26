@@ -2,18 +2,18 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { FlippableCard } from '@/components/ui/flippable-card';
-import type { Valence } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
 import { usePreference } from '@/hooks/usePreference';
 import { METRIC_DISPLAY_INFO, type NumberMetric, type NumberStats, type StatsExtremes } from '@/lib/stats';
-import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import { MetricCard } from './MetricCard';
 import React, { useMemo, useState } from 'react';
+import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 
 interface StatsSummaryProps {
   stats: NumberStats | null;
   valence: Valence;
-  tracking: 'series' | 'trend';
+  tracking: Tracking;
   datasetId: string;
   extremes?: StatsExtremes;
   cumulatives?: NumberStats;
@@ -30,6 +30,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
   // Get primary metric
   const primaryMetric = getPrimaryMetric(tracking);
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
+  const primaryMetricInfo = METRIC_DISPLAY_INFO[primaryMetric];
   
   // Stable initial value for preferences
   const defaultSelectedMetrics = useMemo(
@@ -42,10 +43,15 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
     `statsSummary_metrics_${datasetId}`,
     defaultSelectedMetrics
   );
+
+  const showDeltasOption = primaryMetricInfo.primary === 'trend';
+  const showCumulativesOption = primaryMetricInfo.primary === 'series';
+  const defaultShowDeltas = showDeltasOption;
+  const defaultShowCumulatives = showCumulativesOption;
   
   const [showDeltas, setShowDeltas] = usePreference<boolean>(
     `statsSummary_deltas_${datasetId}`,
-    false
+    defaultShowDeltas
   );
   
   const [showExtremes, setShowExtremes] = usePreference<boolean>(
@@ -55,7 +61,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
   
   const [showCumulatives, setShowCumulatives] = usePreference<boolean>(
     `statsSummary_cumulatives_${datasetId}`,
-    false
+    defaultShowCumulatives
   );
 
   const handleConfigOpen = () => {
@@ -76,9 +82,9 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
 
   const handleResetToDefault = () => {
     setSelectedMetrics(defaultSelectedMetrics);
-    setShowDeltas(false);
+    setShowDeltas(defaultShowDeltas);
     setShowExtremes(false);
-    setShowCumulatives(false);
+    setShowCumulatives(defaultShowCumulatives);
   };
 
   const getValueColors = (value: number | null) => {
@@ -94,7 +100,10 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
   const buildSummaryItems = useMemo(() => {
     if (!fullStats) return [];
 
-    return selectedMetrics
+    const visibleMetrics = selectedMetrics
+      .filter(metric => METRIC_DISPLAY_INFO[metric].hide !== tracking);
+
+    return visibleMetrics
       .map(metric => {
         const value = fullStats[metric];
         const deltaValue = showDeltas && deltas ? deltas[metric] : undefined;
@@ -117,7 +126,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
           colors: getValueColors(value),
         };
       });
-  }, [fullStats, selectedMetrics, showDeltas, showExtremes, showCumulatives, deltas, extremes, cumulatives, primaryMetric]);
+  }, [fullStats, selectedMetrics, showDeltas, showExtremes, showCumulatives, deltas, extremes, cumulatives, primaryMetric, tracking]);
 
   const primaryItems = buildSummaryItems.filter(item => item.isPrimary);
   const secondaryItems = buildSummaryItems.filter(item => !item.isPrimary);
@@ -159,7 +168,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
           <div className="overflow-y-auto pr-2 space-y-4">
             {/* Primary metric - highlighted */}
             <div className="rounded-md bg-slate-100 dark:bg-slate-800 p-2">
-              <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">PRIMARY METRIC ({tracking})</div>
+              <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">PRIMARY METRIC</div>
               <div className="flex items-start gap-2 p-2 rounded transition-colors hover:bg-slate-300 dark:hover:bg-slate-700">
                 <Checkbox
                   id={`metric-${primaryMetric}`}
@@ -189,7 +198,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
             <div className="border-t pt-3">
               <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">SECONDARY STATS</div>
               <div className="space-y-2">
-                {tracking === 'trend' && (
+                {showDeltasOption && (
                   <div className="flex items-center gap-2 p-2 rounded transition-colors hover:bg-slate-200 dark:hover:bg-slate-800">
                     <Checkbox
                       id="show-deltas"
@@ -202,7 +211,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
                     </Label>
                   </div>
                 )}
-                {tracking === 'series' && (
+                {showCumulativesOption && (
                   <div className="flex items-center gap-2 p-2 rounded transition-colors hover:bg-slate-200 dark:hover:bg-slate-800">
                     <Checkbox
                       id="show-cumulatives"
@@ -235,7 +244,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
             <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">METRICS</div>
             <div className="space-y-2">
               {(Object.keys(METRIC_DISPLAY_INFO) as NumberMetric[])
-                .filter(m => m !== primaryMetric)
+                .filter(m => m !== primaryMetric && METRIC_DISPLAY_INFO[m].hide !== tracking)
                 .map(metric => (
                   <div key={metric} className="flex items-start gap-2 p-2 rounded transition-colors hover:bg-slate-200 dark:hover:bg-slate-800">
                     <Checkbox
