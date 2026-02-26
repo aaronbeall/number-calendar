@@ -291,7 +291,7 @@ export function Analysis() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Controls Panel */}
         <Card className="lg:col-span-1 p-3 sm:p-4 space-y-3 h-fit sticky top-2 z-20 lg:top-6">
-          {!isMobile ? (
+          {isMobile ? (
             <Accordion type="single" collapsible defaultValue="controls">
               <AccordionItem value="controls" className="border-none">
                 <AccordionTrigger className="py-1.5 px-0 text-sm">
