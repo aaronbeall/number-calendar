@@ -371,7 +371,7 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, {
   median: { label: 'Median', description: 'Middle value when sorted', aggregateDescription: 'Median across all periods in the range', icon: FoldVertical, cumulatives: false },
   min: { label: 'Minimum', description: 'Lowest value in the period', aggregateDescription: 'Lowest value across all periods in the range', icon: ChevronDown },
   max: { label: 'Maximum', description: 'Highest value in the period', aggregateDescription: 'Highest value across all periods in the range', icon: ChevronUp },
-  count: { label: 'Count', description: 'Number of data points recorded', aggregateDescription: 'Total count across all periods in the range', icon: Hash, valenceless: true },
+  count: { label: 'Count', description: 'Number of data points recorded', aggregateDescription: 'Total count of all periods in the range', icon: Hash, valenceless: true },
   first: { label: 'Open', description: 'First value at the start of the period', aggregateDescription: 'Opening value across all periods in the range', icon: ArrowRightFromLine, cumulatives: false },
   last: { label: 'Close', description: 'Last value at the end of the period', aggregateDescription: 'Closing value across all periods in the range', icon: ArrowRightToLine, primary: 'trend' },
   range: { label: 'Range', description: 'Difference between max and min values', aggregateDescription: 'Range between highest and lowest values across all periods', icon: Minimize2, valenceless: true },
