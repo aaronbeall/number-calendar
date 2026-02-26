@@ -232,7 +232,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
                   />
                   <Label htmlFor="show-extremes" className="text-sm cursor-pointer flex-1">
                     <div className="font-medium">Show Extremes</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">Highest/lowest values for each metric</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Highest/lowest aggregated period values for each metric</div>
                   </Label>
                 </div>
               </div>
