@@ -220,6 +220,10 @@ export function computeAnalysisData<T extends TimePeriod>(
       cumulativePercents = cumulatives && priorPeriod.cumulatives
         ? computeStatsPercents(cumulatives, priorPeriod.cumulatives)
         : undefined;
+    } else {
+      // Seed deltas/percents when there is no prior period available.
+      deltas = computeStatsDeltas(stats, null);
+      percents = computeStatsPercents(stats, null);
     }
   }
 
