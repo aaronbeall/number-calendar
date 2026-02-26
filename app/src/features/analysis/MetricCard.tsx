@@ -213,6 +213,8 @@ export function MetricCard({
               valence={metricValence} 
               short={!isHovered}
               animated 
+              delta={METRIC_DISPLAY_INFO[metric].delta}
+              percent={METRIC_DISPLAY_INFO[metric].percent}
             />
           </div>
           {deltaValue !== undefined && (
@@ -258,6 +260,8 @@ export function MetricCard({
                   valence={metricValence} 
                   short={!isHovered}
                   animated 
+                  delta={METRIC_DISPLAY_INFO[metric].delta}
+                  percent={METRIC_DISPLAY_INFO[metric].percent}
                 />
                 {cumulativePercent !== undefined && (
                   <span className={`inline-flex items-center whitespace-nowrap ${getValenceTone(cumulativePercent, cumulativePercent)}`}>
@@ -295,6 +299,8 @@ export function MetricCard({
                     valence={metricValence} 
                     short={!isHovered}
                     animated 
+                    delta={METRIC_DISPLAY_INFO[metric].delta}
+                    percent={METRIC_DISPLAY_INFO[metric].percent}
                   />
                 </span>
               )}
@@ -307,6 +313,8 @@ export function MetricCard({
                     valence={metricValence} 
                     short={!isHovered}
                     animated 
+                    delta={METRIC_DISPLAY_INFO[metric].delta}
+                    percent={METRIC_DISPLAY_INFO[metric].percent}
                   />
                 </span>
               )}

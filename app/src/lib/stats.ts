@@ -373,7 +373,7 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, {
   count: { label: 'Count', description: 'Number of data points recorded', icon: Hash, valenceless: true },
   first: { label: 'Open', description: 'First value at the start of the period', icon: ArrowRightFromLine, cumulatives: false },
   last: { label: 'Close', description: 'Last value at the end of the period', icon: ArrowRightToLine, primary: 'trend' },
-  range: { label: 'Range', description: 'Difference between max and min values', icon: Minimize2, delta: true, valenceless: true },
+  range: { label: 'Range', description: 'Difference between max and min values', icon: Minimize2, valenceless: true },
   change: { label: 'Difference', description: 'Difference between first and last values', icon: TrendingUp, delta: true },
   changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value', icon: Percent, delta: true, percent: true },
   mode: { label: 'Mode', description: 'Most frequently occurring value in the period', icon: BarChart2, cumulatives: false },
