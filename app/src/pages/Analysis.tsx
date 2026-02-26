@@ -1,4 +1,5 @@
 import { Card } from '@/components/ui/card';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import {
   Select,
   SelectContent,
@@ -14,6 +15,7 @@ import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { formatFriendlyDate, dateToDayKey, convertDateKey, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo, useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
@@ -30,6 +32,7 @@ export function Analysis() {
   const { dataset } = useDatasetContext();
   const aggregateData = useAllPeriodsAggregateData();
   const { data: allDays = [] } = useAllDays(dataset.id);
+  const isMobile = useIsMobile();
 
   const [aggregationType, setAggregationType] = useSearchParamState<AggregationType>('agg', 'month');
   const actualAggregationType = (typeof aggregationType === 'string' ? aggregationType : 'month') as AggregationType;
@@ -162,6 +165,11 @@ export function Analysis() {
     { value: 'year', label: 'Year', icon: CalendarClock, corner: 'rounded-br-md' },
   ] as const;
 
+  const activeAggregationLabel =
+    aggregationOptions.find(option => option.value === actualAggregationType)?.label ?? 'Month';
+  const activePresetLabel =
+    availablePresets.find(preset => preset.preset === presetRange)?.label ?? 'Custom';
+
   if (!dataset || aggregateData.days.length === 0) {
     return (
       <div className="max-w-6xl mx-auto p-6">
@@ -174,114 +182,142 @@ export function Analysis() {
     );
   }
 
+  const controlsContent = (
+    <>
+      {/* Time Frame Section */}
+      <div className="pb-3 border-b">
+        <h3 className="font-semibold text-[11px] sm:text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-2">
+          <Calendar className="w-3.5 h-3.5" />
+          Time Frame
+        </h3>
+        <Select value={presetRange} onValueChange={(value) => {
+          const newPreset = value as TimeFramePreset;
+          if (newPreset !== 'custom') {
+            // Switching to a preset - sync custom values to match it
+            const presetTimeRange = getTimeRange(newPreset, today);
+            setCustomStart(presetTimeRange.startDate);
+            setCustomEnd(presetTimeRange.endDate);
+          } else {
+            // Switching TO custom - initialize with the current preset's range
+            const currentPresetRange = getTimeRange(presetRange, today);
+            setCustomStart(currentPresetRange.startDate);
+            setCustomEnd(currentPresetRange.endDate);
+          }
+          setPresetRange(newPreset);
+        }}>
+          <SelectTrigger className="w-full text-xs h-9 sm:h-8">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {availablePresets.map(preset => (
+              <SelectItem key={preset.preset} value={preset.preset} className="text-xs">
+                {preset.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {presetRange === 'custom' && (
+        <div className="pb-3 border-b">
+          <CustomRangePicker
+            tracking={dataset.tracking}
+            valence={dataset.valence}
+            aggregation={actualAggregationType}
+            allPeriods={periodsForAggregation}
+            startDate={customStart}
+            endDate={customEnd}
+            onRangeChange={(start, end) => {
+              setCustomStart(start);
+              setCustomEnd(end);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Aggregation Section */}
+      <div className="pb-3 border-b">
+        <h3 className="font-semibold text-[11px] sm:text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-2">
+          <BarChart3 className="w-3.5 h-3.5" />
+          Aggregation
+        </h3>
+        <div className="grid grid-cols-2 gap-px rounded-md bg-slate-200 dark:bg-slate-800 p-px">
+          {aggregationOptions.map((option) => {
+            const isActive = actualAggregationType === option.value;
+            const Icon = option.icon;
+
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleAggregationChange(option.value)}
+                className={`h-10 sm:h-9 px-2 text-xs font-medium flex items-center justify-center gap-1.5 ${option.corner} transition-colors ${isActive ? 'bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-50' : 'bg-white/80 text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                aria-pressed={isActive}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="pt-1">
+        <h3 className="font-semibold text-[11px] sm:text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-2">
+          <Zap className="w-3.5 h-3.5" />
+          Summary
+        </h3>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
+            <span className="text-slate-600 dark:text-slate-400">{actualAggregationType === 'day' ? 'Days' : actualAggregationType === 'week' ? 'Weeks' : actualAggregationType === 'month' ? 'Months' : 'Years'}</span>
+            <span className="font-semibold text-slate-900 dark:text-white">{formatValue(periodCount)}</span>
+          </div>
+          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
+            <span className="text-slate-600 dark:text-slate-400">Data Points</span>
+            <span className="font-semibold text-slate-900 dark:text-white">{formatValue(stats?.count ?? 0)}</span>
+          </div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded mt-2">
+            <div className="font-semibold text-slate-600 dark:text-slate-300 mb-1">Range</div>
+            <div>{formatFriendlyDate(dateToDayKey(timeRange.startDate), dateToDayKey(timeRange.endDate))}</div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+    <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Controls Panel */}
-        <Card className="lg:col-span-1 p-4 space-y-3 h-fit sticky top-6">
-          {/* Time Frame Section */}
-          <div className="pb-3 border-b">
-            <h3 className="font-semibold text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-2">
-              <Calendar className="w-3.5 h-3.5" />
-              Time Frame
-            </h3>
-            <Select value={presetRange} onValueChange={(value) => {
-              const newPreset = value as TimeFramePreset;
-              if (newPreset !== 'custom') {
-                // Switching to a preset - sync custom values to match it
-                const presetTimeRange = getTimeRange(newPreset, today);
-                setCustomStart(presetTimeRange.startDate);
-                setCustomEnd(presetTimeRange.endDate);
-              } else {
-                // Switching TO custom - initialize with the current preset's range
-                const currentPresetRange = getTimeRange(presetRange, today);
-                setCustomStart(currentPresetRange.startDate);
-                setCustomEnd(currentPresetRange.endDate);
-              }
-              setPresetRange(newPreset);
-            }}>
-              <SelectTrigger className="w-full text-xs h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {availablePresets.map(preset => (
-                  <SelectItem key={preset.preset} value={preset.preset} className="text-xs">
-                    {preset.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {presetRange === 'custom' && (
-            <div className="pb-3 border-b">
-              <CustomRangePicker
-                tracking={dataset.tracking}
-                valence={dataset.valence}
-                aggregation={actualAggregationType}
-                allPeriods={periodsForAggregation}
-                startDate={customStart}
-                endDate={customEnd}
-                onRangeChange={(start, end) => {
-                  setCustomStart(start);
-                  setCustomEnd(end);
-                }}
-              />
-            </div>
+        <Card className="lg:col-span-1 p-3 sm:p-4 space-y-3 h-fit sticky top-2 z-20 lg:top-6">
+          {!isMobile ? (
+            <Accordion type="single" collapsible defaultValue="controls">
+              <AccordionItem value="controls" className="border-none">
+                <AccordionTrigger className="py-1.5 px-0 text-sm">
+                  <div className="flex w-full gap-3 text-left">
+                    <div className="flex-1">
+                      <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Time Frame</div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{activePresetLabel}</div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Aggregation</div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{activeAggregationLabel}</div>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="py-1 pb-0">
+                  {controlsContent}
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          ) : (
+            controlsContent
           )}
-
-          {/* Aggregation Section */}
-          <div className="pb-3 border-b">
-            <h3 className="font-semibold text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-2">
-              <BarChart3 className="w-3.5 h-3.5" />
-              Aggregation
-            </h3>
-            <div className="grid grid-cols-2 gap-px rounded-md bg-slate-200 dark:bg-slate-800 p-px">
-              {aggregationOptions.map((option) => {
-                const isActive = actualAggregationType === option.value;
-                const Icon = option.icon;
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleAggregationChange(option.value)}
-                    className={`h-9 px-2 text-xs font-medium flex items-center justify-center gap-1.5 ${option.corner} transition-colors ${isActive ? 'bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-50' : 'bg-white/80 text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
-                    aria-pressed={isActive}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Summary Stats */}
-          <div className="pt-1">
-            <h3 className="font-semibold text-xs uppercase tracking-wide text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-2">
-              <Zap className="w-3.5 h-3.5" />
-              Summary
-            </h3>
-            <div className="space-y-1.5 text-xs">
-              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
-                <span className="text-slate-600 dark:text-slate-400">{actualAggregationType === 'day' ? 'Days' : actualAggregationType === 'week' ? 'Weeks' : actualAggregationType === 'month' ? 'Months' : 'Years'}</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{formatValue(periodCount)}</span>
-              </div>
-              <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
-                <span className="text-slate-600 dark:text-slate-400">Data Points</span>
-                <span className="font-semibold text-slate-900 dark:text-white">{formatValue(stats?.count ?? 0)}</span>
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded mt-2">
-                <div className="font-semibold text-slate-600 dark:text-slate-300 mb-1">Range</div>
-                <div>{formatFriendlyDate(dateToDayKey(timeRange.startDate), dateToDayKey(timeRange.endDate))}</div>
-              </div>
-            </div>
-          </div>
         </Card>
 
         {/* Charts Grid */}
-        <div className="lg:col-span-3 space-y-4">
+        <div className="lg:col-span-3 space-y-4 sm:space-y-5">
           {/* Summary Stats */}
           <StatsSummary
             key={dataset.id}
@@ -296,7 +332,7 @@ export function Analysis() {
 
           {/* Trend Chart */}
           <Card className="p-4">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <LineChart className="w-4 h-4" />
               Trend Over Time
             </h3>
@@ -309,7 +345,7 @@ export function Analysis() {
 
           {/* Aggregation Bar Chart */}
           <Card className="p-4">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
               {actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Totals
             </h3>
@@ -322,7 +358,7 @@ export function Analysis() {
 
           {/* Distribution Histogram */}
           <Card className="p-4">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <Activity className="w-4 h-4" />
               Value Distribution
             </h3>
@@ -335,7 +371,7 @@ export function Analysis() {
           {/* Valence Distribution for non-neutral datasets */}
           {dataset.valence !== 'neutral' && (
             <Card className="p-4">
-              <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                 <PieChart className="w-4 h-4" />
                 {dataset.valence === 'positive' ? 'Positive/Negative' : 'Beneficial/Harmful'} Breakdown
               </h3>
@@ -348,7 +384,7 @@ export function Analysis() {
 
           {/* Period Comparison */}
           <Card className="p-4">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <TrendingUp className="w-4 h-4" />
               {actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Comparison
             </h3>
