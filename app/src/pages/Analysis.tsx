@@ -1,11 +1,17 @@
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { useAllDays } from '@/features/db/useDayEntryData';
 import type { DateKey } from '@/features/db/localdb';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
-import { formatFriendlyDate, dateToDayKey, convertDateKey } from '@/lib/friendly-date';
+import { formatFriendlyDate, dateToDayKey, convertDateKey, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo, useState } from 'react';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
@@ -16,6 +22,7 @@ import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributio
 import { DistributionHistogram } from '@/features/analysis/DistributionHistogram';
 import { PeriodComparisonChart } from '@/features/analysis/PeriodComparisonChart';
 import { StatsSummary } from '@/features/analysis/StatsSummary';
+import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
 
 
 
@@ -61,6 +68,48 @@ export function Analysis() {
     const customRange = presetRange === 'custom' ? { startDate: customStart, endDate: customEnd } : undefined;
     return getTimeRange(presetRange, today, customRange);
   }, [presetRange, customStart, customEnd, today]);
+
+  const handleAggregationChange = (nextAggregation: AggregationType) => {
+    setAggregationType(nextAggregation);
+
+    if (presetRange !== 'custom') return;
+
+    const nextPeriods = (() => {
+      switch (nextAggregation) {
+        case 'day':
+          return aggregateData.days;
+        case 'week':
+          return aggregateData.weeks;
+        case 'month':
+          return aggregateData.months;
+        case 'year':
+          return aggregateData.years;
+        default:
+          return aggregateData.months;
+      }
+    })();
+
+    if (nextPeriods.length === 0) return;
+
+    const periodsInRange = nextPeriods.filter(p => {
+      try {
+        const periodDate = parseDateKey(p.dateKey);
+        return periodDate >= customStart && periodDate <= customEnd;
+      } catch {
+        return false;
+      }
+    });
+
+    if (periodsInRange.length === 0) {
+      try {
+        const firstPeriod = parseDateKey(nextPeriods[0].dateKey);
+        setCustomStart(firstPeriod);
+        setCustomEnd(firstPeriod);
+      } catch {
+        // Invalid date, ignore
+      }
+    }
+  };
 
   // Compute analysis data for selected time range
   const analysisData = useMemo(() => 
@@ -136,36 +185,47 @@ export function Analysis() {
               <Calendar className="w-3.5 h-3.5" />
               Time Frame
             </h3>
-            <div className="space-y-1.5">  
-              {availablePresets.map(preset => (
-                <Button
-                  key={preset.preset}
-                  variant={presetRange === preset.preset ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPresetRange(preset.preset)}
-                  className="w-full justify-start text-xs h-8"
-                >
-                  {preset.label}
-                </Button>
-              ))}
-            </div>
+            <Select value={presetRange} onValueChange={(value) => {
+              const newPreset = value as TimeFramePreset;
+              if (newPreset !== 'custom') {
+                // Switching to a preset - sync custom values to match it
+                const presetTimeRange = getTimeRange(newPreset, today);
+                setCustomStart(presetTimeRange.startDate);
+                setCustomEnd(presetTimeRange.endDate);
+              } else {
+                // Switching TO custom - initialize with the current preset's range
+                const currentPresetRange = getTimeRange(presetRange, today);
+                setCustomStart(currentPresetRange.startDate);
+                setCustomEnd(currentPresetRange.endDate);
+              }
+              setPresetRange(newPreset);
+            }}>
+              <SelectTrigger className="w-full text-xs h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availablePresets.map(preset => (
+                  <SelectItem key={preset.preset} value={preset.preset} className="text-xs">
+                    {preset.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {presetRange === 'custom' && (
-            <div className="space-y-2 pb-3 border-b">
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">Start Date</label>
-              <input
-                type="date"
-                value={dateToDayKey(customStart)}
-                onChange={(e) => setCustomStart(new Date(e.target.value))}
-                className="w-full px-2 py-1.5 text-xs border rounded bg-white dark:bg-slate-800"
-              />
-              <label className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-400">End Date</label>
-              <input
-                type="date"
-                value={dateToDayKey(customEnd)}
-                onChange={(e) => setCustomEnd(new Date(e.target.value))}
-                className="w-full px-2 py-1.5 text-xs border rounded bg-white dark:bg-slate-800"
+            <div className="pb-3 border-b">
+              <CustomRangePicker
+                tracking={dataset.tracking}
+                valence={dataset.valence}
+                aggregation={actualAggregationType}
+                allPeriods={periodsForAggregation}
+                startDate={customStart}
+                endDate={customEnd}
+                onRangeChange={(start, end) => {
+                  setCustomStart(start);
+                  setCustomEnd(end);
+                }}
               />
             </div>
           )}
@@ -185,7 +245,7 @@ export function Analysis() {
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setAggregationType(option.value as AggregationType)}
+                    onClick={() => handleAggregationChange(option.value)}
                     className={`h-9 px-2 text-xs font-medium flex items-center justify-center gap-1.5 ${option.corner} transition-colors ${isActive ? 'bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-50' : 'bg-white/80 text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
                     aria-pressed={isActive}
                   >
@@ -224,6 +284,7 @@ export function Analysis() {
         <div className="lg:col-span-3 space-y-4">
           {/* Summary Stats */}
           <StatsSummary
+            key={dataset.id}
             stats={stats}
             valence={dataset.valence}
             tracking={dataset.tracking}

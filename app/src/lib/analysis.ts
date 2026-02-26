@@ -13,19 +13,19 @@ export interface TimeFrameConfig {
 }
 
 export const TIME_FRAME_PRESETS = {
-  'last-7-days': { label: 'Last 7 Days', aggregations: ['day'] },
-  'last-30-days': { label: 'Last 30 Days', aggregations: ['day'] },
+  'last-7-days': { label: 'Past 7 Days', aggregations: ['day'] },
+  'last-30-days': { label: 'Past 30 Days', aggregations: ['day'] },
   'this-week': { label: 'This Week', aggregations: ['day'] },
   'last-week': { label: 'Last Week', aggregations: ['day'] },
   'last-4-weeks': { label: 'Last 4 Weeks', aggregations: ['week'] },
   'this-month': { label: 'This Month', aggregations: ['day', 'week'] },
   'last-month': { label: 'Last Month', aggregations: ['day', 'week'] },
-  'last-6-months': { label: 'Last 6 Months', aggregations: ['day', 'week', 'month'] },
-  'last-12-months': { label: 'Last 12 Months', aggregations: ['day', 'week', 'month'] },
+  'last-6-months': { label: 'Past 6 Months', aggregations: ['day', 'week', 'month'] },
+  'last-12-months': { label: 'Past 12 Months', aggregations: ['day', 'week', 'month'] },
   'this-year': { label: 'This Year', aggregations: ['day', 'week', 'month'] },
   'last-year': { label: 'Last Year', aggregations: ['day', 'week', 'month'] },
   'all-time': { label: 'All Time', aggregations: ['day', 'week', 'month', 'year'] },
-  'custom': { label: 'Custom Range', aggregations: ['day', 'week', 'month', 'year'] },
+  'custom': { label: 'Custom Range...', aggregations: ['day', 'week', 'month', 'year'] },
 } as const satisfies Record<string, TimeFrameConfig>;
 
 export type TimeFramePreset = keyof typeof TIME_FRAME_PRESETS;
