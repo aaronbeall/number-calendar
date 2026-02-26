@@ -3,6 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { FlippableCard } from '@/components/ui/flippable-card';
 import type { Tracking, Valence } from '@/features/db/localdb';
+import type { AggregationType } from '@/lib/analysis';
 import { usePreference } from '@/hooks/usePreference';
 import { METRIC_DISPLAY_INFO, type NumberMetric, type NumberStats, type StatsExtremes } from '@/lib/stats';
 import { MetricCard } from './MetricCard';
@@ -14,6 +15,7 @@ interface StatsSummaryProps {
   valence: Valence;
   tracking: Tracking;
   datasetId: string;
+  aggregationType: AggregationType;
   extremes?: StatsExtremes;
   cumulatives?: NumberStats;
   cumulativePercents?: Partial<NumberStats>;
@@ -21,7 +23,7 @@ interface StatsSummaryProps {
   percents?: Partial<NumberStats>;
 }
 
-export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, extremes, cumulatives, cumulativePercents, deltas, percents }: StatsSummaryProps) {
+export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, aggregationType, extremes, cumulatives, cumulativePercents, deltas, percents }: StatsSummaryProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [originalMetrics, setOriginalMetrics] = useState<NumberMetric[] | null>(null);
   const [originalShowDeltas, setOriginalShowDeltas] = useState<boolean | null>(null);
@@ -284,6 +286,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
               label={item.label}
               valence={valence}
               tracking={tracking}
+              aggregationType={aggregationType}
               variant="primary"
               showConfigButton
               onConfigClick={handleConfigOpen}
@@ -309,6 +312,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
               label={item.label}
               valence={valence}
               tracking={tracking}
+              aggregationType={aggregationType}
               variant="normal"
               deltaValue={showDeltas ? item.deltaValue : undefined}
               deltaPercent={showDeltas ? item.deltaPercent : undefined}

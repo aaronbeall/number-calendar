@@ -4,7 +4,8 @@ import { NumberText } from '@/components/ui/number-text';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import type { NumberMetric } from '@/lib/stats';
 import type { Tracking, Valence } from '@/features/db/localdb';
-import { METRIC_DISPLAY_INFO, getMetricDescription } from '@/lib/stats';
+import type { AggregationType } from '@/lib/analysis';
+import { METRIC_DISPLAY_INFO, getMetricDescription, getMetricAggregateDescription } from '@/lib/stats';
 import { getValenceSource } from '@/lib/tracking';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import {
@@ -24,6 +25,7 @@ interface MetricCardProps {
   label: string;
   valence: Valence;
   tracking: Tracking;
+  aggregationType: AggregationType;
   variant: 'primary' | 'normal';
   showConfigButton?: boolean;
   onConfigClick?: () => void;
@@ -41,6 +43,7 @@ export function MetricCard({
   label,
   valence,
   tracking,
+  aggregationType,
   variant = 'normal',
   showConfigButton,
   onConfigClick,
@@ -113,7 +116,9 @@ export function MetricCard({
     parts.push(
       <div key="metric" className="mb-2">
         <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{metricInfo.label}</div>
-        <div className="text-xs text-slate-600 dark:text-slate-400">{getMetricDescription(metric)}</div>
+        <div className="text-xs text-slate-600 dark:text-slate-400">
+          {aggregationType !== 'none' ? getMetricAggregateDescription(metric) : getMetricDescription(metric)}
+        </div>
       </div>
     );
     

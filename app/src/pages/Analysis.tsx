@@ -354,6 +354,7 @@ export function Analysis() {
             valence={dataset.valence}
             tracking={dataset.tracking}
             datasetId={dataset.id}
+            aggregationType={actualAggregationType}
             extremes={extremes}
             cumulatives={cumulativesData}
             deltas={deltasData}

@@ -357,6 +357,7 @@ export function computePeriodDerivedStats(
 export const METRIC_DISPLAY_INFO: Record<NumberMetric, { 
   label: string; 
   description: string; 
+  aggregateDescription: string; // description when viewing aggregated data across multiple periods
   icon: LucideIcon; 
   delta?: boolean; // should always be formatted as delta (+/-)
   percent?: boolean; // should always be formatted as percentage (with % sign)
@@ -365,23 +366,23 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, {
   hide?: Tracking; // which tracking mode to hide this metric for (series vs trend)
   valenceless?: boolean; // whether this metric has no valence (good/bad/neutral) association and should be formatted as neutral
 }> = {
-  total: {label: 'Total', description: 'Sum of all values in the period', icon: Plus, primary: 'series', hide: 'trend' },
-  mean: { label: 'Average', description: 'Mean of all values in the period', icon: BarChart3 },
-  median: { label: 'Median', description: 'Middle value when sorted', icon: FoldVertical, cumulatives: false },
-  min: { label: 'Minimum', description: 'Lowest value in the period', icon: ChevronDown },
-  max: { label: 'Maximum', description: 'Highest value in the period', icon: ChevronUp },
-  count: { label: 'Count', description: 'Number of data points recorded', icon: Hash, valenceless: true },
-  first: { label: 'Open', description: 'First value at the start of the period', icon: ArrowRightFromLine, cumulatives: false },
-  last: { label: 'Close', description: 'Last value at the end of the period', icon: ArrowRightToLine, primary: 'trend' },
-  range: { label: 'Range', description: 'Difference between max and min values', icon: Minimize2, valenceless: true },
-  change: { label: 'Difference', description: 'Difference between first and last values', icon: TrendingUp, delta: true },
-  changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value', icon: Percent, delta: true, percent: true },
-  mode: { label: 'Mode', description: 'Most frequently occurring value in the period', icon: BarChart2, cumulatives: false },
-  slope: { label: 'Slope', description: 'Average change per entry (rate of change)', icon: Zap, delta: true },
-  midrange: { label: 'Midrange', description: 'Average of the minimum and maximum values', icon: Maximize2 },
-  variance: { label: 'Variance', description: 'Measure of spread around the mean', icon: ScatterChart, cumulatives: false, valenceless: true },
-  standardDeviation: { label: 'Standard Deviation', description: 'Square root of variance (spread around mean)', icon: Activity, cumulatives: false, valenceless: true },
-  interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles', icon: Copy, cumulatives: false, valenceless: true },
+  total: {label: 'Total', description: 'Sum of all values in the period', aggregateDescription: 'Sum across all periods in the range', icon: Plus, primary: 'series', hide: 'trend' },
+  mean: { label: 'Average', description: 'Mean of all values in the period', aggregateDescription: 'Average across all periods in the range', icon: BarChart3 },
+  median: { label: 'Median', description: 'Middle value when sorted', aggregateDescription: 'Median across all periods in the range', icon: FoldVertical, cumulatives: false },
+  min: { label: 'Minimum', description: 'Lowest value in the period', aggregateDescription: 'Lowest value across all periods in the range', icon: ChevronDown },
+  max: { label: 'Maximum', description: 'Highest value in the period', aggregateDescription: 'Highest value across all periods in the range', icon: ChevronUp },
+  count: { label: 'Count', description: 'Number of data points recorded', aggregateDescription: 'Total count across all periods in the range', icon: Hash, valenceless: true },
+  first: { label: 'Open', description: 'First value at the start of the period', aggregateDescription: 'Opening value across all periods in the range', icon: ArrowRightFromLine, cumulatives: false },
+  last: { label: 'Close', description: 'Last value at the end of the period', aggregateDescription: 'Closing value across all periods in the range', icon: ArrowRightToLine, primary: 'trend' },
+  range: { label: 'Range', description: 'Difference between max and min values', aggregateDescription: 'Range between highest and lowest values across all periods', icon: Minimize2, valenceless: true },
+  change: { label: 'Difference', description: 'Difference between first and last values', aggregateDescription: 'Change from first to last across all periods in the range', icon: TrendingUp, delta: true },
+  changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value', aggregateDescription: 'Percentage change from first to last across all periods', icon: Percent, delta: true, percent: true },
+  mode: { label: 'Mode', description: 'Most frequently occurring value in the period', aggregateDescription: 'Most frequent value across all periods in the range', icon: BarChart2, cumulatives: false },
+  slope: { label: 'Slope', description: 'Average change per entry (rate of change)', aggregateDescription: 'Average rate of change across all periods in the range', icon: Zap, delta: true },
+  midrange: { label: 'Midrange', description: 'Average of the minimum and maximum values', aggregateDescription: 'Midpoint between min and max across all periods', icon: Maximize2 },
+  variance: { label: 'Variance', description: 'Measure of spread around the mean', aggregateDescription: 'Variance across all periods in the range', icon: ScatterChart, cumulatives: false, valenceless: true },
+  standardDeviation: { label: 'Standard Deviation', description: 'Square root of variance (spread around mean)', aggregateDescription: 'Standard deviation across all periods in the range', icon: Activity, cumulatives: false, valenceless: true },
+  interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles', aggregateDescription: 'Interquartile range across all periods in the range', icon: Copy, cumulatives: false, valenceless: true },
 };
 
 
@@ -391,6 +392,10 @@ export function getMetricDisplayName(metric: NumberMetric): string {
 
 export function getMetricDescription(metric: NumberMetric): string {
   return METRIC_DISPLAY_INFO[metric].description;
+}
+
+export function getMetricAggregateDescription(metric: NumberMetric): string {
+  return METRIC_DISPLAY_INFO[metric].aggregateDescription;
 }
 
 export const METRIC_SOURCES_DISPLAY_INFO: Record<NumberSource, { label: string; description: string }> = {
