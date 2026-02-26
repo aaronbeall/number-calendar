@@ -1,11 +1,11 @@
 import type { TimePeriod } from '@/features/db/localdb';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import type { NumberStats } from '@/lib/stats';
-import { computeNumberStats, calculateExtremes, type StatsExtremes } from '@/lib/stats';
+import type { NumberStats, NumberMetric } from '@/lib/stats';
+import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes } from '@/lib/stats';
 import { parseDateKey } from '@/lib/friendly-date';
 import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear } from 'date-fns';
 
-export type AggregationType = 'day' | 'week' | 'month' | 'year';
+export type AggregationType = 'none' | 'day' | 'week' | 'month' | 'year';
 
 export interface TimeFrameConfig {
   label: string;
@@ -139,17 +139,28 @@ export interface AnalysisData {
   priorPeriod?: PeriodAggregateData<any>;
   /** All data points from periods in the time range */
   dataPoints: number[];
-  /** Full NumberStats for the time range */
+  /** Summary stats for the time range (raw for none, aggregate for primary metric otherwise) */
   stats: NumberStats | null;
+  /** Stats computed from period aggregates (stats of stats for each metric) */
+  aggregateStats?: Record<NumberMetric, NumberStats | null>;
   /** Delta stats compared to prior period */
   deltas?: NumberStats;
+  /** Percent change vs prior period */
+  percents?: Partial<NumberStats>;
   /** Extremes across all periods in range */
   extremes?: StatsExtremes;
   /** Cumulative stats (for series tracking) */
   cumulatives?: NumberStats;
+  /** Percent change in cumulative from start to end of time range (compares cumulative before range vs cumulative at end of range) */
+  cumulativePercents?: Partial<NumberStats>;
   /** Number of periods in the range */
   periodCount: number;
 }
+
+type AnalysisOptions = {
+  aggregation?: AggregationType;
+  primaryMetric?: NumberMetric;
+};
 
 /**
  * Compute analysis data for a given time range and aggregation
@@ -158,19 +169,31 @@ export function computeAnalysisData<T extends TimePeriod>(
   allPeriods: PeriodAggregateData<T>[],
   timeRange: TimeRange,
   includePriorPeriod: boolean = true,
+  options: AnalysisOptions = {},
 ): AnalysisData {
+  const aggregation = options.aggregation ?? 'none';
+  const primaryMetric = options.primaryMetric ?? 'total';
   const periodsInRange = filterPeriodsByTimeRange(allPeriods, timeRange);
   const periodCount = periodsInRange.length;
 
   // Collect all numbers from periods in range
   const dataPoints = periodsInRange.flatMap(p => p.numbers);
   
-  // Compute aggregated stats
-  const stats = computeNumberStats(dataPoints);
+  // Compute summary stats based on aggregation mode
+  const periodStats = periodsInRange.map(p => p.stats).filter(s => s.count > 0);
+  const stats = aggregation === 'none'
+    ? computeNumberStats(dataPoints)
+    : computeMetricStats(periodStats, primaryMetric);
 
   // Calculate extremes across all periods
-  const periodStats = periodsInRange.map(p => p.stats).filter(s => s.count > 0);
   const extremes = calculateExtremes(periodStats);
+
+  // Compute stats from period aggregates (stats of stats for each metric)
+  const aggregateStats: Record<NumberMetric, NumberStats | null> = {} as any;
+  const metrics: NumberMetric[] = ['count', 'total', 'mean', 'median', 'min', 'max', 'first', 'last', 'range', 'change', 'changePercent', 'mode', 'slope', 'midrange', 'variance', 'standardDeviation', 'interquartileRange'];
+  for (const metric of metrics) {
+    aggregateStats[metric] = computeMetricStats(periodStats, metric);
+  }
 
   // Get cumulatives from the last period in range (already computed incrementally)
   const cumulatives = periodsInRange.length > 0 
@@ -180,13 +203,23 @@ export function computeAnalysisData<T extends TimePeriod>(
   // Find prior period for deltas
   let priorPeriod: PeriodAggregateData<T> | undefined;
   let deltas: NumberStats | undefined;
+  let percents: Partial<NumberStats> | undefined;
+  let cumulativePercents: Partial<NumberStats> | undefined;
 
-  if (includePriorPeriod && periodsInRange.length > 0) {
+  if (includePriorPeriod && periodsInRange.length > 0 && stats) {
     const firstPeriodIndex = allPeriods.findIndex(p => p.dateKey === periodsInRange[0].dateKey);
     if (firstPeriodIndex > 0) {
       priorPeriod = allPeriods[firstPeriodIndex - 1];
-      // Use the deltas already computed in the first period (which compares to prior)
-      deltas = periodsInRange[0].deltas;
+      const priorStats = aggregation === 'none'
+        ? priorPeriod.stats
+        : computeMetricStats([priorPeriod.stats], primaryMetric);
+      // Compare summary stats for entire range vs prior period
+      deltas = priorStats ? computeStatsDeltas(stats, priorStats) : undefined;
+      percents = priorStats ? computeStatsPercents(stats, priorStats) : undefined;
+      // Cumulative percent: compare cumulative at end of range vs cumulative before range
+      cumulativePercents = cumulatives && priorPeriod.cumulatives
+        ? computeStatsPercents(cumulatives, priorPeriod.cumulatives)
+        : undefined;
     }
   }
 
@@ -195,9 +228,12 @@ export function computeAnalysisData<T extends TimePeriod>(
     priorPeriod,
     dataPoints,
     stats,
+    aggregateStats,
     deltas,
+    percents,
     extremes,
     cumulatives,
+    cumulativePercents,
     periodCount,
   };
 }
@@ -206,7 +242,8 @@ export function computeAnalysisData<T extends TimePeriod>(
  * Get available time frame presets for a given aggregation type
  */
 export function getAvailablePresets(aggregation: AggregationType): Array<TimeFrameConfig & { preset: TimeFramePreset }> {
+  const effectiveAggregation = aggregation === 'none' ? 'day' : aggregation;
   return (Object.entries(TIME_FRAME_PRESETS) as Array<[TimeFramePreset, TimeFrameConfig]>)
-    .filter(([_, config]) => config.aggregations.includes(aggregation))
+    .filter(([_, config]) => config.aggregations.includes(effectiveAggregation))
     .map(([preset, config]) => ({ ...config, preset }));
 }

@@ -128,6 +128,8 @@ export type FormatValueOptions = {
   percent?: boolean;
   /** If true, format as a delta with sign (e.g. +5, -3) */
   delta?: boolean;
+  /** If true, hide sign (e.g. -5 -> 5) */
+  absolute?: boolean;
   /** 
    * Control decimal places:
    * - "auto": Round to 3 significant figures (e.g., 0.1234 -> 0.123, 123.456 -> 123)
@@ -161,7 +163,7 @@ export function formatFriendlyNumber(value: number | [number, number], options: 
  * Helper to format numeric values for display in the UI,
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
-export function formatValue(num: number | undefined, { short = false, percent = false, delta = false, decimals }: FormatValueOptions = {}): string {
+export function formatValue(num: number | undefined, { short = false, percent = false, delta = false, absolute = false, decimals }: FormatValueOptions = {}): string {
   if (num === undefined || isNaN(num)) return '';
   let options: Intl.NumberFormatOptions = {};
   let value = num;
@@ -178,6 +180,10 @@ export function formatValue(num: number | undefined, { short = false, percent = 
   }
   if (delta) {
     options = { ...options, signDisplay: 'exceptZero' };
+  }
+  if (absolute) {
+    options = { ...options, signDisplay: 'never' };
+    value = Math.abs(value);
   }
   
   // Handle decimal places
@@ -202,15 +208,15 @@ export function formatValue(num: number | undefined, { short = false, percent = 
 /**
  * Helper to format ranges for display, using formatValue for each number and handling percent/delta formatting
  */
-export function formatRange(range: [number, number] | undefined, { short, percent, delta }: FormatValueOptions = {}): string {
+export function formatRange(range: [number, number] | undefined, { short, percent, delta, absolute }: FormatValueOptions = {}): string {
   if (!range) return '';
   const [min, max] = range;
   // For deltas or ranges with negatives use `→` to avoid confusion with minus sign, 
   // otherwise en dash (e.g. `5–10`)
   const separator = delta || (min < 0 || max < 0) ? '→' : '–';
   // For percents, omit the leading % symbol if using en dash, for brevity (e.g. `5–10%` instead of `5%–10%`))
-  const options = { short, percent, delta };
-  const minOptions = percent && separator === '–' ? { short, delta } : options;
+  const options = { short, percent, delta, absolute };
+  const minOptions = percent && separator === '–' ? { short, delta, absolute } : options;
   const minStr = formatValue(min, minOptions);
   const maxStr = formatValue(max, options);
   return `${minStr}${separator}${maxStr}`;

@@ -33,6 +33,7 @@ export const NumberText: React.FC<NumberTextProps> = ({
   short = false,
   percent = false,
   delta = false,
+  absolute = false,
   decimals,
   currency,
   animated = false
@@ -104,24 +105,28 @@ export const NumberText: React.FC<NumberTextProps> = ({
   
   let formatted: React.ReactNode;
   if (isRenderFinite) {
-    formatted = formatValue(renderValue, { short, percent, delta, decimals });
+    formatted = formatValue(renderValue, { short, percent, delta, absolute, decimals });
   } else {
     formatted = placeholder;
   }
 
   // If using currency, split the decimal part (cents) and render with smaller font size
-  if (currency && isRenderFinite) {
-    const [integerPart, decimalPart] = String(formatted).split('.');
-    formatted = (
-      <>
-        {integerPart}
-        {decimalPart !== undefined && (
-          <span className="text-xs align-top opacity-70">
-            .{decimalPart}
+  if (isRenderFinite && currency) {
+    const formattedText = String(formatted);
+    const match = formattedText.match(/^(.*?)(\.(\d+))(.*)$/);
+
+    if (match) {
+      const [, integerPart, , decimalDigits, decimalSuffix] = match;
+      formatted = (
+        <>
+          {integerPart}
+          <span className="text-[0.7em] align-text-top opacity-70">
+            .{decimalDigits}
           </span>
-        )}
-      </>
-    );
+          {decimalSuffix}
+        </>
+      );
+    }
   }
 
   const text = (

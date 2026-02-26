@@ -48,7 +48,7 @@ export function AggregationBarChart({
       const avg = allNumbers.length > 0 ? total / allNumbers.length : 0;
 
       let label = groupKey;
-      if (aggregationType === 'day') {
+      if (aggregationType === 'none' || aggregationType === 'day') {
         label = formatFriendlyDate(groupKey as DateKey);
       } else if (aggregationType === 'month') {
         label = formatFriendlyDate(groupKey as MonthKey);

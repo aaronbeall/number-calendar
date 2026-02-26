@@ -17,7 +17,8 @@ import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock } from 'lucide-react';
+import { getPrimaryMetric } from '@/lib/tracking';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { AggregationBarChart } from '@/features/analysis/AggregationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -25,6 +26,7 @@ import { DistributionHistogram } from '@/features/analysis/DistributionHistogram
 import { PeriodComparisonChart } from '@/features/analysis/PeriodComparisonChart';
 import { StatsSummary } from '@/features/analysis/StatsSummary';
 import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
+import { capitalize, pluralize } from '@/lib/utils';
 
 
 
@@ -33,6 +35,7 @@ export function Analysis() {
   const aggregateData = useAllPeriodsAggregateData();
   const { data: allDays = [] } = useAllDays(dataset.id);
   const isMobile = useIsMobile();
+  const primaryMetric = getPrimaryMetric(dataset.tracking);
 
   const [aggregationType, setAggregationType] = useSearchParamState<AggregationType>('agg', 'month');
   const actualAggregationType = (typeof aggregationType === 'string' ? aggregationType : 'month') as AggregationType;
@@ -43,6 +46,7 @@ export function Analysis() {
   // Get periods based on aggregation type
   const periodsForAggregation = useMemo(() => {
     switch (actualAggregationType) {
+      case 'none': return aggregateData.days;
       case 'day': return aggregateData.days;
       case 'week': return aggregateData.weeks;
       case 'month': return aggregateData.months;
@@ -79,6 +83,8 @@ export function Analysis() {
 
     const nextPeriods = (() => {
       switch (nextAggregation) {
+        case 'none':
+          return aggregateData.days;
         case 'day':
           return aggregateData.days;
         case 'week':
@@ -116,11 +122,14 @@ export function Analysis() {
 
   // Compute analysis data for selected time range
   const analysisData = useMemo(() => 
-    computeAnalysisData(periodsForAggregation, timeRange, true),
-    [periodsForAggregation, timeRange]
+    computeAnalysisData(periodsForAggregation, timeRange, true, {
+      aggregation: actualAggregationType,
+      primaryMetric,
+    }),
+    [actualAggregationType, periodsForAggregation, primaryMetric, timeRange]
   );
 
-  const { dataPoints, stats, extremes, cumulatives, deltas, periodCount } = analysisData;
+  const { dataPoints, stats, extremes, cumulatives, cumulativePercents, deltas, percents, periodCount } = analysisData;
 
   // Cumulatives only for series tracking
   const cumulativesData = dataset.tracking === 'series' ? cumulatives : undefined;
@@ -159,10 +168,11 @@ export function Analysis() {
   }, [daysInRange, actualAggregationType]);
 
   const aggregationOptions = [
-    { value: 'day', label: 'Day', icon: CalendarDays, corner: 'rounded-tl-md' },
-    { value: 'week', label: 'Week', icon: CalendarRange, corner: 'rounded-tr-md' },
-    { value: 'month', label: 'Month', icon: Calendar, corner: 'rounded-bl-md' },
-    { value: 'year', label: 'Year', icon: CalendarClock, corner: 'rounded-br-md' },
+    { value: 'none', label: 'None', icon: Ban },
+    { value: 'day', label: 'Day', icon: CalendarDays },
+    { value: 'week', label: 'Week', icon: CalendarRange },
+    { value: 'month', label: 'Month', icon: Calendar },
+    { value: 'year', label: 'Year', icon: CalendarClock },
   ] as const;
 
   const activeAggregationLabel =
@@ -241,7 +251,7 @@ export function Analysis() {
           <BarChart3 className="w-3.5 h-3.5" />
           Aggregation
         </h3>
-        <div className="grid grid-cols-2 gap-px rounded-md bg-slate-200 dark:bg-slate-800 p-px">
+        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(90px,1fr))] gap-1 rounded-md bg-slate-200 dark:bg-slate-800 p-1">
           {aggregationOptions.map((option) => {
             const isActive = actualAggregationType === option.value;
             const Icon = option.icon;
@@ -251,7 +261,7 @@ export function Analysis() {
                 key={option.value}
                 type="button"
                 onClick={() => handleAggregationChange(option.value)}
-                className={`h-10 sm:h-9 px-2 text-xs font-medium flex items-center justify-center gap-1.5 ${option.corner} transition-colors ${isActive ? 'bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-50' : 'bg-white/80 text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
+                className={`h-10 sm:h-9 px-2 text-xs font-medium flex items-center justify-center gap-1.5 rounded-md transition-colors ${isActive ? 'bg-white text-slate-900 dark:bg-slate-700 dark:text-slate-50' : 'bg-white/80 text-slate-600 hover:bg-white dark:bg-slate-900/60 dark:text-slate-300 dark:hover:bg-slate-800'}`}
                 aria-pressed={isActive}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -269,13 +279,15 @@ export function Analysis() {
           Summary
         </h3>
         <div className="space-y-1.5 text-xs">
-          <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
-            <span className="text-slate-600 dark:text-slate-400">{actualAggregationType === 'day' ? 'Days' : actualAggregationType === 'week' ? 'Weeks' : actualAggregationType === 'month' ? 'Months' : 'Years'}</span>
-            <span className="font-semibold text-slate-900 dark:text-white">{formatValue(periodCount)}</span>
-          </div>
+          {actualAggregationType !== 'none' && (
+            <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
+              <span className="text-slate-600 dark:text-slate-400">{capitalize(pluralize(actualAggregationType))}</span>
+              <span className="font-semibold text-slate-900 dark:text-white">{formatValue(periodCount)}</span>
+            </div>
+          )}
           <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
             <span className="text-slate-600 dark:text-slate-400">Data Points</span>
-            <span className="font-semibold text-slate-900 dark:text-white">{formatValue(stats?.count ?? 0)}</span>
+            <span className="font-semibold text-slate-900 dark:text-white">{formatValue(dataPoints.length)}</span>
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded mt-2">
             <div className="font-semibold text-slate-600 dark:text-slate-300 mb-1">Range</div>
@@ -328,6 +340,8 @@ export function Analysis() {
             extremes={extremes}
             cumulatives={cumulativesData}
             deltas={deltasData}
+            percents={percents}
+            cumulativePercents={cumulativePercents}
           />
 
           {/* Trend Chart */}
@@ -347,7 +361,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
-              {actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Totals
+              {actualAggregationType === 'none' ? 'Raw' : actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Totals
             </h3>
             <AggregationBarChart
               groupedData={groupedData}
@@ -386,7 +400,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <TrendingUp className="w-4 h-4" />
-              {actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Comparison
+              {actualAggregationType === 'none' ? 'Raw' : actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Comparison
             </h3>
             <PeriodComparisonChart
               groupedData={groupedData}

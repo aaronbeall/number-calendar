@@ -177,6 +177,12 @@ describe('formatValue', () => {
     expect(formatValue(0, { delta: true })).toBe('0');
   });
 
+  it('formats absolute values without sign display', () => {
+    expect(formatValue(-45.6, { absolute: true })).toBe('45.6');
+    expect(formatValue(-10, { delta: true, absolute: true })).toBe('10');
+    expect(formatValue(-5, { percent: true, absolute: true })).toBe('5%');
+  });
+
   describe('decimals option', () => {
     it('uses default of 2 decimal places when decimals is not specified', () => {
       expect(formatValue(1.234)).toBe('1.23');

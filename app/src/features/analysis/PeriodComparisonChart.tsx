@@ -44,7 +44,9 @@ export function PeriodComparisonChart({
       const allNumbers = days.flatMap((day) => day.numbers);
 
       let label = groupKey;
-      if (aggregationType === 'month') {
+      if (aggregationType === 'none') {
+        label = formatFriendlyDate(groupKey as DateKey);
+      } else if (aggregationType === 'month') {
         label = formatFriendlyDate(groupKey as DateKey);
       } else if (aggregationType === 'week') {
         label = formatFriendlyDate(groupKey as DateKey);

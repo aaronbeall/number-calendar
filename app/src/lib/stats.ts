@@ -361,26 +361,27 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, {
   delta?: boolean; // should always be formatted as delta (+/-)
   percent?: boolean; // should always be formatted as percentage (with % sign)
   cumulatives?: boolean; // supports cumulatives appropriately
-  primary?: Tracking;
-  hide?: Tracking;
+  primary?: Tracking; // which tracking mode to prioritize this metric for (series vs trend)
+  hide?: Tracking; // which tracking mode to hide this metric for (series vs trend)
+  valenceless?: boolean; // whether this metric has no valence (good/bad/neutral) association and should be formatted as neutral
 }> = {
-  total: { label: 'Total', description: 'Sum of all values in the period', icon: Plus, primary: 'series', hide: 'trend' },
+  total: {label: 'Total', description: 'Sum of all values in the period', icon: Plus, primary: 'series', hide: 'trend' },
   mean: { label: 'Average', description: 'Mean of all values in the period', icon: BarChart3 },
   median: { label: 'Median', description: 'Middle value when sorted', icon: FoldVertical, cumulatives: false },
   min: { label: 'Minimum', description: 'Lowest value in the period', icon: ChevronDown },
   max: { label: 'Maximum', description: 'Highest value in the period', icon: ChevronUp },
-  count: { label: 'Count', description: 'Number of data points recorded', icon: Hash },
+  count: { label: 'Count', description: 'Number of data points recorded', icon: Hash, valenceless: true },
   first: { label: 'Open', description: 'First value at the start of the period', icon: ArrowRightFromLine },
   last: { label: 'Close', description: 'Last value at the end of the period', icon: ArrowRightToLine, primary: 'trend' },
-  range: { label: 'Range', description: 'Difference between max and min values', icon: Minimize2, delta: true },
+  range: { label: 'Range', description: 'Difference between max and min values', icon: Minimize2, delta: true, valenceless: true },
   change: { label: 'Difference', description: 'Difference between first and last values', icon: TrendingUp, delta: true },
   changePercent: { label: 'Difference (%)', description: 'Percentage change from first to last value', icon: Percent, delta: true, percent: true },
   mode: { label: 'Mode', description: 'Most frequently occurring value in the period', icon: BarChart2, cumulatives: false },
   slope: { label: 'Slope', description: 'Average change per entry (rate of change)', icon: Zap, delta: true },
   midrange: { label: 'Midrange', description: 'Average of the minimum and maximum values', icon: Maximize2 },
-  variance: { label: 'Variance', description: 'Measure of spread around the mean', icon: ScatterChart, cumulatives: false },
-  standardDeviation: { label: 'Standard Deviation', description: 'Square root of variance (spread around mean)', icon: Activity, cumulatives: false },
-  interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles', icon: Copy, cumulatives: false },
+  variance: { label: 'Variance', description: 'Measure of spread around the mean', icon: ScatterChart, cumulatives: false, valenceless: true },
+  standardDeviation: { label: 'Standard Deviation', description: 'Square root of variance (spread around mean)', icon: Activity, cumulatives: false, valenceless: true },
+  interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles', icon: Copy, cumulatives: false, valenceless: true },
 };
 
 

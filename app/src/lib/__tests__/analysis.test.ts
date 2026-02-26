@@ -136,5 +136,113 @@ describe('analysis', () => {
 
       expect(result.periodCount).toBeGreaterThan(0);
     });
+
+    it('should calculate delta percents comparing range stats to prior period', () => {
+      const periods: PeriodAggregateData<'day'>[] = [
+        { 
+          ...createEmptyAggregate('2024-01-01', 'day'), 
+          numbers: [10],
+          stats: { count: 1, total: 10, mean: 10, median: 10, min: 10, max: 10, first: 10, last: 10, range: 0, change: 0, changePercent: 0, mode: 10, slope: 0, midrange: 10, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 1, total: 10, mean: 10, median: 10, min: 10, max: 10, first: 10, last: 10, range: 0, change: 0, changePercent: 0, mode: 10, slope: 0, midrange: 10, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+        { 
+          ...createEmptyAggregate('2024-01-02', 'day'), 
+          numbers: [20],
+          stats: { count: 1, total: 20, mean: 20, median: 20, min: 20, max: 20, first: 20, last: 20, range: 0, change: 0, changePercent: 0, mode: 20, slope: 0, midrange: 20, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 2, total: 30, mean: 15, median: 15, min: 10, max: 20, first: 10, last: 20, range: 10, change: 10, changePercent: 100, mode: 10, slope: 10, midrange: 15, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+        { 
+          ...createEmptyAggregate('2024-01-03', 'day'), 
+          numbers: [30],
+          stats: { count: 1, total: 30, mean: 30, median: 30, min: 30, max: 30, first: 30, last: 30, range: 0, change: 0, changePercent: 0, mode: 30, slope: 0, midrange: 30, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 3, total: 60, mean: 20, median: 20, min: 10, max: 30, first: 10, last: 30, range: 20, change: 20, changePercent: 200, mode: 10, slope: 10, midrange: 20, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+      ];
+
+      const result = computeAnalysisData(periods, {
+        startDate: new Date('2024-01-02'),
+        endDate: new Date('2024-01-03'),
+      }, true);
+
+      // Range contains days 2-3 with numbers [20, 30], total = 50
+      // Prior period is day 1 with total = 10
+      // Delta percent for total: (50 - 10) / 10 * 100 = 400%
+      expect(result.stats?.total).toBe(50);
+      expect(result.priorPeriod?.stats.total).toBe(10);
+      expect(result.percents?.total).toBe(400);
+    });
+
+    it('should calculate cumulative percents comparing range stats to cumulative stats', () => {
+      const periods: PeriodAggregateData<'day'>[] = [
+        { 
+          ...createEmptyAggregate('2024-01-01', 'day'), 
+          numbers: [10],
+          stats: { count: 1, total: 10, mean: 10, median: 10, min: 10, max: 10, first: 10, last: 10, range: 0, change: 0, changePercent: 0, mode: 10, slope: 0, midrange: 10, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 1, total: 10, mean: 10, median: 10, min: 10, max: 10, first: 10, last: 10, range: 0, change: 0, changePercent: 0, mode: 10, slope: 0, midrange: 10, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+        { 
+          ...createEmptyAggregate('2024-01-02', 'day'), 
+          numbers: [20],
+          stats: { count: 1, total: 20, mean: 20, median: 20, min: 20, max: 20, first: 20, last: 20, range: 0, change: 0, changePercent: 0, mode: 20, slope: 0, midrange: 20, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 2, total: 30, mean: 15, median: 15, min: 10, max: 20, first: 10, last: 20, range: 10, change: 10, changePercent: 100, mode: 10, slope: 10, midrange: 15, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+        { 
+          ...createEmptyAggregate('2024-01-03', 'day'), 
+          numbers: [30],
+          stats: { count: 1, total: 30, mean: 30, median: 30, min: 30, max: 30, first: 30, last: 30, range: 0, change: 0, changePercent: 0, mode: 30, slope: 0, midrange: 30, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 3, total: 60, mean: 20, median: 20, min: 10, max: 30, first: 10, last: 30, range: 20, change: 20, changePercent: 200, mode: 10, slope: 10, midrange: 20, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+      ];
+
+      const result = computeAnalysisData(periods, {
+        startDate: new Date('2024-01-02'),
+        endDate: new Date('2024-01-03'),
+      }, true);
+
+      // Range contains days 2-3, cumulative at end of range = 60
+      // Prior period (day 1) has cumulative = 10
+      // Cumulative percent for total: (60 - 10) / 10 * 100 = 500%
+      expect(result.stats?.total).toBe(50);
+      expect(result.cumulatives?.total).toBe(60);
+      expect(result.priorPeriod?.cumulatives.total).toBe(10);
+      expect(result.cumulativePercents?.total).toBe(500);
+    });
+
+    it('should show negative cumulative percent when cumulative decreases', () => {
+      const periods: PeriodAggregateData<'month'>[] = [
+        { 
+          ...createEmptyAggregate('2024-11', 'month'), 
+          numbers: [-7400],
+          stats: { count: 1, total: -7400, mean: -7400, median: -7400, min: -7400, max: -7400, first: -7400, last: -7400, range: 0, change: 0, changePercent: 0, mode: -7400, slope: 0, midrange: -7400, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 1, total: -7400, mean: -7400, median: -7400, min: -7400, max: -7400, first: -7400, last: -7400, range: 0, change: 0, changePercent: 0, mode: -7400, slope: 0, midrange: -7400, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+        { 
+          ...createEmptyAggregate('2024-12', 'month'), 
+          numbers: [-10900],
+          stats: { count: 1, total: -10900, mean: -10900, median: -10900, min: -10900, max: -10900, first: -10900, last: -10900, range: 0, change: 0, changePercent: 0, mode: -10900, slope: 0, midrange: -10900, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 2, total: -18300, mean: -9150, median: -9150, min: -10900, max: -7400, first: -7400, last: -10900, range: 3500, change: -3500, changePercent: 47.3, mode: -7400, slope: -3500, midrange: -9150, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+        { 
+          ...createEmptyAggregate('2025-01', 'month'), 
+          numbers: [-11000],
+          stats: { count: 1, total: -11000, mean: -11000, median: -11000, min: -11000, max: -11000, first: -11000, last: -11000, range: 0, change: 0, changePercent: 0, mode: -11000, slope: 0, midrange: -11000, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+          cumulatives: { count: 3, total: -29300, mean: -9767, median: -10900, min: -11000, max: -7400, first: -7400, last: -11000, range: 3600, change: -3600, changePercent: 48.6, mode: -7400, slope: -1800, midrange: -9200, variance: 0, standardDeviation: 0, interquartileRange: 0 },
+        },
+      ];
+
+      const result = computeAnalysisData(periods, {
+        startDate: new Date('2024-12-01'),
+        endDate: new Date('2025-01-31'),
+      }, true);
+
+      // Range: Dec 2024 - Jan 2025, total = -21900
+      // Cumulative at end (Jan 2025): -29300
+      // Prior cumulative (Nov 2024): -7400
+      // Cumulative percent: (-29300 - (-7400)) / |-7400| * 100 = -21900 / 7400 * 100 = -295.95%
+      expect(result.stats?.total).toBe(-21900);
+      expect(result.cumulatives?.total).toBe(-29300);
+      expect(result.priorPeriod?.cumulatives.total).toBe(-7400);
+      expect(result.cumulativePercents?.total).toBeCloseTo(-295.95, 1);
+    });
   });
 });

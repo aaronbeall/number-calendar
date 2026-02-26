@@ -3,7 +3,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { FlippableCard } from '@/components/ui/flippable-card';
 import type { Tracking, Valence } from '@/features/db/localdb';
-import { getValueForValence } from '@/lib/valence';
 import { usePreference } from '@/hooks/usePreference';
 import { METRIC_DISPLAY_INFO, type NumberMetric, type NumberStats, type StatsExtremes } from '@/lib/stats';
 import { MetricCard } from './MetricCard';
@@ -17,10 +16,12 @@ interface StatsSummaryProps {
   datasetId: string;
   extremes?: StatsExtremes;
   cumulatives?: NumberStats;
+  cumulativePercents?: Partial<NumberStats>;
   deltas?: NumberStats;
+  percents?: Partial<NumberStats>;
 }
 
-export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, extremes, cumulatives, deltas }: StatsSummaryProps) {
+export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, extremes, cumulatives, cumulativePercents, deltas, percents }: StatsSummaryProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [originalMetrics, setOriginalMetrics] = useState<NumberMetric[] | null>(null);
   const [originalShowDeltas, setOriginalShowDeltas] = useState<boolean | null>(null);
@@ -87,16 +88,6 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
     setShowCumulatives(defaultShowCumulatives);
   };
 
-  const getValueColors = (value: number | null) => {
-    if (value === null) return { bg: 'bg-slate-50 dark:bg-slate-800/50', icon: 'text-slate-500 dark:text-slate-400', text: 'text-slate-500 dark:text-slate-400' };
-    
-    return getValueForValence(value, valence, {
-      good: { bg: 'bg-green-50 dark:bg-green-900/20', icon: 'text-green-600 dark:text-green-400', text: 'text-green-700 dark:text-green-400' },
-      bad: { bg: 'bg-red-50 dark:bg-red-900/20', icon: 'text-red-600 dark:text-red-400', text: 'text-red-700 dark:text-red-400' },
-      neutral: { bg: 'bg-slate-50 dark:bg-slate-800/50', icon: 'text-slate-500 dark:text-slate-400', text: 'text-slate-700 dark:text-slate-300' },
-    });
-  };
-
   const buildSummaryItems = useMemo(() => {
     if (!fullStats) return [];
 
@@ -111,6 +102,9 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
         const high = showExtremes && extremes ? extremes[`highest${metric.charAt(0).toUpperCase()}${metric.slice(1)}` as keyof StatsExtremes] : undefined;
         const low = showExtremes && extremes ? extremes[`lowest${metric.charAt(0).toUpperCase()}${metric.slice(1)}` as keyof StatsExtremes] : undefined;
         
+        const deltaPercent = showDeltas && percents ? percents[metric] : undefined;
+        const cumulativePercent = showCumulatives && cumulativePercents ? cumulativePercents[metric] : undefined;
+        
         const isPrimary = metric === primaryMetric;
         const info = METRIC_DISPLAY_INFO[metric];
 
@@ -118,15 +112,16 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
           metric,
           value,
           deltaValue,
+          deltaPercent,
           cumulativeValue,
+          cumulativePercent,
           high,
           low,
           isPrimary,
           label: info.label,
-          colors: getValueColors(value),
         };
       });
-  }, [fullStats, selectedMetrics, showDeltas, showExtremes, showCumulatives, deltas, extremes, cumulatives, primaryMetric, tracking]);
+  }, [fullStats, selectedMetrics, showDeltas, showExtremes, showCumulatives, deltas, percents, extremes, cumulatives, cumulativePercents, primaryMetric, tracking]);
 
   const primaryItems = buildSummaryItems.filter(item => item.isPrimary);
   const secondaryItems = buildSummaryItems.filter(item => !item.isPrimary);
@@ -288,12 +283,14 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
               value={item.value}
               label={item.label}
               valence={valence}
+              tracking={tracking}
               variant="primary"
-              colors={item.colors}
               showConfigButton
               onConfigClick={handleConfigOpen}
               deltaValue={showDeltas ? item.deltaValue : undefined}
+              deltaPercent={showDeltas ? item.deltaPercent : undefined}
               cumulativeValue={showCumulatives ? item.cumulativeValue : undefined}
+              cumulativePercent={showCumulatives ? item.cumulativePercent : undefined}
               high={showExtremes ? item.high : undefined}
               low={showExtremes ? item.low : undefined}
             />
@@ -311,10 +308,12 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, e
               value={item.value}
               label={item.label}
               valence={valence}
+              tracking={tracking}
               variant="normal"
-              colors={item.colors}
               deltaValue={showDeltas ? item.deltaValue : undefined}
+              deltaPercent={showDeltas ? item.deltaPercent : undefined}
               cumulativeValue={showCumulatives ? item.cumulativeValue : undefined}
+              cumulativePercent={showCumulatives ? item.cumulativePercent : undefined}
               high={showExtremes ? item.high : undefined}
               low={showExtremes ? item.low : undefined}
             />

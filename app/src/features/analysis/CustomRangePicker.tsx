@@ -165,6 +165,8 @@ export function CustomRangePicker({
     try {
       const date = parseDateKey(dateKey as DateKey);
       switch (aggregation) {
+        case 'none':
+          return format(date, "MMM d, ''yy");
         case 'day':
           return format(date, "MMM d, ''yy");
         case 'week':

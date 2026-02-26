@@ -2,16 +2,16 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { NumberText } from '@/components/ui/number-text';
 import type { NumberMetric } from '@/lib/stats';
-import type { Valence } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import { METRIC_DISPLAY_INFO } from '@/lib/stats';
-import { getValueForValence } from '@/lib/valence';
+import { getValenceSource } from '@/lib/tracking';
+import { getValueForSign, getValueForValence } from '@/lib/valence';
 import {
   Settings,
   ArrowUpToLine,
   ArrowDownToLine,
   ArrowUpRight,
   ArrowDownRight,
-  ArrowRight,
 } from 'lucide-react';
 import React, { useState } from 'react';
 
@@ -20,16 +20,14 @@ interface MetricCardProps {
   value: number | null;
   label: string;
   valence: Valence;
+  tracking: Tracking;
   variant: 'primary' | 'normal';
-  colors: {
-    bg: string;
-    icon: string;
-    text: string;
-  };
   showConfigButton?: boolean;
   onConfigClick?: () => void;
   deltaValue?: number | null;
+  deltaPercent?: number;
   cumulativeValue?: number | null;
+  cumulativePercent?: number;
   high?: number | null;
   low?: number | null;
 }
@@ -39,29 +37,60 @@ export function MetricCard({
   value,
   label,
   valence,
+  tracking,
   variant = 'normal',
-  colors,
   showConfigButton,
   onConfigClick,
   deltaValue,
+  deltaPercent,
   cumulativeValue,
+  cumulativePercent,
   high,
   low,
 }: MetricCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [isConfigHovered, setIsConfigHovered] = useState(false);
-  const getValenceTone = (value: number | null | undefined) => {
-    return getValueForValence(value ?? 0, valence, {
-      good: 'text-green-600 dark:text-green-400',
-      bad: 'text-red-600 dark:text-red-400',
-      neutral: 'text-slate-500 dark:text-slate-400',
-    });
+  const valenceToneClasses = {
+    good: 'text-green-600 dark:text-green-400',
+    bad: 'text-red-600 dark:text-red-400',
+    neutral: 'text-slate-500 dark:text-slate-400',
   };
-  const DeltaIcon = deltaValue && deltaValue !== 0
-    ? deltaValue > 0
-      ? ArrowUpRight
-      : ArrowDownRight
-    : ArrowRight;
+  const isValenceless = METRIC_DISPLAY_INFO[metric].valenceless ?? false;
+  const valenceSource = getValenceSource(tracking);
+  const getValenceValue = (value: number | null | undefined, delta: number | null | undefined) => {
+    if (isValenceless) return value ?? 0;
+    if (valenceSource === 'deltas') return delta ?? 0;
+    return value ?? 0;
+  };
+  const getValenceTone = (value: number | null | undefined, delta: number | null | undefined) => {
+    if (isValenceless) return valenceToneClasses.neutral;
+    return getValueForValence(getValenceValue(value, delta), valence, valenceToneClasses);
+  };
+  const metricValence = isValenceless ? 'neutral' : valence;
+
+  // For high/low deltas, we don't have priors so instead compare high/low to current value to determine valence
+  const highValenceDelta = (high ?? 0) - (value ?? 0) || deltaValue;
+  const lowValenceDelta = (low ?? 0) - (value ?? 0) || deltaValue;
+  
+  // Determine card background color based on value and valenceless flag
+  const cardBg = isValenceless || value === null
+    ? 'bg-slate-50 dark:bg-slate-800/50'
+    : getValueForValence(getValenceValue(value, deltaValue), valence, {
+        good: 'bg-green-50 dark:bg-green-900/20',
+        bad: 'bg-red-50 dark:bg-red-900/20',
+        neutral: 'bg-slate-50 dark:bg-slate-800/50',
+      })
+  const CumulativePercentIcon = getValueForSign(cumulativePercent, {
+    positive: ArrowUpRight,
+    negative: ArrowDownRight,
+    zero: null,
+  });
+  
+  const DeltaIcon = getValueForSign(deltaValue, {
+    positive: ArrowUpRight,
+    negative: ArrowDownRight,
+    zero: null,
+  });
 
   const isPrimary = variant === 'primary';
   const cardPadding = isPrimary ? 'p-4' : 'p-3';
@@ -82,7 +111,7 @@ export function MetricCard({
 
   return (
     <Card
-      className={`${cardPadding} transition-all ${colors.bg} ${cardScale}`}
+      className={`${cardPadding} transition-all ${cardBg} ${cardScale}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -97,8 +126,8 @@ export function MetricCard({
           <div className={valueClass}>
             <NumberText 
               value={value} 
-              valenceValue={value} 
-              valence={valence} 
+              valenceValue={getValenceValue(value, deltaValue)} 
+              valence={metricValence} 
               short={!isHovered}
               animated 
             />
@@ -106,15 +135,34 @@ export function MetricCard({
           {deltaValue !== undefined && (
             <div className={deltaWrapperClass}>
               <span className={deltaChipClass}>
-                <DeltaIcon className={`${deltaIconClass} ${getValenceTone(deltaValue)}`} />
+                {DeltaIcon && <DeltaIcon className={`${deltaIconClass} ${getValenceTone(deltaValue, deltaValue)}`} />}
                 <NumberText 
                   value={deltaValue} 
-                  valenceValue={deltaValue} 
-                  valence={valence} 
+                  valenceValue={getValenceValue(deltaValue, deltaValue)} 
+                  valence={metricValence} 
                   short={!isHovered}
                   animated 
                   delta 
                 />
+                {deltaPercent !== undefined && (
+                  <span className={`inline-flex items-center whitespace-nowrap ${getValenceTone(deltaPercent, deltaPercent)}`}>
+                    (
+                    <NumberText
+                      value={deltaPercent}
+                      valenceValue={getValenceValue(deltaPercent, deltaPercent)}
+                      valence={metricValence}
+                      short={!isHovered}
+                      percent
+                      absolute
+                      decimals={1}
+                      className="text-inherit"
+                      goodClassName={valenceToneClasses.good}
+                      badClassName={valenceToneClasses.bad}
+                      neutralClassName={valenceToneClasses.neutral}
+                    />
+                    )
+                  </span>
+                )}
               </span>
             </div>
           )}
@@ -123,35 +171,57 @@ export function MetricCard({
               <span className={deltaChipClass}>
                 <NumberText 
                   value={cumulativeValue} 
-                  valenceValue={cumulativeValue} 
-                  valence={valence} 
+                  valenceValue={getValenceValue(cumulativeValue, deltaValue)} 
+                  valence={metricValence} 
                   short={!isHovered}
                   animated 
                 />
+                {cumulativePercent !== undefined && (
+                  <span className={`inline-flex items-center whitespace-nowrap ${getValenceTone(cumulativePercent, cumulativePercent)}`}>
+                    (
+                    {CumulativePercentIcon && (
+                      <CumulativePercentIcon className={`${deltaIconClass} ${getValenceTone(cumulativePercent, cumulativePercent)}`} />
+                    )}
+                    <NumberText
+                      value={cumulativePercent}
+                      valenceValue={getValenceValue(cumulativePercent, cumulativePercent)}
+                      valence={metricValence}
+                      short={!isHovered}
+                      percent
+                      absolute
+                      decimals={1}
+                      className="text-inherit"
+                      goodClassName={valenceToneClasses.good}
+                      badClassName={valenceToneClasses.bad}
+                      neutralClassName={valenceToneClasses.neutral}
+                    />
+                    )
+                  </span>
+                )}
               </span>
             </div>
           )}
           {(high !== undefined || low !== undefined) && (
             <div className={extremesWrapperClass}>
-              {high !== undefined && (
+              {high != undefined && (
                 <span className={extremesChipClass}>
-                  <ArrowUpToLine className={`${deltaIconClass} ${getValenceTone(high)}`} />
+                  <ArrowUpToLine className={`${deltaIconClass} ${getValenceTone(high, highValenceDelta)}`} />
                   <NumberText 
                     value={high} 
-                    valenceValue={high} 
-                    valence={valence} 
+                    valenceValue={getValenceValue(high, highValenceDelta)} 
+                    valence={metricValence} 
                     short={!isHovered}
                     animated 
                   />
                 </span>
               )}
-              {low !== undefined && (
+              {low != undefined && (
                 <span className={extremesChipClass}>
-                  <ArrowDownToLine className={`${deltaIconClass} ${getValenceTone(low)}`} />
+                  <ArrowDownToLine className={`${deltaIconClass} ${getValenceTone(low, lowValenceDelta)}`} />
                   <NumberText 
                     value={low} 
-                    valenceValue={low} 
-                    valence={valence} 
+                    valenceValue={getValenceValue(low, lowValenceDelta)} 
+                    valence={metricValence} 
                     short={!isHovered}
                     animated 
                   />
