@@ -445,7 +445,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
-              {actualAggregationType === 'none' ? 'Raw' : actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Totals
+              {actualAggregationType === 'none' ? '' : capitalize(adjectivize(actualAggregationType))} Change
             </h3>
             <AggregationBarChart
               key={dataset.id}
@@ -453,6 +453,7 @@ export function Analysis() {
               aggregationType={actualAggregationType}
               tracking={dataset.tracking}
               valence={dataset.valence}
+              selectedMetrics={selectedSummaryMetrics}
             />
           </Card>
 
@@ -488,7 +489,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <TrendingUp className="w-4 h-4" />
-              {actualAggregationType === 'none' ? 'Raw' : actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Comparison
+              {actualAggregationType === 'none' ? 'Raw' : capitalize(adjectivize(actualAggregationType))} Comparison
             </h3>
             <PeriodComparisonChart
               key={dataset.id}
