@@ -32,6 +32,7 @@ interface AggregationBarChartProps {
 interface BarDataPoint {
   dateKey: string;
   label: string;
+  entryNumber?: number;
   value: number;
   statsValue?: Partial<Record<NumberMetric, number>>;
   deltaValue?: Partial<Record<NumberMetric, number>>;
@@ -73,13 +74,14 @@ export function AggregationBarChart({
     try {
       const date = parseDateKey(dateKey as any);
       switch (aggregationType) {
+        case 'none':
+          return format(date, "MMM d");
         case 'week':
           return `W${format(date, 'ww')} '${format(date, 'yy')}`;
         case 'month':
           return format(date, "MMM ''yy");
         case 'year':
           return format(date, 'yyyy');
-        case 'none':
         case 'day':
         default:
           return format(date, "MMM d, ''yy");
@@ -92,7 +94,7 @@ export function AggregationBarChart({
   const data: BarDataPoint[] = useMemo(() => {
     return periods
       .filter((period) => period.stats.count > 0)
-      .map((period) => {
+      .map((period, index) => {
         const statsValue: Partial<Record<NumberMetric, number>> = {};
         const deltaValue: Partial<Record<NumberMetric, number>> = {};
 
@@ -109,6 +111,7 @@ export function AggregationBarChart({
         return {
           dateKey: period.dateKey,
           label: formatPeriodLabel(period.dateKey),
+          ...(aggregationType === 'none' && { entryNumber: index + 1 }),
           value,
           statsValue,
           deltaValue,
@@ -172,9 +175,14 @@ export function AggregationBarChart({
 
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
-        <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-          {formatFriendlyDate(point.dateKey as any)}
-        </div>
+        {aggregationType === 'none' && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{point.label} (#{point.entryNumber})</div>
+        )}
+        {aggregationType !== 'none' && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+            {formatFriendlyDate(point.dateKey as any)}
+          </div>
+        )}
         <div className="space-y-1">
           {visibleTooltipMetrics.map((metric) => {
             const metricValue =

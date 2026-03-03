@@ -465,7 +465,7 @@ export function Analysis() {
             </h3>
             <AggregationBarChart
               key={dataset.id}
-              periods={analysisData.periods}
+              periods={trendChartPeriods}
               aggregationType={actualAggregationType}
               tracking={dataset.tracking}
               valence={dataset.valence}
@@ -481,7 +481,7 @@ export function Analysis() {
             </h3>
             <DistributionHistogram
               key={dataset.id}
-              periods={analysisData.periods}
+              periods={trendChartPeriods}
               tracking={dataset.tracking}
               valence={dataset.valence}
             />
