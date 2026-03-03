@@ -19,6 +19,8 @@ type AllPeriodsAggregateData = {
   months: PeriodAggregateData<'month'>[];
   years: PeriodAggregateData<'year'>[];
   alltime: PeriodAggregateData<'anytime'>;
+  allDays: DayEntry[];
+  isLoading: boolean;
 };
 
 type CalendarCache = {
@@ -90,7 +92,7 @@ const areExtremesEqual = (left: StatsExtremes | undefined, right: StatsExtremes 
  */
 export function useAllPeriodsAggregateData(): AllPeriodsAggregateData {
   const { dataset } = useDatasetContext();
-  const { data: allDays = [] } = useAllDays(dataset.id);
+  const { data: allDays = [], isLoading } = useAllDays(dataset.id);
   const cacheRef = useRef<CalendarCache | null>(null);
 
   return useMemo(() => {
@@ -264,6 +266,8 @@ export function useAllPeriodsAggregateData(): AllPeriodsAggregateData {
       months: monthsWithExtremes,
       years: yearsWithExtremes,
       alltime: alltimeWithExtremes,
+      allDays: sortedAllDays,
+      isLoading,
     };
-  }, [allDays, dataset.id]);
+  }, [allDays, dataset.id, isLoading]);
 }

@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/PageHeader';
+import { LoadingState, ErrorState } from '@/components/PageStates';
 import type { DateKey, Valence } from '@/features/db/localdb';
 import { formatValue } from '@/lib/friendly-numbers';
 import { Award, CalendarDays, Flame, Skull, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
@@ -20,8 +21,8 @@ export function Records({ datasetId }: { datasetId: string }) {
   );
 
   if (!dataset) return <div className="max-w-4xl mx-auto p-8">Dataset not found.</div>;
-  if (isLoading) return <div className="max-w-4xl mx-auto p-8">Loading records…</div>;
-  if (error) return <div className="max-w-4xl mx-auto p-8 text-red-500">Failed to load records.</div>;
+  if (isLoading) return <LoadingState title="Loading records" message="Analyzing your best performances..." />;
+  if (error) return <ErrorState title="Failed to load records" message="There was a problem loading your records. Please try again." />;
   if (!records) return null;
 
   // Prepare all records as an array for sorting, based on tracking type

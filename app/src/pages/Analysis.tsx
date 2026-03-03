@@ -7,8 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
+import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
-import { useAllDays } from '@/features/db/useDayEntryData';
 import type { DateKey } from '@/features/db/localdb';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { usePreference } from '@/hooks/usePreference';
@@ -33,6 +35,7 @@ import { adjectivize, capitalize, pluralize } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
 import { buildSingleNumberAggregates, computeRunningAggregatePeriods } from '@/lib/period-aggregate';
+import { Link } from 'react-router-dom';
 
 function formatAggregationRange(
   startDate: Date,
@@ -58,10 +61,54 @@ function formatAggregationRange(
   }
 }
 
+// Abstract chart illustration for empty state
+function EmptyChartIllustration() {
+  return (
+    <svg
+      width="320"
+      height="180"
+      viewBox="0 0 320 180"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="opacity-40"
+    >
+      {/* Grid lines */}
+      <line x1="30" y1="30" x2="30" y2="150" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.15" />
+      <line x1="30" y1="150" x2="290" y2="150" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.15" />
+      <line x1="30" y1="60" x2="290" y2="60" stroke="currentColor" strokeWidth="1" strokeOpacity="0.08" strokeDasharray="5 5" />
+      <line x1="30" y1="90" x2="290" y2="90" stroke="currentColor" strokeWidth="1" strokeOpacity="0.08" strokeDasharray="5 5" />
+      <line x1="30" y1="120" x2="290" y2="120" stroke="currentColor" strokeWidth="1" strokeOpacity="0.08" strokeDasharray="5 5" />
+      
+      {/* Bars - different heights */}
+      <rect x="55" y="105" width="28" height="45" rx="3" fill="currentColor" fillOpacity="0.12" />
+      <rect x="105" y="70" width="28" height="80" rx="3" fill="currentColor" fillOpacity="0.16" />
+      <rect x="155" y="90" width="28" height="60" rx="3" fill="currentColor" fillOpacity="0.14" />
+      <rect x="205" y="75" width="28" height="75" rx="3" fill="currentColor" fillOpacity="0.15" />
+      <rect x="255" y="110" width="28" height="40" rx="3" fill="currentColor" fillOpacity="0.11" />
+      
+      {/* Trend line overlay */}
+      <path
+        d="M 55 115 Q 105 85 155 100 T 255 125"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeOpacity="0.2"
+        fill="none"
+        strokeLinecap="round"
+      />
+      
+      {/* Dots on trend line */}
+      <circle cx="55" cy="115" r="4" fill="currentColor" fillOpacity="0.25" />
+      <circle cx="105" cy="85" r="4" fill="currentColor" fillOpacity="0.25" />
+      <circle cx="155" cy="100" r="4" fill="currentColor" fillOpacity="0.25" />
+      <circle cx="205" cy="95" r="4" fill="currentColor" fillOpacity="0.25" />
+      <circle cx="255" cy="125" r="4" fill="currentColor" fillOpacity="0.25" />
+    </svg>
+  );
+}
+
 export function Analysis() {
   const { dataset } = useDatasetContext();
-  const aggregateData = useAllPeriodsAggregateData();
-  const { data: allDays = [] } = useAllDays(dataset.id);
+  const { allDays, isLoading, ...aggregateData } = useAllPeriodsAggregateData();
   const isMobile = useIsMobile();
   const primaryMetric = getPrimaryMetric(dataset.tracking);
 
@@ -245,14 +292,42 @@ export function Analysis() {
       : capitalize(adjectivize(actualAggregationType));
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
 
+  if (isLoading) {
+    return <LoadingState title="Loading analysis" message="Preparing your data visualizations..." />;
+  }
+
   if (!dataset || aggregateData.days.length === 0) {
     return (
       <div className="max-w-6xl mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-2">Analysis</h1>
-        <p className="text-slate-500 mb-8">No data available</p>
-        <div className="text-slate-500 mt-8">
-          Start tracking numbers to see analysis visualizations.
-        </div>
+        <Empty className="min-h-[60vh]">
+          <EmptyHeader>
+            <div className="mb-6">
+              <EmptyChartIllustration />
+            </div>
+            <EmptyTitle className="text-xl">No Data to Analyze</EmptyTitle>
+            <EmptyDescription className="text-base mt-3">
+              Start tracking numbers to unlock powerful insights and visualizations.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <div className="flex flex-col sm:flex-row gap-3 mt-2">
+              {dataset && (
+                <Button asChild size="lg">
+                  <Link to={`/dataset/${dataset.id}`}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Go to Calendar
+                  </Link>
+                </Button>
+              )}
+              <Button asChild variant="outline" size="lg">
+                <Link to="/">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  View Dashboard
+                </Link>
+              </Button>
+            </div>
+          </EmptyContent>
+        </Empty>
       </div>
     );
   }

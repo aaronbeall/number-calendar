@@ -1,6 +1,7 @@
 import { NumberText } from '@/components/ui/number-text';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
 import AchievementBadgeIcon from '@/features/achievements/AchievementBadgeIcon';
 import AchievementBadge from '@/features/achievements/AchievementBadge';
@@ -903,7 +904,7 @@ const EMPTY_ACHIEVEMENTS: CompletedAchievementResult[] = [];
 
 export function Timeline() {
   const { dataset } = useDatasetContext();
-  const { days: periodDays, weeks: periodWeeks, months: periodMonths, years: periodYears, alltime: alltimeAggregate } = useAllPeriodsAggregateData();
+  const { days: periodDays, weeks: periodWeeks, months: periodMonths, years: periodYears, alltime: alltimeAggregate, isLoading } = useAllPeriodsAggregateData();
   const { data: notes = [] } = useNotes(dataset.id);
   const achievementResults = useAchievements(dataset.id);
   const achievementResultsByDateKey = useMemo(
@@ -1390,6 +1391,10 @@ export function Timeline() {
 
     return result;
   }, [activeYearKey, dayAggByKey, dataset.tracking, dataset.valence, todayDate]);
+
+  if (isLoading) {
+    return <LoadingState title="Loading timeline" message="Preparing your timeline..."/>;
+  }
 
   return (
     <div className="min-h-screen py-6">

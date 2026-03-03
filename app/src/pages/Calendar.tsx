@@ -13,6 +13,7 @@ import { MonthSummary } from '@/features/stats/MonthSummary';
 import { YearSummary } from '@/features/stats/YearSummary';
 import { YearOverview } from '@/features/year/YearOverview';
 import { AllYearsOverview } from '@/features/year/AllYearsOverview';
+import { LoadingState } from '@/components/PageStates';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { getMonthDays } from "@/lib/calendar";
@@ -62,7 +63,7 @@ export function Calendar({
   // Chart state moved into MonthChart and YearChart components
   const [showWeekends, setShowWeekends] = useState(true);
 
-  const { days, weeks, months, years } = useAllPeriodsAggregateData();
+  const { days, weeks, months, years, isLoading } = useAllPeriodsAggregateData();
   const saveDayMutation = useSaveDay();
 
   const handleSaveDay = async (date: string, numbers: number[]) => {
@@ -235,6 +236,10 @@ export function Calendar({
   const handleAllYearsOverviewYearClick = useCallback((selectedYear: number) => {
     setYear(selectedYear);
   }, [setYear]);
+
+  if (isLoading) {
+    return <LoadingState title="Loading calendar" message="Preparing your calendar..."/>;
+  }
 
   return (
     <div className="min-h-screen">
