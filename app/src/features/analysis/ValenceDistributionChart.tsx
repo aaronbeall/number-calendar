@@ -57,12 +57,12 @@ export function ValenceDistributionChart({
     periods.forEach((period) => {
       if (period.stats.count === 0) return;
       const value = getValenceValueFromData(period, tracking) ?? 0;
-      const valenceValue = getValueForValence(value, valence, { good: 1, bad: -1, neutral: 0 });
 
-      if (valenceValue > 0) {
+      // Count based on actual value sign, not semantic valence
+      if (value > 0) {
         posCount += 1;
         posTotal += Math.abs(value);
-      } else if (valenceValue < 0) {
+      } else if (value < 0) {
         negCount += 1;
         negTotal += Math.abs(value);
       }
@@ -75,7 +75,7 @@ export function ValenceDistributionChart({
     };
 
     if (tracking === 'series' && posCount > 0 && negCount > 0) {
-      // Impact ratio: average magnitude per occurrence for each valence
+      // Impact ratio: average magnitude per occurrence for each direction
       const posAvg = posTotal / posCount;
       const negAvg = negTotal / negCount;
       metrics.impactRatio = posAvg / negAvg;
