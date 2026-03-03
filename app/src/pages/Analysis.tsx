@@ -234,7 +234,7 @@ export function Analysis() {
           setPresetRange(newPreset);
         }}>
           <SelectTrigger className="w-full text-xs h-9 sm:h-8">
-            <SelectValue placeholder={formatAggregationRange(customStart, customEnd, actualAggregationType)} />
+            <SelectValue placeholder={formatAggregationRange(timeRange.startDate, timeRange.endDate, actualAggregationType)} />
           </SelectTrigger>
           <SelectContent>
             {availablePresets.map(preset => (
@@ -252,8 +252,8 @@ export function Analysis() {
           valence={dataset.valence}
           aggregation={actualAggregationType}
           allPeriods={periodsForAggregation}
-          startDate={customStart}
-          endDate={customEnd}
+          startDate={timeRange.startDate}
+          endDate={timeRange.endDate}
           onRangeChange={(start, end) => {
             setCustomStart(start);
             setCustomEnd(end);
