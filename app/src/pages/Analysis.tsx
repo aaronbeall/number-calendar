@@ -188,6 +188,7 @@ export function Analysis() {
   }, [allDays, timeRange]);
 
   // Group days by aggregation type for AggregationBarChart
+  // Note: This is still used by PeriodComparisonChart
   const groupedData = useMemo(() => {
     const groups: Record<string, typeof daysInRange> = {};
     
@@ -448,8 +449,9 @@ export function Analysis() {
             </h3>
             <AggregationBarChart
               key={dataset.id}
-              groupedData={groupedData}
+              periods={analysisData.periods}
               aggregationType={actualAggregationType}
+              tracking={dataset.tracking}
               valence={dataset.valence}
             />
           </Card>

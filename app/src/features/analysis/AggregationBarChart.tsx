@@ -1,9 +1,13 @@
 import { useTheme } from '@/components/ThemeProvider';
-import type { DayEntry, Valence, DateKey, MonthKey } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import type { AggregationType } from '@/lib/analysis';
-import { formatFriendlyDate } from '@/lib/friendly-date';
+import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import { getPrimaryMetric } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
+import { format } from 'date-fns';
+import { useMemo } from 'react';
 import {
   Bar,
   BarChart,
@@ -14,22 +18,27 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+
 interface AggregationBarChartProps {
-  groupedData: Record<string, DayEntry[]>;
+  periods: PeriodAggregateData<any>[];
   aggregationType: AggregationType;
+  tracking: Tracking;
   valence: Valence;
 }
 
 interface BarDataPoint {
+  dateKey: string;
   label: string;
-  total: number;
-  count: number;
-  avg: number;
+  value: number;
+  // For tooltip context
+  statsValue?: number;
+  deltaValue?: number;
 }
 
 export function AggregationBarChart({
-  groupedData,
+  periods,
   aggregationType,
+  tracking,
   valence,
 }: AggregationBarChartProps) {
   const { theme } = useTheme();
@@ -39,31 +48,50 @@ export function AggregationBarChart({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  const data: BarDataPoint[] = Object.entries(groupedData)
-    .map(([groupKey, days]) => {
-      const allNumbers = days.flatMap((day) => day.numbers);
-      const total = allNumbers.reduce((a, b) => a + b, 0);
-      const avg = allNumbers.length > 0 ? total / allNumbers.length : 0;
+  const primaryMetric = getPrimaryMetric(tracking);
+  
+  // Determine valence source from tracking mode
+  // Series tracking: valence source = stats
+  // Trend tracking: valence source = deltas
+  const valenceSource: 'stats' | 'deltas' = tracking === 'series' ? 'stats' : 'deltas';
 
-      let label = groupKey;
-      if (aggregationType === 'none' || aggregationType === 'day') {
-        label = formatFriendlyDate(groupKey as DateKey);
-      } else if (aggregationType === 'month') {
-        label = formatFriendlyDate(groupKey as MonthKey);
-      } else if (aggregationType === 'week') {
-        label = formatFriendlyDate(groupKey as DateKey);
-      } else if (aggregationType === 'year') {
-        label = formatFriendlyDate(groupKey as DateKey);
+  const formatPeriodLabel = (dateKey: string): string => {
+    try {
+      const date = parseDateKey(dateKey as any);
+      switch (aggregationType) {
+        case 'week':
+          return `W${format(date, 'ww')} '${format(date, 'yy')}`;
+        case 'month':
+          return format(date, "MMM ''yy");
+        case 'year':
+          return format(date, 'yyyy');
+        case 'none':
+        case 'day':
+        default:
+          return format(date, "MMM d, ''yy");
       }
+    } catch {
+      return dateKey;
+    }
+  };
 
-      return {
-        label,
-        total,
-        count: allNumbers.length,
-        avg,
-      };
-    })
-    .sort((a, b) => a.label.localeCompare(b.label));
+  const data: BarDataPoint[] = useMemo(() => {
+    return periods
+      .filter((period) => period.stats.count > 0)
+      .map((period) => {
+        const statsValue = period.stats[primaryMetric];
+        const deltaValue = period.deltas?.[primaryMetric];
+        const value = valenceSource === 'stats' ? statsValue : deltaValue ?? 0;
+
+        return {
+          dateKey: period.dateKey,
+          label: formatPeriodLabel(period.dateKey),
+          value,
+          statsValue,
+          deltaValue,
+        };
+      });
+  }, [periods, primaryMetric, valenceSource, aggregationType]);
 
   if (data.length === 0) {
     return <div>No data available</div>;
@@ -72,15 +100,46 @@ export function AggregationBarChart({
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
   
-  // Get colors based on valence
-  const getBarColor = (value: number) => {
-    if (valence === 'neutral') return isDark ? '#60a5fa' : '#3b82f6';
-    const isPositive = getValueForValence(value, valence, { good: true, bad: false, neutral: false });
-    if (isPositive) {
-      return isDark ? '#4ade80' : '#22c55e';
-    } else {
-      return isDark ? '#f87171' : '#ef4444';
-    }
+  // Get bar color based on valence
+  const getBarColor = (value: number): string => {
+    return getValueForValence(value, valence, {
+      good: '#22c55e',
+      bad: '#ef4444',
+      neutral: '#3b82f6',
+    });
+  };
+
+  const renderTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ payload?: BarDataPoint }>;
+  }) => {
+    if (!active || !payload?.length || !payload[0].payload) return null;
+    const point = payload[0].payload;
+
+    const displayValue = point.value;
+
+    return (
+      <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+        <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+          {formatFriendlyDate(point.dateKey as any)}
+        </div>
+        <div className="flex items-center gap-2">
+          <div
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: getBarColor(point.value) }}
+          />
+          <span
+            className="text-sm font-medium"
+            style={{ color: getBarColor(displayValue) }}
+          >
+            {formatValue(displayValue, { delta: true })}
+          </span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -93,23 +152,18 @@ export function AggregationBarChart({
             stroke={axisColor}
             style={{ fontSize: '12px' }}
             tick={{ fill: axisColor }}
-            angle={-45}
-            textAnchor="end"
-            height={80}
+            interval={Math.floor(data.length / 8) || 0}
           />
-          <YAxis stroke={axisColor} style={{ fontSize: '12px' }} tick={{ fill: axisColor }} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: isDark ? '#1e293b' : '#ffffff',
-              border: `1px solid ${isDark ? '#475569' : '#e2e8f0'}`,
-              borderRadius: '8px',
-            }}
-            formatter={(value) => formatValue(value as number)}
-            labelFormatter={(label) => label as string}
+          <YAxis
+            stroke={axisColor}
+            style={{ fontSize: '12px' }}
+            tick={{ fill: axisColor }}
+            tickFormatter={(value) => formatValue(Number(value), { short: true })}
           />
-          <Bar dataKey="total" fill="#8884d8" isAnimationActive={true} radius={[8, 8, 0, 0]}>
+          <Tooltip content={renderTooltip} />
+          <Bar dataKey="value" fill="#8884d8" isAnimationActive={true} radius={[8, 8, 0, 0]}>
             {data.map((entry, index) => (
-              <Cell key={`bar-${index}`} fill={getBarColor(entry.total)} />
+              <Cell key={`bar-${index}`} fill={getBarColor(entry.value)} />
             ))}
           </Bar>
         </BarChart>
