@@ -31,7 +31,7 @@ interface TrendAnalysisChartProps {
   selectedMetrics?: NumberMetric[];
 }
 
-export type TrendDataMode = 'cumulative' | 'delta';
+export type TrendDataMode = 'trend' | 'change';
 
 type TrendPoint = {
   dateKey: string;
@@ -61,6 +61,11 @@ export function TrendAnalysisChart({
   const gradientId = useId();
 
   const primaryMetric = getPrimaryMetric(tracking);
+  
+  // Determine valence source from tracking mode
+  // Series tracking: valence source = stats
+  // Trend tracking: valence source = deltas
+  const valenceSource: 'stats' | 'deltas' = tracking === 'series' ? 'stats' : 'deltas';
 
   const displayMetrics = useMemo(() => {
     const unique = [
@@ -117,15 +122,21 @@ export function TrendAnalysisChart({
           point.statsValue![metric] = period.stats?.[metric];
           point.deltaValue![metric] = period.deltas?.[metric];
 
-          // Set main display value based on current mode
-          if (tracking === 'series') {
+          // Unified data model: display value based on valence source + mode
+          // Valence source = stats:
+          //   Trend: show cumulatives
+          //   Change: show stats
+          // Valence source = deltas:
+          //   Trend: show stats
+          //   Change: show deltas
+          if (valenceSource === 'stats') {
             point[metric] = 
-              mode === 'cumulative' 
+              mode === 'trend' 
                 ? period.cumulatives?.[metric]
                 : period.stats?.[metric];
           } else {
             point[metric] = 
-              mode === 'delta'
+              mode === 'trend'
                 ? period.stats?.[metric]
                 : period.deltas?.[metric];
           }
@@ -133,7 +144,7 @@ export function TrendAnalysisChart({
 
         return point;
       });
-  }, [periods, tracking, mode, displayMetrics, aggregationType]);
+  }, [periods, valenceSource, mode, displayMetrics, aggregationType]);
 
   if (data.length === 0) {
     return <div>No data available</div>;
@@ -141,7 +152,47 @@ export function TrendAnalysisChart({
 
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
-  const primaryColor = getValueForValence(data[data.length - 1]?.[primaryMetric] ?? 0, valence, {
+
+  // Extract valence source values for color calculations
+  const valenceSourceValues = data
+    .map((point) =>
+      valenceSource === 'stats'
+        ? point.statsValue?.[primaryMetric]
+        : point.deltaValue?.[primaryMetric]
+    )
+    .filter((value): value is number => typeof value === 'number');
+  
+  const latestValenceValue = valenceSourceValues.length > 0
+    ? valenceSourceValues[valenceSourceValues.length - 1]
+    : 0;
+  
+  // Extract displayed values for gradient positioning
+  const displayedValues = data
+    .map((point) => point[primaryMetric])
+    .filter((value): value is number => typeof value === 'number');
+  
+  const minDisplayed = displayedValues.length ? Math.min(...displayedValues) : 0;
+  const maxDisplayed = displayedValues.length ? Math.max(...displayedValues) : 0;
+  
+  // Gradient center point:
+  // - Most cases: center on 0
+  // - Valence source = deltas + trend mode: center on first data point's value
+  const gradientCenterValue = valenceSource === 'deltas' && mode === 'trend'
+    ? (data.length > 0 ? data[0][primaryMetric] ?? 0 : 0)
+    : 0;
+  
+  // Calculate gradient offset based on displayed values (not valence source)
+  const zeroOffset =
+    maxDisplayed <= gradientCenterValue 
+      ? 0 
+      : minDisplayed >= gradientCenterValue 
+        ? 1 
+        : (maxDisplayed - gradientCenterValue) / (maxDisplayed - minDisplayed);
+
+  // Always use gradient with proper valence coloring
+  const shouldUseGradientPrimary = true;
+
+  const primaryColor = getValueForValence(latestValenceValue, valence, {
     good: '#22c55e',
     bad: '#ef4444',
     neutral: '#3b82f6',
@@ -158,17 +209,9 @@ export function TrendAnalysisChart({
     neutral: '#3b82f6',
   });
 
-  const primaryValues = data
-    .map((point) => point[primaryMetric])
-    .filter((value): value is number => typeof value === 'number');
-  const minPrimary = primaryValues.length ? Math.min(...primaryValues) : 0;
-  const maxPrimary = primaryValues.length ? Math.max(...primaryValues) : 0;
-  const zeroOffset =
-    maxPrimary <= 0 ? 0 : minPrimary >= 0 ? 1 : maxPrimary / (maxPrimary - minPrimary);
-
   const getLineColor = (metric: NumberMetric): string => {
     if (metric === primaryMetric) {
-      if (tracking === 'series') {
+      if (shouldUseGradientPrimary) {
         return `url(#trend-gradient-${gradientId})`;
       }
       return primaryColor;
@@ -218,53 +261,93 @@ export function TrendAnalysisChart({
         <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatFriendlyDate(point.dateKey as any)}</div>
         <div className="space-y-1">
           {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {
-            const primaryValue = point[metric];
             const dash = getLineDash(metric);
             
-            let contextLabel = '';
-            let contextValue = 0;
+            // Unified tooltip model based on valence source and mode
+            // Valence = stats + trend: primary=cumulative/color-by-cumulative, secondary=stats/color-by-stats
+            // Valence = stats + change: primary=stats/color-by-stats, secondary=cumulative/color-by-cumulative
+            // Valence = deltas + trend: primary=stats/color-by-deltas, secondary=deltas/color-by-deltas
+            // Valence = deltas + change: primary=deltas/color-by-deltas, secondary=stats/color-by-deltas
+            let primaryValue = 0;
+            let secondaryValue = 0;
+            let primaryValenceValue = 0;
+            let secondaryValenceValue = 0;
+            let primaryShowDelta = false;
+            let secondaryShowDelta = false;
             
-            if (tracking === 'series') {
-              // For series: show cumulative and stats as context
-              if (mode === 'cumulative') {
-                contextLabel = `(daily: `;
-                contextValue = point.statsValue?.[metric] ?? 0;
+            if (valenceSource === 'stats') {
+              if (mode === 'trend') {
+                primaryValue = point.cumulativeValue?.[metric] ?? 0;
+                secondaryValue = point.statsValue?.[metric] ?? 0;
+                primaryValenceValue = point.cumulativeValue?.[metric] ?? 0;
+                secondaryValenceValue = point.statsValue?.[metric] ?? 0;
+                primaryShowDelta = false;
+                secondaryShowDelta = true; // stats are daily values (changes)
               } else {
-                contextLabel = `(cumul: `;
-                contextValue = point.cumulativeValue?.[metric] ?? 0;
+                primaryValue = point.statsValue?.[metric] ?? 0;
+                secondaryValue = point.cumulativeValue?.[metric] ?? 0;
+                primaryValenceValue = point.statsValue?.[metric] ?? 0;
+                secondaryValenceValue = point.cumulativeValue?.[metric] ?? 0;
+                primaryShowDelta = true; // stats are daily values (changes)
+                secondaryShowDelta = false;
               }
             } else {
-              // For trend: show stats and deltas as context
-              if (mode === 'delta') {
-                contextLabel = `(change: `;
-                contextValue = point.deltaValue?.[metric] ?? 0;
+              // Valence source = deltas: both use deltas for valence coloring
+              if (mode === 'trend') {
+                primaryValue = point.statsValue?.[metric] ?? 0;
+                secondaryValue = point.deltaValue?.[metric] ?? 0;
+                primaryValenceValue = point.deltaValue?.[metric] ?? 0;
+                secondaryValenceValue = point.deltaValue?.[metric] ?? 0;
+                primaryShowDelta = false;
+                secondaryShowDelta = true; // deltas are changes
               } else {
-                contextLabel = `(value: `;
-                contextValue = point.statsValue?.[metric] ?? 0;
+                primaryValue = point.deltaValue?.[metric] ?? 0;
+                secondaryValue = point.statsValue?.[metric] ?? 0;
+                primaryValenceValue = point.deltaValue?.[metric] ?? 0;
+                secondaryValenceValue = point.deltaValue?.[metric] ?? 0;
+                primaryShowDelta = true; // deltas are changes
+                secondaryShowDelta = false;
               }
             }
+            
+            // Check if metric has valence
+            const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+            
+            // Calculate swatch color (primary uses valence, secondary uses static colors)
+            const swatchColor = metric === primaryMetric
+              ? getValueForValence(primaryValenceValue, metricValence, {
+                  good: '#22c55e',
+                  bad: '#ef4444',
+                  neutral: '#3b82f6',
+                })
+              : getSwatchColor(metric);
+
+            // Calculate secondary color based on secondary valence value
+            const secondaryColor = getValueForValence(secondaryValenceValue, metricValence, {
+              good: '#22c55e',
+              bad: '#ef4444',
+              neutral: '#3b82f6',
+            });
 
             return (
               <div key={metric} className="flex items-center gap-2 text-xs">
                 <span
                   className="inline-block h-0.5 w-3"
                   style={{
-                    backgroundColor: getSwatchColor(metric),
+                    backgroundColor: swatchColor,
                     borderTopStyle: dash ? 'dashed' : 'solid',
                     borderTopWidth: dash ? 1 : 0,
                   }}
                 />
                 <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
                   <span className="font-semibold">
-                    <NumberText value={primaryValue ?? 0} valenceValue={primaryValue ?? 0} valence={valence} />
+                    <NumberText value={primaryValue} valenceValue={primaryValenceValue} valence={metricValence} delta={primaryShowDelta} />
                   </span>
                   <span className="text-slate-600 dark:text-slate-400">
                     {METRIC_DISPLAY_INFO[metric].label}
                   </span>
-                  <span className="opacity-60">
-                    {contextLabel}
-                    <NumberText value={contextValue} valenceValue={contextValue} valence={valence} delta className="inline" />
-                    )
+                  <span style={{ color: secondaryColor }}>
+                    (<NumberText value={secondaryValue} valenceValue={secondaryValenceValue} valence={metricValence} delta={secondaryShowDelta} className="inline" />)
                   </span>
                 </div>
               </div>
@@ -280,7 +363,7 @@ export function TrendAnalysisChart({
       <div className="min-h-0 flex-1 w-full relative">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-          {tracking === 'series' && (
+          {shouldUseGradientPrimary && (
             <defs>
               <linearGradient id={`trend-gradient-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor={positiveColor} />
@@ -304,7 +387,7 @@ export function TrendAnalysisChart({
             tick={{ fill: axisColor }}
             tickFormatter={(value) => formatValue(Number(value), { short: true })}
           />
-            {tracking === 'series' && mode === 'cumulative' && (
+            {valenceSource === 'stats' && mode === 'trend' && (
               <ReferenceLine y={0} stroke={axisColor} strokeOpacity={0.35} strokeDasharray="3 3" />
             )}
             <Tooltip content={renderTooltip} />

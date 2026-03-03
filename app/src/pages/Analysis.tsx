@@ -77,7 +77,7 @@ export function Analysis() {
     `statsSummary_metrics_${dataset.id}`,
     defaultSelectedSummaryMetrics,
   );
-  const defaultTrendMode: TrendDataMode = dataset.tracking === 'series' ? 'cumulative' : 'delta';
+  const defaultTrendMode: TrendDataMode = dataset.tracking === 'series' ? 'trend' : 'change';
   const [trendChartMode, setTrendChartMode] = usePreference<TrendDataMode>(
     `trendChart_dataMode_${dataset.tracking}_${dataset.id}`,
     defaultTrendMode,
@@ -405,22 +405,22 @@ export function Analysis() {
               >
                 {dataset.tracking === 'series' ? (
                   <>
-                    <ToggleGroupItem value="cumulative" aria-label="Cumulative">
+                    <ToggleGroupItem value="trend" aria-label="Trend">
                       <LineChart className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Cumulative</span>
+                      <span className="hidden sm:inline">Trend</span>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="delta" aria-label={aggregationModeLabel}>
+                    <ToggleGroupItem value="change" aria-label={aggregationModeLabel}>
                       <BarChart3 className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">{aggregationModeLabel}</span>
                     </ToggleGroupItem>
                   </>
                 ) : (
                   <>
-                    <ToggleGroupItem value="delta" aria-label="Trend">
+                    <ToggleGroupItem value="trend" aria-label="Trend">
                       <LineChart className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">Trend</span>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="cumulative" aria-label={trendChangeModeLabel}>
+                    <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
                       <TrendingUp className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">{trendChangeModeLabel}</span>
                     </ToggleGroupItem>
