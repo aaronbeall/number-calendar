@@ -1,5 +1,12 @@
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import { buildPriorAggregateMap, createEmptyAggregate, computeAggregateCumulatives } from '@/lib/period-aggregate';
+import type { DayEntry } from '@/features/db/localdb';
+import {
+  buildPriorAggregateMap,
+  createEmptyAggregate,
+  computeAggregateCumulatives,
+  buildSingleNumberAggregates,
+  computeRunningAggregatePeriods,
+} from '@/lib/period-aggregate';
 import { computeNumberStats } from '@/lib/stats';
 import { describe, expect, it } from 'vitest';
 
@@ -8,6 +15,12 @@ const makeDayAggregate = (dateKey: PeriodAggregateData<'day'>['dateKey'], number
   const stats = computeNumberStats(numbers) || createEmptyAggregate('2024-01-01', 'day').stats;
   return { ...aggregate, numbers, stats };
 };
+
+const makeDayEntry = (date: DayEntry['date'], numbers: number[]): DayEntry => ({
+  date,
+  numbers,
+  datasetId: 'test-dataset',
+});
 
 describe('buildPriorAggregateMap', () => {
   it('skips empty days when selecting prior aggregates', () => {
@@ -116,5 +129,62 @@ describe('computeAggregateCumulatives', () => {
     // Mean of [30, 70, 50] = 50
     expect(result?.mean).toBe(50);
     // These are computed from the period totals, not carried forward from first period
+  });
+});
+
+describe('buildSingleNumberAggregates', () => {
+  it('creates one aggregate per number with normalized stats', () => {
+    const days: DayEntry[] = [makeDayEntry('2026-01-01', [5, -2])];
+    const result = buildSingleNumberAggregates(days);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].numbers).toEqual([5]);
+    expect(result[0].stats.count).toBe(1);
+    expect(result[0].stats.total).toBe(5);
+    expect(result[0].stats.mean).toBe(5);
+    expect(result[0].stats.last).toBe(5);
+
+    expect(result[1].numbers).toEqual([-2]);
+    expect(result[1].stats.count).toBe(1);
+    expect(result[1].stats.total).toBe(-2);
+    expect(result[1].stats.mean).toBe(-2);
+    expect(result[1].stats.last).toBe(-2);
+
+    expect(result[0].deltas.last).toBe(0);
+    expect(result[1].deltas.last).toBe(-7);
+    expect(result[0].percents.last).toBe(0);
+    expect(result[1].percents.last).toBe(-140);
+  });
+});
+
+describe('computeRunningAggregatePeriods', () => {
+  it('computes running distributional cumulatives from primary metric values', () => {
+    const days: DayEntry[] = [makeDayEntry('2026-01-01', [10, 30, 20])];
+    const source = buildSingleNumberAggregates(days);
+    const result = computeRunningAggregatePeriods(source, 'last');
+
+    expect(result).toHaveLength(3);
+
+    expect(result[0].cumulatives.median).toBe(10);
+    expect(result[1].cumulatives.median).toBe(20);
+    expect(result[2].cumulatives.median).toBe(20);
+
+    expect(result[2].cumulatives.min).toBe(10);
+    expect(result[2].cumulatives.max).toBe(30);
+    expect(result[2].cumulatives.midrange).toBe(20);
+  });
+
+  it('preserves period-local primary metric in stats while updating other running metrics', () => {
+    const days: DayEntry[] = [makeDayEntry('2026-01-01', [2, 4, 8])];
+    const source = buildSingleNumberAggregates(days);
+    const result = computeRunningAggregatePeriods(source, 'last');
+
+    expect(result[0].stats.last).toBe(2);
+    expect(result[1].stats.last).toBe(4);
+    expect(result[2].stats.last).toBe(8);
+
+    expect(result[2].stats.min).toBe(2);
+    expect(result[2].stats.max).toBe(8);
+    expect(result[2].stats.median).toBe(4);
   });
 });

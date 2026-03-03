@@ -67,24 +67,36 @@ export function TrendAnalysisChart({
   // Trend tracking: valence source = deltas
   const valenceSource: 'stats' | 'deltas' = tracking === 'series' ? 'stats' : 'deltas';
 
+  const suppressMetricOptions = aggregationType === 'none' && mode === 'change';
+
   const displayMetrics = useMemo(() => {
+    if (suppressMetricOptions) {
+      return [primaryMetric];
+    }
     const unique = [
       primaryMetric,
       ...selectedMetrics.filter((metric): metric is NumberMetric => metric !== primaryMetric),
     ];
     return unique.length > 0 ? unique : [primaryMetric];
-  }, [primaryMetric, selectedMetrics]);
+  }, [primaryMetric, selectedMetrics, suppressMetricOptions]);
 
-  // Default: show primary metric + average (if available)
   const [visibleMetrics, setVisibleMetrics] = useState<Set<NumberMetric>>(() => {
     const defaults = new Set<NumberMetric>([primaryMetric]);
-    if (displayMetrics.includes('mean')) {
+    if (!suppressMetricOptions && displayMetrics.includes('mean')) {
       defaults.add('mean');
     }
     return defaults;
   });
 
-  const formatPeriodLabel = (dateKey: string): string => {
+  const formatPeriodLabel = (dateKey: string, index?: number): string => {
+    if (aggregationType === 'none') {
+      // Use the array index to number entries
+      if (index !== undefined) {
+        return `#${index + 1}`;
+      }
+      return dateKey;
+    }
+
     try {
       const date = parseDateKey(dateKey as any);
       switch (aggregationType) {
@@ -94,7 +106,6 @@ export function TrendAnalysisChart({
           return format(date, "MMM ''yy");
         case 'year':
           return format(date, 'yyyy');
-        case 'none':
         case 'day':
         default:
           return format(date, "MMM d, ''yy");
@@ -107,10 +118,10 @@ export function TrendAnalysisChart({
   const data: TrendPoint[] = useMemo(() => {
     return periods
       .filter((period) => period.stats.count > 0)
-      .map((period) => {
+      .map((period, index) => {
         const point: TrendPoint = {
           dateKey: period.dateKey,
-          label: formatPeriodLabel(period.dateKey),
+          label: formatPeriodLabel(period.dateKey, index),
           cumulativeValue: {},
           statsValue: {},
           deltaValue: {},
@@ -144,7 +155,7 @@ export function TrendAnalysisChart({
 
         return point;
       });
-  }, [periods, valenceSource, mode, displayMetrics, aggregationType]);
+  }, [periods, valenceSource, mode, displayMetrics]);
 
   if (data.length === 0) {
     return <div>No data available</div>;
@@ -232,6 +243,13 @@ export function TrendAnalysisChart({
     return SECONDARY_DASHES[Math.max(0, metricIndex - 1) % SECONDARY_DASHES.length];
   };
 
+  const getMetricLabel = (metric: NumberMetric): string => {
+    if (aggregationType === 'none' && metric === primaryMetric) {
+      return 'Entry';
+    }
+    return METRIC_DISPLAY_INFO[metric].label;
+  };
+
   const toggleMetric = (metric: NumberMetric) => {
     setVisibleMetrics((prev) => {
       const next = new Set(prev);
@@ -244,7 +262,7 @@ export function TrendAnalysisChart({
     });
   };
 
-  const hasVisibleMetrics = displayMetrics.some((metric) => visibleMetrics.has(metric));
+  const hasVisibleMetrics = suppressMetricOptions || displayMetrics.some((metric) => visibleMetrics.has(metric));
 
   const renderTooltip = ({
     active,
@@ -258,7 +276,12 @@ export function TrendAnalysisChart({
 
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
-        <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatFriendlyDate(point.dateKey as any)}</div>
+        {aggregationType === 'none' && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{point.label}</div>
+        )}
+        {aggregationType !== 'none' && (
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatFriendlyDate(point.dateKey as any)}</div>
+        )}
         <div className="space-y-1">
           {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {
             const dash = getLineDash(metric);
@@ -292,20 +315,20 @@ export function TrendAnalysisChart({
                 secondaryShowDelta = false;
               }
             } else {
-              // Valence source = deltas: both use deltas for valence coloring
+              // Valence source = deltas: use deltas for valence coloring
               if (mode === 'trend') {
                 primaryValue = point.statsValue?.[metric] ?? 0;
                 secondaryValue = point.deltaValue?.[metric] ?? 0;
                 primaryValenceValue = point.deltaValue?.[metric] ?? 0;
                 secondaryValenceValue = point.deltaValue?.[metric] ?? 0;
                 primaryShowDelta = false;
-                secondaryShowDelta = true; // deltas are changes
+                secondaryShowDelta = true;
               } else {
                 primaryValue = point.deltaValue?.[metric] ?? 0;
                 secondaryValue = point.statsValue?.[metric] ?? 0;
                 primaryValenceValue = point.deltaValue?.[metric] ?? 0;
                 secondaryValenceValue = point.deltaValue?.[metric] ?? 0;
-                primaryShowDelta = true; // deltas are changes
+                primaryShowDelta = true;
                 secondaryShowDelta = false;
               }
             }
@@ -344,7 +367,7 @@ export function TrendAnalysisChart({
                     <NumberText value={primaryValue} valenceValue={primaryValenceValue} valence={metricValence} delta={primaryShowDelta} />
                   </span>
                   <span className="text-slate-600 dark:text-slate-400">
-                    {METRIC_DISPLAY_INFO[metric].label}
+                    {getMetricLabel(metric)}
                   </span>
                   <span style={{ color: secondaryColor }}>
                     (<NumberText value={secondaryValue} valenceValue={secondaryValenceValue} valence={metricValence} delta={secondaryShowDelta} className="inline" />)
@@ -402,7 +425,7 @@ export function TrendAnalysisChart({
                 dot={false}
                 strokeWidth={metric === primaryMetric ? 2.5 : 1.75}
                 isAnimationActive
-                name={METRIC_DISPLAY_INFO[metric].label}
+                name={getMetricLabel(metric)}
                 hide={!visibleMetrics.has(metric)}
               />
             ))}
@@ -414,26 +437,28 @@ export function TrendAnalysisChart({
           </div>
         )}
       </div>
-      <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap gap-2 pr-1">
-        {displayMetrics.map((metric) => {
-          const isVisible = visibleMetrics.has(metric);
-          return (
-            <button
-              key={metric}
-              type="button"
-              onClick={() => toggleMetric(metric)}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors ${isVisible ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-transparent border-slate-200 dark:border-slate-800 opacity-70'}`}
-              title={isVisible ? 'Hide line' : 'Show line'}
-            >
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: getSwatchColor(metric) }}
-              />
-              <span className="text-slate-700 dark:text-slate-300">{METRIC_DISPLAY_INFO[metric].label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {!suppressMetricOptions && (
+        <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap gap-2 pr-1">
+          {displayMetrics.map((metric) => {
+            const isVisible = visibleMetrics.has(metric);
+            return (
+              <button
+                key={metric}
+                type="button"
+                onClick={() => toggleMetric(metric)}
+                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors ${isVisible ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-transparent border-slate-200 dark:border-slate-800 opacity-70'}`}
+                title={isVisible ? 'Hide line' : 'Show line'}
+              >
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full"
+                  style={{ backgroundColor: getSwatchColor(metric) }}
+                />
+                <span className="text-slate-700 dark:text-slate-300">{getMetricLabel(metric)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

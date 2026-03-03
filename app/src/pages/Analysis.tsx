@@ -32,6 +32,7 @@ import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
 import { adjectivize, capitalize, pluralize } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
+import { buildSingleNumberAggregates, computeRunningAggregatePeriods } from '@/lib/period-aggregate';
 
 function formatAggregationRange(
   startDate: Date,
@@ -210,6 +211,26 @@ export function Analysis() {
     
     return groups;
   }, [daysInRange, actualAggregationType]);
+
+  const trendChartPeriods = useMemo(() => {
+    // Compute aggregates on full dataset from start through range end, then filter to in-range
+    let allComputedPeriods;
+    
+    if (actualAggregationType === 'none') {
+      // Use all days (not just in-range) to build aggregates with full historical context
+      const singleNumberAggregates = buildSingleNumberAggregates(allDays);
+      allComputedPeriods = computeRunningAggregatePeriods(singleNumberAggregates, primaryMetric);
+    } else {
+      // Use all periods (not just in-range) to compute running aggregates with full historical context
+      allComputedPeriods = computeRunningAggregatePeriods(periodsForAggregation, primaryMetric);
+    }
+    
+    // Filter computed periods to in-range for display
+    return allComputedPeriods.filter(period => {
+      const periodDate = parseDateKey(period.dateKey);
+      return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
+    });
+  }, [actualAggregationType, allDays, periodsForAggregation, primaryMetric, timeRange]);
 
   const aggregationOptions = [
     { value: 'none', label: 'None', icon: Ban },
@@ -432,7 +453,7 @@ export function Analysis() {
             </div>
             <TrendAnalysisChart
               key={dataset.id}
-              periods={analysisData.periods}
+              periods={trendChartPeriods}
               aggregationType={actualAggregationType}
               tracking={dataset.tracking}
               mode={trendChartMode}
@@ -445,7 +466,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
-              {actualAggregationType === 'none' ? '' : capitalize(adjectivize(actualAggregationType))} Change
+              {actualAggregationType === 'none' ? 'Entries' : capitalize(adjectivize(actualAggregationType))} Change
             </h3>
             <AggregationBarChart
               key={dataset.id}
@@ -465,7 +486,8 @@ export function Analysis() {
             </h3>
             <DistributionHistogram
               key={dataset.id}
-              numbers={dataPoints}
+              periods={analysisData.periods}
+              tracking={dataset.tracking}
               valence={dataset.valence}
             />
           </Card>
@@ -489,7 +511,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <TrendingUp className="w-4 h-4" />
-              {actualAggregationType === 'none' ? 'Raw' : capitalize(adjectivize(actualAggregationType))} Comparison
+              {actualAggregationType === 'none' ? 'Entries' : capitalize(adjectivize(actualAggregationType))} Comparison
             </h3>
             <PeriodComparisonChart
               key={dataset.id}

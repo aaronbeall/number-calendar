@@ -101,34 +101,9 @@ export function filterPeriodsByTimeRange<T extends TimePeriod>(
   const { startDate, endDate } = timeRange;
   
   return periods.filter(period => {
-    const dateKey = period.dateKey;
-    if (!dateKey) return false;
-    
-    // Parse the dateKey to get its date representation
-    try {
-      const periodDate = parseDateKey(dateKey);
-      
-      // For period-based keys, we need to check if the period overlaps with the range
-      // A period can be partially in the range
-      if (period.period === 'week') {
-        const weekStart = startOfWeek(periodDate);
-        const weekEnd = endOfWeek(periodDate);
-        return weekEnd >= startDate && weekStart <= endDate;
-      } else if (period.period === 'month') {
-        const monthStart = startOfMonth(periodDate);
-        const monthEnd = endOfMonth(periodDate);
-        return monthEnd >= startDate && monthStart <= endDate;
-      } else if (period.period === 'year') {
-        const yearStart = startOfYear(periodDate);
-        const yearEnd = endOfYear(periodDate);
-        return yearEnd >= startDate && yearStart <= endDate;
-      } else {
-        // For day aggregation, simple date comparison
-        return periodDate >= startDate && periodDate <= endDate;
-      }
-    } catch {
-      return false;
-    }
+    if (!period.dateKey) return false;
+    const periodDate = parseDateKey(period.dateKey);
+    return periodDate >= startDate && periodDate <= endDate;
   });
 }
 

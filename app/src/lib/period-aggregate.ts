@@ -1,5 +1,15 @@
-import type { DateKeyByPeriod, DayKey, TimePeriod } from '@/features/db/localdb';
-import { emptyStats, computeCumulatives, type NumberStats, type NumberMetric, type StatsExtremes, calculateExtremes } from '@/lib/stats';
+import type { DateKeyByPeriod, DayKey, TimePeriod, DayEntry } from '@/features/db/localdb';
+import {
+  emptyStats,
+  computeCumulatives,
+  computeStatsDeltas,
+  computeStatsPercents,
+  computeNumberStats,
+  type NumberStats,
+  type NumberMetric,
+  type StatsExtremes,
+  calculateExtremes,
+} from '@/lib/stats';
 import type { DateKeyType } from './friendly-date';
 
 export type PeriodAggregateData<T extends TimePeriod> = {
@@ -101,3 +111,94 @@ export const calculateYearDailyExtremes = (
     .filter((stats) => stats.count > 0); // Only include days with data
   return calculateExtremes(yearDayStats);
 };
+
+/**
+ * Build fake single-number aggregates where each entry represents one raw number.
+ * Metric values are normalized to the raw value so downstream aggregate transforms
+ * can treat these like period aggregates.
+ */
+export function buildSingleNumberAggregates(
+  days: DayEntry[],
+): PeriodAggregateData<'day'>[] {
+  let priorStats: NumberStats | null = null;
+  const result: PeriodAggregateData<'day'>[] = [];
+
+  for (const day of days) {
+    for (let i = 0; i < day.numbers.length; i++) {
+      const value = day.numbers[i];
+      const stats = emptyStats();
+      for (const key of Object.keys(stats) as NumberMetric[]) {
+        stats[key] = value;
+      }
+      stats.count = 1;
+
+      const deltas = computeStatsDeltas(stats, priorStats);
+      const percents = computeStatsPercents(stats, priorStats);
+      priorStats = stats;
+
+      result.push({
+        dateKey: day.date,
+        period: 'day',
+        numbers: [value],
+        stats,
+        deltas,
+        percents,
+        cumulatives: emptyStats(),
+        cumulativeDeltas: emptyStats(),
+        cumulativePercents: {},
+        extremes: undefined,
+      });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Recompute per-period cumulative aggregate statistics using all prior period primary values.
+ * Distributional metrics are derived from the full running range up to each point.
+ *
+ * `stats` are updated to include those running aggregate metrics while preserving the current
+ * period's primary metric value to keep the plotted primary line period-local.
+ */
+export function computeRunningAggregatePeriods<T extends TimePeriod>(
+  periods: PeriodAggregateData<T>[],
+  primaryMetric: NumberMetric,
+): PeriodAggregateData<T>[] {
+  const primaryValues: number[] = [];
+  let priorStats: NumberStats | null = null;
+  let priorCumulatives: NumberStats | null = null;
+
+  return periods.map((period) => {
+    const primaryValue = typeof period.stats?.[primaryMetric] === 'number'
+      ? period.stats[primaryMetric]
+      : 0;
+    primaryValues.push(primaryValue);
+
+    const runningStats = computeNumberStats(primaryValues) ?? emptyStats();
+
+    const stats = {
+      ...runningStats,
+      [primaryMetric]: primaryValue,
+    } as NumberStats;
+
+    const cumulatives = runningStats;
+    const deltas = computeStatsDeltas(stats, priorStats);
+    const percents = computeStatsPercents(stats, priorStats);
+    const cumulativeDeltas = priorCumulatives ? computeStatsDeltas(cumulatives, priorCumulatives) : emptyStats();
+    const cumulativePercents = priorCumulatives ? computeStatsPercents(cumulatives, priorCumulatives) : {};
+
+    priorStats = stats;
+    priorCumulatives = cumulatives;
+
+    return {
+      ...period,
+      stats,
+      deltas,
+      percents,
+      cumulatives,
+      cumulativeDeltas,
+      cumulativePercents,
+    };
+  });
+}
