@@ -183,5 +183,17 @@ describe('stats', () => {
       expect(cumulatives.first).toBe(6);
       expect(cumulatives.last).toBe(4);
     });
+
+    it('falls back to current distribution metrics when allNumbers is unavailable', () => {
+      const prior = computeNumberStats([6, 4])!;
+      const current = computeNumberStats([2, 4, 4])!;
+      const cumulatives = computeCumulatives(current, prior);
+
+      expect(cumulatives.median).toBe(current.median);
+      expect(cumulatives.mode).toBe(current.mode);
+      expect(cumulatives.variance).toBe(current.variance);
+      expect(cumulatives.standardDeviation).toBe(current.standardDeviation);
+      expect(cumulatives.interquartileRange).toBe(current.interquartileRange);
+    });
   });
 });

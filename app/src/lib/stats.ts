@@ -287,8 +287,9 @@ export type PeriodDerivedStats = {
  * Build cumulative stats using prior cumulatives plus the current period stats.
  *
  * When `allNumbers` is not provided, distributional metrics (median, mode, variance,
- * standardDeviation, interquartileRange) are set to 0 as they cannot be accurately 
- * computed without the full data sequence.
+ * standardDeviation, interquartileRange) fall back to the current period's stats.
+ * This avoids showing misleading zeros in contexts where only incremental stats are available
+ * (for example, `computePeriodDerivedStats`).
  *
  * When `allNumbers` is provided, distributional metrics are computed from the
  * complete sequence of numbers, enabling accurate "stats of the metric" semantics.
@@ -316,7 +317,7 @@ export function computeCumulatives(
   const slope = count > 1 ? change / (count - 1) : 0;
   const midrange = (min + max) / 2;
 
-  // Compute or set distributional metrics
+  // Compute or fall back distributional metrics
   let median: number, mode: number, variance: number, standardDeviation: number, interquartileRange: number;
   
   if (allNumbers && allNumbers.length > 0) {
@@ -328,12 +329,12 @@ export function computeCumulatives(
     standardDeviation = distributionalStats?.standardDeviation ?? stats.standardDeviation;
     interquartileRange = distributionalStats?.interquartileRange ?? stats.interquartileRange;
   } else {
-    // Set to 0 when unavailable (cumulatives: false metrics)
-    median = 0;
-    mode = 0;
-    variance = 0;
-    standardDeviation = 0;
-    interquartileRange = 0;
+    // Fall back to current period metrics when full sequence is unavailable
+    median = stats.median;
+    mode = stats.mode;
+    variance = stats.variance;
+    standardDeviation = stats.standardDeviation;
+    interquartileRange = stats.interquartileRange;
   }
 
   return {
