@@ -566,11 +566,13 @@ export function Analysis() {
             <Card className="p-4">
               <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                 <PieChart className="w-4 h-4" />
-                {dataset.valence === 'positive' ? 'Positive/Negative' : 'Beneficial/Harmful'} Breakdown
+                {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
               </h3>
               <ValenceDistributionChart
                 key={dataset.id}
-                numbers={dataPoints}
+                periods={trendChartPeriods}
+                aggregationType={actualAggregationType}
+                tracking={dataset.tracking}
                 valence={dataset.valence}
               />
             </Card>

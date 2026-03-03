@@ -6,7 +6,7 @@ import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { METRIC_DISPLAY_INFO } from '@/lib/stats';
-import { getPrimaryMetric } from '@/lib/tracking';
+import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { format } from 'date-fns';
 import { useMemo } from 'react';
@@ -55,7 +55,7 @@ export function AggregationBarChart({
 
   const primaryMetric = getPrimaryMetric(tracking);
 
-  const valenceSource: 'stats' | 'deltas' = tracking === 'series' ? 'stats' : 'deltas';
+  const valenceSource = getValenceSource(tracking);
 
   const formatPeriodLabel = (dateKey: string): string => {
     try {

@@ -6,7 +6,7 @@ import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
-import { getPrimaryMetric } from '@/lib/tracking';
+import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { format } from 'date-fns';
 import { useId, useMemo, useState } from 'react';
@@ -63,10 +63,7 @@ export function TrendAnalysisChart({
 
   const primaryMetric = getPrimaryMetric(tracking);
   
-  // Determine valence source from tracking mode
-  // Series tracking: valence source = stats
-  // Trend tracking: valence source = deltas
-  const valenceSource: 'stats' | 'deltas' = tracking === 'series' ? 'stats' : 'deltas';
+  const valenceSource = getValenceSource(tracking);
 
   const suppressMetricOptions = aggregationType === 'none' && mode === 'change';
 
