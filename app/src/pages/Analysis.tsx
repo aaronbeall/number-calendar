@@ -482,6 +482,7 @@ export function Analysis() {
               key={dataset.id}
               periods={trendChartPeriods}
               tracking={dataset.tracking}
+              valence={dataset.valence}
             />
           </Card>
 

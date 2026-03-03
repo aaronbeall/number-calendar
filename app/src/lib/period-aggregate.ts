@@ -160,6 +160,8 @@ export function buildSingleNumberAggregates(
  *
  * `stats` are updated to include those running aggregate metrics while preserving the current
  * period's primary metric value to keep the plotted primary line period-local.
+ * 
+ * Note: Filters out empty periods (count=0) from the result.
  */
 export function computeRunningAggregatePeriods<T extends TimePeriod>(
   periods: PeriodAggregateData<T>[],
@@ -168,8 +170,12 @@ export function computeRunningAggregatePeriods<T extends TimePeriod>(
   const primaryValues: number[] = [];
   let priorStats: NumberStats | null = null;
   let priorCumulatives: NumberStats | null = null;
+  const result: PeriodAggregateData<T>[] = [];
 
-  return periods.map((period) => {
+  for (const period of periods) {
+    // Skip empty periods
+    if (period.stats.count === 0) continue;
+
     const primaryValue = typeof period.stats?.[primaryMetric] === 'number'
       ? period.stats[primaryMetric]
       : 0;
@@ -191,7 +197,7 @@ export function computeRunningAggregatePeriods<T extends TimePeriod>(
     priorStats = stats;
     priorCumulatives = cumulatives;
 
-    return {
+    result.push({
       ...period,
       stats,
       deltas,
@@ -199,6 +205,8 @@ export function computeRunningAggregatePeriods<T extends TimePeriod>(
       cumulatives,
       cumulativeDeltas,
       cumulativePercents,
-    };
-  });
+    });
+  }
+
+  return result;
 }

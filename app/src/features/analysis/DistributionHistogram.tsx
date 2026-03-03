@@ -1,8 +1,9 @@
 import { useTheme } from '@/components/ThemeProvider';
-import type { Tracking } from '@/features/db/localdb';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import { getPrimaryMetric } from '@/lib/tracking';
+import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
+import { getValueForValence } from '@/lib/valence';
 import { useMemo, useState } from 'react';
 import {
   Bar,
@@ -17,6 +18,7 @@ import {
 interface DistributionHistogramProps {
   periods: PeriodAggregateData<any>[];
   tracking: Tracking;
+  valence?: Valence;
 }
 
 interface HistogramBucket {
@@ -32,6 +34,7 @@ interface HistogramBucket {
 export function DistributionHistogram({
   periods,
   tracking,
+  valence = 'neutral',
 }: DistributionHistogramProps) {
   const { theme } = useTheme();
   const isDark =
@@ -41,19 +44,32 @@ export function DistributionHistogram({
       window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const primaryMetric = getPrimaryMetric(tracking);
-  const valenceSource: 'stats' | 'deltas' = tracking === 'series' ? 'stats' : 'deltas';
+  const valenceSource = getValenceSource(tracking);
 
+  // Always use stats for binning (actual value range)
   const numbers = useMemo(() => {
     return periods
       .filter((period) => period.stats.count > 0)
-      .map((period) => {
-        const value =
-          valenceSource === 'stats'
-            ? period.stats[primaryMetric]
-            : (period.deltas?.[primaryMetric] ?? 0);
-        return value;
-      })
+      .map((period) => period.stats[primaryMetric])
       .filter((value): value is number => typeof value === 'number');
+  }, [periods, primaryMetric]);
+
+  // Extract numbers with their source context for proper positive/negative categorization
+  const numbersWithContext = useMemo(() => {
+    return periods
+      .filter((period) => period.stats.count > 0)
+      .map((period) => {
+        const binValue = period.stats[primaryMetric]; // Stat value for binning
+        const valenceValue = period[valenceSource][primaryMetric] ?? 0; // Value for pos/neg categorization
+        return { 
+          value: binValue, 
+          isPositive: valenceValue > 0, 
+          isNegative: valenceValue < 0 
+        };
+      })
+      .filter((item): item is { value: number; isPositive: boolean; isNegative: boolean } => 
+        typeof item.value === 'number'
+      );
   }, [periods, primaryMetric, valenceSource]);
 
   // Calculate optimal bin count using Freedman-Diaconis rule with sensible bounds
@@ -94,10 +110,12 @@ export function DistributionHistogram({
       const binMin = min + i * binSize;
       const binMax = binMin + binSize;
       const binMid = (binMin + binMax) / 2;
-      const binNumbers = numbers.filter((n) => n >= binMin && (i === activeBinCount - 1 ? n <= binMax : n < binMax));
-      const count = binNumbers.length;
-      const positiveCount = binNumbers.filter((n) => n > 0).length;
-      const negativeCount = binNumbers.filter((n) => n < 0).length;
+      const binValues = numbersWithContext.filter(
+        (item) => item.value >= binMin && (i === activeBinCount - 1 ? item.value <= binMax : item.value < binMax)
+      );
+      const count = binValues.length;
+      const positiveCount = binValues.filter((item) => item.isPositive).length;
+      const negativeCount = binValues.filter((item) => item.isNegative).length;
 
       buckets.push({
         range: `${formatValue(binMin, { short: true })}–${formatValue(binMax, { short: true })}`,
@@ -110,7 +128,7 @@ export function DistributionHistogram({
       });
     }
     return buckets;
-  }, [numbers, activeBinCount]);
+  }, [numbers, numbersWithContext, activeBinCount]);
 
   if (bins.length === 0) {
     return <div>No data available</div>;
@@ -118,6 +136,14 @@ export function DistributionHistogram({
 
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
+
+  // Determine colors based on valence
+  const positiveColor = getValueForValence(1, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' });
+  const negativeColor = getValueForValence(-1, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#64748b' });
+
+  // Determine labels based on tracking type
+  const positiveLabel = tracking === 'trend' ? 'Uptrend' : 'Positive';
+  const negativeLabel = tracking === 'trend' ? 'Downtrend' : 'Negative';
 
   const renderTooltip = ({
     active,
@@ -137,17 +163,17 @@ export function DistributionHistogram({
         <div className="space-y-0.5">
           {bin.positiveCount > 0 && (
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: positiveColor }} />
               <span className="text-sm text-slate-900 dark:text-slate-100">
-                Positive: {bin.positiveCount}
+                {positiveLabel}: {bin.positiveCount}
               </span>
             </div>
           )}
           {bin.negativeCount > 0 && (
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: negativeColor }} />
               <span className="text-sm text-slate-900 dark:text-slate-100">
-                Negative: {bin.negativeCount}
+                {negativeLabel}: {bin.negativeCount}
               </span>
             </div>
           )}
@@ -182,8 +208,8 @@ export function DistributionHistogram({
               label={{ value: 'Frequency', angle: -90, position: 'insideLeft', style: { fill: axisColor } }}
             />
             <Tooltip content={renderTooltip} />
-            <Bar dataKey="positiveCount" stackId="a" fill="#22c55e" isAnimationActive={true} radius={[8, 8, 8, 8]} />
-            <Bar dataKey="negativeCount" stackId="a" fill="#ef4444" isAnimationActive={true} radius={[8, 8, 8, 8]} />
+            <Bar dataKey="positiveCount" stackId="a" fill={positiveColor} isAnimationActive={true} radius={[8, 8, 8, 8]} />
+            <Bar dataKey="negativeCount" stackId="a" fill={negativeColor} isAnimationActive={true} radius={[8, 8, 8, 8]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
