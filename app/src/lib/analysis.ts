@@ -216,12 +216,9 @@ export function computeAnalysisData<T extends TimePeriod>(
       // Compare summary stats for entire range vs prior period
       deltas = priorStats ? computeStatsDeltas(stats, priorStats) : undefined;
       percents = priorStats ? computeStatsPercents(stats, priorStats) : undefined;
-      // Cumulative percent: compare cumulative at end of range vs cumulative before range
-      const priorCumulatives = aggregation === 'none'
-        ? computeNumberStats(allPeriods.slice(0, firstPeriodIndex).flatMap(p => p.numbers)) ?? undefined // Stats of all raw numbers before range
-        : computeAggregateCumulatives(allPeriods.slice(0, firstPeriodIndex), primaryMetric); // Stats of period metrics before range
-      cumulativePercents = cumulatives && priorCumulatives
-        ? computeStatsPercents(cumulatives, priorCumulatives)
+      // Cumulative percent: compare current range stats vs cumulative at end of range
+      cumulativePercents = cumulatives && stats
+        ? computeStatsPercents(stats, cumulatives)
         : undefined;
     } else {
       // Seed deltas/percents when there is no prior period available.
