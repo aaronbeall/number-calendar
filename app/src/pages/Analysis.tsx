@@ -270,6 +270,7 @@ export function Analysis() {
 
       <div className="pb-3 border-b">
         <CustomRangePicker
+          key={dataset.id}
           tracking={dataset.tracking}
           valence={dataset.valence}
           aggregation={actualAggregationType}
@@ -429,6 +430,7 @@ export function Analysis() {
               </ToggleGroup>
             </div>
             <TrendAnalysisChart
+              key={dataset.id}
               periods={analysisData.periods}
               aggregationType={actualAggregationType}
               tracking={dataset.tracking}
@@ -445,6 +447,7 @@ export function Analysis() {
               {actualAggregationType === 'none' ? 'Raw' : actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Totals
             </h3>
             <AggregationBarChart
+              key={dataset.id}
               groupedData={groupedData}
               aggregationType={actualAggregationType}
               valence={dataset.valence}
@@ -458,6 +461,7 @@ export function Analysis() {
               Value Distribution
             </h3>
             <DistributionHistogram
+              key={dataset.id}
               numbers={dataPoints}
               valence={dataset.valence}
             />
@@ -471,6 +475,7 @@ export function Analysis() {
                 {dataset.valence === 'positive' ? 'Positive/Negative' : 'Beneficial/Harmful'} Breakdown
               </h3>
               <ValenceDistributionChart
+                key={dataset.id}
                 numbers={dataPoints}
                 valence={dataset.valence}
               />
@@ -484,6 +489,7 @@ export function Analysis() {
               {actualAggregationType === 'none' ? 'Raw' : actualAggregationType === 'day' ? 'Daily' : actualAggregationType === 'week' ? 'Weekly' : actualAggregationType === 'month' ? 'Monthly' : 'Yearly'} Comparison
             </h3>
             <PeriodComparisonChart
+              key={dataset.id}
               groupedData={groupedData}
               aggregationType={actualAggregationType}
             />
