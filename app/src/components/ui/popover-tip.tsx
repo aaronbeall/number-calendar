@@ -3,7 +3,7 @@
 import * as React from "react"
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 type PopoverTipContextValue = {
@@ -13,25 +13,6 @@ type PopoverTipContextValue = {
 const PopoverTipContext = React.createContext<PopoverTipContextValue>({ usePopover: false })
 
 const usePopoverTipContext = () => React.useContext(PopoverTipContext)
-
-const useIsCoarsePointer = () => {
-  const [isCoarse, setIsCoarse] = React.useState(false)
-
-  React.useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return
-    const media = window.matchMedia("(pointer: coarse)")
-    const update = () => setIsCoarse(media.matches)
-    update()
-    if (media.addEventListener) {
-      media.addEventListener("change", update)
-      return () => media.removeEventListener("change", update)
-    }
-    media.addListener(update)
-    return () => media.removeListener(update)
-  }, [])
-
-  return isCoarse
-}
 
 type PopoverTipProps = React.ComponentPropsWithoutRef<typeof Popover>
 
