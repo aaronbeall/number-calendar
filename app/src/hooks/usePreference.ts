@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 
 // Safe JSON parse for localStorage values
@@ -27,35 +27,37 @@ function getInitial<T>(key: string, initialValue: T | (() => T)): T {
  * Works like useState but requires a key and syncs across tabs.
  */
 export function usePreference<T>(key: string, initialValue: T | (() => T)) {
+  const keyRef = useRef(key);
   const [value, setValue] = useState<T>(() => getInitial(key, initialValue));
 
-  // Update localStorage whenever the value changes
+  // React to key changes by updating ref and re-reading localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    keyRef.current = key;
+    setValue(getInitial(key, initialValue));
+  }, [key]);
+
+  // Update localStorage whenever the value changes (use ref for key to avoid race conditions)
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(key, JSON.stringify(value));
+      window.localStorage.setItem(keyRef.current, JSON.stringify(value));
     } catch (err) {
       console.error("Failed to save preference to localStorage", err);
     }
-  }, [key, value]);
-
-  // React to key changes by re-reading localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    setValue(getInitial(key, initialValue));
-  }, [key, initialValue]);
+  }, [value]);
 
   // Sync updates from other tabs/windows
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === key) {
+      if (event.key === keyRef.current) {
         setValue((prev) => parseStoredValue<T>(event.newValue, prev));
       }
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, [key]);
+  }, []);
 
   return [value, setValue] as const;
 }
