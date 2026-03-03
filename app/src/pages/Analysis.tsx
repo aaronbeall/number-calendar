@@ -214,16 +214,11 @@ export function Analysis() {
 
   const trendChartPeriods = useMemo(() => {
     // Compute aggregates on full dataset from start through range end, then filter to in-range
-    let allComputedPeriods;
-    
-    if (actualAggregationType === 'none') {
-      // Use all days (not just in-range) to build aggregates with full historical context
-      const singleNumberAggregates = buildSingleNumberAggregates(allDays);
-      allComputedPeriods = computeRunningAggregatePeriods(singleNumberAggregates, primaryMetric);
-    } else {
-      // Use all periods (not just in-range) to compute running aggregates with full historical context
-      allComputedPeriods = computeRunningAggregatePeriods(periodsForAggregation, primaryMetric);
-    }
+    const allAggregationPeriods = actualAggregationType === 'none'
+      ? buildSingleNumberAggregates(allDays)
+      : periodsForAggregation;
+      
+    const allComputedPeriods = computeRunningAggregatePeriods(allAggregationPeriods, primaryMetric);
     
     // Filter computed periods to in-range for display
     return allComputedPeriods.filter(period => {
