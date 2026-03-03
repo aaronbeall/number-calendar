@@ -89,7 +89,7 @@ export function TrendAnalysisChart({
     return defaults;
   });
 
-  const formatPeriodLabel = (dateKey: string, index?: number): string => {
+  const formatPeriodLabel = (dateKey: string): string => {
     try {
       const date = parseDateKey(dateKey as any);
       switch (aggregationType) {
@@ -116,7 +116,7 @@ export function TrendAnalysisChart({
       .map((period, index) => {
         const point: TrendPoint = {
           dateKey: period.dateKey,
-          label: formatPeriodLabel(period.dateKey, index),
+          label: formatPeriodLabel(period.dateKey),
           ...(aggregationType === 'none' && { entryNumber: index + 1 }),
           cumulativeValue: {},
           statsValue: {},
