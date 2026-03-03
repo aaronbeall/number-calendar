@@ -1,5 +1,6 @@
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { Badge } from '@/components/ui/badge';
+import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import type { AggregationType } from '@/lib/analysis';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getValenceValueFromData } from '@/lib/tracking';
@@ -7,6 +8,7 @@ import { getValueForValence } from '@/lib/valence';
 import { formatValue } from '@/lib/friendly-numbers';
 import { pluralize } from '@/lib/utils';
 import { useMemo } from 'react';
+import { HelpCircle } from 'lucide-react';
 import {
   Cell,
   Legend,
@@ -32,6 +34,11 @@ interface PieDataPoint {
   mode: 'count' | 'total';
 }
 
+interface MetricsData {
+  impactRatio: number | null;
+  intensitySkew: number;
+}
+
 export function ValenceDistributionChart({
   periods,
   aggregationType,
@@ -41,7 +48,7 @@ export function ValenceDistributionChart({
 }: ValenceDistributionChartProps) {
   const effectiveMode = tracking === 'series' ? mode : 'count';
 
-  const { positiveCount, negativeCount, positiveTotal, negativeTotal } = useMemo(() => {
+  const { positiveCount, negativeCount, positiveTotal, negativeTotal, metrics } = useMemo(() => {
     let posCount = 0;
     let negCount = 0;
     let posTotal = 0;
@@ -61,11 +68,32 @@ export function ValenceDistributionChart({
       }
     });
 
+    // Calculate metrics for series tracking
+    const metrics: MetricsData = {
+      impactRatio: null,
+      intensitySkew: 0,
+    };
+
+    if (tracking === 'series' && posCount > 0 && negCount > 0) {
+      // Impact ratio: average magnitude per occurrence for each valence
+      const posAvg = posTotal / posCount;
+      const negAvg = negTotal / negCount;
+      metrics.impactRatio = posAvg / negAvg;
+
+      // Intensity skew: difference in share between magnitude and count
+      const total = posCount + negCount;
+      const totalMagnitude = posTotal + negTotal;
+      const countShare = posCount / total;
+      const magnitudeShare = posTotal / totalMagnitude;
+      metrics.intensitySkew = magnitudeShare - countShare;
+    }
+
     return {
       positiveCount: posCount,
       negativeCount: negCount,
       positiveTotal: posTotal,
       negativeTotal: negTotal,
+      metrics,
     };
   }, [periods, tracking, valence]);
 
@@ -173,7 +201,86 @@ export function ValenceDistributionChart({
   };
 
   return (
-    <div className="h-80 w-full">
+    <div className="space-y-3">
+      {tracking === 'series' && metrics.impactRatio !== null && (
+        <div className="flex flex-wrap gap-2">
+          {(() => {
+            const ratioDirection = metrics.impactRatio > 1 ? 1 : -1;
+            const ratioColor = getValueForValence(ratioDirection, valence, {
+              good: '#22c55e',
+              bad: '#ef4444',
+              neutral: '#3b82f6',
+            });
+            return (
+              <PopoverTip>
+                <PopoverTipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="cursor-help"
+                    style={{
+                      backgroundColor: ratioColor + '15',
+                      borderColor: ratioColor + '40',
+                    }}
+                  >
+                    <span className="text-xs" style={{ color: ratioColor }}>
+                      {metrics.impactRatio > 1
+                        ? `${formatValue(metrics.impactRatio)}x stronger positive impact`
+                        : `${formatValue(1 / metrics.impactRatio)}x stronger negative impact`}
+                    </span>
+                    <HelpCircle className="ml-1 h-4 w-4 text-slate-400" />
+                  </Badge>
+                </PopoverTipTrigger>
+                <PopoverTipContent side="top">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm">Impact Ratio</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      Compares the average strength of positive vs negative entries. For example, a 2x ratio means positive entries are roughly twice as strong as negative ones.
+                    </p>
+                  </div>
+                </PopoverTipContent>
+              </PopoverTip>
+            );
+          })()}
+          {Math.abs(metrics.intensitySkew) > 0.01 && (() => {
+            const skewDirection = metrics.intensitySkew > 0 ? 1 : -1;
+            const skewColor = getValueForValence(skewDirection, valence, {
+              good: '#22c55e',
+              bad: '#ef4444',
+              neutral: '#3b82f6',
+            });
+            return (
+              <PopoverTip>
+                <PopoverTipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="cursor-help"
+                    style={{
+                      backgroundColor: skewColor + '15',
+                      borderColor: skewColor + '40',
+                    }}
+                  >
+                    <span className="text-xs" style={{ color: skewColor }}>
+                      {metrics.intensitySkew > 0
+                        ? `Positive is ${formatValue(metrics.intensitySkew, { percent: true })} more impactful`
+                        : `Negative is ${formatValue(Math.abs(metrics.intensitySkew), { percent: true })} more impactful`}
+                    </span>
+                    <HelpCircle className="ml-1 h-4 w-4 text-slate-400" />
+                  </Badge>
+                </PopoverTipTrigger>
+                <PopoverTipContent side="top">
+                  <div className="space-y-1">
+                    <p className="font-semibold text-sm">Intensity Skew</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-300">
+                      Shows if positive and negative entries have uneven impact. A 10% skew means one direction produces 10% more total impact than its number of entries would suggest.
+                    </p>
+                  </div>
+                </PopoverTipContent>
+              </PopoverTip>
+            );
+          })()}
+        </div>
+      )}
+      <div className="h-80 w-full">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -197,6 +304,7 @@ export function ValenceDistributionChart({
           <Legend content={renderLegend} />
         </PieChart>
       </ResponsiveContainer>
+      </div>
     </div>
   );
 }
