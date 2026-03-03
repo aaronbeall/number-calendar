@@ -1,15 +1,13 @@
 import { useTheme } from '@/components/ThemeProvider';
-import type { Tracking, Valence } from '@/features/db/localdb';
+import type { Tracking } from '@/features/db/localdb';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric } from '@/lib/tracking';
-import { getValueForValence } from '@/lib/valence';
 import { useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -19,7 +17,6 @@ import {
 interface DistributionHistogramProps {
   periods: PeriodAggregateData<any>[];
   tracking: Tracking;
-  valence?: Valence;
 }
 
 interface HistogramBucket {
@@ -27,13 +24,14 @@ interface HistogramBucket {
   rangeMin: number;
   rangeMax: number;
   count: number;
+  positiveCount: number;
+  negativeCount: number;
   midpoint: number;
 }
 
 export function DistributionHistogram({
   periods,
   tracking,
-  valence = 'neutral',
 }: DistributionHistogramProps) {
   const { theme } = useTheme();
   const isDark =
@@ -96,13 +94,18 @@ export function DistributionHistogram({
       const binMin = min + i * binSize;
       const binMax = binMin + binSize;
       const binMid = (binMin + binMax) / 2;
-      const count = numbers.filter((n) => n >= binMin && (i === activeBinCount - 1 ? n <= binMax : n < binMax)).length;
+      const binNumbers = numbers.filter((n) => n >= binMin && (i === activeBinCount - 1 ? n <= binMax : n < binMax));
+      const count = binNumbers.length;
+      const positiveCount = binNumbers.filter((n) => n > 0).length;
+      const negativeCount = binNumbers.filter((n) => n < 0).length;
 
       buckets.push({
         range: `${formatValue(binMin, { short: true })}–${formatValue(binMax, { short: true })}`,
         rangeMin: binMin,
         rangeMax: binMax,
         count,
+        positiveCount,
+        negativeCount,
         midpoint: binMid,
       });
     }
@@ -115,14 +118,6 @@ export function DistributionHistogram({
 
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
-
-  const getBarColor = (midpoint: number): string => {
-    return getValueForValence(midpoint, valence, {
-      good: '#22c55e',
-      bad: '#ef4444',
-      neutral: '#3b82f6',
-    });
-  };
 
   const renderTooltip = ({
     active,
@@ -139,14 +134,26 @@ export function DistributionHistogram({
         <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
           {formatValue(bin.rangeMin)} – {formatValue(bin.rangeMax)}
         </div>
-        <div className="flex items-center gap-2">
-          <div
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: getBarColor(bin.midpoint) }}
-          />
-          <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
-            {bin.count} {bin.count === 1 ? 'occurrence' : 'occurrences'}
-          </span>
+        <div className="space-y-0.5">
+          {bin.positiveCount > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-sm text-slate-900 dark:text-slate-100">
+                Positive: {bin.positiveCount}
+              </span>
+            </div>
+          )}
+          {bin.negativeCount > 0 && (
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="text-sm text-slate-900 dark:text-slate-100">
+                Negative: {bin.negativeCount}
+              </span>
+            </div>
+          )}
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 pt-1 border-t border-slate-200 dark:border-slate-700">
+            Total: {bin.count}
+          </div>
         </div>
       </div>
     );
@@ -175,11 +182,8 @@ export function DistributionHistogram({
               label={{ value: 'Frequency', angle: -90, position: 'insideLeft', style: { fill: axisColor } }}
             />
             <Tooltip content={renderTooltip} />
-            <Bar dataKey="count" isAnimationActive={true} radius={[8, 8, 0, 0]}>
-              {bins.map((bin, index) => (
-                <Cell key={`bar-${index}`} fill={getBarColor(bin.midpoint)} />
-              ))}
-            </Bar>
+            <Bar dataKey="positiveCount" stackId="a" fill="#22c55e" isAnimationActive={true} radius={[8, 8, 8, 8]} />
+            <Bar dataKey="negativeCount" stackId="a" fill="#ef4444" isAnimationActive={true} radius={[8, 8, 8, 8]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
