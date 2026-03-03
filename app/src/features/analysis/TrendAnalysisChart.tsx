@@ -36,6 +36,7 @@ export type TrendDataMode = 'trend' | 'change';
 type TrendPoint = {
   dateKey: string;
   label: string;
+  entryNumber?: number;
   cumulativeValue?: Partial<Record<NumberMetric, number>>;
   statsValue?: Partial<Record<NumberMetric, number>>;
   deltaValue?: Partial<Record<NumberMetric, number>>;
@@ -89,17 +90,11 @@ export function TrendAnalysisChart({
   });
 
   const formatPeriodLabel = (dateKey: string, index?: number): string => {
-    if (aggregationType === 'none') {
-      // Use the array index to number entries
-      if (index !== undefined) {
-        return `#${index + 1}`;
-      }
-      return dateKey;
-    }
-
     try {
       const date = parseDateKey(dateKey as any);
       switch (aggregationType) {
+        case 'none':
+          return format(date, "MMM d");
         case 'week':
           return `W${format(date, 'ww')} '${format(date, 'yy')}`;
         case 'month':
@@ -122,6 +117,7 @@ export function TrendAnalysisChart({
         const point: TrendPoint = {
           dateKey: period.dateKey,
           label: formatPeriodLabel(period.dateKey, index),
+          ...(aggregationType === 'none' && { entryNumber: index + 1 }),
           cumulativeValue: {},
           statsValue: {},
           deltaValue: {},
@@ -277,7 +273,7 @@ export function TrendAnalysisChart({
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
         {aggregationType === 'none' && (
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{point.label}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{point.label} (#{point.entryNumber})</div>
         )}
         {aggregationType !== 'none' && (
           <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatFriendlyDate(point.dateKey as any)}</div>
