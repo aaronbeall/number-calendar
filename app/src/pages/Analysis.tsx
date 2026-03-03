@@ -461,7 +461,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
-              {actualAggregationType === 'none' ? 'Entries' : capitalize(adjectivize(actualAggregationType))} Change
+              {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} Deviation from Average
             </h3>
             <AggregationBarChart
               key={dataset.id}
@@ -469,7 +469,6 @@ export function Analysis() {
               aggregationType={actualAggregationType}
               tracking={dataset.tracking}
               valence={dataset.valence}
-              selectedMetrics={selectedSummaryMetrics}
             />
           </Card>
 

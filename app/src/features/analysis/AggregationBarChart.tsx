@@ -5,16 +5,17 @@ import type { AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import { METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
+import { METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { getPrimaryMetric } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { format } from 'date-fns';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -26,7 +27,6 @@ interface AggregationBarChartProps {
   aggregationType: AggregationType;
   tracking: Tracking;
   valence: Valence;
-  selectedMetrics?: NumberMetric[];
 }
 
 interface BarDataPoint {
@@ -34,18 +34,17 @@ interface BarDataPoint {
   label: string;
   entryNumber?: number;
   value: number;
-  statsValue?: Partial<Record<NumberMetric, number>>;
-  deltaValue?: Partial<Record<NumberMetric, number>>;
+  deviationFromMean: number;
+  deviationFromMedian: number;
+  mean: number;
+  median: number;
 }
-
-const SECONDARY_COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899', '#14b8a6', '#6366f1'];
 
 export function AggregationBarChart({
   periods,
   aggregationType,
   tracking,
   valence,
-  selectedMetrics = [],
 }: AggregationBarChartProps) {
   const { theme } = useTheme();
   const isDark =
@@ -57,18 +56,6 @@ export function AggregationBarChart({
   const primaryMetric = getPrimaryMetric(tracking);
 
   const valenceSource: 'stats' | 'deltas' = tracking === 'series' ? 'stats' : 'deltas';
-
-  const displayMetrics: NumberMetric[] = useMemo(() => {
-    const defaults: NumberMetric[] = [primaryMetric, 'count', 'mean'];
-    const extras = selectedMetrics.filter(
-      (metric) => metric !== primaryMetric && metric !== 'count' && metric !== 'mean'
-    );
-    return [...new Set<NumberMetric>([...defaults, ...extras])];
-  }, [primaryMetric, selectedMetrics]);
-
-  const [visibleMetrics, setVisibleMetrics] = useState<Set<NumberMetric>>(
-    () => new Set<NumberMetric>([primaryMetric, 'count', 'mean'])
-  );
 
   const formatPeriodLabel = (dateKey: string): string => {
     try {
@@ -92,32 +79,45 @@ export function AggregationBarChart({
   };
 
   const data: BarDataPoint[] = useMemo(() => {
-    return periods
+    const periodValues = periods
       .filter((period) => period.stats.count > 0)
       .map((period, index) => {
-        const statsValue: Partial<Record<NumberMetric, number>> = {};
-        const deltaValue: Partial<Record<NumberMetric, number>> = {};
-
-        for (const metric of displayMetrics) {
-          statsValue[metric] = period.stats?.[metric];
-          deltaValue[metric] = period.deltas?.[metric];
-        }
-
         const value =
           valenceSource === 'stats'
-            ? (statsValue[primaryMetric] ?? 0)
-            : (deltaValue[primaryMetric] ?? 0);
+            ? (period.stats[primaryMetric] ?? 0)
+            : (period.deltas?.[primaryMetric] ?? 0);
 
         return {
-          dateKey: period.dateKey,
-          label: formatPeriodLabel(period.dateKey),
-          ...(aggregationType === 'none' && { entryNumber: index + 1 }),
+          period,
+          index,
           value,
-          statsValue,
-          deltaValue,
         };
       });
-  }, [periods, displayMetrics, primaryMetric, valenceSource, aggregationType]);
+
+    // Calculate mean and median across all periods in range
+    const values = periodValues.map(pv => pv.value);
+    const mean = values.length > 0
+      ? values.reduce((sum, v) => sum + v, 0) / values.length
+      : 0;
+    
+    const sortedValues = [...values].sort((a, b) => a - b);
+    const median = sortedValues.length > 0
+      ? sortedValues.length % 2 === 0
+        ? (sortedValues[sortedValues.length / 2 - 1] + sortedValues[sortedValues.length / 2]) / 2
+        : sortedValues[Math.floor(sortedValues.length / 2)]
+      : 0;
+
+    return periodValues.map(({ period, index, value }) => ({
+      dateKey: period.dateKey,
+      label: formatPeriodLabel(period.dateKey),
+      ...(aggregationType === 'none' && { entryNumber: index + 1 }),
+      value,
+      deviationFromMean: value - mean,
+      deviationFromMedian: value - median,
+      mean,
+      median,
+    }));
+  }, [periods, primaryMetric, valenceSource, aggregationType]);
 
   if (data.length === 0) {
     return <div>No data available</div>;
@@ -126,38 +126,11 @@ export function AggregationBarChart({
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
 
-  const getBarColor = (value: number): string => {
-    return getValueForValence(value, valence, {
+  const getBarColor = (deviation: number): string => {
+    return getValueForValence(deviation, valence, {
       good: '#22c55e',
       bad: '#ef4444',
       neutral: '#3b82f6',
-    });
-  };
-
-  const latestValenceValue =
-    data.length > 0
-      ? (valenceSource === 'stats'
-          ? data[data.length - 1].statsValue?.[primaryMetric]
-          : data[data.length - 1].deltaValue?.[primaryMetric]) ?? 0
-      : 0;
-
-  const primaryColor = getBarColor(latestValenceValue);
-
-  const getSwatchColor = (metric: NumberMetric): string => {
-    if (metric === primaryMetric) return primaryColor;
-    const metricIndex = displayMetrics.indexOf(metric);
-    return SECONDARY_COLORS[Math.max(0, metricIndex - 1) % SECONDARY_COLORS.length];
-  };
-
-  const toggleMetric = (metric: NumberMetric) => {
-    setVisibleMetrics((prev) => {
-      const next = new Set(prev);
-      if (next.has(metric)) {
-        next.delete(metric);
-      } else {
-        next.add(metric);
-      }
-      return next;
     });
   };
 
@@ -171,105 +144,99 @@ export function AggregationBarChart({
     if (!active || !payload?.length || !payload[0].payload) return null;
     const point = payload[0].payload;
 
-    const visibleTooltipMetrics = displayMetrics.filter((metric) => visibleMetrics.has(metric));
+    const metricLabel = METRIC_DISPLAY_INFO[primaryMetric].label;
 
     return (
-      <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+      <div className="rounded-md bg-white dark:bg-slate-900 px-2.5 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
         {aggregationType === 'none' && (
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{point.label} (#{point.entryNumber})</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">{point.label} (#{point.entryNumber})</div>
         )}
         {aggregationType !== 'none' && (
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">
             {formatFriendlyDate(point.dateKey as any)}
           </div>
         )}
-        <div className="space-y-1">
-          {visibleTooltipMetrics.map((metric) => {
-            const metricValue =
-              valenceSource === 'stats'
-                ? (point.statsValue?.[metric] ?? 0)
-                : (point.deltaValue?.[metric] ?? 0);
-            const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+        
+        {/* Primary value */}
+        <div className="flex items-center justify-between gap-3 mb-2 pb-2 border-b border-slate-200 dark:border-slate-700">
+          <span className="text-xs text-slate-600 dark:text-slate-400">{metricLabel}</span>
+          <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <NumberText
+              value={point.value}
+              valenceValue={point.value}
+              valence={valence}
+              delta={valenceSource === 'deltas'}
+              className="inline"
+            />
+          </span>
+        </div>
 
-            return (
-              <div key={metric} className="flex items-center gap-2 text-xs">
-                <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{ backgroundColor: getSwatchColor(metric) }}
-                />
-                <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
-                  <span className="text-slate-600 dark:text-slate-400">
-                    {METRIC_DISPLAY_INFO[metric].label}
-                  </span>
-                  <span className="font-semibold">
-                    <NumberText
-                      value={metricValue}
-                      valenceValue={metricValue}
-                      valence={metricValence}
-                      delta
-                      className="inline"
-                    />
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-          {visibleTooltipMetrics.length === 0 && (
-            <div className="text-xs text-slate-500 dark:text-slate-400">No metrics selected</div>
-          )}
+        {/* Deviation from mean */}
+        <div className="flex items-center justify-between gap-3 mb-1.5">
+          <span className="text-xs text-slate-600 dark:text-slate-400">vs Mean</span>
+          <span className="text-sm font-semibold">
+            <NumberText
+              value={point.deviationFromMean}
+              valenceValue={point.deviationFromMean}
+              valence={valence}
+              delta
+              className="inline"
+            />
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-3 mb-2 text-[11px] text-slate-500 dark:text-slate-500">
+          <span>Range mean:</span>
+          <span>{formatValue(point.mean)}</span>
+        </div>
+
+        {/* Deviation from median */}
+        <div className="flex items-center justify-between gap-3 mb-1.5">
+          <span className="text-xs text-slate-600 dark:text-slate-400">vs Median</span>
+          <span className="text-sm font-semibold">
+            <NumberText
+              value={point.deviationFromMedian}
+              valenceValue={point.deviationFromMedian}
+              valence={valence}
+              delta
+              className="inline"
+            />
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-500">
+          <span>Range median:</span>
+          <span>{formatValue(point.median)}</span>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="h-80 w-full flex flex-col">
-      <div className="min-h-0 flex-1 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 5, right: 20, bottom: 40, left: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-            <XAxis
-              dataKey="label"
-              stroke={axisColor}
-              style={{ fontSize: '12px' }}
-              tick={{ fill: axisColor }}
-              interval={Math.floor(data.length / 8) || 0}
-            />
-            <YAxis
-              stroke={axisColor}
-              style={{ fontSize: '12px' }}
-              tick={{ fill: axisColor }}
-              tickFormatter={(value) => formatValue(Number(value), { short: true })}
-            />
-            <Tooltip content={renderTooltip} />
-            <Bar dataKey="value" fill="#8884d8" isAnimationActive={true} radius={[8, 8, 0, 0]}>
-              {data.map((entry, index) => (
-                <Cell key={`bar-${index}`} fill={getBarColor(entry.value)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap gap-2 pr-1">
-        {displayMetrics.map((metric) => {
-          const isVisible = visibleMetrics.has(metric);
-          return (
-            <button
-              key={metric}
-              type="button"
-              onClick={() => toggleMetric(metric)}
-              className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors ${isVisible ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-transparent border-slate-200 dark:border-slate-800 opacity-70'}`}
-              title={isVisible ? 'Hide tooltip metric' : 'Show tooltip metric'}
-            >
-              <span
-                className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: getSwatchColor(metric) }}
-              />
-              <span className="text-slate-700 dark:text-slate-300">{METRIC_DISPLAY_INFO[metric].label}</span>
-            </button>
-          );
-        })}
-      </div>
+    <div className="h-80 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={data} margin={{ top: 5, right: 20, bottom: 40, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+          <XAxis
+            dataKey="label"
+            stroke={axisColor}
+            style={{ fontSize: '12px' }}
+            tick={{ fill: axisColor }}
+            interval={Math.floor(data.length / 8) || 0}
+          />
+          <YAxis
+            stroke={axisColor}
+            style={{ fontSize: '12px' }}
+            tick={{ fill: axisColor }}
+            tickFormatter={(value) => formatValue(Number(value), { short: true })}
+          />
+          <ReferenceLine y={0} stroke={axisColor} strokeOpacity={0.5} strokeWidth={1.5} />
+          <Tooltip content={renderTooltip} />
+          <Bar dataKey="deviationFromMean" fill="#8884d8" isAnimationActive={true} radius={[8, 8, 0, 0]}>
+            {data.map((entry, index) => (
+              <Cell key={`bar-${index}`} fill={getBarColor(entry.deviationFromMean)} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
