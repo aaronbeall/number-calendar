@@ -1,10 +1,12 @@
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import { buildPriorAggregateMap, createEmptyAggregate } from '@/lib/period-aggregate';
+import { buildPriorAggregateMap, createEmptyAggregate, computeAggregateCumulatives } from '@/lib/period-aggregate';
+import { computeNumberStats } from '@/lib/stats';
 import { describe, expect, it } from 'vitest';
 
 const makeDayAggregate = (dateKey: PeriodAggregateData<'day'>['dateKey'], numbers: number[]): PeriodAggregateData<'day'> => {
   const aggregate = createEmptyAggregate(dateKey, 'day');
-  return { ...aggregate, numbers };
+  const stats = computeNumberStats(numbers) || createEmptyAggregate('2024-01-01', 'day').stats;
+  return { ...aggregate, numbers, stats };
 };
 
 describe('buildPriorAggregateMap', () => {
@@ -30,5 +32,89 @@ describe('buildPriorAggregateMap', () => {
 
     expect(map[day1.dateKey]).toBeUndefined();
     expect(map[day2.dateKey]).toBeUndefined();
+  });
+});
+
+describe('computeAggregateCumulatives', () => {
+  it('returns undefined for empty periods', () => {
+    const result = computeAggregateCumulatives([]);
+    expect(result).toBeUndefined();
+  });
+
+  it('returns undefined when all periods have no data', () => {
+    const day1 = makeDayAggregate('2024-11-01', []);
+    const day2 = makeDayAggregate('2024-11-02', []);
+
+    const result = computeAggregateCumulatives([day1, day2]);
+    expect(result).toBeUndefined();
+  });
+
+  it('treats single period as a unit with count=1', () => {
+    const day1 = makeDayAggregate('2024-11-01', [10, 20, 30]);
+
+    const result = computeAggregateCumulatives([day1]);
+
+    expect(result).toBeDefined();
+    expect(result?.count).toBe(1);
+    expect(result?.total).toBe(60); // sum of [10, 20, 30]
+    expect(result?.mean).toBe(20); // average of [10, 20, 30]
+    expect(result?.min).toBe(10);
+    expect(result?.max).toBe(30);
+  });
+
+  it('accumulates count as number of periods', () => {
+    const day1 = makeDayAggregate('2024-11-01', [10, 20]);
+    const day2 = makeDayAggregate('2024-11-02', [30, 40]);
+    const day3 = makeDayAggregate('2024-11-03', [50]);
+
+    const result = computeAggregateCumulatives([day1, day2, day3]);
+
+    expect(result?.count).toBe(3); // 3 periods, not 5 data points
+  });
+
+  it('computes mean as average of period totals', () => {
+    const day1 = makeDayAggregate('2024-11-01', [10, 20]); // total = 30
+    const day2 = makeDayAggregate('2024-11-02', [60]); // total = 60
+
+    const result = computeAggregateCumulatives([day1, day2]);
+
+    expect(result?.total).toBe(90); // 30 + 60
+    expect(result?.mean).toBe(45); // (30 + 60) / 2
+  });
+
+  it('preserves min/max across all periods', () => {
+    const day1 = makeDayAggregate('2024-11-01', [15, 25]); // min=15, max=25
+    const day2 = makeDayAggregate('2024-11-02', [5, 35]); // min=5, max=35
+
+    const result = computeAggregateCumulatives([day1, day2]);
+
+    expect(result?.min).toBe(5); // overall min
+    expect(result?.max).toBe(35); // overall max
+  });
+
+  it('skips periods with no data', () => {
+    const day1 = makeDayAggregate('2024-11-01', [10]);
+    const day2 = makeDayAggregate('2024-11-02', []);
+    const day3 = makeDayAggregate('2024-11-03', [20]);
+
+    const result = computeAggregateCumulatives([day1, day2, day3]);
+
+    expect(result?.count).toBe(2); // only 2 periods with data
+    expect(result?.total).toBe(30); // 10 + 20
+  });
+
+  it('computes distributional metrics from period totals', () => {
+    // Period totals: [30, 70, 50]
+    const day1 = makeDayAggregate('2024-11-01', [10, 20]); // total=30
+    const day2 = makeDayAggregate('2024-11-02', [60, 10]); // total=70
+    const day3 = makeDayAggregate('2024-11-03', [50]); // total=50
+
+    const result = computeAggregateCumulatives([day1, day2, day3]);
+
+    // Median of [30, 50, 70] = 50
+    expect(result?.median).toBe(50);
+    // Mean of [30, 70, 50] = 50
+    expect(result?.mean).toBe(50);
+    // These are computed from the period totals, not carried forward from first period
   });
 });

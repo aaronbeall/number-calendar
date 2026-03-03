@@ -1,5 +1,5 @@
 import type { TimePeriod } from '@/features/db/localdb';
-import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import { computeAggregateCumulatives, type PeriodAggregateData } from '@/lib/period-aggregate';
 import type { NumberStats, NumberMetric } from '@/lib/stats';
 import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes } from '@/lib/stats';
 import { parseDateKey } from '@/lib/friendly-date';
@@ -141,8 +141,6 @@ export interface AnalysisData {
   dataPoints: number[];
   /** Summary stats for the time range (raw for none, aggregate for primary metric otherwise) */
   stats: NumberStats | null;
-  /** Stats computed from period aggregates (stats of stats for each metric) */
-  aggregateStats?: Record<NumberMetric, NumberStats | null>;
   /** Delta stats compared to prior period */
   deltas?: NumberStats;
   /** Percent change vs prior period */
@@ -168,7 +166,6 @@ type AnalysisOptions = {
 export function computeAnalysisData<T extends TimePeriod>(
   allPeriods: PeriodAggregateData<T>[],
   timeRange: TimeRange,
-  includePriorPeriod: boolean = true,
   options: AnalysisOptions = {},
 ): AnalysisData {
   const aggregation = options.aggregation ?? 'none';
@@ -188,17 +185,20 @@ export function computeAnalysisData<T extends TimePeriod>(
   // Calculate extremes across all periods
   const extremes = calculateExtremes(periodStats);
 
-  // Compute stats from period aggregates (stats of stats for each metric)
-  const aggregateStats: Record<NumberMetric, NumberStats | null> = {} as any;
-  const metrics: NumberMetric[] = ['count', 'total', 'mean', 'median', 'min', 'max', 'first', 'last', 'range', 'change', 'changePercent', 'mode', 'slope', 'midrange', 'variance', 'standardDeviation', 'interquartileRange'];
-  for (const metric of metrics) {
-    aggregateStats[metric] = computeMetricStats(periodStats, metric);
-  }
-
-  // Get cumulatives from the last period in range (already computed incrementally)
-  const cumulatives = periodsInRange.length > 0 
-    ? periodsInRange[periodsInRange.length - 1].cumulatives 
+  const lastPeriodKey = periodsInRange.length > 0
+    ? periodsInRange[periodsInRange.length - 1].dateKey
     : undefined;
+  const lastPeriodIndex = lastPeriodKey
+    ? allPeriods.findIndex(p => p.dateKey === lastPeriodKey)
+    : -1;
+  const lastPeriodsSlice = lastPeriodIndex >= 0
+    ? allPeriods.slice(0, lastPeriodIndex + 1)
+    : [];
+
+  // Get cumulatives from the last period in range
+  const cumulatives = aggregation === 'none'
+    ? computeNumberStats(lastPeriodsSlice.flatMap(p => p.numbers)) ?? undefined // Stats of all raw numbers up to end of range
+    : computeAggregateCumulatives(lastPeriodsSlice, primaryMetric); // Stats of period metrics up to end of range
 
   // Find prior period for deltas
   let priorPeriod: PeriodAggregateData<T> | undefined;
@@ -206,7 +206,7 @@ export function computeAnalysisData<T extends TimePeriod>(
   let percents: Partial<NumberStats> | undefined;
   let cumulativePercents: Partial<NumberStats> | undefined;
 
-  if (includePriorPeriod && periodsInRange.length > 0 && stats) {
+  if (periodsInRange.length > 0 && stats) {
     const firstPeriodIndex = allPeriods.findIndex(p => p.dateKey === periodsInRange[0].dateKey);
     if (firstPeriodIndex > 0) {
       priorPeriod = allPeriods[firstPeriodIndex - 1];
@@ -217,8 +217,11 @@ export function computeAnalysisData<T extends TimePeriod>(
       deltas = priorStats ? computeStatsDeltas(stats, priorStats) : undefined;
       percents = priorStats ? computeStatsPercents(stats, priorStats) : undefined;
       // Cumulative percent: compare cumulative at end of range vs cumulative before range
-      cumulativePercents = cumulatives && priorPeriod.cumulatives
-        ? computeStatsPercents(cumulatives, priorPeriod.cumulatives)
+      const priorCumulatives = aggregation === 'none'
+        ? computeNumberStats(allPeriods.slice(0, firstPeriodIndex).flatMap(p => p.numbers)) ?? undefined // Stats of all raw numbers before range
+        : computeAggregateCumulatives(allPeriods.slice(0, firstPeriodIndex), primaryMetric); // Stats of period metrics before range
+      cumulativePercents = cumulatives && priorCumulatives
+        ? computeStatsPercents(cumulatives, priorCumulatives)
         : undefined;
     } else {
       // Seed deltas/percents when there is no prior period available.
@@ -232,7 +235,6 @@ export function computeAnalysisData<T extends TimePeriod>(
     priorPeriod,
     dataPoints,
     stats,
-    aggregateStats,
     deltas,
     percents,
     extremes,

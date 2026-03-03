@@ -10,8 +10,12 @@ import { useState } from 'react';
 import type { GoalRequirements, GoalTarget, TimePeriod, Tracking, Valence } from '../db/localdb';
 
 // Shared filtering functions for all goal builders
-export const filterMetricsForTracking = (metric: NumberMetric, tracking?: Tracking): boolean => {
+export const filterMetricsForTracking = (metric: NumberMetric, tracking?: Tracking, source?: NumberSource): boolean => {
   if (tracking === 'trend' && metric === 'total') return false;
+  // Filter out metrics that don't support cumulatives when source is 'cumulatives' or 'cumulativePercents'
+  if ((source === 'cumulatives' || source === 'cumulativePercents') && METRIC_DISPLAY_INFO[metric].cumulatives === false) {
+    return false;
+  }
   return true;
 };
 
@@ -100,7 +104,7 @@ export function GoalBuilder({ value, onChange, tracking }: GoalBuilderProps) {
           </SelectTrigger>
           <SelectContent className="max-h-60">
             {entriesOf(METRICS)
-              .filter(([key]) => filterMetricsForTracking(key, tracking))
+              .filter(([key]) => filterMetricsForTracking(key, tracking, source))
               .map(([key, { label, description }]) => {
               const isPrimary = tracking && key === getPrimaryMetric(tracking);
               return (

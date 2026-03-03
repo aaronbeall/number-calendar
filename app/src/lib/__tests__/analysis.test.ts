@@ -162,7 +162,7 @@ describe('analysis', () => {
       const result = computeAnalysisData(periods, {
         startDate: new Date('2024-01-02'),
         endDate: new Date('2024-01-03'),
-      }, true);
+      });
 
       // Range contains days 2-3 with numbers [20, 30], total = 50
       // Prior period is day 1 with total = 10
@@ -197,7 +197,7 @@ describe('analysis', () => {
       const result = computeAnalysisData(periods, {
         startDate: new Date('2024-01-02'),
         endDate: new Date('2024-01-03'),
-      }, true);
+      });
 
       // Range contains days 2-3, cumulative at end of range = 60
       // Prior period (day 1) has cumulative = 10
@@ -233,7 +233,7 @@ describe('analysis', () => {
       const result = computeAnalysisData(periods, {
         startDate: new Date('2024-12-01'),
         endDate: new Date('2025-01-31'),
-      }, true);
+      });
 
       // Range: Dec 2024 - Jan 2025, total = -21900
       // Cumulative at end (Jan 2025): -29300

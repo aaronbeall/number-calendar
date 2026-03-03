@@ -174,7 +174,8 @@ describe('stats', () => {
   describe('computeCumulatives', () => {
     it('accumulates totals and counts across periods', () => {
       const prior = computeNumberStats([6, 4])!; // total 10, count 2
-      const cumulatives = computeCumulatives([2, 4], prior);
+      const current = computeNumberStats([2, 4])!; // total 6, count 2
+      const cumulatives = computeCumulatives(current, prior);
 
       expect(cumulatives.total).toBe(16);
       expect(cumulatives.count).toBe(4);

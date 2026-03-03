@@ -351,7 +351,7 @@ export class CalendarData {
       let cumulativeDeltas: NumberStats;
       let cumulativePercents: Partial<NumberStats>;
       if (priorCumulatives) {
-        cumulatives = computeCumulatives(currentCache.numbers ?? [], priorCumulatives);
+        cumulatives = computeCumulatives(currentCache.stats, priorCumulatives);
         cumulativeDeltas = computeStatsDeltas(cumulatives, priorCumulatives);
         cumulativePercents = computeStatsPercents(cumulatives, priorCumulatives);
       } else {

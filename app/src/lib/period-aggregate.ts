@@ -1,5 +1,5 @@
 import type { DateKeyByPeriod, DayKey, TimePeriod } from '@/features/db/localdb';
-import { emptyStats, type NumberStats, type StatsExtremes, calculateExtremes } from '@/lib/stats';
+import { emptyStats, computeCumulatives, type NumberStats, type NumberMetric, type StatsExtremes, calculateExtremes } from '@/lib/stats';
 import type { DateKeyType } from './friendly-date';
 
 export type PeriodAggregateData<T extends TimePeriod> = {
@@ -45,6 +45,46 @@ export const buildPriorAggregateMap = <T extends DateKeyType>(
     }
   }
   return record;
+};
+
+/**
+ * Compute cumulative statistics across aggregated periods, treating each period as a single unit.
+ * 
+ * This transforms each period's stats by setting count=1, then uses computeCumulatives to accumulate
+ * basic metrics (count, total, mean, min, max, etc.). For distributional metrics (median, mode, 
+ * variance, etc.), we compute them from the period metric values themselves.
+ * 
+ * The result represents statistics of the period aggregates themselves:
+ * - count: number of periods (not individual data points)
+ * - total: sum of all period totals
+ * - mean: average of period totals
+ * - min/max: lowest/highest values across all periods
+ * - median/mode/variance/etc: computed from the sequence of period metric values
+ * 
+ * @param periods Array of period aggregate data to accumulate
+ * @param primaryMetric The metric to use for distributional calculations (default: 'total')
+ * @returns Cumulative stats across the periods, or undefined if no valid periods
+ */
+export const computeAggregateCumulatives = <T extends TimePeriod>(
+  periods: PeriodAggregateData<T>[],
+  primaryMetric: NumberMetric = 'total',
+): NumberStats | undefined => {
+  const validPeriods = periods.filter(p => p.stats.count > 0);
+  if (validPeriods.length === 0) return undefined;
+
+  // Extract metric values for distributional computation
+  const metricValues = validPeriods.map(p => p.stats[primaryMetric]);
+
+  // Accumulate basic metrics using computeCumulatives with metric values
+  let cumulatives: NumberStats | null = null;
+  for (const period of validPeriods) {
+    const unitAggregate = { ...period.stats, count: 1 };
+    cumulatives = cumulatives
+      ? computeCumulatives(unitAggregate, cumulatives, metricValues)
+      : unitAggregate;
+  }
+
+  return cumulatives ?? undefined;
 };
 
 /**

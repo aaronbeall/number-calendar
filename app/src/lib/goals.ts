@@ -132,16 +132,14 @@ function createPeriodCache(data: Record<DayKey, number[]>) {
   function getPeriodCumulatives(timePeriod: DateKeyType): Record<DateKey, NumberStats | null> {
     if (periodCumulativesCache[timePeriod]) return periodCumulativesCache[timePeriod]!;
     const periods = getPeriods(timePeriod);
-    const dataByPeriod = getPeriodData(timePeriod);
     const statsByPeriod = getPeriodStats(timePeriod);
     const cumulatives: Record<DateKey, NumberStats | null> = {};
     let priorCumulatives: NumberStats | null = null;
     for (const period of periods) {
       const stats = statsByPeriod[period];
-      const numbers = dataByPeriod[period] || [];
       if (stats) {
         if (priorCumulatives) {
-          cumulatives[period] = computeCumulatives(numbers, priorCumulatives);
+          cumulatives[period] = computeCumulatives(stats, priorCumulatives);
         } else {
           // First period: cumulative equals stats
           cumulatives[period] = stats;

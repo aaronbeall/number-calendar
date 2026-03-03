@@ -284,42 +284,63 @@ export type PeriodDerivedStats = {
 
 
 /**
- * Build cumulative stats using prior cumulatives plus the current period numbers.
+ * Build cumulative stats using prior cumulatives plus the current period stats.
  *
- * Note: distributional metrics (median, mode, variance, standardDeviation,
- * interquartileRange) are carried forward and are not meaningful until full
- * historical numbers are available.
+ * When `allNumbers` is not provided, distributional metrics (median, mode, variance,
+ * standardDeviation, interquartileRange) are set to 0 as they cannot be accurately 
+ * computed without the full data sequence.
+ *
+ * When `allNumbers` is provided, distributional metrics are computed from the
+ * complete sequence of numbers, enabling accurate "stats of the metric" semantics.
  */
 export function computeCumulatives(
-  numbers: number[],
+  stats: NumberStats,
   priorCumulatives: NumberStats | null,
+  allNumbers?: number[],
 ): NumberStats {
-  const stats = computeNumberStats(numbers) ?? emptyStats();
   if (!priorCumulatives) return stats;
 
-  // Distributional metrics are carried forward when full history is unavailable.
-
-  const numbersTotal = numbers.reduce((sum, value) => sum + value, 0);
-  const count = priorCumulatives.count + numbers.length;
-  const total = priorCumulatives.total + numbersTotal;
+  // Accumulate basic metrics
+  const count = priorCumulatives.count + stats.count;
+  const total = priorCumulatives.total + stats.total;
   const mean = count > 0 ? total / count : 0;
-  const hasNumbers = numbers.length > 0;
+  const hasNumbers = stats.count > 0;
 
-  const min = hasNumbers ? Math.min(priorCumulatives.min, ...numbers) : priorCumulatives.min;
-  const max = hasNumbers ? Math.max(priorCumulatives.max, ...numbers) : priorCumulatives.max;
-  const first = priorCumulatives.count > 0 ? priorCumulatives.first : (hasNumbers ? numbers[0] : 0);
-  const last = hasNumbers ? numbers[numbers.length - 1] : priorCumulatives.last;
+  const min = hasNumbers ? Math.min(priorCumulatives.min, stats.min) : priorCumulatives.min;
+  const max = hasNumbers ? Math.max(priorCumulatives.max, stats.max) : priorCumulatives.max;
+  const first = priorCumulatives.count > 0 ? priorCumulatives.first : stats.first;
+  const last = hasNumbers ? stats.last : priorCumulatives.last;
   const range = max - min;
   const change = last - first;
   const changePercent = first !== 0 ? (change / Math.abs(first)) * 100 : 0;
   const slope = count > 1 ? change / (count - 1) : 0;
   const midrange = (min + max) / 2;
 
+  // Compute or set distributional metrics
+  let median: number, mode: number, variance: number, standardDeviation: number, interquartileRange: number;
+  
+  if (allNumbers && allNumbers.length > 0) {
+    // Compute distributional metrics from complete sequence
+    const distributionalStats = computeNumberStats(allNumbers);
+    median = distributionalStats?.median ?? stats.median;
+    mode = distributionalStats?.mode ?? stats.mode;
+    variance = distributionalStats?.variance ?? stats.variance;
+    standardDeviation = distributionalStats?.standardDeviation ?? stats.standardDeviation;
+    interquartileRange = distributionalStats?.interquartileRange ?? stats.interquartileRange;
+  } else {
+    // Set to 0 when unavailable (cumulatives: false metrics)
+    median = 0;
+    mode = 0;
+    variance = 0;
+    standardDeviation = 0;
+    interquartileRange = 0;
+  }
+
   return {
     count,
     total,
     mean,
-    median: priorCumulatives.count > 0 ? priorCumulatives.median : stats.median,
+    median,
     min,
     max,
     first,
@@ -327,12 +348,12 @@ export function computeCumulatives(
     range,
     change,
     changePercent,
-    mode: priorCumulatives.count > 0 ? priorCumulatives.mode : stats.mode,
+    mode,
     slope,
     midrange,
-    variance: priorCumulatives.count > 0 ? priorCumulatives.variance : stats.variance,
-    standardDeviation: priorCumulatives.count > 0 ? priorCumulatives.standardDeviation : stats.standardDeviation,
-    interquartileRange: priorCumulatives.count > 0 ? priorCumulatives.interquartileRange : stats.interquartileRange,
+    variance,
+    standardDeviation,
+    interquartileRange,
   };
 }
 
@@ -347,7 +368,7 @@ export function computePeriodDerivedStats(
   const stats = computeNumberStats(numbers) ?? emptyStats();
   const deltas = computeStatsDeltas(stats, priorStats);
   const percents = computeStatsPercents(stats, priorStats);
-  const cumulatives = computeCumulatives(numbers, priorCumulatives);
+  const cumulatives = computeCumulatives(stats, priorCumulatives);
   const cumulativeDeltas = priorCumulatives ? computeStatsDeltas(cumulatives, priorCumulatives) : emptyStats();
   const cumulativePercents = priorCumulatives ? computeStatsPercents(cumulatives, priorCumulatives) : {};
 

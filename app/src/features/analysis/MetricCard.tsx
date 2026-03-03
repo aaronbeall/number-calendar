@@ -109,7 +109,6 @@ export function MetricCard({
   // Build description content for the help popover
   const buildHelpDescription = (): React.ReactNode => {
     const parts: React.ReactNode[] = [];
-    const supportsCumulatives = METRIC_DISPLAY_INFO[metric].cumulatives !== false;
     const metricInfo = METRIC_DISPLAY_INFO[metric];
     
     // Main metric description
@@ -133,11 +132,15 @@ export function MetricCard({
     }
     
     // Cumulative description
-    if (cumulativeValue !== undefined && supportsCumulatives) {
+    if (cumulativeValue !== undefined) {
       parts.push(
         <div key="cumulative" className="mb-2">
           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Cumulative</div>
-          <div className="text-xs text-slate-600 dark:text-slate-400">Running total up to this period</div>
+          <div className="text-xs text-slate-600 dark:text-slate-400">
+            {aggregationType !== 'none' 
+              ? 'Statistics of period aggregates from beginning to end of range'
+              : 'Statistics of all data from beginning to end of range'}
+          </div>
         </div>
       );
     }
@@ -160,15 +163,6 @@ export function MetricCard({
           <div className="text-xs text-slate-600 dark:text-slate-400">
             Primary metric for {metricInfo.primary} tracking — used as the basis for aggregate statistics
           </div>
-        </div>
-      );
-    }
-    
-    // Note about no cumulative support
-    if (!supportsCumulatives) {
-      parts.push(
-        <div key="no-cumulative" className="text-xs text-slate-500 dark:text-slate-500 italic">
-          This metric doesn't support cumulative calculations
         </div>
       );
     }
@@ -256,7 +250,7 @@ export function MetricCard({
               </span>
             </div>
           )}
-          {cumulativeValue !== undefined && METRIC_DISPLAY_INFO[metric].cumulatives !== false && (
+          {cumulativeValue !== undefined && (
             <div className={deltaWrapperClass}>
               <span className={deltaChipClass}>
                 <NumberText 

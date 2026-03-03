@@ -148,7 +148,7 @@ export function Analysis() {
 
   // Compute analysis data for selected time range
   const analysisData = useMemo(() => 
-    computeAnalysisData(periodsForAggregation, timeRange, true, {
+    computeAnalysisData(periodsForAggregation, timeRange, {
       aggregation: actualAggregationType,
       primaryMetric,
     }),
