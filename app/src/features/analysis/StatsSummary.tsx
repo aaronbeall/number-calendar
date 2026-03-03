@@ -21,11 +21,13 @@ interface StatsSummaryProps {
   cumulativePercents?: Partial<NumberStats>;
   deltas?: NumberStats;
   percents?: Partial<NumberStats>;
+  selectedMetrics: NumberMetric[];
+  onSelectedMetricsChange: (metrics: NumberMetric[]) => void;
 }
 
-export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, aggregationType, extremes, cumulatives, cumulativePercents, deltas, percents }: StatsSummaryProps) {
+export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, aggregationType, extremes, cumulatives, cumulativePercents, deltas, percents, selectedMetrics, onSelectedMetricsChange }: StatsSummaryProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [originalMetrics, setOriginalMetrics] = useState<NumberMetric[] | null>(null);
+  const [draftSelectedMetrics, setDraftSelectedMetrics] = useState<NumberMetric[]>(selectedMetrics);
   const [originalShowDeltas, setOriginalShowDeltas] = useState<boolean | null>(null);
   const [originalShowExtremes, setOriginalShowExtremes] = useState<boolean | null>(null);
   const [originalShowCumulatives, setOriginalShowCumulatives] = useState<boolean | null>(null);
@@ -41,12 +43,6 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
     [primaryMetric]
   );
   
-  // Load configuration from preferences
-  const [selectedMetrics, setSelectedMetrics] = usePreference<NumberMetric[]>(
-    `statsSummary_metrics_${datasetId}`,
-    defaultSelectedMetrics
-  );
-
   const showDeltasOption = primaryMetricInfo.primary === 'trend';
   const showCumulativesOption = primaryMetricInfo.primary === 'series';
   const defaultShowDeltas = showDeltasOption;
@@ -68,7 +64,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
   );
 
   const handleConfigOpen = () => {
-    setOriginalMetrics(selectedMetrics);
+    setDraftSelectedMetrics(selectedMetrics);
     setOriginalShowDeltas(showDeltas);
     setOriginalShowExtremes(showExtremes);
     setOriginalShowCumulatives(showCumulatives);
@@ -76,7 +72,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
   };
 
   const handleCancel = () => {
-    if (originalMetrics !== null) setSelectedMetrics(originalMetrics);
+    setDraftSelectedMetrics(selectedMetrics);
     if (originalShowDeltas !== null) setShowDeltas(originalShowDeltas);
     if (originalShowExtremes !== null) setShowExtremes(originalShowExtremes);
     if (originalShowCumulatives !== null) setShowCumulatives(originalShowCumulatives);
@@ -84,10 +80,15 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
   };
 
   const handleResetToDefault = () => {
-    setSelectedMetrics(defaultSelectedMetrics);
+    setDraftSelectedMetrics(defaultSelectedMetrics);
     setShowDeltas(defaultShowDeltas);
     setShowExtremes(false);
     setShowCumulatives(defaultShowCumulatives);
+  };
+
+  const handleDone = () => {
+    onSelectedMetricsChange(draftSelectedMetrics);
+    setIsConfigOpen(false);
   };
 
   const buildSummaryItems = useMemo(() => {
@@ -152,7 +153,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
         <Button
           variant="default"
           size="sm"
-          onClick={() => setIsConfigOpen(false)}
+          onClick={handleDone}
           className="font-medium"
         >
           Done
@@ -169,12 +170,12 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
               <div className="flex items-start gap-2 p-2 rounded transition-colors hover:bg-slate-300 dark:hover:bg-slate-700">
                 <Checkbox
                   id={`metric-${primaryMetric}`}
-                  checked={selectedMetrics.includes(primaryMetric)}
+                  checked={draftSelectedMetrics.includes(primaryMetric)}
                   onCheckedChange={(checked) => {
                     if (checked) {
-                      setSelectedMetrics([...selectedMetrics, primaryMetric].filter((m, i, arr) => arr.indexOf(m) === i));
+                      setDraftSelectedMetrics([...draftSelectedMetrics, primaryMetric].filter((m, i, arr) => arr.indexOf(m) === i));
                     } else {
-                      setSelectedMetrics(selectedMetrics.filter(m => m !== primaryMetric));
+                      setDraftSelectedMetrics(draftSelectedMetrics.filter(m => m !== primaryMetric));
                     }
                   }}
                   disabled
@@ -246,12 +247,12 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
                   <div key={metric} className="flex items-start gap-2 p-2 rounded transition-colors hover:bg-slate-200 dark:hover:bg-slate-800">
                     <Checkbox
                       id={`metric-${metric}`}
-                      checked={selectedMetrics.includes(metric)}
+                      checked={draftSelectedMetrics.includes(metric)}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setSelectedMetrics([...selectedMetrics, metric]);
+                          setDraftSelectedMetrics([...draftSelectedMetrics, metric]);
                         } else {
-                          setSelectedMetrics(selectedMetrics.filter(m => m !== metric));
+                          setDraftSelectedMetrics(draftSelectedMetrics.filter(m => m !== metric));
                         }
                       }}
                     />

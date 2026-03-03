@@ -39,9 +39,9 @@ I'm liking this one.
   - [ ] Export/import achievements
 - [ ] Data settings
   - [x] Which is better (valence): higher, lower, etc
-    - [ ] Range-bound valence: above, below, inside, outside
+    - [ ] (**MVP**) Range-bound valence: above, below, inside, outside
   - [ ] Allowed range (combines with valence for semantics, ex positive valence with positive numbers means higher is better, not positive is better)
-  - [ ] Formatting style (none, currency, percent, unit)
+  - [ ] (**MVP**) Formatting style (none, currency, percent, unit)
     - [ ] Options (sign display, accounting, precision)
   - [x] Tracking: trend (weight, etc), series (P&L, etc)
   - [ ] Computed data (formula input from other sources)
@@ -64,9 +64,9 @@ I'm liking this one.
 - [ ] Display options
   - [ ] Heatmap mode (valence coloring based on magnitude)
   - [ ] Show/hide week summaries
-  - [ ] Calculat weeks across months
+  - [ ] Calculate weeks across months
   - [x] Short format numbers (10K, 1M, etc)
-  - [ ] Customize displayed stats
+  - [ ] Customize displayed cell stats
 - [ ] Full math support, ex `1+(100/23)`
   - [ ] Sub-expression parsing in numbers input, ex `1+2-(4+6)` = `[1, 2, -10]`
   - [x] Support math expressions in individual number editor
@@ -76,9 +76,10 @@ I'm liking this one.
 - [x] Dashboard (for multiple data sets)
 - [ ] Chart improvements
   - [x] Line chart
-  - [ ] Rolling averages
+  - [ ] (**MVP**) Rolling averages
+  - [ ] (**MVP**) Growth projections
   - [ ] Compare
-  - [ ] Rolling start from
+  - [ ] Range/All-Time Cumulatives
   - [ ] Formulas
   - [ ] Expand/fullscreen
   - [ ] Export image/pdf
@@ -86,23 +87,23 @@ I'm liking this one.
   - [ ] Public data sources (weather, demographics, etc)
 - [ ] Additional add options
   - [x] Add by diff
-  - [ ] Global quick add (with options) tailored for mobile
+  - [ ] (**MVP**)Global quick add (with options) tailored for mobile
   - [ ] Add to rollups (week, month, year) -- how to distribute?
   - [ ] Multi-line add (re-use import code)
   - [ ] Timer/stopwatch add
   - [ ] Slider
+  - [ ] (**MVP**) Intelligent options based on units
 - [ ] Audit log (per period)
 - [ ] Prev/Next in the panel
-- [ ] Day breakdown/links in numbers panel (week/month/year)
+- [ ] (**MVP**)Day breakdown/links in numbers panel (week/month/year)
 - [ ] Timestamp date with number entries (requires stable re-parsing)
 - [ ] View customization (weekly, order, display metric, valence, etc)
 - [ ] Calendar cell tooltips (consise number panel info)
-- [ ] Growth projections
 - [ ] Search
 - [ ] Filter by expression (re-use goal-builder)
 - [ ] Custom analytics queries (expose generic `stats.ts` API)
-- [ ] Add tags (on day/month/week/year)
-- [ ] Add ratings (on day/month/week/year)
+- [ ] Add tags/reactions/ratings (on day/month/week/year)
+  - [ ] Search and filter by tags/reactions/ratings
 - [ ] Tooltips on extremes, ex "January Best"
 - [ ] Highlight min/max in editable numbers badge
 - [ ] Number dictionary by data type (ex "calories", lookup calories for food)
@@ -129,7 +130,7 @@ I'm liking this one.
 - [ ] User social login/data sync
 - [x] Support (Patreon, Buy Me A Coffee)
 - [x] Feedback
-- [ ] Ads?
+- [ ] Ads? Yuck
 - [x] Share
 - [ ] Copyright/EULA/authorship
 - [x] About
@@ -138,7 +139,7 @@ I'm liking this one.
 - [ ] Premium features
   - [ ] No ads
   - [ ] Number of datasets
-  - [ ] AI assistance (bleh)
+  - [ ] AI assistance (bleh) -- analysis feedback?
   - [ ] Data Syncing (via Supabase, Dropbox, Jsonbin)
   - [ ] Data export/import
   - [ ] Data integrations

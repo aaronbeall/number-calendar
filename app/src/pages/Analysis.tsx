@@ -11,6 +11,7 @@ import { useDatasetContext } from '@/context/DatasetContext';
 import { useAllDays } from '@/features/db/useDayEntryData';
 import type { DateKey } from '@/features/db/localdb';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
+import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { formatFriendlyDate, dateToDayKey, convertDateKey, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
@@ -19,6 +20,7 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { getPrimaryMetric } from '@/lib/tracking';
+import type { NumberMetric } from '@/lib/stats';
 import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { AggregationBarChart } from '@/features/analysis/AggregationBarChart';
@@ -27,7 +29,9 @@ import { DistributionHistogram } from '@/features/analysis/DistributionHistogram
 import { PeriodComparisonChart } from '@/features/analysis/PeriodComparisonChart';
 import { StatsSummary } from '@/features/analysis/StatsSummary';
 import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
-import { capitalize, pluralize } from '@/lib/utils';
+import { adjectivize, capitalize, pluralize } from '@/lib/utils';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
 
 function formatAggregationRange(
   startDate: Date,
@@ -65,6 +69,19 @@ export function Analysis() {
   const [presetRange, setPresetRange] = useState<TimeFramePreset | null>('last-6-months');
   const [customStart, setCustomStart] = useState<Date>(new Date());
   const [customEnd, setCustomEnd] = useState<Date>(new Date());
+  const defaultSelectedSummaryMetrics = useMemo(
+    () => ['count', 'mean', 'median', 'min', 'max', primaryMetric] as NumberMetric[],
+    [primaryMetric],
+  );
+  const [selectedSummaryMetrics, setSelectedSummaryMetrics] = usePreference<NumberMetric[]>(
+    `statsSummary_metrics_${dataset.id}`,
+    defaultSelectedSummaryMetrics,
+  );
+  const defaultTrendMode: TrendDataMode = dataset.tracking === 'series' ? 'cumulative' : 'delta';
+  const [trendChartMode, setTrendChartMode] = usePreference<TrendDataMode>(
+    `trendChart_dataMode_${dataset.tracking}_${dataset.id}`,
+    defaultTrendMode,
+  );
 
   // Get periods based on aggregation type
   const periodsForAggregation = useMemo(() => {
@@ -205,6 +222,11 @@ export function Analysis() {
     aggregationOptions.find(option => option.value === actualAggregationType)?.label ?? 'Month';
   const activePresetLabel =
     availablePresets.find(preset => preset.preset === presetRange)?.label ?? 'Custom';
+  const aggregationModeLabel =
+    actualAggregationType === 'none'
+      ? 'Entries'
+      : capitalize(adjectivize(actualAggregationType));
+  const trendChangeModeLabel = `${aggregationModeLabel} Change`;
 
   if (!dataset || aggregateData.days.length === 0) {
     return (
@@ -360,18 +382,59 @@ export function Analysis() {
             deltas={deltasData}
             percents={percents}
             cumulativePercents={cumulativePercents}
+            selectedMetrics={selectedSummaryMetrics}
+            onSelectedMetricsChange={setSelectedSummaryMetrics}
           />
 
           {/* Trend Chart */}
           <Card className="p-4">
-            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-              <LineChart className="w-4 h-4" />
-              Trend Over Time
-            </h3>
+            <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2">
+              <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+                <LineChart className="w-4 h-4" />
+                Trend Over Time
+              </h3>
+              <ToggleGroup
+                type="single"
+                value={trendChartMode}
+                onValueChange={(value) => {
+                  if (value) setTrendChartMode(value as TrendDataMode);
+                }}
+                size="sm"
+                variant="outline"
+                aria-label="Trend chart mode"
+              >
+                {dataset.tracking === 'series' ? (
+                  <>
+                    <ToggleGroupItem value="cumulative" aria-label="Cumulative">
+                      <LineChart className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Cumulative</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="delta" aria-label={aggregationModeLabel}>
+                      <BarChart3 className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">{aggregationModeLabel}</span>
+                    </ToggleGroupItem>
+                  </>
+                ) : (
+                  <>
+                    <ToggleGroupItem value="delta" aria-label="Trend">
+                      <LineChart className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Trend</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="cumulative" aria-label={trendChangeModeLabel}>
+                      <TrendingUp className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">{trendChangeModeLabel}</span>
+                    </ToggleGroupItem>
+                  </>
+                )}
+              </ToggleGroup>
+            </div>
             <TrendAnalysisChart
-              days={daysInRange}
+              periods={analysisData.periods}
               aggregationType={actualAggregationType}
+              tracking={dataset.tracking}
+              mode={trendChartMode}
               valence={dataset.valence}
+              selectedMetrics={selectedSummaryMetrics}
             />
           </Card>
 

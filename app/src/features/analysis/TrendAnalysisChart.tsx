@@ -1,10 +1,19 @@
 import { useTheme } from '@/components/ThemeProvider';
-import type { DayEntry, Valence } from '@/features/db/localdb';
+import { NumberText } from '@/components/ui/number-text';
+import type { Tracking, Valence } from '@/features/db/localdb';
 import type { AggregationType } from '@/lib/analysis';
-import { formatFriendlyDate } from '@/lib/friendly-date';
+import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import { METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
+import { getPrimaryMetric } from '@/lib/tracking';
+import { getValueForValence } from '@/lib/valence';
+import { format } from 'date-fns';
+import { useId, useMemo, useState } from 'react';
 import {
   CartesianGrid,
+  ReferenceLine,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -12,21 +21,36 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+
 interface TrendAnalysisChartProps {
-  days: DayEntry[];
+  periods: PeriodAggregateData<any>[];
   aggregationType: AggregationType;
+  tracking: Tracking;
+  mode: TrendDataMode;
   valence?: Valence;
+  selectedMetrics?: NumberMetric[];
 }
 
-interface TrendPoint {
-  date: string;
-  value: number;
-  avg?: number;
-}
+export type TrendDataMode = 'cumulative' | 'delta';
+
+type TrendPoint = {
+  dateKey: string;
+  label: string;
+  cumulativeValue?: Partial<Record<NumberMetric, number>>;
+  statsValue?: Partial<Record<NumberMetric, number>>;
+  deltaValue?: Partial<Record<NumberMetric, number>>;
+} & Partial<Record<NumberMetric, number>>;
+
+const SECONDARY_COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899', '#14b8a6', '#6366f1'];
+const SECONDARY_DASHES = ['4 2', '2 2', '6 3', '3 2', '5 2', '2 1'];
 
 export function TrendAnalysisChart({
-  days,
+  periods,
+  aggregationType,
+  tracking,
+  mode,
   valence = 'neutral',
+  selectedMetrics = [],
 }: TrendAnalysisChartProps) {
   const { theme } = useTheme();
   const isDark =
@@ -34,16 +58,82 @@ export function TrendAnalysisChart({
     (theme === 'system' &&
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const gradientId = useId();
 
-  const data: TrendPoint[] = days.map((day) => {
-    const lastValue = day.numbers[day.numbers.length - 1] ?? 0;
-    const avgValue = day.numbers.reduce((a, b) => a + b, 0) / day.numbers.length;
-    return {
-      date: day.date,
-      value: lastValue,
-      avg: avgValue,
-    };
+  const primaryMetric = getPrimaryMetric(tracking);
+
+  const displayMetrics = useMemo(() => {
+    const unique = [
+      primaryMetric,
+      ...selectedMetrics.filter((metric): metric is NumberMetric => metric !== primaryMetric),
+    ];
+    return unique.length > 0 ? unique : [primaryMetric];
+  }, [primaryMetric, selectedMetrics]);
+
+  // Default: show primary metric + average (if available)
+  const [visibleMetrics, setVisibleMetrics] = useState<Set<NumberMetric>>(() => {
+    const defaults = new Set<NumberMetric>([primaryMetric]);
+    if (displayMetrics.includes('mean')) {
+      defaults.add('mean');
+    }
+    return defaults;
   });
+
+  const formatPeriodLabel = (dateKey: string): string => {
+    try {
+      const date = parseDateKey(dateKey as any);
+      switch (aggregationType) {
+        case 'week':
+          return `W${format(date, 'ww')} '${format(date, 'yy')}`;
+        case 'month':
+          return format(date, "MMM ''yy");
+        case 'year':
+          return format(date, 'yyyy');
+        case 'none':
+        case 'day':
+        default:
+          return format(date, "MMM d, ''yy");
+      }
+    } catch {
+      return dateKey;
+    }
+  };
+
+  const data: TrendPoint[] = useMemo(() => {
+    return periods
+      .filter((period) => period.stats.count > 0)
+      .map((period) => {
+        const point: TrendPoint = {
+          dateKey: period.dateKey,
+          label: formatPeriodLabel(period.dateKey),
+          cumulativeValue: {},
+          statsValue: {},
+          deltaValue: {},
+        };
+
+        for (const metric of displayMetrics) {
+          // Always populate all sources for tooltip context
+          point.cumulativeValue![metric] = period.cumulatives?.[metric];
+          point.statsValue![metric] = period.stats?.[metric];
+          point.deltaValue![metric] = period.deltas?.[metric];
+
+          // Set main display value based on current mode
+          if (tracking === 'series') {
+            point[metric] = 
+              mode === 'cumulative' 
+                ? period.cumulatives?.[metric]
+                : period.stats?.[metric];
+          } else {
+            point[metric] = 
+              mode === 'delta'
+                ? period.stats?.[metric]
+                : period.deltas?.[metric];
+          }
+        }
+
+        return point;
+      });
+  }, [periods, tracking, mode, displayMetrics, aggregationType]);
 
   if (data.length === 0) {
     return <div>No data available</div>;
@@ -51,60 +141,216 @@ export function TrendAnalysisChart({
 
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
-  
-  // Determine line colors based on valence
-  const getLineColor = () => {
-    if (valence === 'neutral') return isDark ? '#60a5fa' : '#3b82f6';
-    if (valence === 'positive') return isDark ? '#4ade80' : '#22c55e';
-    return isDark ? '#fca5a5' : '#ef4444';
+  const primaryColor = getValueForValence(data[data.length - 1]?.[primaryMetric] ?? 0, valence, {
+    good: '#22c55e',
+    bad: '#ef4444',
+    neutral: '#3b82f6',
+  });
+
+  const positiveColor = getValueForValence(1, valence, {
+    good: '#22c55e',
+    bad: '#ef4444',
+    neutral: '#3b82f6',
+  });
+  const negativeColor = getValueForValence(-1, valence, {
+    good: '#22c55e',
+    bad: '#ef4444',
+    neutral: '#3b82f6',
+  });
+
+  const primaryValues = data
+    .map((point) => point[primaryMetric])
+    .filter((value): value is number => typeof value === 'number');
+  const minPrimary = primaryValues.length ? Math.min(...primaryValues) : 0;
+  const maxPrimary = primaryValues.length ? Math.max(...primaryValues) : 0;
+  const zeroOffset =
+    maxPrimary <= 0 ? 0 : minPrimary >= 0 ? 1 : maxPrimary / (maxPrimary - minPrimary);
+
+  const getLineColor = (metric: NumberMetric): string => {
+    if (metric === primaryMetric) {
+      if (tracking === 'series') {
+        return `url(#trend-gradient-${gradientId})`;
+      }
+      return primaryColor;
+    }
+    const metricIndex = displayMetrics.indexOf(metric);
+    return SECONDARY_COLORS[Math.max(0, metricIndex - 1) % SECONDARY_COLORS.length];
   };
 
-  const lineColor = getLineColor();
-  const avgColor = isDark ? '#a78bfa' : '#8b5cf6';
+  const getSwatchColor = (metric: NumberMetric): string => {
+    if (metric === primaryMetric) return primaryColor;
+    const metricIndex = displayMetrics.indexOf(metric);
+    return SECONDARY_COLORS[Math.max(0, metricIndex - 1) % SECONDARY_COLORS.length];
+  };
+
+  const getLineDash = (metric: NumberMetric): string | undefined => {
+    if (metric === primaryMetric) return undefined;
+    const metricIndex = displayMetrics.indexOf(metric);
+    return SECONDARY_DASHES[Math.max(0, metricIndex - 1) % SECONDARY_DASHES.length];
+  };
+
+  const toggleMetric = (metric: NumberMetric) => {
+    setVisibleMetrics((prev) => {
+      const next = new Set(prev);
+      if (next.has(metric)) {
+        next.delete(metric);
+      } else {
+        next.add(metric);
+      }
+      return next;
+    });
+  };
+
+  const hasVisibleMetrics = displayMetrics.some((metric) => visibleMetrics.has(metric));
+
+  const renderTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ payload?: TrendPoint }>;
+  }) => {
+    if (!active || !payload?.length || !payload[0].payload) return null;
+    const point = payload[0].payload;
+
+    return (
+      <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
+        <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatFriendlyDate(point.dateKey as any)}</div>
+        <div className="space-y-1">
+          {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {
+            const primaryValue = point[metric];
+            const dash = getLineDash(metric);
+            
+            let contextLabel = '';
+            let contextValue = 0;
+            
+            if (tracking === 'series') {
+              // For series: show cumulative and stats as context
+              if (mode === 'cumulative') {
+                contextLabel = `(daily: `;
+                contextValue = point.statsValue?.[metric] ?? 0;
+              } else {
+                contextLabel = `(cumul: `;
+                contextValue = point.cumulativeValue?.[metric] ?? 0;
+              }
+            } else {
+              // For trend: show stats and deltas as context
+              if (mode === 'delta') {
+                contextLabel = `(change: `;
+                contextValue = point.deltaValue?.[metric] ?? 0;
+              } else {
+                contextLabel = `(value: `;
+                contextValue = point.statsValue?.[metric] ?? 0;
+              }
+            }
+
+            return (
+              <div key={metric} className="flex items-center gap-2 text-xs">
+                <span
+                  className="inline-block h-0.5 w-3"
+                  style={{
+                    backgroundColor: getSwatchColor(metric),
+                    borderTopStyle: dash ? 'dashed' : 'solid',
+                    borderTopWidth: dash ? 1 : 0,
+                  }}
+                />
+                <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
+                  <span className="font-semibold">
+                    <NumberText value={primaryValue ?? 0} valenceValue={primaryValue ?? 0} valence={valence} />
+                  </span>
+                  <span className="text-slate-600 dark:text-slate-400">
+                    {METRIC_DISPLAY_INFO[metric].label}
+                  </span>
+                  <span className="opacity-60">
+                    {contextLabel}
+                    <NumberText value={contextValue} valenceValue={contextValue} valence={valence} delta className="inline" />
+                    )
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="h-80 w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+    <div className="h-80 w-full flex flex-col">
+      <div className="min-h-0 flex-1 w-full relative">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+          {tracking === 'series' && (
+            <defs>
+              <linearGradient id={`trend-gradient-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={positiveColor} />
+                <stop offset={`${zeroOffset * 100}%`} stopColor={positiveColor} />
+                <stop offset={`${zeroOffset * 100}%`} stopColor={negativeColor} />
+                <stop offset="100%" stopColor={negativeColor} />
+              </linearGradient>
+            </defs>
+          )}
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
           <XAxis
-            dataKey="date"
+            dataKey="label"
             stroke={axisColor}
             style={{ fontSize: '12px' }}
             tick={{ fill: axisColor }}
             interval={Math.floor(data.length / 8) || 0}
           />
-          <YAxis stroke={axisColor} style={{ fontSize: '12px' }} tick={{ fill: axisColor }} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: isDark ? '#1e293b' : '#ffffff',
-              border: `1px solid ${isDark ? '#475569' : '#e2e8f0'}`,
-              borderRadius: '8px',
-            }}
-            formatter={(value) => formatValue(value as number)}
-            labelFormatter={(label) => formatFriendlyDate(label as any)}
+          <YAxis
+            stroke={axisColor}
+            style={{ fontSize: '12px' }}
+            tick={{ fill: axisColor }}
+            tickFormatter={(value) => formatValue(Number(value), { short: true })}
           />
-          <Line
-            type="monotone"
-            dataKey="value"
-            stroke={lineColor}
-            dot={false}
-            strokeWidth={2}
-            isAnimationActive={true}
-            name="Last Value"
-          />
-          <Line
-            type="monotone"
-            dataKey="avg"
-            stroke={avgColor}
-            dot={false}
-            strokeWidth={1}
-            strokeDasharray="5 5"
-            isAnimationActive={true}
-            name="Daily Avg"
-          />
-        </LineChart>
-      </ResponsiveContainer>
+            {tracking === 'series' && mode === 'cumulative' && (
+              <ReferenceLine y={0} stroke={axisColor} strokeOpacity={0.35} strokeDasharray="3 3" />
+            )}
+            <Tooltip content={renderTooltip} />
+            <Legend wrapperStyle={{ display: 'none' }} />
+            {displayMetrics.map((metric) => (
+              <Line
+                key={metric}
+                type="monotone"
+                dataKey={metric}
+                stroke={getLineColor(metric)}
+                strokeDasharray={getLineDash(metric)}
+                dot={false}
+                strokeWidth={metric === primaryMetric ? 2.5 : 1.75}
+                isAnimationActive
+                name={METRIC_DISPLAY_INFO[metric].label}
+                hide={!visibleMetrics.has(metric)}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+        {!hasVisibleMetrics && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-white/65 text-center text-xs text-slate-700 dark:bg-slate-900/65 dark:text-slate-300 pointer-events-none px-4">
+            No metrics selected. Use the legend below to enable one or more lines.
+          </div>
+        )}
+      </div>
+      <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap gap-2 pr-1">
+        {displayMetrics.map((metric) => {
+          const isVisible = visibleMetrics.has(metric);
+          return (
+            <button
+              key={metric}
+              type="button"
+              onClick={() => toggleMetric(metric)}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors ${isVisible ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-transparent border-slate-200 dark:border-slate-800 opacity-70'}`}
+              title={isVisible ? 'Hide line' : 'Show line'}
+            >
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: getSwatchColor(metric) }}
+              />
+              <span className="text-slate-700 dark:text-slate-300">{METRIC_DISPLAY_INFO[metric].label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
