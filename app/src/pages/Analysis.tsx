@@ -23,7 +23,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { AggregationBarChart } from '@/features/analysis/AggregationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -129,6 +129,10 @@ export function Analysis() {
   const [trendChartMode, setTrendChartMode] = usePreference<TrendDataMode>(
     `trendChart_dataMode_${dataset.tracking}_${dataset.id}`,
     defaultTrendMode,
+  );
+  const [valenceDistributionMode, setValenceDistributionMode] = usePreference<'count' | 'total'>(
+    `valenceDistribution_mode_${dataset.tracking}_${dataset.id}`,
+    'count',
   );
 
   // Get periods based on aggregation type
@@ -564,16 +568,40 @@ export function Analysis() {
           {/* Valence Distribution for non-neutral datasets */}
           {dataset.valence !== 'neutral' && (
             <Card className="p-4">
-              <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                <PieChart className="w-4 h-4" />
-                {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
-              </h3>
+              <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2">
+                <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+                  <PieChart className="w-4 h-4" />
+                  {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
+                </h3>
+                {dataset.tracking === 'series' && (
+                  <ToggleGroup
+                    type="single"
+                    value={valenceDistributionMode}
+                    onValueChange={(value) => {
+                      if (value) setValenceDistributionMode(value as 'count' | 'total');
+                    }}
+                    size="sm"
+                    variant="outline"
+                    aria-label="Valence distribution mode"
+                  >
+                    <ToggleGroupItem value="count" aria-label="Count">
+                      <Hash className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Count</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="total" aria-label="Total">
+                      <Sigma className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">Total</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                )}
+              </div>
               <ValenceDistributionChart
                 key={dataset.id}
                 periods={trendChartPeriods}
                 aggregationType={actualAggregationType}
                 tracking={dataset.tracking}
                 valence={dataset.valence}
+                mode={valenceDistributionMode}
               />
             </Card>
           )}

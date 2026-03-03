@@ -6,6 +6,7 @@ import { getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { formatValue } from '@/lib/friendly-numbers';
 import { pluralize } from '@/lib/utils';
+import { useMemo } from 'react';
 import {
   Cell,
   Legend,
@@ -20,6 +21,7 @@ interface ValenceDistributionChartProps {
   aggregationType: AggregationType;
   tracking: Tracking;
   valence: Valence;
+  mode?: 'count' | 'total';
 }
 
 interface PieDataPoint {
@@ -27,6 +29,7 @@ interface PieDataPoint {
   value: number;
   percentage: number;
   direction: 1 | -1;
+  mode: 'count' | 'total';
 }
 
 export function ValenceDistributionChart({
@@ -34,25 +37,41 @@ export function ValenceDistributionChart({
   aggregationType,
   tracking,
   valence,
+  mode = 'count',
 }: ValenceDistributionChartProps) {
-  let positiveCount = 0;
-  let negativeCount = 0;
+  const effectiveMode = tracking === 'series' ? mode : 'count';
 
-  // Count positive/negative based on valence source
-  periods.forEach((period) => {
-    if (period.stats.count === 0) return;
-    const value = getValenceValueFromData(period, tracking) ?? 0;
-    
-    const valenceValue = getValueForValence(value, valence, { good: 1, bad: -1, neutral: 0 });
-    
-    if (valenceValue > 0) {
-      positiveCount++;
-    } else if (valenceValue < 0) {
-      negativeCount++;
-    }
-  });
+  const { positiveCount, negativeCount, positiveTotal, negativeTotal } = useMemo(() => {
+    let posCount = 0;
+    let negCount = 0;
+    let posTotal = 0;
+    let negTotal = 0;
 
-  const total = positiveCount + negativeCount;
+    periods.forEach((period) => {
+      if (period.stats.count === 0) return;
+      const value = getValenceValueFromData(period, tracking) ?? 0;
+      const valenceValue = getValueForValence(value, valence, { good: 1, bad: -1, neutral: 0 });
+
+      if (valenceValue > 0) {
+        posCount += 1;
+        posTotal += Math.abs(value);
+      } else if (valenceValue < 0) {
+        negCount += 1;
+        negTotal += Math.abs(value);
+      }
+    });
+
+    return {
+      positiveCount: posCount,
+      negativeCount: negCount,
+      positiveTotal: posTotal,
+      negativeTotal: negTotal,
+    };
+  }, [periods, tracking, valence]);
+
+  const positiveValue = effectiveMode === 'count' ? positiveCount : positiveTotal;
+  const negativeValue = effectiveMode === 'count' ? negativeCount : negativeTotal;
+  const total = positiveValue + negativeValue;
 
   if (total === 0) {
     return <div>No data available</div>;
@@ -65,15 +84,17 @@ export function ValenceDistributionChart({
   const data: PieDataPoint[] = [
     {
       name: positiveLabel,
-      value: positiveCount,
-      percentage: (positiveCount / total) * 100,
+      value: positiveValue,
+      percentage: (positiveValue / total) * 100,
       direction: 1 as const,
+      mode: effectiveMode,
     },
     {
       name: negativeLabel,
-      value: negativeCount,
-      percentage: (negativeCount / total) * 100,
+      value: negativeValue,
+      percentage: (negativeValue / total) * 100,
       direction: -1 as const,
+      mode: effectiveMode,
     },
   ].filter((item) => item.value > 0);
 
@@ -112,7 +133,17 @@ export function ValenceDistributionChart({
           {entry.name}
         </div>
         <div className="text-xs text-slate-600 dark:text-slate-400">
-          <span style={{ color: valueColor }} className="font-semibold">{entry.value}</span> {pluralize(aggregationUnit, entry.value)} ({formatValue(entry.percentage, { percent: true })})
+          {entry.mode === 'count' ? (
+            <>
+              <span style={{ color: valueColor }} className="font-semibold">{formatValue(entry.value)}</span> {pluralize(aggregationUnit, entry.value)} (
+              <span style={{ color: valueColor }}>{formatValue(entry.percentage, { percent: true })}</span>)
+            </>
+          ) : (
+            <>
+              <span style={{ color: valueColor }} className="font-semibold">{formatValue(entry.value)}</span> total {entry.name.toLowerCase()} (
+              <span style={{ color: valueColor }}>{formatValue(entry.percentage, { percent: true })}</span>)
+            </>
+          )}
         </div>
       </div>
     );
@@ -133,7 +164,7 @@ export function ValenceDistributionChart({
               <span className="text-sm text-slate-700 dark:text-slate-300">
                 {entry.value}
               </span>
-              <Badge variant="secondary" className="px-1.5 py-0 text-[11px] leading-4">{dataPoint?.value}</Badge>
+              <Badge variant="secondary" className="px-1.5 py-0 text-[11px] leading-4">{formatValue(dataPoint?.value ?? 0)}</Badge>
             </div>
           );
         })}
