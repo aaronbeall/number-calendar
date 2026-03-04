@@ -439,7 +439,7 @@ export function getDeltasAnalysisDescription(
   const metricLabel = METRIC_DISPLAY_INFO[metric].label;
   
   if (aggregationType === 'none') {
-    return `Change in ${metricLabel.toLowerCase()} from the prior day`;
+    return `Change in ${metricLabel.toLowerCase()} from the prior value`;
   }
     
   return `Change in ${metricLabel.toLowerCase()} from the prior ${aggregationType}`;
