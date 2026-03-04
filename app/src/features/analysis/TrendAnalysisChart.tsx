@@ -116,18 +116,18 @@ export function TrendAnalysisChart({
             if (mode === 'trend') {
               // Show cumulatives, color by cumulatives
               point.primaryValue[metric] = period.cumulatives?.[metric] ?? 0;
-              point.secondaryValue[metric] = period.stats?.[metric] ?? 0;
+              point.secondaryValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.primaryValenceValue[metric] = period.cumulatives?.[metric] ?? 0;
-              point.secondaryValenceValue[metric] = period.stats?.[metric] ?? 0;
+              point.secondaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.primaryShowDelta[metric] = false;
               point.secondaryShowDelta[metric] = true;
               // Chart displays cumulatives
               point[metric] = period.cumulatives?.[metric];
             } else {
               // Show stats, color by stats
-              point.primaryValue[metric] = period.stats?.[metric] ?? 0;
+              point.primaryValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.secondaryValue[metric] = period.cumulatives?.[metric] ?? 0;
-              point.primaryValenceValue[metric] = period.stats?.[metric] ?? 0;
+              point.primaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.secondaryValenceValue[metric] = period.cumulatives?.[metric] ?? 0;
               point.primaryShowDelta[metric] = true;
               point.secondaryShowDelta[metric] = false;
@@ -139,9 +139,9 @@ export function TrendAnalysisChart({
             if (mode === 'trend') {
               // Show stats, color by cumulative deltas
               point.primaryValue[metric] = period.stats?.[metric] ?? 0;
-              point.secondaryValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
-              point.primaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
-              point.secondaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
+              point.secondaryValue[metric] = period.deltas?.[metric] ?? 0;
+              point.primaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
+              point.secondaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
               point.primaryShowDelta[metric] = false;
               point.secondaryShowDelta[metric] = true;
               // Chart displays stats
