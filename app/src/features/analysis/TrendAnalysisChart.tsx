@@ -10,11 +10,12 @@ import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { useId, useMemo, useState } from 'react';
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   ReferenceLine,
   Legend,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -162,22 +163,6 @@ export function TrendAnalysisChart({
         return point;
       });
     
-    // Debug: log cumulative deltas vs cumulatives for first few periods
-    if (valenceSource === 'deltas' && mode === 'trend' && result.length > 0) {
-      console.log('[TrendAnalysisChart] Debug cumulative deltas:');
-      result.slice(0, 5).forEach((point, i) => {
-        const period = periods.filter(p => p.stats.count > 0)[i];
-        console.log(`Period ${i}:`, {
-          dateKey: point.dateKey,
-          primaryMetric,
-          stats: period.stats?.[primaryMetric],
-          cumulatives: period.cumulatives?.[primaryMetric],
-          cumulativeDeltas: period.cumulativeDeltas?.[primaryMetric],
-          deltas: period.deltas?.[primaryMetric],
-        });
-      });
-    }
-    
     return result;
   }, [periods, valenceSource, mode, displayMetrics, aggregationType, primaryMetric]);
 
@@ -205,8 +190,8 @@ export function TrendAnalysisChart({
   const primaryMaxDisplayed = primaryDisplayedValues.length ? Math.max(...primaryDisplayedValues) : 0;
   
   // Gradient center point:
-  // - Most cases: center on 0
-  // - Valence source = deltas + trend mode: center on first data point's value
+  // - Tracking=trend (deltas) in trend mode: center on first data point's value (starting baseline)
+  // - Tracking=series (stats) or change mode: center on 0
   const primaryGradientCenterValue = valenceSource === 'deltas' && mode === 'trend'
     ? (data.length > 0 ? data[0][primaryMetric] ?? 0 : 0)
     : 0;
@@ -256,18 +241,20 @@ export function TrendAnalysisChart({
     neutral: '#3b82f6',
   });
 
-  // Create gradient for a metric with given offset and good/bad colors
-  const createMetricGradient = (
+  // Create gradient for a metric with given offset, colors, center opacity, and squeeze factor
+  const createGradient = (
     gradId: string,
     goodColor: string,
     badColor: string,
-    offset: number
+    offset: number,
+    centerOpacity: number = 1,
+    colorSqueezeFactor: number = 0
   ): React.ReactElement => (
     <linearGradient key={gradId} id={gradId} x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stopColor={goodColor} />
-      <stop offset={`${offset * 100}%`} stopColor={goodColor} />
-      <stop offset={`${offset * 100}%`} stopColor={badColor} />
-      <stop offset="100%" stopColor={badColor} />
+      <stop offset={`${offset * colorSqueezeFactor}%`} stopColor={goodColor} stopOpacity={1} />
+      <stop offset={`${offset * 100}%`} stopColor={goodColor} stopOpacity={centerOpacity} />
+      <stop offset={`${offset * 100}%`} stopColor={badColor} stopOpacity={centerOpacity} />
+      <stop offset={`${offset * colorSqueezeFactor + (100 - colorSqueezeFactor)}%`} stopColor={badColor} stopOpacity={1} />
     </linearGradient>
   );
 
@@ -388,20 +375,29 @@ export function TrendAnalysisChart({
     <div className="h-80 w-full flex flex-col">
       <div className="min-h-0 flex-1 w-full relative">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+          <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
           <defs>
-            {createMetricGradient(
+            {createGradient(
               `trend-gradient-${gradientId}`,
               primaryPositiveColor,
               primaryNegativeColor,
-              primaryZeroOffset
+              primaryZeroOffset,
+              0
+            )}
+            {createGradient(
+              `trend-gradient-stroke-${gradientId}`,
+              primaryPositiveColor,
+              primaryNegativeColor,
+              primaryZeroOffset,
+              0.25,
+              50
             )}
             {displayMetrics.filter((m) => m !== primaryMetric).map((metric) => {
               const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
               const goodColor = getMetricColorForValence(metric, 1, metricValence);
               const badColor = getMetricColorForValence(metric, -1, metricValence);
               const offset = getSecondaryMetricGradientOffset(metric);
-              return createMetricGradient(
+              return createGradient(
                 `trend-gradient-${metric}-${gradientId}`,
                 goodColor,
                 badColor,
@@ -428,21 +424,38 @@ export function TrendAnalysisChart({
             )}
             <Tooltip content={renderTooltip} />
             <Legend wrapperStyle={{ display: 'none' }} />
-            {displayMetrics.map((metric) => (
-              <Line
-                key={metric}
+            {/* Render primary metric area first (underneath) */}
+            {visibleMetrics.has(primaryMetric) && (
+              <Area
+                key={primaryMetric}
                 type="monotone"
-                dataKey={metric}
-                stroke={getLineColor(metric)}
-                strokeDasharray={getLineDash(metric)}
+                dataKey={primaryMetric}
+                stroke={`url(#trend-gradient-stroke-${gradientId})`}
+                fill={`url(#trend-gradient-${gradientId})`}
+                baseValue={valenceSource === 'deltas' && mode === 'trend' && data.length > 0 ? data[0][primaryMetric] ?? 0 : 0}
                 dot={false}
-                strokeWidth={metric === primaryMetric ? 2.5 : 1.75}
+                strokeWidth={2.5}
                 isAnimationActive
-                name={getMetricLabel(metric)}
-                hide={!visibleMetrics.has(metric)}
+                name={getMetricLabel(primaryMetric)}
               />
-            ))}
-          </LineChart>
+            )}
+            {/* Then render secondary metric lines on top */}
+            {displayMetrics
+              .filter((metric) => metric !== primaryMetric && visibleMetrics.has(metric))
+              .map((metric) => (
+                <Line
+                  key={metric}
+                  type="monotone"
+                  dataKey={metric}
+                  stroke={getLineColor(metric)}
+                  strokeDasharray={getLineDash(metric)}
+                  dot={false}
+                  strokeWidth={1.75}
+                  isAnimationActive
+                  name={getMetricLabel(metric)}
+                />
+              ))}
+          </ComposedChart>
         </ResponsiveContainer>
         {!hasVisibleMetrics && (
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-white/65 text-center text-xs text-slate-700 dark:bg-slate-900/65 dark:text-slate-300 pointer-events-none px-4">
