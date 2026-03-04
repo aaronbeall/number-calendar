@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { FlippableCard } from '@/components/ui/flippable-card';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import type { AggregationType } from '@/lib/analysis';
+import { getMetricAnalysisDescription, getCumulativeAnalysisDescription, getExtremesAnalysisDescription, getDeltasAnalysisDescription } from '@/lib/analysis';
 import { usePreference } from '@/hooks/usePreference';
 import { METRIC_DISPLAY_INFO, type NumberMetric, type NumberStats, type StatsExtremes } from '@/lib/stats';
 import { MetricCard } from './MetricCard';
@@ -16,6 +17,7 @@ interface StatsSummaryProps {
   tracking: Tracking;
   datasetId: string;
   aggregationType: AggregationType;
+  timeFrameLabel: string;
   extremes?: StatsExtremes;
   cumulatives?: NumberStats;
   cumulativePercents?: Partial<NumberStats>;
@@ -25,7 +27,7 @@ interface StatsSummaryProps {
   onSelectedMetricsChange: (metrics: NumberMetric[]) => void;
 }
 
-export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, aggregationType, extremes, cumulatives, cumulativePercents, deltas, percents, selectedMetrics, onSelectedMetricsChange }: StatsSummaryProps) {
+export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, aggregationType, timeFrameLabel, extremes, cumulatives, cumulativePercents, deltas, percents, selectedMetrics, onSelectedMetricsChange }: StatsSummaryProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [draftSelectedMetrics, setDraftSelectedMetrics] = useState<NumberMetric[]>(selectedMetrics);
   const [originalShowDeltas, setOriginalShowDeltas] = useState<boolean | null>(null);
@@ -187,7 +189,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
                     </div>
                     <span className="font-medium">{primaryMetricLabel}</span>
                   </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{METRIC_DISPLAY_INFO[primaryMetric]?.description}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">{getMetricAnalysisDescription(primaryMetric, aggregationType, timeFrameLabel, primaryMetric)}</div>
                 </Label>
               </div>
             </div>
@@ -205,7 +207,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
                     />
                     <Label htmlFor="show-deltas" className="text-sm cursor-pointer flex-1">
                       <div className="font-medium">Show Deltas</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">Change from previous period for each metric</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{getDeltasAnalysisDescription(primaryMetric, aggregationType, timeFrameLabel)}</div>
                     </Label>
                   </div>
                 )}
@@ -218,7 +220,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
                     />
                     <Label htmlFor="show-cumulatives" className="text-sm cursor-pointer flex-1">
                       <div className="font-medium">Show Cumulatives</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">Cumulative values from beginning through selected time frame</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{getCumulativeAnalysisDescription(primaryMetric, aggregationType, timeFrameLabel, primaryMetric)}</div>
                     </Label>
                   </div>
                 )}
@@ -230,7 +232,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
                   />
                   <Label htmlFor="show-extremes" className="text-sm cursor-pointer flex-1">
                     <div className="font-medium">Show Extremes</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">Highest/lowest aggregated period values for each metric</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{getExtremesAnalysisDescription(primaryMetric, aggregationType, timeFrameLabel, primaryMetric)}</div>
                   </Label>
                 </div>
               </div>
@@ -263,7 +265,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
                         </div>
                         <span className="font-medium">{METRIC_DISPLAY_INFO[metric]?.label}</span>
                       </div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">{METRIC_DISPLAY_INFO[metric]?.description}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{getMetricAnalysisDescription(metric, aggregationType, timeFrameLabel, primaryMetric)}</div>
                     </Label>
                   </div>
                 ))}
@@ -288,6 +290,8 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
               valence={valence}
               tracking={tracking}
               aggregationType={aggregationType}
+              timeFrameLabel={timeFrameLabel}
+              primaryMetric={primaryMetric}
               variant="primary"
               showConfigButton
               onConfigClick={handleConfigOpen}
@@ -314,6 +318,8 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
               valence={valence}
               tracking={tracking}
               aggregationType={aggregationType}
+              timeFrameLabel={timeFrameLabel}
+              primaryMetric={primaryMetric}
               variant="normal"
               deltaValue={showDeltas ? item.deltaValue : undefined}
               deltaPercent={showDeltas ? item.deltaPercent : undefined}

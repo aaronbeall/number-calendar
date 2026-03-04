@@ -257,8 +257,9 @@ export function Analysis() {
 
   const activeAggregationLabel =
     aggregationOptions.find(option => option.value === actualAggregationType)?.label ?? 'Month';
-  const activePresetLabel =
-    availablePresets.find(preset => preset.preset === presetRange)?.label ?? 'Custom';
+  const activeTimeFrameLabel =
+    availablePresets.find(preset => preset.preset === presetRange)?.label 
+    ?? formatAggregationRange(timeRange.startDate, timeRange.endDate, actualAggregationType);
   const aggregationModeLabel =
     actualAggregationType === 'none'
       ? 'Entries'
@@ -415,7 +416,7 @@ export function Analysis() {
                   <div className="flex w-full gap-3 text-left">
                     <div className="flex-1">
                       <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Time Frame</div>
-                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{activePresetLabel}</div>
+                      <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{activeTimeFrameLabel}</div>
                     </div>
                     <div className="flex-1">
                       <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Aggregation</div>
@@ -443,6 +444,7 @@ export function Analysis() {
             tracking={dataset.tracking}
             datasetId={dataset.id}
             aggregationType={actualAggregationType}
+            timeFrameLabel={activeTimeFrameLabel}
             extremes={extremes}
             cumulatives={cumulativesData}
             deltas={deltasData}

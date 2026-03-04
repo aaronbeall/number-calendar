@@ -5,7 +5,8 @@ import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/u
 import type { NumberMetric } from '@/lib/stats';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import type { AggregationType } from '@/lib/analysis';
-import { METRIC_DISPLAY_INFO, getMetricDescription, getMetricAggregateDescription } from '@/lib/stats';
+import { getMetricAnalysisDescription, getCumulativeAnalysisDescription, getExtremesAnalysisDescription, getDeltasAnalysisDescription } from '@/lib/analysis';
+import { METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { getValenceSource } from '@/lib/tracking';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import {
@@ -26,6 +27,8 @@ interface MetricCardProps {
   valence: Valence;
   tracking: Tracking;
   aggregationType: AggregationType;
+  timeFrameLabel: string;
+  primaryMetric: NumberMetric;
   variant: 'primary' | 'normal';
   showConfigButton?: boolean;
   onConfigClick?: () => void;
@@ -44,6 +47,8 @@ export function MetricCard({
   valence,
   tracking,
   aggregationType,
+  timeFrameLabel,
+  primaryMetric,
   variant = 'normal',
   showConfigButton,
   onConfigClick,
@@ -116,7 +121,7 @@ export function MetricCard({
       <div key="metric" className="mb-2">
         <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{metricInfo.label}</div>
         <div className="text-xs text-slate-600 dark:text-slate-400">
-          {aggregationType !== 'none' ? getMetricAggregateDescription(metric) : getMetricDescription(metric)}
+          {getMetricAnalysisDescription(metric, aggregationType, timeFrameLabel, primaryMetric)}
         </div>
       </div>
     );
@@ -126,7 +131,9 @@ export function MetricCard({
       parts.push(
         <div key="delta" className="mb-2">
           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Change</div>
-          <div className="text-xs text-slate-600 dark:text-slate-400">Difference from the prior period</div>
+          <div className="text-xs text-slate-600 dark:text-slate-400">
+            {getDeltasAnalysisDescription(metric, aggregationType, timeFrameLabel)}
+          </div>
         </div>
       );
     }
@@ -137,9 +144,7 @@ export function MetricCard({
         <div key="cumulative" className="mb-2">
           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Cumulative</div>
           <div className="text-xs text-slate-600 dark:text-slate-400">
-            {aggregationType !== 'none' 
-              ? 'Statistics of period aggregates from beginning to end of range'
-              : 'Statistics of all data from beginning to end of range'}
+            {getCumulativeAnalysisDescription(metric, aggregationType, timeFrameLabel, primaryMetric)}
           </div>
         </div>
       );
@@ -150,7 +155,9 @@ export function MetricCard({
       parts.push(
         <div key="extremes" className="mb-2">
           <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Extremes</div>
-          <div className="text-xs text-slate-600 dark:text-slate-400">Highest and lowest values across the range</div>
+          <div className="text-xs text-slate-600 dark:text-slate-400">
+            {getExtremesAnalysisDescription(metric, aggregationType, timeFrameLabel, primaryMetric)}
+          </div>
         </div>
       );
     }

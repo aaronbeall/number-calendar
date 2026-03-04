@@ -1,13 +1,15 @@
 import type { TimePeriod, DateKey, Valence } from '@/features/db/localdb';
 import { computeAggregateCumulatives, type PeriodAggregateData } from '@/lib/period-aggregate';
 import type { NumberStats, NumberMetric } from '@/lib/stats';
-import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes, METRIC_DISPLAY_INFO } from '@/lib/stats';
+import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes, METRIC_DISPLAY_INFO, type AggregationType } from '@/lib/stats';
 import { parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { isBad } from '@/lib/valence';
+import { capitalize, adjectivize, pluralize } from '@/lib/utils';
 import { colord } from 'colord';
 import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format } from 'date-fns';
 
-export type AggregationType = 'none' | 'day' | 'week' | 'month' | 'year';
+// Re-export AggregationType for backward compatibility
+export type { AggregationType };
 
 /**
  * Format a period label for chart display based on aggregation type
@@ -310,4 +312,135 @@ export function getAvailablePresets(aggregation: AggregationType): Array<TimeFra
   return (Object.entries(TIME_FRAME_PRESETS) as Array<[TimeFramePreset, TimeFrameConfig]>)
     .filter(([_, config]) => config.aggregations.includes(effectiveAggregation))
     .map(([preset, config]) => ({ ...config, preset }));
+}
+
+function replaceTokens(template: string, tokens: Record<string, string>): string {
+  return Object.entries(tokens).reduce(
+    (result, [key, value]) => result.replace(new RegExp(`\\{${key}\\}`, 'g'), value),
+    template,
+  );
+}
+
+function substitutePlaceholders(
+  template: string,
+  params: {
+    metric: NumberMetric;
+    aggregationType: AggregationType;
+    primaryMetric: NumberMetric;
+    timeframe: string;
+  },
+): string {
+  const primaryMetricLabel = METRIC_DISPLAY_INFO[params.primaryMetric].label.toLowerCase();
+  const primaryMetrics = pluralize(primaryMetricLabel);
+  const period = params.aggregationType === 'none' ? 'value' : params.aggregationType;
+  const periods = params.aggregationType === 'none' ? 'values' : pluralize(params.aggregationType);
+  const periodly = params.aggregationType === 'none' ? 'individual' : adjectivize(params.aggregationType);
+  const value = params.aggregationType === 'none' ? 'value' : `${periodly} ${primaryMetricLabel}`;
+  const values = params.aggregationType === 'none' ? 'values' : `${periodly} ${primaryMetrics}`;
+
+  const baseTokens = {
+    period,
+    periods,
+    periodly,
+    primaryMetric: primaryMetricLabel,
+    primaryMetrics,
+    value,
+    values,
+  };
+
+  const timeframe = replaceTokens(params.timeframe, baseTokens);
+  return replaceTokens(template, { ...baseTokens, timeframe });
+}
+
+/**
+ * Get a contextual description for a metric based on aggregation, time frame, and primary metric
+ * Uses metric-specific templates with dynamic token substitution
+ * Examples:
+ * - Non-aggregated: "Sum of values in past 30 days"
+ * - Aggregated: "Sum of all daily totals in past 30 days"
+ * - With count metric: "Count of logged days in past 30 days"
+ */
+export function getMetricAnalysisDescription(
+  metric: NumberMetric,
+  aggregationType: AggregationType,
+  timeFrameLabel: string,
+  primaryMetric: NumberMetric,
+): string {
+  return capitalize(
+    substitutePlaceholders(METRIC_DISPLAY_INFO[metric].descriptionTemplate, {
+      metric,
+      aggregationType,
+      primaryMetric,
+      timeframe: timeFrameLabel,
+    }),
+  );
+}
+
+/**
+ * Get a description for cumulative values - uses same template as metric descriptions
+ * but with "from the beginning" timeframe instead of period-based
+ * Examples:
+ * - Non-aggregated: "Sum of values from the beginning"
+ * - Aggregated: "Sum of all daily totals from the beginning"
+ * - With count metric: "Count of logged days from the beginning"
+ */
+export function getCumulativeAnalysisDescription(
+  metric: NumberMetric,
+  aggregationType: AggregationType,
+  _timeFrameLabel: string,
+  primaryMetric: NumberMetric,
+): string {
+  return capitalize(
+    substitutePlaceholders(METRIC_DISPLAY_INFO[metric].descriptionTemplate, {
+      metric,
+      aggregationType,
+      primaryMetric,
+      timeframe: 'all {periods} since the beginning',
+    }),
+  );
+}
+
+/**
+ * Get a description for extreme values (highest/lowest)
+ * Uses custom description format since it doesn't fit the unified template pattern
+ * Examples:
+ * - Non-aggregated: "Highest and lowest values in past 30 days"
+ * - Aggregated: "Highest and lowest daily totals in past 30 days"
+ * - Aggregated: "Highest and lowest weekly counts in this year"
+ */
+export function getExtremesAnalysisDescription(
+  metric: NumberMetric,
+  aggregationType: AggregationType,
+  timeFrameLabel: string,
+  primaryMetric?: NumberMetric,
+): string {
+  const resolvedPrimaryMetric = primaryMetric ?? metric;
+  return substitutePlaceholders('Highest and lowest {values} in {timeframe}', {
+    metric,
+    aggregationType,
+    primaryMetric: resolvedPrimaryMetric,
+    timeframe: timeFrameLabel,
+  });
+}
+
+/**
+ * Get a description for delta values (change from prior period)
+ * Clarifies what's changing: the metric value per period, not raw values
+ * Examples:
+ * - Non-aggregated: "Change in mean from the prior day"
+ * - Aggregated: "Change in average from the prior day"
+ * - Aggregated: "Change in count from the prior week"
+ */
+export function getDeltasAnalysisDescription(
+  metric: NumberMetric,
+  aggregationType: AggregationType,
+  _timeFrameLabel: string,
+): string {
+  const metricLabel = METRIC_DISPLAY_INFO[metric].label;
+  
+  if (aggregationType === 'none') {
+    return `Change in ${metricLabel.toLowerCase()} from the prior day`;
+  }
+    
+  return `Change in ${metricLabel.toLowerCase()} from the prior ${aggregationType}`;
 }
