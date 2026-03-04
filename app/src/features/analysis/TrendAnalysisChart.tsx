@@ -131,7 +131,7 @@ export function TrendAnalysisChart({
               point.primaryShowDelta[metric] = true;
               point.secondaryShowDelta[metric] = false;
               // Chart displays stats
-              point[metric] = period.stats?.[metric];
+              point[metric] = period.cumulativeDeltas?.[metric];
             }
           } else {
             // valenceSource === 'deltas'
