@@ -113,47 +113,47 @@ export function TrendAnalysisChart({
         for (const metric of displayMetrics) {
           if (valenceSource === 'stats') {
             if (mode === 'trend') {
-              // Show cumulatives, color by cumulatives
+              // Show `cumulatives (cumulative deltas)`
               point.primaryValue[metric] = period.cumulatives?.[metric] ?? 0;
               point.secondaryValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.primaryValenceValue[metric] = period.cumulatives?.[metric] ?? 0;
               point.secondaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.primaryShowDelta[metric] = false;
               point.secondaryShowDelta[metric] = true;
-              // Chart displays cumulatives
+              // Chart points based on cumulatives
               point[metric] = period.cumulatives?.[metric];
             } else {
-              // Show stats, color by stats
+              // Show `cumulative deltas (cumulatives)`
               point.primaryValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.secondaryValue[metric] = period.cumulatives?.[metric] ?? 0;
               point.primaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
               point.secondaryValenceValue[metric] = period.cumulatives?.[metric] ?? 0;
               point.primaryShowDelta[metric] = true;
               point.secondaryShowDelta[metric] = false;
-              // Chart displays stats
+              // Chart points based on cumulative deltas
               point[metric] = period.cumulativeDeltas?.[metric];
             }
           } else {
             // valenceSource === 'deltas'
             if (mode === 'trend') {
-              // Show stats, color by cumulative deltas
+              // Show `stats (deltas)` and color by deltas
               point.primaryValue[metric] = period.stats?.[metric] ?? 0;
               point.secondaryValue[metric] = period.deltas?.[metric] ?? 0;
               point.primaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
               point.secondaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
               point.primaryShowDelta[metric] = false;
               point.secondaryShowDelta[metric] = true;
-              // Chart displays stats
+              // Chart points based on stats
               point[metric] = period.stats?.[metric];
             } else {
-              // Show deltas, color by deltas
+              // Show `deltas (stats)` and color by deltas
               point.primaryValue[metric] = period.deltas?.[metric] ?? 0;
               point.secondaryValue[metric] = period.stats?.[metric] ?? 0;
               point.primaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
               point.secondaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
               point.primaryShowDelta[metric] = true;
               point.secondaryShowDelta[metric] = false;
-              // Chart displays deltas
+              // Chart points based on deltas
               point[metric] = period.deltas?.[metric];
             }
           }
