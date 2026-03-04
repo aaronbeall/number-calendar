@@ -1,7 +1,7 @@
 import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
-import { formatPeriodLabel, type AggregationType } from '@/lib/analysis';
+import { formatPeriodLabel, getMetricColorForValence, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
@@ -45,7 +45,6 @@ type TrendPoint = {
   secondaryShowDelta: Partial<Record<NumberMetric, boolean>>;
 } & Partial<Record<NumberMetric, number>>;
 
-const SECONDARY_COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899', '#14b8a6', '#6366f1'];
 const SECONDARY_DASHES = ['4 2', '2 2', '6 3', '3 2', '5 2', '2 1'];
 
 export function TrendAnalysisChart({
@@ -189,73 +188,101 @@ export function TrendAnalysisChart({
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
 
-  // Extract valence source values for color calculations
-  const valenceSourceValues = data
+  // Extract valence source values and displayed values for primary metric
+  const primaryValenceSourceValues = data
     .map((point) => point.primaryValenceValue[primaryMetric])
     .filter((value): value is number => typeof value === 'number');
   
-  const latestValenceValue = valenceSourceValues.length > 0
-    ? valenceSourceValues[valenceSourceValues.length - 1]
+  const latestValenceValue = primaryValenceSourceValues.length > 0
+    ? primaryValenceSourceValues[primaryValenceSourceValues.length - 1]
     : 0;
   
-  // Extract displayed values for gradient positioning
-  const displayedValues = data
+  const primaryDisplayedValues = data
     .map((point) => point[primaryMetric])
     .filter((value): value is number => typeof value === 'number');
   
-  const minDisplayed = displayedValues.length ? Math.min(...displayedValues) : 0;
-  const maxDisplayed = displayedValues.length ? Math.max(...displayedValues) : 0;
+  const primaryMinDisplayed = primaryDisplayedValues.length ? Math.min(...primaryDisplayedValues) : 0;
+  const primaryMaxDisplayed = primaryDisplayedValues.length ? Math.max(...primaryDisplayedValues) : 0;
   
   // Gradient center point:
   // - Most cases: center on 0
   // - Valence source = deltas + trend mode: center on first data point's value
-  const gradientCenterValue = valenceSource === 'deltas' && mode === 'trend'
+  const primaryGradientCenterValue = valenceSource === 'deltas' && mode === 'trend'
     ? (data.length > 0 ? data[0][primaryMetric] ?? 0 : 0)
     : 0;
   
-  // Calculate gradient offset based on displayed values (not valence source)
-  const zeroOffset =
-    maxDisplayed <= gradientCenterValue 
+  // Calculate gradient offset for primary metric
+  const primaryZeroOffset =
+    primaryMaxDisplayed <= primaryGradientCenterValue 
       ? 0 
-      : minDisplayed >= gradientCenterValue 
+      : primaryMinDisplayed >= primaryGradientCenterValue 
         ? 1 
-        : (maxDisplayed - gradientCenterValue) / (maxDisplayed - minDisplayed);
+        : (primaryMaxDisplayed - primaryGradientCenterValue) / (primaryMaxDisplayed - primaryMinDisplayed);
+  
+  // Helper to calculate gradient offsets for secondary metrics
+  const getSecondaryMetricGradientOffset = (metric: NumberMetric): number => {
+    const metricsDisplayedValues = data
+      .map((point) => point[metric])
+      .filter((value): value is number => typeof value === 'number');
+    
+    if (!metricsDisplayedValues.length) return 0.5;
+    
+    const minVal = Math.min(...metricsDisplayedValues);
+    const maxVal = Math.max(...metricsDisplayedValues);
+    const centerVal = valenceSource === 'deltas' && mode === 'trend'
+      ? (data.length > 0 ? data[0][metric] ?? 0 : 0)
+      : 0;
+    
+    if (maxVal <= centerVal) return 0;
+    if (minVal >= centerVal) return 1;
+    return (maxVal - centerVal) / (maxVal - minVal);
+  };
 
-  // Always use gradient with proper valence coloring
-  const shouldUseGradientPrimary = true;
-
+  // Primary metric uses good/bad colors (not metric color)
+  const primaryPositiveColor = getValueForValence(1, valence, {
+    good: '#22c55e',
+    bad: '#ef4444',
+    neutral: '#3b82f6',
+  });
+  const primaryNegativeColor = getValueForValence(-1, valence, {
+    good: '#22c55e',
+    bad: '#ef4444',
+    neutral: '#3b82f6',
+  });
+  
   const primaryColor = getValueForValence(latestValenceValue, valence, {
     good: '#22c55e',
     bad: '#ef4444',
     neutral: '#3b82f6',
   });
 
-  const positiveColor = getValueForValence(1, valence, {
-    good: '#22c55e',
-    bad: '#ef4444',
-    neutral: '#3b82f6',
-  });
-  const negativeColor = getValueForValence(-1, valence, {
-    good: '#22c55e',
-    bad: '#ef4444',
-    neutral: '#3b82f6',
-  });
+  // Create gradient for a metric with given offset and good/bad colors
+  const createMetricGradient = (
+    gradId: string,
+    goodColor: string,
+    badColor: string,
+    offset: number
+  ): React.ReactElement => (
+    <linearGradient key={gradId} id={gradId} x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stopColor={goodColor} />
+      <stop offset={`${offset * 100}%`} stopColor={goodColor} />
+      <stop offset={`${offset * 100}%`} stopColor={badColor} />
+      <stop offset="100%" stopColor={badColor} />
+    </linearGradient>
+  );
 
   const getLineColor = (metric: NumberMetric): string => {
     if (metric === primaryMetric) {
-      if (shouldUseGradientPrimary) {
-        return `url(#trend-gradient-${gradientId})`;
-      }
-      return primaryColor;
+      return `url(#trend-gradient-${gradientId})`;
     }
-    const metricIndex = displayMetrics.indexOf(metric);
-    return SECONDARY_COLORS[Math.max(0, metricIndex - 1) % SECONDARY_COLORS.length];
+    // Use gradient for secondary metrics too
+    return `url(#trend-gradient-${metric}-${gradientId})`;
   };
 
   const getSwatchColor = (metric: NumberMetric): string => {
     if (metric === primaryMetric) return primaryColor;
-    const metricIndex = displayMetrics.indexOf(metric);
-    return SECONDARY_COLORS[Math.max(0, metricIndex - 1) % SECONDARY_COLORS.length];
+    const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+    return getMetricColorForValence(metric, 0, metricValence);
   };
 
   const getLineDash = (metric: NumberMetric): string | undefined => {
@@ -318,21 +345,15 @@ export function TrendAnalysisChart({
             // Check if metric has valence
             const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
             
-            // Calculate swatch color (primary uses valence, secondary uses static colors)
+            // Calculate swatch color using valence-aware coloring for secondary metrics
             const swatchColor = metric === primaryMetric
               ? getValueForValence(primaryValenceValue, metricValence, {
                   good: '#22c55e',
                   bad: '#ef4444',
                   neutral: '#3b82f6',
                 })
-              : getSwatchColor(metric);
+              : getMetricColorForValence(metric, secondaryValenceValue, metricValence);
 
-            // Calculate secondary color based on secondary valence value
-            const secondaryColor = getValueForValence(secondaryValenceValue, metricValence, {
-              good: '#22c55e',
-              bad: '#ef4444',
-              neutral: '#3b82f6',
-            });
 
             return (
               <div key={metric} className="flex items-center gap-2 text-xs">
@@ -351,7 +372,7 @@ export function TrendAnalysisChart({
                   <span className="text-slate-600 dark:text-slate-400">
                     {getMetricLabel(metric)}
                   </span>
-                  <span style={{ color: secondaryColor }}>
+                  <span>
                     (<NumberText value={secondaryValue} valenceValue={secondaryValenceValue} valence={metricValence} delta={secondaryShowDelta} className="inline" />)
                   </span>
                 </div>
@@ -368,16 +389,26 @@ export function TrendAnalysisChart({
       <div className="min-h-0 flex-1 w-full relative">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-          {shouldUseGradientPrimary && (
-            <defs>
-              <linearGradient id={`trend-gradient-${gradientId}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={positiveColor} />
-                <stop offset={`${zeroOffset * 100}%`} stopColor={positiveColor} />
-                <stop offset={`${zeroOffset * 100}%`} stopColor={negativeColor} />
-                <stop offset="100%" stopColor={negativeColor} />
-              </linearGradient>
-            </defs>
-          )}
+          <defs>
+            {createMetricGradient(
+              `trend-gradient-${gradientId}`,
+              primaryPositiveColor,
+              primaryNegativeColor,
+              primaryZeroOffset
+            )}
+            {displayMetrics.filter((m) => m !== primaryMetric).map((metric) => {
+              const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+              const goodColor = getMetricColorForValence(metric, 1, metricValence);
+              const badColor = getMetricColorForValence(metric, -1, metricValence);
+              const offset = getSecondaryMetricGradientOffset(metric);
+              return createMetricGradient(
+                `trend-gradient-${metric}-${gradientId}`,
+                goodColor,
+                badColor,
+                offset
+              );
+            })}
+          </defs>
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
           <XAxis
             dataKey="label"

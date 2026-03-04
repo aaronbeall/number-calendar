@@ -586,6 +586,8 @@ export function Analysis() {
                 periods={periods}
                 aggregationType={actualAggregationType}
                 selectedMetrics={selectedSummaryMetrics}
+                valence={dataset.valence}
+                tracking={dataset.tracking}
               />
             </Card>
           )}

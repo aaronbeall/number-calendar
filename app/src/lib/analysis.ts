@@ -1,8 +1,10 @@
-import type { TimePeriod, DateKey } from '@/features/db/localdb';
+import type { TimePeriod, DateKey, Valence } from '@/features/db/localdb';
 import { computeAggregateCumulatives, type PeriodAggregateData } from '@/lib/period-aggregate';
 import type { NumberStats, NumberMetric } from '@/lib/stats';
-import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes } from '@/lib/stats';
+import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes, METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { parseDateKey, type DateKeyType } from '@/lib/friendly-date';
+import { isBad } from '@/lib/valence';
+import { colord } from 'colord';
 import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format } from 'date-fns';
 
 export type AggregationType = 'none' | 'day' | 'week' | 'month' | 'year';
@@ -53,6 +55,43 @@ export const METRIC_COLORS: Record<NumberMetric, string> = {
   standardDeviation: '#6366f1',
   interquartileRange: '#8b5cf6',
 };
+
+/**
+ * Darken a hex color by a given amount (0-1)
+ */
+function darkenColor(hex: string, amount: number = 0.3): string {
+  return colord(hex).darken(amount).toHex();
+}
+
+/**
+ * Get the color for a metric with valence-aware darkening.
+ * Returns a darkened version of the metric color for "bad" values.
+ * If the metric is valenceless, returns the normal color regardless of the value.
+ * 
+ * @param metric The metric to get the color for
+ * @param value The value to evaluate for valence (can be null/undefined for neutral)
+ * @param valence The valence setting ('positive', 'negative', or 'neutral')
+ * @returns Hex color string, darkened if the value is "bad" according to valence
+ */
+export function getMetricColorForValence(
+  metric: NumberMetric,
+  value: number | null | undefined,
+  valence: Valence,
+): string {
+  const baseColor = METRIC_COLORS[metric];
+  
+  // If the metric is valenceless, always return the base color
+  if (METRIC_DISPLAY_INFO[metric].valenceless) {
+    return baseColor;
+  }
+  
+  // If the value is "bad" for the given valence, return darkened color
+  if (isBad(value ?? 0, valence)) {
+    return darkenColor(baseColor);
+  }
+  
+  return baseColor;
+}
 
 export interface TimeFrameConfig {
   label: string;

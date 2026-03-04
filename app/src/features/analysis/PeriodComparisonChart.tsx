@@ -1,15 +1,19 @@
 import { useTheme } from '@/components/ThemeProvider';
 import type { NumberMetric } from '@/lib/stats';
 import { METRIC_DISPLAY_INFO } from '@/lib/stats';
-import { formatPeriodLabel, METRIC_COLORS, type AggregationType } from '@/lib/analysis';
+import { formatPeriodLabel, getMetricColorForValence, METRIC_COLORS, type AggregationType } from '@/lib/analysis';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
+import type { Valence, Tracking } from '@/features/db/localdb';
+import { getValenceSource } from '@/lib/tracking';
+import { getValueForValence } from '@/lib/valence';
 import { useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
   Legend,
   ResponsiveContainer,
   Tooltip,
@@ -21,6 +25,8 @@ interface PeriodComparisonChartProps {
   periods: PeriodAggregateData<DateKeyType>[];
   aggregationType: AggregationType;
   selectedMetrics?: NumberMetric[];
+  valence: Valence;
+  tracking: Tracking;
 }
 
 type ComparisonDataPoint = {
@@ -32,6 +38,8 @@ export function PeriodComparisonChart({
   periods,
   aggregationType,
   selectedMetrics = [],
+  valence,
+  tracking,
 }: PeriodComparisonChartProps) {
   const { theme } = useTheme();
   const isDark =
@@ -75,6 +83,30 @@ export function PeriodComparisonChart({
         return point;
       });
   }, [periods, displayMetrics, aggregationType]);
+
+  // Get first values for each metric to calculate deltas
+  const firstValues = useMemo(() => {
+    const first: Partial<Record<NumberMetric, number>> = {};
+    if (data.length > 0) {
+      displayMetrics.forEach((metric) => {
+        first[metric] = (data[0][metric] as number) ?? 0;
+      });
+    }
+    return first;
+  }, [data, displayMetrics]);
+
+  // Calculate the valence color value based on valence source
+  const getValenceColorValue = (metric: NumberMetric, value: number): number => {
+    const valenceSource = getValenceSource(tracking);
+    let colorValue = value ?? 0;
+    if (valenceSource === 'deltas' && !METRIC_DISPLAY_INFO[metric].valenceless) {
+      // For deltas mode, use difference from first value
+      const firstValue = firstValues[metric] ?? 0;
+      colorValue = colorValue - firstValue;
+    }
+    // For stats mode, use value as-is (vs 0)
+    return colorValue;
+  };
 
   if (data.length === 0) {
     return <div>No data available</div>;
@@ -122,7 +154,17 @@ export function PeriodComparisonChart({
         </div>
         <div className="space-y-0.5">
           {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {
-            const value = dataPoint[metric];
+            const value = dataPoint[metric] as number;
+            const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+            const colorValue = getValenceColorValue(metric, value ?? 0);
+            
+            // Use traditional green/red/blue valence coloring
+            const valueColor = getValueForValence(colorValue, metricValence, {
+              good: '#22c55e',
+              bad: '#ef4444',
+              neutral: '#3b82f6',
+            });
+            
             return (
               <div key={metric} className="flex items-center gap-2 text-xs">
                 <span
@@ -130,7 +172,7 @@ export function PeriodComparisonChart({
                   style={{ backgroundColor: getSwatchColor(metric) }}
                 />
                 <span className="text-slate-600 dark:text-slate-300">
-                  <span className="font-semibold text-slate-700 dark:text-slate-200">{typeof value === 'number' ? formatValue(value) : '—'}</span>{' '}
+                  <span className="font-semibold" style={{ color: valueColor }}>{typeof value === 'number' ? formatValue(value) : '—'}</span>{' '}
                   <span className="text-slate-500 dark:text-slate-400">{getMetricLabel(metric)}</span>
                 </span>
               </div>
@@ -173,7 +215,19 @@ export function PeriodComparisonChart({
                   name={getMetricLabel(metric)}
                   isAnimationActive={true}
                   hide={!visibleMetrics.has(metric)}
-                />
+                >
+                  {valence && tracking && data.map((point, index) => {
+                    const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+                    const colorValue = getValenceColorValue(metric, (point[metric] as number) ?? 0);
+                    
+                    return (
+                      <Cell
+                        key={`cell-${metric}-${index}`}
+                        fill={getMetricColorForValence(metric, colorValue, metricValence)}
+                      />
+                    );
+                  })}
+                </Bar>
               ) : null;
             })}
           </BarChart>
