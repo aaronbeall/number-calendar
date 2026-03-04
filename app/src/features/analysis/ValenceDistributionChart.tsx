@@ -17,9 +17,10 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+import type { DateKeyType } from '@/lib/friendly-date';
 
 interface ValenceDistributionChartProps {
-  periods: PeriodAggregateData<any>[];
+  periods: PeriodAggregateData<DateKeyType>[];
   aggregationType: AggregationType;
   tracking: Tracking;
   valence: Valence;

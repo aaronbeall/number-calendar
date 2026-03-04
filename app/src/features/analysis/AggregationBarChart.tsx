@@ -1,14 +1,13 @@
 import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
-import type { AggregationType } from '@/lib/analysis';
-import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
+import { formatPeriodLabel, type AggregationType } from '@/lib/analysis';
+import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { format } from 'date-fns';
 import { useMemo } from 'react';
 import {
   Bar,
@@ -23,7 +22,7 @@ import {
 } from 'recharts';
 
 interface AggregationBarChartProps {
-  periods: PeriodAggregateData<any>[];
+  periods: PeriodAggregateData<DateKeyType>[];
   aggregationType: AggregationType;
   tracking: Tracking;
   valence: Valence;
@@ -57,27 +56,6 @@ export function AggregationBarChart({
 
   const valenceSource = getValenceSource(tracking);
 
-  const formatPeriodLabel = (dateKey: string): string => {
-    try {
-      const date = parseDateKey(dateKey as any);
-      switch (aggregationType) {
-        case 'none':
-          return format(date, "MMM d");
-        case 'week':
-          return `W${format(date, 'ww')} '${format(date, 'yy')}`;
-        case 'month':
-          return format(date, "MMM ''yy");
-        case 'year':
-          return format(date, 'yyyy');
-        case 'day':
-        default:
-          return format(date, "MMM d, ''yy");
-      }
-    } catch {
-      return dateKey;
-    }
-  };
-
   const data: BarDataPoint[] = useMemo(() => {
     const periodValues = periods
       .filter((period) => period.stats.count > 0)
@@ -109,7 +87,7 @@ export function AggregationBarChart({
 
     return periodValues.map(({ period, index, value }) => ({
       dateKey: period.dateKey,
-      label: formatPeriodLabel(period.dateKey),
+      label: formatPeriodLabel(period.dateKey, aggregationType),
       ...(aggregationType === 'none' && { entryNumber: index + 1 }),
       value,
       deviationFromMean: value - mean,

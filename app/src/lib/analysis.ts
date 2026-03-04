@@ -1,11 +1,58 @@
-import type { TimePeriod } from '@/features/db/localdb';
+import type { TimePeriod, DateKey } from '@/features/db/localdb';
 import { computeAggregateCumulatives, type PeriodAggregateData } from '@/lib/period-aggregate';
 import type { NumberStats, NumberMetric } from '@/lib/stats';
 import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes } from '@/lib/stats';
-import { parseDateKey } from '@/lib/friendly-date';
-import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear } from 'date-fns';
+import { parseDateKey, type DateKeyType } from '@/lib/friendly-date';
+import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format } from 'date-fns';
 
 export type AggregationType = 'none' | 'day' | 'week' | 'month' | 'year';
+
+/**
+ * Format a period label for chart display based on aggregation type
+ */
+export function formatPeriodLabel(dateKey: DateKey, aggregationType: AggregationType): string {
+  try {
+    const date = parseDateKey(dateKey);
+    switch (aggregationType) {
+      case 'none':
+        return format(date, "MMM d");
+      case 'week':
+        return `W${format(date, 'ww')} '${format(date, 'yy')}`;
+      case 'month':
+        return format(date, "MMM ''yy");
+      case 'year':
+        return format(date, 'yyyy');
+      case 'day':
+      default:
+        return format(date, "MMM d, ''yy");
+    }
+  } catch {
+    return dateKey;
+  }
+}
+
+/**
+ * Semantic colors for metrics in visualizations
+ */
+export const METRIC_COLORS: Record<NumberMetric, string> = {
+  total: '#22c55e',
+  mean: '#3b82f6',
+  median: '#06b6d4',
+  min: '#ef4444',
+  max: '#22c55e',
+  count: '#a78bfa',
+  first: '#f59e0b',
+  last: '#ec4899',
+  range: '#14b8a6',
+  change: '#6366f1',
+  changePercent: '#8b5cf6',
+  mode: '#06b6d4',
+  slope: '#f59e0b',
+  midrange: '#ec4899',
+  variance: '#14b8a6',
+  standardDeviation: '#6366f1',
+  interquartileRange: '#8b5cf6',
+};
 
 export interface TimeFrameConfig {
   label: string;
@@ -109,9 +156,9 @@ export function filterPeriodsByTimeRange<T extends TimePeriod>(
 
 export interface AnalysisData {
   /** Periods in the selected time range */
-  periods: PeriodAggregateData<any>[];
+  periods: PeriodAggregateData<DateKeyType>[];
   /** Prior period for delta calculation (if available) */
-  priorPeriod?: PeriodAggregateData<any>;
+  priorPeriod?: PeriodAggregateData<DateKeyType>;
   /** All data points from periods in the time range */
   dataPoints: number[];
   /** Summary stats for the time range (raw for none, aggregate for primary metric otherwise) */
@@ -138,7 +185,7 @@ type AnalysisOptions = {
 /**
  * Compute analysis data for a given time range and aggregation
  */
-export function computeAnalysisData<T extends TimePeriod>(
+export function computeAnalysisData<T extends DateKeyType>(
   allPeriods: PeriodAggregateData<T>[],
   timeRange: TimeRange,
   options: AnalysisOptions = {},

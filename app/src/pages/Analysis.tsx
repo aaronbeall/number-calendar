@@ -11,11 +11,10 @@ import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
-import type { DateKey } from '@/features/db/localdb';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
-import { formatFriendlyDate, dateToDayKey, convertDateKey, parseDateKey } from '@/lib/friendly-date';
+import { formatFriendlyDate, dateToDayKey, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
@@ -224,44 +223,13 @@ export function Analysis() {
     [actualAggregationType, periodsForAggregation, primaryMetric, timeRange]
   );
 
-  const { dataPoints, stats, extremes, cumulatives, cumulativePercents, deltas, percents, periodCount } = analysisData;
+  const { periods, dataPoints, stats, extremes, cumulatives, cumulativePercents, deltas, percents, periodCount } = analysisData;
 
   // Cumulatives only for series tracking
   const cumulativesData = dataset.tracking === 'series' ? cumulatives : undefined;
 
   // Deltas only for trend tracking
   const deltasData = dataset.tracking === 'trend' ? deltas : undefined;
-
-  // Filter allDays by the time range for charts
-  const daysInRange = useMemo(() => {
-    const startKey = dateToDayKey(timeRange.startDate);
-    const endKey = dateToDayKey(timeRange.endDate);
-    return allDays.filter(day => day.date >= startKey && day.date <= endKey);
-  }, [allDays, timeRange]);
-
-  // Group days by aggregation type for AggregationBarChart
-  // Note: This is still used by PeriodComparisonChart
-  const groupedData = useMemo(() => {
-    const groups: Record<string, typeof daysInRange> = {};
-    
-    daysInRange.forEach(day => {
-      let groupKey: DateKey = day.date; // DateKey union type allows all date key types
-      if (actualAggregationType === 'week') {
-        groupKey = convertDateKey(day.date, 'week');
-      } else if (actualAggregationType === 'month') {
-        groupKey = convertDateKey(day.date, 'month');
-      } else if (actualAggregationType === 'year') {
-        groupKey = convertDateKey(day.date, 'year');
-      }
-      
-      if (!groups[groupKey]) {
-        groups[groupKey] = [];
-      }
-      groups[groupKey].push(day);
-    });
-    
-    return groups;
-  }, [daysInRange, actualAggregationType]);
 
   const trendChartPeriods = useMemo(() => {
     // Compute aggregates on full dataset from start through range end, then filter to in-range
@@ -606,18 +574,21 @@ export function Analysis() {
             </Card>
           )}
 
-          {/* Period Comparison */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-              <TrendingUp className="w-4 h-4" />
-              {actualAggregationType === 'none' ? 'Entries' : capitalize(adjectivize(actualAggregationType))} Comparison
-            </h3>
-            <PeriodComparisonChart
-              key={dataset.id}
-              groupedData={groupedData}
-              aggregationType={actualAggregationType}
-            />
-          </Card>
+          {/* Period Comparison - only for aggregated data */}
+          {actualAggregationType !== 'none' && (
+            <Card className="p-4">
+              <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                <TrendingUp className="w-4 h-4" />
+                {capitalize(adjectivize(actualAggregationType))} Comparison
+              </h3>
+              <PeriodComparisonChart
+                key={dataset.id}
+                periods={periods}
+                aggregationType={actualAggregationType}
+                selectedMetrics={selectedSummaryMetrics}
+              />
+            </Card>
+          )}
         </div>
       </div>
     </div>

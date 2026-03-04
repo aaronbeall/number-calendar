@@ -1,5 +1,6 @@
 import { useTheme } from '@/components/ThemeProvider';
 import type { Tracking, Valence } from '@/features/db/localdb';
+import type { DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
@@ -16,7 +17,7 @@ import {
 } from 'recharts';
 
 interface DistributionHistogramProps {
-  periods: PeriodAggregateData<any>[];
+  periods: PeriodAggregateData<DateKeyType>[];
   tracking: Tracking;
   valence?: Valence;
 }

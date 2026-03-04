@@ -1,14 +1,13 @@
 import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
-import type { Tracking, Valence } from '@/features/db/localdb';
-import type { AggregationType } from '@/lib/analysis';
-import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
+import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
+import { formatPeriodLabel, type AggregationType } from '@/lib/analysis';
+import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { format } from 'date-fns';
 import { useId, useMemo, useState } from 'react';
 import {
   CartesianGrid,
@@ -23,7 +22,7 @@ import {
 } from 'recharts';
 
 interface TrendAnalysisChartProps {
-  periods: PeriodAggregateData<any>[];
+  periods: PeriodAggregateData<DateKeyType>[];
   aggregationType: AggregationType;
   tracking: Tracking;
   mode: TrendDataMode;
@@ -34,7 +33,7 @@ interface TrendAnalysisChartProps {
 export type TrendDataMode = 'trend' | 'change';
 
 type TrendPoint = {
-  dateKey: string;
+  dateKey: DateKey;
   label: string;
   entryNumber?: number;
   cumulativeValue?: Partial<Record<NumberMetric, number>>;
@@ -86,34 +85,13 @@ export function TrendAnalysisChart({
     return defaults;
   });
 
-  const formatPeriodLabel = (dateKey: string): string => {
-    try {
-      const date = parseDateKey(dateKey as any);
-      switch (aggregationType) {
-        case 'none':
-          return format(date, "MMM d");
-        case 'week':
-          return `W${format(date, 'ww')} '${format(date, 'yy')}`;
-        case 'month':
-          return format(date, "MMM ''yy");
-        case 'year':
-          return format(date, 'yyyy');
-        case 'day':
-        default:
-          return format(date, "MMM d, ''yy");
-      }
-    } catch {
-      return dateKey;
-    }
-  };
-
   const data: TrendPoint[] = useMemo(() => {
     return periods
       .filter((period) => period.stats.count > 0)
       .map((period, index) => {
         const point: TrendPoint = {
           dateKey: period.dateKey,
-          label: formatPeriodLabel(period.dateKey),
+          label: formatPeriodLabel(period.dateKey, aggregationType),
           ...(aggregationType === 'none' && { entryNumber: index + 1 }),
           cumulativeValue: {},
           statsValue: {},
@@ -273,7 +251,7 @@ export function TrendAnalysisChart({
           <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{point.label} (#{point.entryNumber})</div>
         )}
         {aggregationType !== 'none' && (
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatFriendlyDate(point.dateKey as any)}</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{formatFriendlyDate(point.dateKey)}</div>
         )}
         <div className="space-y-1">
           {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {

@@ -1,20 +1,19 @@
 import { useMemo, useCallback, useRef, useState, useEffect } from 'react';
 import type { Valence, DateKey } from '@/features/db/localdb';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import type { AggregationType } from '@/lib/analysis';
+import { formatPeriodLabel, type AggregationType } from '@/lib/analysis';
 import { getValueForValence } from '@/lib/valence';
-import { parseDateKey } from '@/lib/friendly-date';
+import { parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { format } from 'date-fns';
 import { BarChart, LineChart, Bar, Line, ResponsiveContainer, Cell } from 'recharts';
 
 interface CustomRangePickerProps {
   tracking: 'series' | 'trend';
   valence: Valence;
   aggregation: AggregationType;
-  allPeriods: PeriodAggregateData<any>[];
+  allPeriods: PeriodAggregateData<DateKeyType>[];
   startDate: Date;
   endDate: Date;
   onRangeChange: (startDate: Date, endDate: Date) => void;
@@ -159,27 +158,6 @@ export function CustomRangePicker({
     const sum = chartData.reduce((acc, item) => acc + item.value, 0);
     return sum / chartData.length;
   }, [chartData, tracking]);
-
-  // Format period label based on aggregation
-  const formatPeriodLabel = useCallback((dateKey: string): string => {
-    try {
-      const date = parseDateKey(dateKey as DateKey);
-      switch (aggregation) {
-        case 'none':
-          return format(date, "MMM d, ''yy");
-        case 'day':
-          return format(date, "MMM d, ''yy");
-        case 'week':
-          return format(date, "'W'ww ''yy");
-        case 'month':
-          return format(date, "MMM ''yy");
-        case 'year':
-          return format(date, 'yyyy');
-      }
-    } catch {
-      return dateKey;
-    }
-  }, [aggregation]);
 
   // Handle stepping
   const handleStepStart = useCallback((direction: 1 | -1) => {
@@ -377,7 +355,7 @@ export function CustomRangePicker({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <PeriodStepper
           title="Start"
-          dateKey={periodsWithData[labelStartIndex] ? formatPeriodLabel(periodsWithData[labelStartIndex].dateKey) : null}
+          dateKey={periodsWithData[labelStartIndex] ? formatPeriodLabel(periodsWithData[labelStartIndex].dateKey, aggregation) : null}
           onStepLeft={() => handleStepStart(-1)}
           onStepRight={() => handleStepStart(1)}
           disableLeft={labelStartIndex <= 0}
@@ -385,7 +363,7 @@ export function CustomRangePicker({
         />
         <PeriodStepper
           title="End"
-          dateKey={periodsWithData[labelEndIndex] ? formatPeriodLabel(periodsWithData[labelEndIndex].dateKey) : null}
+          dateKey={periodsWithData[labelEndIndex] ? formatPeriodLabel(periodsWithData[labelEndIndex].dateKey, aggregation) : null}
           onStepLeft={() => handleStepEnd(-1)}
           onStepRight={() => handleStepEnd(1)}
           disableLeft={labelEndIndex <= labelStartIndex}
