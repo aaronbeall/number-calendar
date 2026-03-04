@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { Button } from '@/components/ui/button';
+import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { useSearchParamState } from '@/hooks/useSearchParamState';
@@ -22,7 +23,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { AggregationBarChart } from '@/features/analysis/AggregationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -457,6 +458,24 @@ export function Analysis() {
               <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                 <LineChart className="w-4 h-4" />
                 Trend Over Time
+                <PopoverTip>
+                  <PopoverTipTrigger asChild>
+                    <button
+                      className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Help: Trend Over Time"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </PopoverTipTrigger>
+                  <PopoverTipContent>
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium">Trend Over Time</p>
+                      <p className="text-muted-foreground">
+                        View how your data changes over time. Toggle between <strong>Trend</strong> mode to see cumulative values building up, or <strong>Change</strong> mode to see period-over-period variations.
+                      </p>
+                    </div>
+                  </PopoverTipContent>
+                </PopoverTip>
               </h3>
               <ToggleGroup
                 type="single"
@@ -509,6 +528,24 @@ export function Analysis() {
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
               {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} Deviation from Average
+              <PopoverTip>
+                <PopoverTipTrigger asChild>
+                  <button
+                    className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Help: Deviation from Average"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                  </button>
+                </PopoverTipTrigger>
+                <PopoverTipContent>
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">Deviation from Average</p>
+                    <p className="text-muted-foreground">
+                      See how each period compares to the overall average. Bars show the difference between each period's value and the mean, helping you spot outliers and patterns.
+                    </p>
+                  </div>
+                </PopoverTipContent>
+              </PopoverTip>
             </h3>
             <AggregationBarChart
               key={dataset.id}
@@ -524,6 +561,24 @@ export function Analysis() {
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <Activity className="w-4 h-4" />
               Value Distribution
+              <PopoverTip>
+                <PopoverTipTrigger asChild>
+                  <button
+                    className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label="Help: Value Distribution"
+                  >
+                    <HelpCircle className="w-3.5 h-3.5" />
+                  </button>
+                </PopoverTipTrigger>
+                <PopoverTipContent>
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">Value Distribution</p>
+                    <p className="text-muted-foreground">
+                      Shows how frequently different values appear in your data. This histogram reveals patterns like clustering around certain values or whether your data is evenly spread out.
+                    </p>
+                  </div>
+                </PopoverTipContent>
+              </PopoverTip>
             </h3>
             <DistributionHistogram
               key={dataset.id}
@@ -540,6 +595,26 @@ export function Analysis() {
                 <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                   <PieChart className="w-4 h-4" />
                   {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
+                  <PopoverTip>
+                    <PopoverTipTrigger asChild>
+                      <button
+                        className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label="Help: Valence Distribution"
+                      >
+                        <HelpCircle className="w-3.5 h-3.5" />
+                      </button>
+                    </PopoverTipTrigger>
+                    <PopoverTipContent>
+                      <div className="space-y-1 text-sm">
+                        <p className="font-medium">Valence Distribution</p>
+                        <p className="text-muted-foreground">
+                          {dataset.tracking === 'trend' 
+                            ? 'Shows the balance between periods with upward trends versus downward trends in your data.'
+                            : 'Shows the balance between positive and negative values. Toggle between Count (number of periods) and Total (sum of values) to see different perspectives.'}
+                        </p>
+                      </div>
+                    </PopoverTipContent>
+                  </PopoverTip>
                 </h3>
                 {dataset.tracking === 'series' && (
                   <ToggleGroup
@@ -580,6 +655,24 @@ export function Analysis() {
               <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                 <TrendingUp className="w-4 h-4" />
                 {capitalize(adjectivize(actualAggregationType))} Comparison
+                <PopoverTip>
+                  <PopoverTipTrigger asChild>
+                    <button
+                      className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="Help: Period Comparison"
+                    >
+                      <HelpCircle className="w-3.5 h-3.5" />
+                    </button>
+                  </PopoverTipTrigger>
+                  <PopoverTipContent>
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium">Period Comparison</p>
+                      <p className="text-muted-foreground">
+                        Compare aggregated metrics side-by-side across different time periods. This makes it easy to spot differences in performance, trends, or patterns between periods.
+                      </p>
+                    </div>
+                  </PopoverTipContent>
+                </PopoverTip>
               </h3>
               <PeriodComparisonChart
                 key={dataset.id}
