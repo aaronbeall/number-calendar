@@ -471,7 +471,7 @@ export function Analysis() {
                     <div className="space-y-1 text-sm">
                       <p className="font-medium">Trend Over Time</p>
                       <p className="text-muted-foreground">
-                        View how your data changes over time. Toggle between <strong>Trend</strong> mode to see cumulative values building up, or <strong>Change</strong> mode to see period-over-period variations.
+                        View how your data changes over time. Toggle between <strong>Trend</strong> mode to see values build up over time, or <strong>Change</strong> mode to see period-over-period variations.
                       </p>
                     </div>
                   </PopoverTipContent>
@@ -493,9 +493,9 @@ export function Analysis() {
                       <LineChart className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">Trend</span>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="change" aria-label={aggregationModeLabel}>
+                    <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
                       <BarChart3 className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">{aggregationModeLabel}</span>
+                      <span className="hidden sm:inline">{trendChangeModeLabel}</span>
                     </ToggleGroupItem>
                   </>
                 ) : (
