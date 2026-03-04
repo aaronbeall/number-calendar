@@ -36,9 +36,13 @@ type TrendPoint = {
   dateKey: DateKey;
   label: string;
   entryNumber?: number;
-  cumulativeValue?: Partial<Record<NumberMetric, number>>;
-  statsValue?: Partial<Record<NumberMetric, number>>;
-  deltaValue?: Partial<Record<NumberMetric, number>>;
+  // Normalized tooltip data per metric
+  primaryValue: Partial<Record<NumberMetric, number>>;
+  secondaryValue: Partial<Record<NumberMetric, number>>;
+  primaryValenceValue: Partial<Record<NumberMetric, number>>;
+  secondaryValenceValue: Partial<Record<NumberMetric, number>>;
+  primaryShowDelta: Partial<Record<NumberMetric, boolean>>;
+  secondaryShowDelta: Partial<Record<NumberMetric, boolean>>;
 } & Partial<Record<NumberMetric, number>>;
 
 const SECONDARY_COLORS = ['#8b5cf6', '#06b6d4', '#f59e0b', '#ec4899', '#14b8a6', '#6366f1'];
@@ -86,47 +90,97 @@ export function TrendAnalysisChart({
   });
 
   const data: TrendPoint[] = useMemo(() => {
-    return periods
+    const result = periods
       .filter((period) => period.stats.count > 0)
       .map((period, index) => {
         const point: TrendPoint = {
           dateKey: period.dateKey,
           label: formatPeriodLabel(period.dateKey, aggregationType),
           ...(aggregationType === 'none' && { entryNumber: index + 1 }),
-          cumulativeValue: {},
-          statsValue: {},
-          deltaValue: {},
+          primaryValue: {},
+          secondaryValue: {},
+          primaryValenceValue: {},
+          secondaryValenceValue: {},
+          primaryShowDelta: {},
+          secondaryShowDelta: {},
         };
 
+        // Normalize tooltip data based on valence source and mode
+        // Valence = stats + trend: primary=cumulative/color-by-cumulative, secondary=stats/color-by-stats
+        // Valence = stats + change: primary=stats/color-by-stats, secondary=cumulative/color-by-cumulative
+        // Valence = deltas + trend: primary=stats/color-by-cumulative-deltas, secondary=cumulative-deltas/color-by-cumulative-deltas
+        // Valence = deltas + change: primary=deltas/color-by-deltas, secondary=stats/color-by-deltas
+        
         for (const metric of displayMetrics) {
-          // Always populate all sources for tooltip context
-          point.cumulativeValue![metric] = period.cumulatives?.[metric];
-          point.statsValue![metric] = period.stats?.[metric];
-          point.deltaValue![metric] = period.deltas?.[metric];
-
-          // Unified data model: display value based on valence source + mode
-          // Valence source = stats:
-          //   Trend: show cumulatives
-          //   Change: show stats
-          // Valence source = deltas:
-          //   Trend: show stats
-          //   Change: show deltas
           if (valenceSource === 'stats') {
-            point[metric] = 
-              mode === 'trend' 
-                ? period.cumulatives?.[metric]
-                : period.stats?.[metric];
+            if (mode === 'trend') {
+              // Show cumulatives, color by cumulatives
+              point.primaryValue[metric] = period.cumulatives?.[metric] ?? 0;
+              point.secondaryValue[metric] = period.stats?.[metric] ?? 0;
+              point.primaryValenceValue[metric] = period.cumulatives?.[metric] ?? 0;
+              point.secondaryValenceValue[metric] = period.stats?.[metric] ?? 0;
+              point.primaryShowDelta[metric] = false;
+              point.secondaryShowDelta[metric] = true;
+              // Chart displays cumulatives
+              point[metric] = period.cumulatives?.[metric];
+            } else {
+              // Show stats, color by stats
+              point.primaryValue[metric] = period.stats?.[metric] ?? 0;
+              point.secondaryValue[metric] = period.cumulatives?.[metric] ?? 0;
+              point.primaryValenceValue[metric] = period.stats?.[metric] ?? 0;
+              point.secondaryValenceValue[metric] = period.cumulatives?.[metric] ?? 0;
+              point.primaryShowDelta[metric] = true;
+              point.secondaryShowDelta[metric] = false;
+              // Chart displays stats
+              point[metric] = period.stats?.[metric];
+            }
           } else {
-            point[metric] = 
-              mode === 'trend'
-                ? period.stats?.[metric]
-                : period.deltas?.[metric];
+            // valenceSource === 'deltas'
+            if (mode === 'trend') {
+              // Show stats, color by cumulative deltas
+              point.primaryValue[metric] = period.stats?.[metric] ?? 0;
+              point.secondaryValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
+              point.primaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
+              point.secondaryValenceValue[metric] = period.cumulativeDeltas?.[metric] ?? 0;
+              point.primaryShowDelta[metric] = false;
+              point.secondaryShowDelta[metric] = true;
+              // Chart displays stats
+              point[metric] = period.stats?.[metric];
+            } else {
+              // Show deltas, color by deltas
+              point.primaryValue[metric] = period.deltas?.[metric] ?? 0;
+              point.secondaryValue[metric] = period.stats?.[metric] ?? 0;
+              point.primaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
+              point.secondaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
+              point.primaryShowDelta[metric] = true;
+              point.secondaryShowDelta[metric] = false;
+              // Chart displays deltas
+              point[metric] = period.deltas?.[metric];
+            }
           }
         }
 
         return point;
       });
-  }, [periods, valenceSource, mode, displayMetrics]);
+    
+    // Debug: log cumulative deltas vs cumulatives for first few periods
+    if (valenceSource === 'deltas' && mode === 'trend' && result.length > 0) {
+      console.log('[TrendAnalysisChart] Debug cumulative deltas:');
+      result.slice(0, 5).forEach((point, i) => {
+        const period = periods.filter(p => p.stats.count > 0)[i];
+        console.log(`Period ${i}:`, {
+          dateKey: point.dateKey,
+          primaryMetric,
+          stats: period.stats?.[primaryMetric],
+          cumulatives: period.cumulatives?.[primaryMetric],
+          cumulativeDeltas: period.cumulativeDeltas?.[primaryMetric],
+          deltas: period.deltas?.[primaryMetric],
+        });
+      });
+    }
+    
+    return result;
+  }, [periods, valenceSource, mode, displayMetrics, aggregationType, primaryMetric]);
 
   if (data.length === 0) {
     return <div>No data available</div>;
@@ -137,11 +191,7 @@ export function TrendAnalysisChart({
 
   // Extract valence source values for color calculations
   const valenceSourceValues = data
-    .map((point) =>
-      valenceSource === 'stats'
-        ? point.statsValue?.[primaryMetric]
-        : point.deltaValue?.[primaryMetric]
-    )
+    .map((point) => point.primaryValenceValue[primaryMetric])
     .filter((value): value is number => typeof value === 'number');
   
   const latestValenceValue = valenceSourceValues.length > 0
@@ -257,52 +307,13 @@ export function TrendAnalysisChart({
           {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {
             const dash = getLineDash(metric);
             
-            // Unified tooltip model based on valence source and mode
-            // Valence = stats + trend: primary=cumulative/color-by-cumulative, secondary=stats/color-by-stats
-            // Valence = stats + change: primary=stats/color-by-stats, secondary=cumulative/color-by-cumulative
-            // Valence = deltas + trend: primary=stats/color-by-deltas, secondary=deltas/color-by-deltas
-            // Valence = deltas + change: primary=deltas/color-by-deltas, secondary=stats/color-by-deltas
-            let primaryValue = 0;
-            let secondaryValue = 0;
-            let primaryValenceValue = 0;
-            let secondaryValenceValue = 0;
-            let primaryShowDelta = false;
-            let secondaryShowDelta = false;
-            
-            if (valenceSource === 'stats') {
-              if (mode === 'trend') {
-                primaryValue = point.cumulativeValue?.[metric] ?? 0;
-                secondaryValue = point.statsValue?.[metric] ?? 0;
-                primaryValenceValue = point.cumulativeValue?.[metric] ?? 0;
-                secondaryValenceValue = point.statsValue?.[metric] ?? 0;
-                primaryShowDelta = false;
-                secondaryShowDelta = true; // stats are daily values (changes)
-              } else {
-                primaryValue = point.statsValue?.[metric] ?? 0;
-                secondaryValue = point.cumulativeValue?.[metric] ?? 0;
-                primaryValenceValue = point.statsValue?.[metric] ?? 0;
-                secondaryValenceValue = point.cumulativeValue?.[metric] ?? 0;
-                primaryShowDelta = true; // stats are daily values (changes)
-                secondaryShowDelta = false;
-              }
-            } else {
-              // Valence source = deltas: use deltas for valence coloring
-              if (mode === 'trend') {
-                primaryValue = point.statsValue?.[metric] ?? 0;
-                secondaryValue = point.deltaValue?.[metric] ?? 0;
-                primaryValenceValue = point.deltaValue?.[metric] ?? 0;
-                secondaryValenceValue = point.deltaValue?.[metric] ?? 0;
-                primaryShowDelta = false;
-                secondaryShowDelta = true;
-              } else {
-                primaryValue = point.deltaValue?.[metric] ?? 0;
-                secondaryValue = point.statsValue?.[metric] ?? 0;
-                primaryValenceValue = point.deltaValue?.[metric] ?? 0;
-                secondaryValenceValue = point.deltaValue?.[metric] ?? 0;
-                primaryShowDelta = true;
-                secondaryShowDelta = false;
-              }
-            }
+            // Use pre-normalized tooltip values
+            const primaryValue = point.primaryValue[metric] ?? 0;
+            const secondaryValue = point.secondaryValue[metric] ?? 0;
+            const primaryValenceValue = point.primaryValenceValue[metric] ?? 0;
+            const secondaryValenceValue = point.secondaryValenceValue[metric] ?? 0;
+            const primaryShowDelta = point.primaryShowDelta[metric] ?? false;
+            const secondaryShowDelta = point.secondaryShowDelta[metric] ?? false;
             
             // Check if metric has valence
             const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
