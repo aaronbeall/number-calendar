@@ -64,10 +64,10 @@ export function TrendAnalysisChart({
   
   const valenceSource = getValenceSource(tracking);
 
-  const suppressMetricOptions = aggregationType === 'none' && mode === 'change';
+  const restrictToPrimaryMetric = aggregationType === 'none' && mode === 'change';
 
   const displayMetrics = useMemo(() => {
-    if (suppressMetricOptions) {
+    if (restrictToPrimaryMetric) {
       return [primaryMetric];
     }
     const unique = [
@@ -75,11 +75,11 @@ export function TrendAnalysisChart({
       ...selectedMetrics.filter((metric): metric is NumberMetric => metric !== primaryMetric),
     ];
     return unique.length > 0 ? unique : [primaryMetric];
-  }, [primaryMetric, selectedMetrics, suppressMetricOptions]);
+  }, [primaryMetric, selectedMetrics, restrictToPrimaryMetric]);
 
   const [visibleMetrics, setVisibleMetrics] = useState<Set<NumberMetric>>(() => {
     const defaults = new Set<NumberMetric>([primaryMetric]);
-    if (!suppressMetricOptions && displayMetrics.includes('mean')) {
+    if (!restrictToPrimaryMetric && displayMetrics.includes('mean')) {
       defaults.add('mean');
     }
     return defaults;
@@ -233,7 +233,7 @@ export function TrendAnalysisChart({
     });
   };
 
-  const hasVisibleMetrics = suppressMetricOptions || displayMetrics.some((metric) => visibleMetrics.has(metric));
+  const hasVisibleMetrics = displayMetrics.some((metric) => visibleMetrics.has(metric));
 
   const renderTooltip = ({
     active,
@@ -408,28 +408,31 @@ export function TrendAnalysisChart({
           </div>
         )}
       </div>
-      {!suppressMetricOptions && (
-        <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap gap-2 pr-1">
-          {displayMetrics.map((metric) => {
-            const isVisible = visibleMetrics.has(metric);
-            return (
-              <button
-                key={metric}
-                type="button"
-                onClick={() => toggleMetric(metric)}
-                className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors ${isVisible ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-transparent border-slate-200 dark:border-slate-800 opacity-70'}`}
-                title={isVisible ? 'Hide line' : 'Show line'}
-              >
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: getSwatchColor(metric) }}
-                />
-                <span className="text-slate-700 dark:text-slate-300">{getMetricLabel(metric)}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+      <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap gap-2 pr-1">
+        {displayMetrics.map((metric) => {
+          const isVisible = visibleMetrics.has(metric);
+          return (
+            <button
+              key={metric}
+              type="button"
+              onClick={() => toggleMetric(metric)}
+              className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors ${isVisible ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700' : 'bg-transparent border-slate-200 dark:border-slate-800 opacity-70'}`}
+              title={isVisible ? 'Hide line' : 'Show line'}
+            >
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: getSwatchColor(metric) }}
+              />
+              <span className="text-slate-700 dark:text-slate-300">{getMetricLabel(metric)}</span>
+            </button>
+          );
+        })}
+        {restrictToPrimaryMetric && (
+          <span className="self-center text-xs text-slate-500 dark:text-slate-400">
+            Individual entries only support the entry value here, so other summary metrics are unavailable.
+          </span>
+        )}
+      </div>
     </div>
   );
 }
