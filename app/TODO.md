@@ -28,7 +28,7 @@ I'm liking this one.
   - [ ] Records notifications
 - [ ] Onboarding
   - [ ] Example datasets
-  - [ ] Create dataset from template (Weightloss, P&L, Diet, etc)
+  - [x] Create dataset from template (Weightloss, P&L, Diet, etc)
 - [ ] App preferences
 - [x] Data import
   - [ ] Option to skip conflicting data
@@ -36,12 +36,13 @@ I'm liking this one.
   - [ ] Import dataset (with name, settings, etc)
 - [x] Data export
   - [ ] Include notes
+  - [ ] Include calculations
   - [ ] Export/import achievements
 - [ ] Data settings
   - [x] Which is better (valence): higher, lower, etc
-    - [ ] (**MVP**) Range-bound valence: above, below, inside, outside
+    - [ ] Range-bound valence: above, below, inside, outside
   - [ ] Allowed range (combines with valence for semantics, ex positive valence with positive numbers means higher is better, not positive is better)
-  - [ ] (**MVP**) Formatting style (none, currency, percent, unit)
+  - [ ] [MVP] Formatting style (none, currency, percent, unit)
     - [ ] Options (sign display, accounting, precision)
   - [x] Tracking: trend (weight, etc), series (P&L, etc)
   - [ ] Computed data (formula input from other sources)
@@ -76,8 +77,8 @@ I'm liking this one.
 - [x] Dashboard (for multiple data sets)
 - [ ] Chart improvements
   - [x] Line chart
-  - [ ] (**MVP**) Rolling averages
-  - [ ] (**MVP**) Growth projections
+  - [ ] [MVP] Rolling averages
+  - [ ] [MVP] Growth projections
   - [ ] Compare
   - [ ] Range/All-Time Cumulatives
   - [ ] Formulas
@@ -87,15 +88,15 @@ I'm liking this one.
   - [ ] Public data sources (weather, demographics, etc)
 - [ ] Additional add options
   - [x] Add by diff
-  - [ ] (**MVP**)Global quick add (with options) tailored for mobile
+  - [ ] [MVP]Global quick add (with options) tailored for mobile
   - [ ] Add to rollups (week, month, year) -- how to distribute?
   - [ ] Multi-line add (re-use import code)
   - [ ] Timer/stopwatch add
   - [ ] Slider
-  - [ ] (**MVP**) Intelligent options based on units
+  - [ ] [MVP] Intelligent options based on units
 - [ ] Audit log (per period)
 - [ ] Prev/Next in the panel
-- [ ] (**MVP**)Day breakdown/links in numbers panel (week/month/year)
+- [ ] [MVP]Day breakdown/links in numbers panel (week/month/year)
 - [ ] Timestamp date with number entries (requires stable re-parsing)
 - [ ] View customization (weekly, order, display metric, valence, etc)
 - [ ] Calendar cell tooltips (consise number panel info)
@@ -163,21 +164,21 @@ I'm liking this one.
 - [x] Week/Month/Year summaries need hover and selected state
 - [x] Can't delete all data on a day anymore
 - [x] [High] Week keys/dates are wrong, it doesn't line up with actual calendar days
-- [ ] [High] Tracking=series and deltas and percents aren't very helpful, period total is already a delta, and percents should be based on cumulative change, not change from prior delta -- will need to add cumulatives source (which itself is useless for tracking=trend)
+- [x] [High] Tracking=series and deltas and percents aren't very helpful, period total is already a delta, and percents should be based on cumulative change, not change from prior delta -- will need to add cumulatives source (which itself is useless for tracking=trend)
   - [x] Add cumulative calculations to data model
   - [x] Show cumulative in tracking=series
   - [x] Expose cumulative sources in goal targets
   - [x] Add cumulatives to goal builder
   - [x] Update goal system to support cumulative goals
 - [ ] [?] Adding data to new month didn't update the monthly view show a new month summary
-- [ ] Need an error boundary to catch UI errors
+- [x] Need an error boundary to catch UI errors
 - [x] [High] Need suggested goal weight, meaningful suggested values throughout
 - [x] Edit badge from numbers panel doesn't work -- replaced with "Share"
 - [ ] Add more Range based achievements to goal builder (averages, milestones from counts, etc)
 - [x] Count and average achievements
 - [ ] "First Win" is kinda broken -- fix or remove
 - [ ] Delete note confirmation disappears -- replace menu item with button
-- [ ] Changing passed data can shift streaks/multi-count achievements, triggering their notification -- may need to use number id -- partial mitigation by only norifiying on current period changes
+- [ ] [High] Changing passed data can shift streaks/multi-count achievements, triggering their notification -- may need to use number id -- partial mitigation by only norifiying on current period changes
 - [ ] Overlapping same category achievements (X-day streak, X-target, etc) should be stacked in notification and only show the highest one
 - [x] Refactor to use unified data manager instead of individual data hooks
 - [ ] Dashboard month trend delta (valence) is wrong, but after opening the data is right -- needs priors
@@ -185,10 +186,10 @@ I'm liking this one.
 - [ ] [Minor] Generated goal text has extra whitespace (renders fine)
 - [ ] Maintain template with created dataset for goal builder -- add way to get to generic goal builder
 - [ ] Optimization -- component memo and data calc caching
-- [ ] Can't delete note (reverts to value)
+- [ ] Can't blank out a note (reverts to value)
 - [ ] Refactor achievements to use aggregate data
 - [x] Refactor to use `formatValue()` instead of `NumberFormatter`
-- [ ] Timeline extremes not handled
+- [ ] Timeline extremes not displayed
 - [x] Editing a badge directly doesn't update the preview
 - [ ] Timeline prior numbers not passed for valence coloring of first number in period (numbers panel)
 - [x] URL/back button compatibility for side-panels
@@ -205,5 +206,5 @@ I'm liking this one.
 - [ ] Achievement progress only works for counts, need it to work for values as well
 - [ ] You should be able to navigate to the calendar location of achievements
 - [ ] Footer share link is crappy
-- [ ] Import needs to be done in bulk, avoid triggering redraw/events during
+- [ ] [High] Import needs to be done in bulk, avoid triggering redraw/events during
 - [ ] Animation polish
