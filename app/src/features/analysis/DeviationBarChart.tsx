@@ -21,7 +21,7 @@ import {
   YAxis,
 } from 'recharts';
 
-interface AggregationBarChartProps {
+interface DeviationBarChartProps {
   periods: PeriodAggregateData<DateKeyType>[];
   aggregationType: AggregationType;
   tracking: Tracking;
@@ -39,12 +39,12 @@ interface BarDataPoint {
   median: number;
 }
 
-export function AggregationBarChart({
+export function DeviationBarChart({
   periods,
   aggregationType,
   tracking,
   valence,
-}: AggregationBarChartProps) {
+}: DeviationBarChartProps) {
   const { theme } = useTheme();
   const isDark =
     theme === 'dark' ||
@@ -104,8 +104,8 @@ export function AggregationBarChart({
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
 
-  const getBarColor = (deviation: number): string => {
-    return getValueForValence(deviation, valence, {
+  const getBarColor = (value: number): string => {
+    return getValueForValence(value, valence, {
       good: '#22c55e',
       bad: '#ef4444',
       neutral: '#3b82f6',
@@ -210,7 +210,7 @@ export function AggregationBarChart({
           <Tooltip content={renderTooltip} />
           <Bar dataKey="deviationFromMean" fill="#8884d8" isAnimationActive={true} radius={[8, 8, 0, 0]}>
             {data.map((entry, index) => (
-              <Cell key={`bar-${index}`} fill={getBarColor(entry.deviationFromMean)} />
+              <Cell key={`bar-${index}`} fill={getBarColor(entry.value)} />
             ))}
           </Bar>
         </BarChart>

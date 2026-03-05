@@ -25,7 +25,7 @@ import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
 import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
-import { AggregationBarChart } from '@/features/analysis/AggregationBarChart';
+import { DeviationBarChart } from '@/features/analysis/DeviationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
 import { DistributionHistogram } from '@/features/analysis/DistributionHistogram';
 import { PeriodComparisonChart } from '@/features/analysis/PeriodComparisonChart';
@@ -549,7 +549,7 @@ export function Analysis() {
                 </PopoverTipContent>
               </PopoverTip>
             </h3>
-            <AggregationBarChart
+            <DeviationBarChart
               key={dataset.id}
               periods={trendChartPeriods}
               aggregationType={actualAggregationType}

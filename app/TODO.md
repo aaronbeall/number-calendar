@@ -88,15 +88,16 @@ I'm liking this one.
   - [ ] Public data sources (weather, demographics, etc)
 - [ ] Additional add options
   - [x] Add by diff
-  - [ ] [MVP]Global quick add (with options) tailored for mobile
+  - [ ] [MVP] Global quick add (with options) tailored for mobile
   - [ ] Add to rollups (week, month, year) -- how to distribute?
   - [ ] Multi-line add (re-use import code)
   - [ ] Timer/stopwatch add
   - [ ] Slider
-  - [ ] [MVP] Intelligent options based on units
+  - [ ] Scale options
+  - [ ] [MVP] Intelligent UI (timer, slider, etc) based on units
 - [ ] Audit log (per period)
 - [ ] Prev/Next in the panel
-- [ ] [MVP]Day breakdown/links in numbers panel (week/month/year)
+- [ ] [MVP] Day breakdown/links in numbers panel (week/month/year)
 - [ ] Timestamp date with number entries (requires stable re-parsing)
 - [ ] View customization (weekly, order, display metric, valence, etc)
 - [ ] Calendar cell tooltips (consise number panel info)
