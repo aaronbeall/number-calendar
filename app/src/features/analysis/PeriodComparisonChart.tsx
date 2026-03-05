@@ -1,12 +1,12 @@
 import { useTheme } from '@/components/ThemeProvider';
 import type { NumberMetric } from '@/lib/stats';
-import { METRIC_DISPLAY_INFO } from '@/lib/stats';
+import { getMetricValence, METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { formatPeriodLabel, getMetricColorForValence, METRIC_COLORS, type AggregationType } from '@/lib/analysis';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { Valence, Tracking } from '@/features/db/localdb';
-import { getValenceSource } from '@/lib/tracking';
+import { getValenceSource, getPrimaryMetric } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { useMemo, useState } from 'react';
 import {
@@ -48,18 +48,21 @@ export function PeriodComparisonChart({
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  // Display all metrics from selectedMetrics
+  const primaryMetric = getPrimaryMetric(tracking);
+
+  // Display all metrics from selectedMetrics, with primary metric first
   const displayMetrics: NumberMetric[] = useMemo(() => {
-    if (selectedMetrics.length === 0) {
-      return Object.keys(METRIC_DISPLAY_INFO) as NumberMetric[];
-    }
-    return selectedMetrics.filter((metric) =>
-      metric in METRIC_DISPLAY_INFO
-    );
-  }, [selectedMetrics]);
+    const baseMetrics = selectedMetrics.length === 0
+      ? (Object.keys(METRIC_DISPLAY_INFO) as NumberMetric[])
+      : selectedMetrics.filter((metric) => metric in METRIC_DISPLAY_INFO);
+    
+    // Put primary metric first
+    const metricsWithoutPrimary = baseMetrics.filter((m) => m !== primaryMetric);
+    return [primaryMetric, ...metricsWithoutPrimary];
+  }, [selectedMetrics, primaryMetric]);
 
   const [visibleMetrics, setVisibleMetrics] = useState<Set<NumberMetric>>(() => {
-    const defaults: NumberMetric[] = ['min', 'max', 'mean'];
+    const defaults: NumberMetric[] = [primaryMetric, 'min', 'max', 'mean'];
     return new Set(defaults.filter((metric) => displayMetrics.includes(metric)));
   });
 
@@ -155,7 +158,7 @@ export function PeriodComparisonChart({
         <div className="space-y-0.5">
           {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {
             const value = dataPoint[metric] as number;
-            const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+            const metricValence = getMetricValence(metric, valence);
             const colorValue = getValenceColorValue(metric, value ?? 0);
             
             // Use traditional green/red/blue valence coloring
@@ -207,23 +210,33 @@ export function PeriodComparisonChart({
             {displayMetrics.map((metric) => {
               // Only render bars for metrics that have data in at least one point
               const hasData = data.some((point) => typeof point[metric] === 'number' && !isNaN(point[metric] as number));
+              const isPrimary = metric === primaryMetric;
               return hasData ? (
                 <Bar
                   key={metric}
                   dataKey={metric}
-                  fill={getSwatchColor(metric)}
+                  fill={isPrimary ? '#8884d8' : getSwatchColor(metric)}
                   name={getMetricLabel(metric)}
                   isAnimationActive={true}
+                  radius={[8, 8, 0, 0]}
                   hide={!visibleMetrics.has(metric)}
                 >
                   {valence && tracking && data.map((point, index) => {
-                    const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+                    const metricValence = getMetricValence(metric, valence);
                     const colorValue = getValenceColorValue(metric, (point[metric] as number) ?? 0);
+                    
+                    const cellColor = isPrimary
+                      ? getValueForValence(colorValue, metricValence, {
+                          good: '#22c55e',
+                          bad: '#ef4444',
+                          neutral: '#3b82f6',
+                        })
+                      : getMetricColorForValence(metric, colorValue, metricValence);
                     
                     return (
                       <Cell
                         key={`cell-${metric}-${index}`}
-                        fill={getMetricColorForValence(metric, colorValue, metricValence)}
+                        fill={cellColor}
                       />
                     );
                   })}
@@ -245,6 +258,12 @@ export function PeriodComparisonChart({
           if (!hasData) return null;
           
           const isVisible = visibleMetrics.has(metric);
+          const isPrimary = metric === primaryMetric;
+          const swatchColor = isPrimary ? getValueForValence(true, valence, {
+            good: '#22c55e',
+            bad: '#ef4444',
+            neutral: '#3b82f6',
+          }) : getSwatchColor(metric);
           return (
             <button
               key={metric}
@@ -255,7 +274,7 @@ export function PeriodComparisonChart({
             >
               <span
                 className="inline-block h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: getSwatchColor(metric) }}
+                style={{ backgroundColor: swatchColor }}
               />
               <span className="text-slate-700 dark:text-slate-300">{getMetricLabel(metric)}</span>
             </button>

@@ -1,4 +1,4 @@
-import type { DayKey, MonthKey, Tracking } from "@/features/db/localdb";
+import type { DayKey, MonthKey, Tracking, Valence } from "@/features/db/localdb";
 import { Activity, ArrowRightFromLine, ArrowRightToLine, BarChart2, BarChart3, ChevronDown, ChevronUp, Copy, FoldVertical, Hash, type LucideIcon, Maximize2, Minimize2, Percent, Plus, ScatterChart, TrendingUp, Zap } from "lucide-react";
 import { parseDayKey, toMonthKey } from "./friendly-date";
 import { capitalize, entriesOf } from "./utils";
@@ -409,13 +409,16 @@ export const METRIC_DISPLAY_INFO: Record<NumberMetric, {
   interquartileRange: { label: 'Interquartile Range', description: 'Range between 25th and 75th percentiles', descriptionTemplate: 'Spread of middle 50% of {values} in {timeframe}', icon: Copy, cumulatives: false, valenceless: true },
 };
 
-
 export function getMetricDisplayName(metric: NumberMetric): string {
   return METRIC_DISPLAY_INFO[metric].label;
 }
 
 export function getMetricDescription(metric: NumberMetric): string {
   return METRIC_DISPLAY_INFO[metric].description;
+}
+
+export function getMetricValence(metric: NumberMetric, valence: Valence): Valence {
+  return METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
 }
 
 export const METRIC_SOURCES_DISPLAY_INFO: Record<NumberSource, { label: string; description: string }> = {

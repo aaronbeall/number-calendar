@@ -6,7 +6,7 @@ import type { NumberMetric } from '@/lib/stats';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import type { AggregationType } from '@/lib/analysis';
 import { getMetricAnalysisDescription, getCumulativeAnalysisDescription, getExtremesAnalysisDescription, getDeltasAnalysisDescription } from '@/lib/analysis';
-import { METRIC_DISPLAY_INFO } from '@/lib/stats';
+import { getMetricValence, METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { getValenceSource } from '@/lib/tracking';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import {
@@ -77,7 +77,7 @@ export function MetricCard({
     if (isValenceless) return valenceToneClasses.neutral;
     return getValueForValence(getValenceValue(value, delta), valence, valenceToneClasses);
   };
-  const metricValence = isValenceless ? 'neutral' : valence;
+  const metricValence = getMetricValence(metric, valence);
 
   // For high/low deltas, we don't have priors so instead compare high/low to current value to determine valence
   const highValenceDelta = (high ?? 0) - (value ?? 0) || deltaValue;

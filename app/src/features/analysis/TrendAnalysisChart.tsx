@@ -5,7 +5,7 @@ import { formatPeriodLabel, getMetricColorForValence, type AggregationType } fro
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import { METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
+import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { useId, useMemo, useState } from 'react';
@@ -268,7 +268,7 @@ export function TrendAnalysisChart({
 
   const getSwatchColor = (metric: NumberMetric): string => {
     if (metric === primaryMetric) return primaryColor;
-    const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+    const metricValence = getMetricValence(metric, valence);
     return getMetricColorForValence(metric, 0, metricValence);
   };
 
@@ -330,7 +330,7 @@ export function TrendAnalysisChart({
             const secondaryShowDelta = point.secondaryShowDelta[metric] ?? false;
             
             // Check if metric has valence
-            const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+            const metricValence = getMetricValence(metric, valence);
             
             // Calculate swatch color using valence-aware coloring for secondary metrics
             const swatchColor = metric === primaryMetric
@@ -393,7 +393,7 @@ export function TrendAnalysisChart({
               50
             )}
             {displayMetrics.filter((m) => m !== primaryMetric).map((metric) => {
-              const metricValence = METRIC_DISPLAY_INFO[metric].valenceless ? 'neutral' : valence;
+              const metricValence = getMetricValence(metric, valence);
               const goodColor = getMetricColorForValence(metric, 1, metricValence);
               const badColor = getMetricColorForValence(metric, -1, metricValence);
               const offset = getSecondaryMetricGradientOffset(metric);
