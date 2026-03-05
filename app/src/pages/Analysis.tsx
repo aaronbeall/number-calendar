@@ -23,7 +23,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { DeviationBarChart } from '@/features/analysis/DeviationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -36,6 +36,8 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
 import { buildSingleNumberAggregates, computeRunningAggregatePeriods } from '@/lib/period-aggregate';
 import { Link } from 'react-router-dom';
+
+export type AnalysisTrendMode = 'all-time-trend' | 'trend' | 'change';
 
 function formatAggregationRange(
   startDate: Date,
@@ -125,10 +127,10 @@ export function Analysis() {
     `statsSummary_metrics_${dataset.id}`,
     defaultSelectedSummaryMetrics,
   );
-  const defaultTrendMode: TrendDataMode = dataset.tracking === 'series' ? 'trend' : 'change';
-  const [trendChartMode, setTrendChartMode] = usePreference<TrendDataMode>(
-    `trendChart_dataMode_${dataset.tracking}_${dataset.id}`,
-    defaultTrendMode,
+  const defaultAnalysisTrendMode: AnalysisTrendMode = dataset.tracking === 'series' ? 'all-time-trend' : 'change';
+  const [analysisTrendMode, setAnalysisTrendMode] = usePreference<AnalysisTrendMode>(
+    `analysis_trendMode_${dataset.tracking}_${dataset.id}`,
+    defaultAnalysisTrendMode,
   );
   const [valenceDistributionMode, setValenceDistributionMode] = usePreference<'count' | 'total'>(
     `valenceDistribution_mode_${dataset.tracking}_${dataset.id}`,
@@ -233,6 +235,11 @@ export function Analysis() {
   const deltasData = dataset.tracking === 'trend' ? deltas : undefined;
 
   const trendChartPeriods = useMemo(() => {
+    if (analysisTrendMode === 'trend') {
+      // Compute cumulatives only within the selected time range
+      return computeRunningAggregatePeriods(periods, primaryMetric);
+    }
+    
     // Compute aggregates on full dataset from start through range end, then filter to in-range
     const allAggregationPeriods = actualAggregationType === 'none'
       ? buildSingleNumberAggregates(allDays)
@@ -245,7 +252,7 @@ export function Analysis() {
       const periodDate = parseDateKey(period.dateKey);
       return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
     });
-  }, [actualAggregationType, allDays, periodsForAggregation, primaryMetric, timeRange]);
+  }, [analysisTrendMode, periods, actualAggregationType, allDays, periodsForAggregation, primaryMetric, timeRange]);
 
   const aggregationOptions = [
     { value: 'none', label: 'None', icon: Ban },
@@ -260,11 +267,14 @@ export function Analysis() {
   const activeTimeFrameLabel =
     availablePresets.find(preset => preset.preset === presetRange)?.label 
     ?? formatAggregationRange(timeRange.startDate, timeRange.endDate, actualAggregationType);
+  const trendScopeLabel = presetRange ? activeTimeFrameLabel : 'Time Frame';
   const aggregationModeLabel =
     actualAggregationType === 'none'
       ? 'Entries'
       : capitalize(adjectivize(actualAggregationType));
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
+  // Map analysis mode to TrendChart mode
+  const trendChartMode: TrendDataMode = analysisTrendMode === 'change' ? 'change' : 'trend';
 
   if (isLoading) {
     return <LoadingState title="Loading analysis" message="Preparing your data visualizations..." />;
@@ -456,7 +466,7 @@ export function Analysis() {
 
           {/* Trend Chart */}
           <Card className="p-4">
-            <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2">
+            <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2 flex-wrap">
               <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                 <LineChart className="w-4 h-4" />
                 Trend Over Time
@@ -473,46 +483,71 @@ export function Analysis() {
                     <div className="space-y-1 text-sm">
                       <p className="font-medium">Trend Over Time</p>
                       <p className="text-muted-foreground">
-                        View how your data changes over time. Toggle between <strong>Trend</strong> mode to see values build up over time, or <strong>Change</strong> mode to see period-over-period variations.
+                        View how your data changes over time. Use{' '}
+                        <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                          <Infinity className="h-3.5 w-3.5" />
+                          All Time
+                        </span>{' '}
+                        for cumulative values from the beginning,{' '}
+                        <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                          <CalendarClock className="h-3.5 w-3.5" />
+                          Time Frame
+                        </span>{' '}
+                        for cumulative values within the selected range, or{' '}
+                        <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                          <Activity className="h-3.5 w-3.5" />
+                          Change
+                        </span>{' '}
+                        for period-over-period movement.
                       </p>
                     </div>
                   </PopoverTipContent>
                 </PopoverTip>
               </h3>
-              <ToggleGroup
-                type="single"
-                value={trendChartMode}
-                onValueChange={(value) => {
-                  if (value) setTrendChartMode(value as TrendDataMode);
-                }}
-                size="sm"
-                variant="outline"
-                aria-label="Trend chart mode"
-              >
+              <div className="flex items-center gap-2">
+                <ToggleGroup
+                  type="single"
+                  value={analysisTrendMode}
+                  onValueChange={(value) => {
+                    if (value) setAnalysisTrendMode(value as AnalysisTrendMode);
+                  }}
+                  size="sm"
+                  variant="outline"
+                  aria-label="Analysis trend mode"
+                >
                 {dataset.tracking === 'series' ? (
                   <>
-                    <ToggleGroupItem value="trend" aria-label="Trend">
-                      <LineChart className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Trend</span>
+                    <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
+                      <Infinity className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">All Time</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="trend" aria-label="Time Frame Trend">
+                      <CalendarClock className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">{trendScopeLabel}</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
-                      <BarChart3 className="size-4 sm:mr-1" />
+                      <Activity className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">{trendChangeModeLabel}</span>
                     </ToggleGroupItem>
                   </>
                 ) : (
                   <>
-                    <ToggleGroupItem value="trend" aria-label="Trend">
+                    <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
+                      <Infinity className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">All Time</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="trend" aria-label="Time Frame Trend">
                       <LineChart className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Trend</span>
+                      <span className="hidden sm:inline">{trendScopeLabel}</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
-                      <TrendingUp className="size-4 sm:mr-1" />
+                      <Activity className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">{trendChangeModeLabel}</span>
                     </ToggleGroupItem>
                   </>
                 )}
               </ToggleGroup>
+              </div>
             </div>
             <TrendAnalysisChart
               key={dataset.id}
@@ -610,9 +645,23 @@ export function Analysis() {
                       <div className="space-y-1 text-sm">
                         <p className="font-medium">Valence Distribution</p>
                         <p className="text-muted-foreground">
-                          {dataset.tracking === 'trend' 
-                            ? 'Shows the balance between periods with upward trends versus downward trends in your data.'
-                            : 'Shows the balance between positive and negative values. Toggle between Count (number of periods) and Total (sum of values) to see different perspectives.'}
+                          {dataset.tracking === 'trend' ? (
+                            'Shows the balance between periods with upward trends versus downward trends in your data.'
+                          ) : (
+                            <>
+                              Shows the balance between positive and negative values. Toggle between{' '}
+                              <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                                <Hash className="h-3.5 w-3.5" />
+                                Count
+                              </span>{' '}
+                              (number of periods) and{' '}
+                              <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                                <Sigma className="h-3.5 w-3.5" />
+                                Total
+                              </span>{' '}
+                              (sum of values) to see different perspectives.
+                            </>
+                          )}
                         </p>
                       </div>
                     </PopoverTipContent>
