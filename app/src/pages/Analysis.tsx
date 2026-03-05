@@ -275,6 +275,7 @@ export function Analysis() {
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
   // Map analysis mode to TrendChart mode
   const trendChartMode: TrendDataMode = analysisTrendMode === 'change' ? 'change' : 'trend';
+  const hasDataInSelection = dataPoints.length > 0;
 
   if (isLoading) {
     return <LoadingState title="Loading analysis" message="Preparing your data visualizations..." />;
@@ -413,6 +414,85 @@ export function Analysis() {
       </div>
     </>
   );
+
+  if (!hasDataInSelection) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
+          {/* Controls Panel */}
+          <Card className="lg:col-span-1 p-3 sm:p-4 space-y-3 h-fit sticky top-2 z-20 lg:top-6">
+            {isMobile ? (
+              <Accordion type="single" collapsible defaultValue="controls">
+                <AccordionItem value="controls" className="border-none">
+                  <AccordionTrigger className="py-1.5 px-0 text-sm">
+                    <div className="flex w-full gap-3 text-left">
+                      <div className="flex-1">
+                        <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Time Frame</div>
+                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{activeTimeFrameLabel}</div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-0.5">Aggregation</div>
+                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{activeAggregationLabel}</div>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="py-1 pb-0">
+                    {controlsContent}
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : (
+              controlsContent
+            )}
+          </Card>
+
+          {/* Selected range empty state */}
+          <Card className="lg:col-span-3 p-6 sm:p-8">
+            <Empty className="min-h-[52vh]">
+              <EmptyHeader>
+                <div className="mb-4">
+                  <EmptyChartIllustration />
+                </div>
+                <EmptyTitle className="text-xl">No Data in This Time Frame</EmptyTitle>
+                <EmptyDescription className="text-base mt-3 max-w-2xl mx-auto">
+                  No tracked values were found for <span className="font-medium text-foreground">{activeTimeFrameLabel}</span> with <span className="font-medium text-foreground">{activeAggregationLabel}</span> aggregation. Try a broader range or a different aggregation to see charts.
+                </EmptyDescription>
+              </EmptyHeader>
+              <EmptyContent>
+                <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                  <Button
+                    size="lg"
+                    onClick={() => {
+                      const timestamps = allDays
+                        .map((day) => {
+                          try {
+                            return parseDateKey(day.date).getTime();
+                          } catch {
+                            return NaN;
+                          }
+                        })
+                        .filter((ts) => Number.isFinite(ts));
+
+                      if (timestamps.length === 0) return;
+
+                      const minTs = Math.min(...timestamps);
+                      const maxTs = Math.max(...timestamps);
+                      setPresetRange(null);
+                      setCustomStart(new Date(minTs));
+                      setCustomEnd(new Date(maxTs));
+                    }}
+                  >
+                    <Infinity className="w-4 h-4 mr-2" />
+                    Select All Time
+                  </Button>
+                </div>
+              </EmptyContent>
+            </Empty>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-5 sm:px-6 sm:py-6">
