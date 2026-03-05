@@ -8,7 +8,8 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { useId, useMemo, useState } from 'react';
+import { useId, useMemo } from 'react';
+import { usePreference } from '@/hooks/usePreference';
 import {
   Area,
   CartesianGrid,
@@ -29,6 +30,7 @@ interface TrendAnalysisChartProps {
   mode: TrendDataMode;
   valence?: Valence;
   selectedMetrics?: NumberMetric[];
+  datasetId: string;
 }
 
 export type TrendDataMode = 'trend' | 'change';
@@ -55,6 +57,7 @@ export function TrendAnalysisChart({
   mode,
   valence = 'neutral',
   selectedMetrics = [],
+  datasetId,
 }: TrendAnalysisChartProps) {
   const { theme } = useTheme();
   const isDark =
@@ -81,13 +84,28 @@ export function TrendAnalysisChart({
     return unique.length > 0 ? unique : [primaryMetric];
   }, [primaryMetric, selectedMetrics, restrictToPrimaryMetric]);
 
-  const [visibleMetrics, setVisibleMetrics] = useState<Set<NumberMetric>>(() => {
-    const defaults = new Set<NumberMetric>([primaryMetric]);
+  const defaultVisibleMetrics = useMemo(() => {
+    const defaults: NumberMetric[] = [primaryMetric];
     if (!restrictToPrimaryMetric && displayMetrics.includes('mean')) {
-      defaults.add('mean');
+      defaults.push('mean');
     }
     return defaults;
-  });
+  }, [primaryMetric, restrictToPrimaryMetric, displayMetrics]);
+
+  const [visibleMetricsArray, setVisibleMetricsArray] = usePreference<NumberMetric[]>(
+    `analysis_trendVisibleMetrics_${datasetId}`,
+    defaultVisibleMetrics,
+  );
+
+  const visibleMetrics = useMemo(() => new Set(visibleMetricsArray), [visibleMetricsArray]);
+
+  const setVisibleMetrics = (updater: (prev: Set<NumberMetric>) => Set<NumberMetric>) => {
+    setVisibleMetricsArray((prev) => {
+      const prevSet = new Set(prev);
+      const newSet = updater(prevSet);
+      return Array.from(newSet);
+    });
+  };
 
   const data: TrendPoint[] = useMemo(() => {
     const result = periods

@@ -105,7 +105,7 @@ export const TIME_FRAME_PRESETS = {
   'last-30-days': { label: 'Past 30 Days', aggregations: ['day'] },
   'this-week': { label: 'This Week', aggregations: ['day', 'week'] },
   'last-week': { label: 'Last Week', aggregations: ['day', 'week'] },
-  'last-4-weeks': { label: 'Last 4 Weeks', aggregations: ['week'] },
+  'last-4-weeks': { label: 'Past 4 Weeks', aggregations: ['week'] },
   'this-month': { label: 'This Month', aggregations: ['day', 'week', 'month'] },
   'last-month': { label: 'Last Month', aggregations: ['day', 'week', 'month'] },
   'last-6-months': { label: 'Past 6 Months', aggregations: ['day', 'week', 'month'] },

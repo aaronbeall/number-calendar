@@ -8,7 +8,8 @@ import { formatValue } from '@/lib/friendly-numbers';
 import type { Valence, Tracking } from '@/features/db/localdb';
 import { getValenceSource, getPrimaryMetric } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { usePreference } from '@/hooks/usePreference';
 import {
   Bar,
   BarChart,
@@ -27,6 +28,7 @@ interface PeriodComparisonChartProps {
   selectedMetrics?: NumberMetric[];
   valence: Valence;
   tracking: Tracking;
+  datasetId: string;
 }
 
 type ComparisonDataPoint = {
@@ -40,6 +42,7 @@ export function PeriodComparisonChart({
   selectedMetrics = [],
   valence,
   tracking,
+  datasetId,
 }: PeriodComparisonChartProps) {
   const { theme } = useTheme();
   const isDark =
@@ -61,10 +64,25 @@ export function PeriodComparisonChart({
     return [primaryMetric, ...metricsWithoutPrimary];
   }, [selectedMetrics, primaryMetric]);
 
-  const [visibleMetrics, setVisibleMetrics] = useState<Set<NumberMetric>>(() => {
+  const defaultVisibleMetrics = useMemo(() => {
     const defaults: NumberMetric[] = [primaryMetric, 'min', 'max', 'mean'];
-    return new Set(defaults.filter((metric) => displayMetrics.includes(metric)));
-  });
+    return defaults.filter((metric) => displayMetrics.includes(metric));
+  }, [primaryMetric, displayMetrics]);
+
+  const [visibleMetricsArray, setVisibleMetricsArray] = usePreference<NumberMetric[]>(
+    `analysis_comparisonVisibleMetrics_${datasetId}`,
+    defaultVisibleMetrics,
+  );
+
+  const visibleMetrics = useMemo(() => new Set(visibleMetricsArray), [visibleMetricsArray]);
+
+  const setVisibleMetrics = (updater: (prev: Set<NumberMetric>) => Set<NumberMetric>) => {
+    setVisibleMetricsArray((prev) => {
+      const prevSet = new Set(prev);
+      const newSet = updater(prevSet);
+      return Array.from(newSet);
+    });
+  };
 
   const data: ComparisonDataPoint[] = useMemo(() => {
     return periods

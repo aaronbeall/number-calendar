@@ -12,12 +12,11 @@ import { Button } from '@/components/ui/button';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
-import { useSearchParamState } from '@/hooks/useSearchParamState';
 import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { formatFriendlyDate, dateToDayKey, parseDateKey } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
@@ -114,11 +113,36 @@ export function Analysis() {
   const isMobile = useIsMobile();
   const primaryMetric = getPrimaryMetric(dataset.tracking);
 
-  const [aggregationType, setAggregationType] = useSearchParamState<AggregationType>('agg', 'month');
-  const actualAggregationType = (typeof aggregationType === 'string' ? aggregationType : 'month') as AggregationType;
-  const [presetRange, setPresetRange] = useState<TimeFramePreset | null>('last-6-months');
-  const [customStart, setCustomStart] = useState<Date>(new Date());
-  const [customEnd, setCustomEnd] = useState<Date>(new Date());
+  // Persisted analysis controls (per dataset)
+  const [aggregationType, setAggregationType] = usePreference<AggregationType>(
+    `analysis_aggregation_${dataset.id}`,
+    'month',
+  );
+  const [presetRange, setPresetRange] = usePreference<TimeFramePreset | null>(
+    `analysis_preset_${dataset.id}`,
+    'last-6-months',
+  );
+  const [customStartDayKey, setCustomStartDayKey] = usePreference<string>(
+    `analysis_customStart_${dataset.id}`,
+    format(new Date(), 'yyyy-MM-dd'),
+  );
+  const [customEndDayKey, setCustomEndDayKey] = usePreference<string>(
+    `analysis_customEnd_${dataset.id}`,
+    format(new Date(), 'yyyy-MM-dd'),
+  );
+
+
+  const customStart = useMemo(() => {
+    const parsed = new Date(customStartDayKey);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  }, [customStartDayKey]);
+
+  const customEnd = useMemo(() => {
+    const parsed = new Date(customEndDayKey);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  }, [customEndDayKey]);
+
+  // Per-dataset preferences
   const defaultSelectedSummaryMetrics = useMemo(
     () => ['count', 'mean', 'median', 'min', 'max', primaryMetric] as NumberMetric[],
     [primaryMetric],
@@ -137,9 +161,18 @@ export function Analysis() {
     'count',
   );
 
+  // Helpers to set custom dates
+  const setCustomStart = (date: Date) => {
+    setCustomStartDayKey(format(date, 'yyyy-MM-dd'));
+  };
+
+  const setCustomEnd = (date: Date) => {
+    setCustomEndDayKey(format(date, 'yyyy-MM-dd'));
+  };
+
   // Get periods based on aggregation type
   const periodsForAggregation = useMemo(() => {
-    switch (actualAggregationType) {
+    switch (aggregationType) {
       case 'none': return aggregateData.days;
       case 'day': return aggregateData.days;
       case 'week': return aggregateData.weeks;
@@ -147,12 +180,12 @@ export function Analysis() {
       case 'year': return aggregateData.years;
       default: return aggregateData.months;
     }
-  }, [actualAggregationType, aggregateData]);
+  }, [aggregationType, aggregateData]);
 
   // Get available time frame presets for current aggregation
   const availablePresets = useMemo(() => 
-    getAvailablePresets(actualAggregationType).filter((preset) => preset.preset !== 'custom'),
-    [actualAggregationType]
+    getAvailablePresets(aggregationType).filter((preset) => preset.preset !== 'custom'),
+    [aggregationType]
   );
 
   // Ensure current preset is valid for aggregation type
@@ -162,7 +195,7 @@ export function Analysis() {
     if (!isValid && availablePresets.length > 0) {
       setPresetRange(availablePresets[0].preset);
     }
-  }, [actualAggregationType, availablePresets, presetRange]);
+  }, [aggregationType, availablePresets, presetRange]);
 
   // Determine active time range
   const today = new Date();
@@ -220,10 +253,10 @@ export function Analysis() {
   // Compute analysis data for selected time range
   const analysisData = useMemo(() => 
     computeAnalysisData(periodsForAggregation, timeRange, {
-      aggregation: actualAggregationType,
+      aggregation: aggregationType,
       primaryMetric,
     }),
-    [actualAggregationType, periodsForAggregation, primaryMetric, timeRange]
+    [aggregationType, periodsForAggregation, primaryMetric, timeRange]
   );
 
   const { periods, dataPoints, stats, extremes, cumulatives, cumulativePercents, deltas, percents, periodCount } = analysisData;
@@ -241,7 +274,7 @@ export function Analysis() {
     }
     
     // Compute aggregates on full dataset from start through range end, then filter to in-range
-    const allAggregationPeriods = actualAggregationType === 'none'
+    const allAggregationPeriods = aggregationType === 'none'
       ? buildSingleNumberAggregates(allDays)
       : periodsForAggregation;
       
@@ -252,7 +285,7 @@ export function Analysis() {
       const periodDate = parseDateKey(period.dateKey);
       return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
     });
-  }, [analysisTrendMode, periods, actualAggregationType, allDays, periodsForAggregation, primaryMetric, timeRange]);
+  }, [analysisTrendMode, periods, aggregationType, allDays, periodsForAggregation, primaryMetric, timeRange]);
 
   const aggregationOptions = [
     { value: 'none', label: 'None', icon: Ban },
@@ -263,15 +296,15 @@ export function Analysis() {
   ] as const;
 
   const activeAggregationLabel =
-    aggregationOptions.find(option => option.value === actualAggregationType)?.label ?? 'Month';
+    aggregationOptions.find(option => option.value === aggregationType)?.label ?? 'Month';
   const activeTimeFrameLabel =
     availablePresets.find(preset => preset.preset === presetRange)?.label 
-    ?? formatAggregationRange(timeRange.startDate, timeRange.endDate, actualAggregationType);
+    ?? formatAggregationRange(timeRange.startDate, timeRange.endDate, aggregationType);
   const trendScopeLabel = presetRange ? activeTimeFrameLabel : 'Time Frame';
   const aggregationModeLabel =
-    actualAggregationType === 'none'
+    aggregationType === 'none'
       ? 'Entries'
-      : capitalize(adjectivize(actualAggregationType));
+      : capitalize(adjectivize(aggregationType));
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
   // Map analysis mode to TrendChart mode
   const trendChartMode: TrendDataMode = analysisTrendMode === 'change' ? 'change' : 'trend';
@@ -333,7 +366,7 @@ export function Analysis() {
           setPresetRange(newPreset);
         }}>
           <SelectTrigger className="w-full text-xs h-9 sm:h-8">
-            <SelectValue placeholder={formatAggregationRange(timeRange.startDate, timeRange.endDate, actualAggregationType)} />
+            <SelectValue placeholder={formatAggregationRange(timeRange.startDate, timeRange.endDate, aggregationType)} />
           </SelectTrigger>
           <SelectContent>
             {availablePresets.map(preset => (
@@ -350,7 +383,7 @@ export function Analysis() {
           key={dataset.id}
           tracking={dataset.tracking}
           valence={dataset.valence}
-          aggregation={actualAggregationType}
+          aggregation={aggregationType}
           allPeriods={periodsForAggregation}
           startDate={timeRange.startDate}
           endDate={timeRange.endDate}
@@ -370,7 +403,7 @@ export function Analysis() {
         </h3>
         <div className="grid [grid-template-columns:repeat(auto-fit,minmax(90px,1fr))] gap-1 rounded-md bg-slate-200 dark:bg-slate-800 p-1">
           {aggregationOptions.map((option) => {
-            const isActive = actualAggregationType === option.value;
+            const isActive = aggregationType === option.value;
             const Icon = option.icon;
 
             return (
@@ -396,9 +429,9 @@ export function Analysis() {
           Summary
         </h3>
         <div className="space-y-1.5 text-xs">
-          {actualAggregationType !== 'none' && (
+          {aggregationType !== 'none' && (
             <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 px-2 py-1.5 rounded">
-              <span className="text-slate-600 dark:text-slate-400">{capitalize(pluralize(actualAggregationType))}</span>
+              <span className="text-slate-600 dark:text-slate-400">{capitalize(pluralize(aggregationType))}</span>
               <span className="font-semibold text-slate-900 dark:text-white">{formatValue(periodCount)}</span>
             </div>
           )}
@@ -533,7 +566,7 @@ export function Analysis() {
             valence={dataset.valence}
             tracking={dataset.tracking}
             datasetId={dataset.id}
-            aggregationType={actualAggregationType}
+            aggregationType={aggregationType}
             timeFrameLabel={activeTimeFrameLabel}
             extremes={extremes}
             cumulatives={cumulativesData}
@@ -632,11 +665,12 @@ export function Analysis() {
             <TrendAnalysisChart
               key={dataset.id}
               periods={trendChartPeriods}
-              aggregationType={actualAggregationType}
+              aggregationType={aggregationType}
               tracking={dataset.tracking}
               mode={trendChartMode}
               valence={dataset.valence}
               selectedMetrics={selectedSummaryMetrics}
+              datasetId={dataset.id}
             />
           </Card>
 
@@ -644,7 +678,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
-              {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} Deviation from Average
+              {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Deviation from Average
               <PopoverTip>
                 <PopoverTipTrigger asChild>
                   <button
@@ -667,7 +701,7 @@ export function Analysis() {
             <DeviationBarChart
               key={dataset.id}
               periods={trendChartPeriods}
-              aggregationType={actualAggregationType}
+              aggregationType={aggregationType}
               tracking={dataset.tracking}
               valence={dataset.valence}
             />
@@ -711,7 +745,7 @@ export function Analysis() {
               <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2">
                 <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
                   <PieChart className="w-4 h-4" />
-                  {actualAggregationType === 'none' ? 'Entry' : capitalize(adjectivize(actualAggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
+                  {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
                   <PopoverTip>
                     <PopoverTipTrigger asChild>
                       <button
@@ -772,7 +806,7 @@ export function Analysis() {
               <ValenceDistributionChart
                 key={dataset.id}
                 periods={trendChartPeriods}
-                aggregationType={actualAggregationType}
+                aggregationType={aggregationType}
                 tracking={dataset.tracking}
                 valence={dataset.valence}
                 mode={valenceDistributionMode}
@@ -781,11 +815,11 @@ export function Analysis() {
           )}
 
           {/* Period Comparison - only for aggregated data */}
-          {actualAggregationType !== 'none' && (
+          {aggregationType !== 'none' && (
             <Card className="p-4">
               <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                 <TrendingUp className="w-4 h-4" />
-                {capitalize(adjectivize(actualAggregationType))} Comparison
+                {capitalize(adjectivize(aggregationType))} Comparison
                 <PopoverTip>
                   <PopoverTipTrigger asChild>
                     <button
@@ -808,10 +842,11 @@ export function Analysis() {
               <PeriodComparisonChart
                 key={dataset.id}
                 periods={periods}
-                aggregationType={actualAggregationType}
+                aggregationType={aggregationType}
                 selectedMetrics={selectedSummaryMetrics}
                 valence={dataset.valence}
                 tracking={dataset.tracking}
+                datasetId={dataset.id}
               />
             </Card>
           )}
