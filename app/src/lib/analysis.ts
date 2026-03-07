@@ -36,6 +36,33 @@ export function formatPeriodLabel(dateKey: DateKey, aggregationType: Aggregation
 }
 
 /**
+ * Format a date range label for a given aggregation type.
+ */
+export function formatAggregationRange(
+  startDate: Date,
+  endDate: Date,
+  aggregation: AggregationType,
+): string {
+  try {
+    switch (aggregation) {
+      case 'none':
+      case 'day':
+        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
+      case 'week':
+        return `W${format(startDate, 'ww')} '${format(startDate, 'yy')} - W${format(endDate, 'ww')} '${format(endDate, 'yy')}`;
+      case 'month':
+        return `${format(startDate, "MMM ''yy")} - ${format(endDate, "MMM ''yy")}`;
+      case 'year':
+        return `${format(startDate, 'yyyy')} - ${format(endDate, 'yyyy')}`;
+      default:
+        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
+    }
+  } catch {
+    return 'Custom range';
+  }
+}
+
+/**
  * Semantic colors for metrics in visualizations
  */
 export const METRIC_COLORS: Record<NumberMetric, string> = {

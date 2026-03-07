@@ -180,5 +180,7 @@ export function escapeRegex(str: string): string {
  * Ensures that a type is never and throws an error if called, used for exhaustive checks in switch statements or conditional logic
  */
 export function assertExhaustive(_x: never): never {
+  // Throw here is mostly to ensure type-flow analysis treats this as unreachable code, 
+  // we don't need to try/catch from calling code since this should only be used in places where the type system guarantees it's unreachable
   throw new Error("This code should be unreachable");
 }

@@ -14,12 +14,12 @@ import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
-import { formatFriendlyDate, dateToDayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
+import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo } from 'react';
-import { format, isValid, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
+import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
+import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
 import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity } from 'lucide-react';
@@ -37,30 +37,6 @@ import { buildSingleNumberAggregates, computeRunningAggregatePeriods, type Perio
 import { Link } from 'react-router-dom';
 
 export type AnalysisTrendMode = 'all-time-trend' | 'in-range-trend' | 'change';
-
-function formatAggregationRange(
-  startDate: Date,
-  endDate: Date,
-  aggregation: AggregationType
-): string {
-  try {
-    switch (aggregation) {
-      case 'none':
-      case 'day':
-        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
-      case 'week':
-        return `W${format(startDate, 'ww')} '${format(startDate, 'yy')} - W${format(endDate, 'ww')} '${format(endDate, 'yy')}`;
-      case 'month':
-        return `${format(startDate, "MMM ''yy")} - ${format(endDate, "MMM ''yy")}`;
-      case 'year':
-        return `${format(startDate, 'yyyy')} - ${format(endDate, 'yyyy')}`;
-      default:
-        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
-    }
-  } catch {
-    return 'Custom range';
-  }
-}
 
 // Abstract chart illustration for empty state
 function EmptyChartIllustration() {
@@ -122,25 +98,19 @@ export function Analysis() {
     `analysis_preset_${dataset.id}`,
     'last-6-months',
   );
-  const [customStartDayKey, setCustomStartDayKey] = usePreference<string>(
+  const [customStartDayKey, setCustomStartDayKey] = usePreference<DayKey>(
     `analysis_customStart_${dataset.id}`,
-    format(new Date(), 'yyyy-MM-dd'),
+    getTodayKey(),
   );
-  const [customEndDayKey, setCustomEndDayKey] = usePreference<string>(
+  const [customEndDayKey, setCustomEndDayKey] = usePreference<DayKey>(
     `analysis_customEnd_${dataset.id}`,
-    format(new Date(), 'yyyy-MM-dd'),
+    getTodayKey(),
   );
 
 
-  const customStart = useMemo(() => {
-    const parsed = parseISO(customStartDayKey);
-    return isValid(parsed) ? parsed : new Date();
-  }, [customStartDayKey]);
+  const customStart = useMemo(() => parseDateKey(customStartDayKey), [customStartDayKey]);
 
-  const customEnd = useMemo(() => {
-    const parsed = parseISO(customEndDayKey);
-    return isValid(parsed) ? parsed : new Date();
-  }, [customEndDayKey]);
+  const customEnd = useMemo(() => parseDateKey(customEndDayKey), [customEndDayKey]);
 
   // Per-dataset preferences
   const defaultSelectedSummaryMetrics = useMemo(
@@ -163,11 +133,11 @@ export function Analysis() {
 
   // Helpers to set custom dates
   const setCustomStart = (date: Date) => {
-    setCustomStartDayKey(format(date, 'yyyy-MM-dd'));
+    setCustomStartDayKey(dateToDayKey(date));
   };
 
   const setCustomEnd = (date: Date) => {
-    setCustomEndDayKey(format(date, 'yyyy-MM-dd'));
+    setCustomEndDayKey(dateToDayKey(date));
   };
 
   // Get periods based on aggregation type
