@@ -1,6 +1,7 @@
 
 import type { DateKey, DayKey, MonthKey, WeekKey, YearKey } from '@/features/db/localdb';
 import { endOfWeek, format, getWeek, getWeekYear, isValid, parse, parseISO, startOfWeek } from 'date-fns';
+import { assertExhaustive } from './utils';
 
 export type DateKeyType = 'day' | 'week' | 'month' | 'year';
 
@@ -184,7 +185,7 @@ export function parseDateKey(key: DateKey): Date {
   if (isYearKey(key)) {
     return parseISO(`${key}-01-01`);
   }
-  throw new Error(`Invalid DateKey: ${key}`);
+  assertExhaustive(key);
 }
 
 export function parseDayKey(dayKey: DayKey): { year: number; month: number; day: number } {
@@ -223,7 +224,7 @@ export function parseDateKeyToParts(dateKey: DateKey): { year: number; month?: n
     const year = parseYearKey(dateKey);
     return { year };
   }
-  throw new Error(`Invalid DateKey: ${dateKey}`);
+  assertExhaustive(dateKey);
 }
 
 /**
@@ -246,7 +247,7 @@ export function formatDateAsKey(date: Date, type: DateKeyType): DateKey {
     case 'year':
       return format(date, 'yyyy') as YearKey;
     default:
-      throw new Error('Invalid key type');
+      assertExhaustive(type);
   }
 }
 
@@ -258,7 +259,7 @@ export function getDateKeyType(key: DateKey): DateKeyType {
   if (isWeekKey(key)) return 'week';
   if (isMonthKey(key)) return 'month';
   if (isYearKey(key)) return 'year';
-  throw new Error(`Invalid DateKey: ${key}`);
+  assertExhaustive(key);
 }
 
 /**

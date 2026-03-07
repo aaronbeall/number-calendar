@@ -152,7 +152,7 @@ export type FormatValueOptions = {
  *   formatFriendlyNumber([0.01, 0.05], { percent: true, delta: true }) -> "1% → 5%"
  *   formatFriendlyNumber([0.01, 0.05], { percent: true, delta: true, short: true }) -> "1% → 5%"
  */
-export function formatFriendlyNumber(value: number | [number, number], options: FormatValueOptions = {}): string {
+export function formatFriendlyNumber(value: number | [number, number], options: FormatValueOptions & NumberDisplayOptions = {}): string {
   if (Array.isArray(value)) {
     return formatRange(value, options);
   }
@@ -163,7 +163,7 @@ export function formatFriendlyNumber(value: number | [number, number], options: 
  * Helper to format numeric values for display in the UI,
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
-export function formatValue(num: number | undefined, { short = false, percent = false, delta = false, absolute = false, decimals }: FormatValueOptions = {}): string {
+export function formatValue(num: number | undefined, { short = false, percent = false, delta = false, absolute = false, decimals, currency, unit, accounting }: FormatValueOptions & NumberDisplayOptions = {}): string {
   if (num === undefined || isNaN(num)) return '';
   let options: Intl.NumberFormatOptions = {};
   let value = num;
@@ -184,6 +184,15 @@ export function formatValue(num: number | undefined, { short = false, percent = 
   if (absolute) {
     options = { ...options, signDisplay: 'never' };
     value = Math.abs(value);
+  }
+  if (currency) {
+    options = { ...options, style: 'currency', currency, currencyDisplay: 'narrowSymbol' };
+    if (accounting) {
+      options = { ...options, currencySign: 'accounting' };
+    }
+  }
+  if (unit) {
+    options = { ...options, style: 'unit', unit, unitDisplay: 'short' };
   }
   
   // Handle decimal places

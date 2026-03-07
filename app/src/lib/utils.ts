@@ -175,3 +175,10 @@ export function sequenceFromNow() {
 export function escapeRegex(str: string): string {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+/**
+ * Ensures that a type is never and throws an error if called, used for exhaustive checks in switch statements or conditional logic
+ */
+export function assertExhaustive(_x: never): never {
+  throw new Error("This code should be unreachable");
+}

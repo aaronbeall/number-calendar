@@ -105,7 +105,7 @@ export const NumberText: React.FC<NumberTextProps> = ({
   
   let formatted: React.ReactNode;
   if (isRenderFinite) {
-    formatted = formatValue(renderValue, { short, percent, delta, absolute, decimals });
+    formatted = formatValue(renderValue, { short, percent, delta, absolute, decimals, currency });
   } else {
     formatted = placeholder;
   }

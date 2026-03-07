@@ -14,7 +14,7 @@ import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
-import { formatFriendlyDate, dateToDayKey, parseDateKey } from '@/lib/friendly-date';
+import { formatFriendlyDate, dateToDayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo } from 'react';
 import { format } from 'date-fns';
@@ -33,10 +33,10 @@ import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
 import { adjectivize, capitalize, pluralize } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
-import { buildSingleNumberAggregates, computeRunningAggregatePeriods } from '@/lib/period-aggregate';
+import { buildSingleNumberAggregates, computeRunningAggregatePeriods, type PeriodAggregateData } from '@/lib/period-aggregate';
 import { Link } from 'react-router-dom';
 
-export type AnalysisTrendMode = 'all-time-trend' | 'trend' | 'change';
+export type AnalysisTrendMode = 'all-time-trend' | 'in-range-trend' | 'change';
 
 function formatAggregationRange(
   startDate: Date,
@@ -267,25 +267,40 @@ export function Analysis() {
   // Deltas only for trend tracking
   const deltasData = dataset.tracking === 'trend' ? deltas : undefined;
 
-  const trendChartPeriods = useMemo(() => {
-    if (analysisTrendMode === 'trend') {
-      // Compute cumulatives only within the selected time range
-      return computeRunningAggregatePeriods(periods, primaryMetric);
-    }
-    
-    // Compute aggregates on full dataset from start through range end, then filter to in-range
-    const allAggregationPeriods = aggregationType === 'none'
+  // Compute all periods
+  const allAggregatePeriods = useMemo(() => {
+    return aggregationType === 'none'
       ? buildSingleNumberAggregates(allDays)
       : periodsForAggregation;
-      
-    const allComputedPeriods = computeRunningAggregatePeriods(allAggregationPeriods, primaryMetric);
+  }, [aggregationType, allDays, periodsForAggregation]);
+
+  const computedAggregatesInRange = useMemo(() => {
+    const filterToInRange = (periods: PeriodAggregateData<DateKeyType>[]) => {
+      return periods.filter((period) => {
+        const periodDate = parseDateKey(period.dateKey);
+        return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
+      });
+    }
+    // For all-time, use running aggregates on all data, then filter, for in-range filter then compute running aggregates
+    if (analysisTrendMode === 'all-time-trend') {
+      return filterToInRange(computeRunningAggregatePeriods(allAggregatePeriods, primaryMetric));
+    } 
+    return computeRunningAggregatePeriods(filterToInRange(allAggregatePeriods), primaryMetric);
+  }, [analysisTrendMode, allAggregatePeriods, primaryMetric, timeRange]);
+
+  const priorTimeFrameValue = useMemo(() => {
+    if (allAggregatePeriods.length === 0) return undefined;
     
-    // Filter computed periods to in-range for display
-    return allComputedPeriods.filter(period => {
-      const periodDate = parseDateKey(period.dateKey);
-      return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
-    });
-  }, [analysisTrendMode, periods, aggregationType, allDays, periodsForAggregation, primaryMetric, timeRange]);
+    if (analysisTrendMode === 'all-time-trend') {
+      // Use the first value from all time
+      const firstValue = allAggregatePeriods[0].stats[primaryMetric];
+      return typeof firstValue === 'number' ? firstValue : undefined;
+    }
+    
+    // For trend mode, use the period before the visible range
+    const priorIndex = Math.max(allAggregatePeriods.length - computedAggregatesInRange.length - 1, 0);
+    return allAggregatePeriods[priorIndex].stats[primaryMetric];
+  }, [analysisTrendMode, allAggregatePeriods, computedAggregatesInRange, primaryMetric]);
 
   const aggregationOptions = [
     { value: 'none', label: 'None', icon: Ban },
@@ -300,7 +315,7 @@ export function Analysis() {
   const activeTimeFrameLabel =
     availablePresets.find(preset => preset.preset === presetRange)?.label 
     ?? formatAggregationRange(timeRange.startDate, timeRange.endDate, aggregationType);
-  const trendScopeLabel = presetRange ? activeTimeFrameLabel : 'Time Frame';
+  const trendScopeLabel = presetRange ? `${activeTimeFrameLabel} Trend` : 'In Range Trend';
   const aggregationModeLabel =
     aggregationType === 'none'
       ? 'Entries'
@@ -632,9 +647,9 @@ export function Analysis() {
                   <>
                     <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
                       <Infinity className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">All Time</span>
+                      <span className="hidden sm:inline">All Time Trend</span>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="trend" aria-label="Time Frame Trend">
+                    <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
                       <CalendarClock className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">{trendScopeLabel}</span>
                     </ToggleGroupItem>
@@ -647,9 +662,9 @@ export function Analysis() {
                   <>
                     <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
                       <Infinity className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">All Time</span>
+                      <span className="hidden sm:inline">All Time Trend</span>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="trend" aria-label="Time Frame Trend">
+                    <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
                       <LineChart className="size-4 sm:mr-1" />
                       <span className="hidden sm:inline">{trendScopeLabel}</span>
                     </ToggleGroupItem>
@@ -664,13 +679,14 @@ export function Analysis() {
             </div>
             <TrendAnalysisChart
               key={dataset.id}
-              periods={trendChartPeriods}
+              periods={computedAggregatesInRange}
               aggregationType={aggregationType}
               tracking={dataset.tracking}
               mode={trendChartMode}
               valence={dataset.valence}
               selectedMetrics={selectedSummaryMetrics}
               datasetId={dataset.id}
+              priorTimeFrameValue={priorTimeFrameValue}
             />
           </Card>
 
@@ -700,7 +716,7 @@ export function Analysis() {
             </h3>
             <DeviationBarChart
               key={dataset.id}
-              periods={trendChartPeriods}
+              periods={computedAggregatesInRange}
               aggregationType={aggregationType}
               tracking={dataset.tracking}
               valence={dataset.valence}
@@ -733,7 +749,7 @@ export function Analysis() {
             </h3>
             <DistributionHistogram
               key={dataset.id}
-              periods={trendChartPeriods}
+              periods={computedAggregatesInRange}
               tracking={dataset.tracking}
               valence={dataset.valence}
             />
@@ -805,7 +821,7 @@ export function Analysis() {
               </div>
               <ValenceDistributionChart
                 key={dataset.id}
-                periods={trendChartPeriods}
+                periods={computedAggregatesInRange}
                 aggregationType={aggregationType}
                 tracking={dataset.tracking}
                 valence={dataset.valence}

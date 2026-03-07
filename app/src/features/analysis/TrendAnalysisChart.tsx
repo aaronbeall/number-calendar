@@ -22,6 +22,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import type { AxisDomain } from 'recharts/types/util/types';
 
 interface TrendAnalysisChartProps {
   periods: PeriodAggregateData<DateKeyType>[];
@@ -31,6 +32,7 @@ interface TrendAnalysisChartProps {
   valence?: Valence;
   selectedMetrics?: NumberMetric[];
   datasetId: string;
+  priorTimeFrameValue?: number;
 }
 
 export type TrendDataMode = 'trend' | 'change';
@@ -58,6 +60,7 @@ export function TrendAnalysisChart({
   valence = 'neutral',
   selectedMetrics = [],
   datasetId,
+  priorTimeFrameValue,
 }: TrendAnalysisChartProps) {
   const { theme } = useTheme();
   const isDark =
@@ -208,10 +211,13 @@ export function TrendAnalysisChart({
   const primaryMaxDisplayed = primaryDisplayedValues.length ? Math.max(...primaryDisplayedValues) : 0;
   
   // Gradient center point:
-  // - Tracking=trend (deltas) in trend mode: center on first data point's value (starting baseline)
+  // - Tracking=trend (deltas) in trend mode: center on prior time frame value if provided,
+  //   otherwise use first visible data point's value (starting baseline)
   // - Tracking=series (stats) or change mode: center on 0
   const primaryGradientCenterValue = valenceSource === 'deltas' && mode === 'trend'
-    ? (data.length > 0 ? data[0][primaryMetric] ?? 0 : 0)
+    ? (priorTimeFrameValue !== undefined
+        ? priorTimeFrameValue
+        : (data.length > 0 ? data[0][primaryMetric] ?? 0 : 0))
     : 0;
   
   // Calculate gradient offset for primary metric
@@ -240,6 +246,11 @@ export function TrendAnalysisChart({
     if (minVal >= centerVal) return 1;
     return (maxVal - centerVal) / (maxVal - minVal);
   };
+
+  const yAxisDomain = useMemo<AxisDomain>(() => 
+    tracking === 'series' ? [0, 'auto'] : ['dataMin', 'dataMax'], 
+    [tracking]
+  );
 
   // Primary metric uses good/bad colors (not metric color)
   const primaryPositiveColor = getValueForValence(1, valence, {
@@ -435,6 +446,7 @@ export function TrendAnalysisChart({
             stroke={axisColor}
             style={{ fontSize: '12px' }}
             tick={{ fill: axisColor }}
+            domain={yAxisDomain}
             tickFormatter={(value) => formatValue(Number(value), { short: true })}
           />
             {valenceSource === 'stats' && mode === 'trend' && (
@@ -450,7 +462,7 @@ export function TrendAnalysisChart({
                 dataKey={primaryMetric}
                 stroke={`url(#trend-gradient-stroke-${gradientId})`}
                 fill={`url(#trend-gradient-${gradientId})`}
-                baseValue={valenceSource === 'deltas' && mode === 'trend' && data.length > 0 ? data[0][primaryMetric] ?? 0 : 0}
+                baseValue={primaryGradientCenterValue}
                 dot={false}
                 strokeWidth={2.5}
                 isAnimationActive
