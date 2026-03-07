@@ -17,7 +17,7 @@ import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { formatFriendlyDate, dateToDayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo } from 'react';
-import { format } from 'date-fns';
+import { format, isValid, parseISO } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
 import { getPrimaryMetric } from '@/lib/tracking';
@@ -133,13 +133,13 @@ export function Analysis() {
 
 
   const customStart = useMemo(() => {
-    const parsed = new Date(customStartDayKey);
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+    const parsed = parseISO(customStartDayKey);
+    return isValid(parsed) ? parsed : new Date();
   }, [customStartDayKey]);
 
   const customEnd = useMemo(() => {
-    const parsed = new Date(customEndDayKey);
-    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+    const parsed = parseISO(customEndDayKey);
+    return isValid(parsed) ? parsed : new Date();
   }, [customEndDayKey]);
 
   // Per-dataset preferences
