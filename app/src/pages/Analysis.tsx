@@ -18,11 +18,11 @@ import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateK
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type TimeFramePreset } from '@/lib/analysis';
+import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type TimeFramePreset } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity, Target } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity, Target, Award, Sparkles, Compass } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { DeviationBarChart } from '@/features/analysis/DeviationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -30,6 +30,9 @@ import { DistributionHistogram } from '@/features/analysis/DistributionHistogram
 import { PeriodComparisonChart } from '@/features/analysis/PeriodComparisonChart';
 import { StatsSummary } from '@/features/analysis/StatsSummary';
 import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
+import { AchievementInsightsChart } from '@/features/analysis/AchievementInsightsChart';
+import { ProjectionsChart } from '@/features/analysis/ProjectionsChart';
+import { MomentumQuadrantChart } from '@/features/analysis/MomentumQuadrantChart';
 import { adjectivize, capitalize, pluralize } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
@@ -181,6 +184,14 @@ export function Analysis() {
   const [valenceDistributionMode, setValenceDistributionMode] = usePreference<'count' | 'total'>(
     `valenceDistribution_mode_${dataset.tracking}_${dataset.id}`,
     'count',
+  );
+  const [projectionMode, setProjectionMode] = usePreference<ProjectionMode>(
+    `analysis_projectionMode_${dataset.tracking}_${dataset.id}`,
+    'linear',
+  );
+  const [projectionHorizon, setProjectionHorizon] = usePreference<ProjectionHorizon>(
+    `analysis_projectionHorizon_${dataset.id}`,
+    6,
   );
 
   // Helpers to set custom dates
@@ -893,6 +904,118 @@ export function Analysis() {
               />
             </ChartSection>
           )}
+
+          {/* Achievement Insights */}
+          <ChartSection>
+            <ChartSectionHeader>
+              <ChartSectionTitle
+                icon={Award}
+                helpLabel="Help: Achievement Insights"
+                helpContent={
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">Achievement Insights</p>
+                    <p className="text-muted-foreground">
+                      See which achievements you unlock most in this range, and which of those are rare across your all-time history.
+                    </p>
+                  </div>
+                }
+              >
+                Achievement Insights
+              </ChartSectionTitle>
+            </ChartSectionHeader>
+            <AchievementInsightsChart
+              datasetId={dataset.id}
+              aggregationType={aggregationType}
+              timeRange={timeRange}
+            />
+          </ChartSection>
+
+          {/* Projection Chart */}
+          <ChartSection>
+            <ChartSectionHeader
+              actions={
+                <div className="flex flex-wrap items-center gap-2">
+                  <ToggleGroup
+                    type="single"
+                    value={projectionMode}
+                    onValueChange={(value) => {
+                      if (value) setProjectionMode(value as ProjectionMode);
+                    }}
+                    size="sm"
+                    variant="outline"
+                    aria-label="Projection mode"
+                  >
+                    <ToggleGroupItem value="linear" aria-label="Linear">Linear</ToggleGroupItem>
+                    <ToggleGroupItem value="recent-average" aria-label="Recent Average">Recent</ToggleGroupItem>
+                    <ToggleGroupItem value="momentum" aria-label="Momentum">Momentum</ToggleGroupItem>
+                    <ToggleGroupItem value="flat" aria-label="Flat">Flat</ToggleGroupItem>
+                  </ToggleGroup>
+
+                  <ToggleGroup
+                    type="single"
+                    value={String(projectionHorizon)}
+                    onValueChange={(value) => {
+                      if (value) setProjectionHorizon(Number(value) as ProjectionHorizon);
+                    }}
+                    size="sm"
+                    variant="outline"
+                    aria-label="Projection horizon"
+                  >
+                    <ToggleGroupItem value="3" aria-label="3 periods">+3</ToggleGroupItem>
+                    <ToggleGroupItem value="6" aria-label="6 periods">+6</ToggleGroupItem>
+                    <ToggleGroupItem value="12" aria-label="12 periods">+12</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              }
+            >
+              <ChartSectionTitle
+                icon={Sparkles}
+                helpLabel="Help: Projections"
+                helpContent={
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">Projections</p>
+                    <p className="text-muted-foreground">
+                      Project your primary metric into future periods. For series datasets this uses cumulative values, and for trend datasets it uses period-close values.
+                    </p>
+                  </div>
+                }
+              >
+                Primary Metric Projections
+              </ChartSectionTitle>
+            </ChartSectionHeader>
+            <ProjectionsChart
+              periods={computedAggregatesInRange}
+              tracking={dataset.tracking}
+              aggregationType={aggregationType}
+              projectionMode={projectionMode}
+              projectionHorizon={projectionHorizon}
+            />
+          </ChartSection>
+
+          {/* Unique chart: Momentum Quadrant */}
+          <ChartSection>
+            <ChartSectionHeader>
+              <ChartSectionTitle
+                icon={Compass}
+                helpLabel="Help: Momentum Quadrant"
+                helpContent={
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">Momentum Quadrant</p>
+                    <p className="text-muted-foreground">
+                      Each point is a period. Right means higher-than-average level, and up means improving momentum. This helps spot strong, improving, or at-risk regimes at a glance.
+                    </p>
+                  </div>
+                }
+              >
+                Momentum Quadrant
+              </ChartSectionTitle>
+            </ChartSectionHeader>
+            <MomentumQuadrantChart
+              periods={computedAggregatesInRange}
+              tracking={dataset.tracking}
+              aggregationType={aggregationType}
+            />
+          </ChartSection>
         </div>
       </div>
     </div>

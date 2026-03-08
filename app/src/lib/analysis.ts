@@ -2,11 +2,13 @@ import type { TimePeriod, DateKey, Valence } from '@/features/db/localdb';
 import { computeAggregateCumulatives, type PeriodAggregateData } from '@/lib/period-aggregate';
 import type { NumberStats, NumberMetric } from '@/lib/stats';
 import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes, METRIC_DISPLAY_INFO, type AggregationType } from '@/lib/stats';
-import { parseDateKey, formatFriendlyDate, formatDateAsKey, type DateKeyType } from '@/lib/friendly-date';
+import { convertDateKey, parseDateKey, formatFriendlyDate, formatDateAsKey, type DateKeyType } from '@/lib/friendly-date';
 import { isBad } from '@/lib/valence';
 import { capitalize, adjectivize, pluralize } from '@/lib/utils';
 import { colord } from 'colord';
 import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format, getWeekYear } from 'date-fns';
+import type { Tracking } from '@/features/db/localdb';
+import type { GoalResults } from './goals';
 
 // Re-export AggregationType for backward compatibility
 export type { AggregationType };
@@ -181,6 +183,43 @@ export type TimeFramePreset = keyof typeof TIME_FRAME_PRESETS;
 export interface TimeRange {
   startDate: Date;
   endDate: Date;
+}
+
+export type ProjectionMode = 'linear' | 'recent-average' | 'momentum' | 'flat';
+export type ProjectionHorizon = 3 | 6 | 12;
+
+export interface ProjectionSeriesPoint {
+  label: string;
+  actual?: number;
+  projected?: number;
+  isProjection: boolean;
+}
+
+export interface MomentumQuadrantPoint {
+  label: string;
+  level: number;
+  momentum: number;
+}
+
+export interface MomentumQuadrantData {
+  points: MomentumQuadrantPoint[];
+  levelMid: number;
+  momentumMid: number;
+}
+
+export interface AchievementInsightItem {
+  id: string;
+  title: string;
+  badge: GoalResults['goal']['badge'];
+  inRangeCount: number;
+  allTimeCount: number;
+  widthPercent: number;
+}
+
+export interface AchievementInsightsData {
+  stacked: AchievementInsightItem[];
+  topByCount: AchievementInsightItem[];
+  rarestByAllTimeCount: AchievementInsightItem[];
 }
 
 /**
@@ -372,6 +411,171 @@ export function getAvailablePresets(aggregation: AggregationType): Array<TimeFra
   return (Object.entries(TIME_FRAME_PRESETS) as Array<[TimeFramePreset, TimeFrameConfig]>)
     .filter(([_, config]) => config.aggregations.includes(effectiveAggregation))
     .map(([preset, config]) => ({ ...config, preset }));
+}
+
+/**
+ * Build projection-ready time series from aggregate periods.
+ */
+export function computeProjectionSeries(
+  periods: PeriodAggregateData<DateKeyType>[],
+  tracking: Tracking,
+  primaryMetric: NumberMetric,
+  aggregationType: AggregationType,
+  mode: ProjectionMode,
+  horizon: ProjectionHorizon,
+): ProjectionSeriesPoint[] {
+  const points = periods
+    .map((period, index) => {
+      const value = tracking === 'series'
+        ? (period.cumulatives?.[primaryMetric] ?? period.stats[primaryMetric] ?? 0)
+        : (period.stats[primaryMetric] ?? 0);
+      return {
+        index,
+        label: formatPeriodLabel(period.dateKey, aggregationType),
+        value,
+      };
+    })
+    .filter((point) => Number.isFinite(point.value));
+
+  if (points.length < 2) return [];
+
+  const values = points.map((point) => point.value);
+  const indices = points.map((point) => point.index);
+  const lastValue = values[values.length - 1] ?? 0;
+  const deltas = values.slice(1).map((value, i) => value - values[i]);
+  const recentDeltas = deltas.slice(-Math.min(3, deltas.length));
+  const avgRecentDelta = recentDeltas.length > 0
+    ? recentDeltas.reduce((sum, value) => sum + value, 0) / recentDeltas.length
+    : 0;
+
+  const xMean = indices.reduce((sum, value) => sum + value, 0) / indices.length;
+  const yMean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const numerator = indices.reduce((sum, x, i) => sum + ((x - xMean) * (values[i] - yMean)), 0);
+  const denominator = indices.reduce((sum, x) => sum + ((x - xMean) ** 2), 0);
+  const slope = denominator === 0 ? 0 : numerator / denominator;
+  const momentumDelta = recentDeltas.length > 0
+    ? recentDeltas.reduce((sum, delta, i) => sum + (delta * (i + 1)), 0) / (recentDeltas.length * (recentDeltas.length + 1) / 2)
+    : 0;
+
+  const getNextValue = (step: number): number => {
+    if (mode === 'flat') return lastValue;
+    if (mode === 'recent-average') return lastValue + (avgRecentDelta * step);
+    if (mode === 'momentum') return lastValue + (momentumDelta * step);
+    return lastValue + (slope * step);
+  };
+
+  const withActuals: ProjectionSeriesPoint[] = points.map((point) => ({
+    label: point.label,
+    actual: point.value,
+    projected: undefined,
+    isProjection: false,
+  }));
+
+  const futurePoints: ProjectionSeriesPoint[] = Array.from({ length: horizon }, (_, i) => {
+    const step = i + 1;
+    return {
+      label: `+${step}`,
+      actual: undefined,
+      projected: getNextValue(step),
+      isProjection: true,
+    };
+  });
+
+  return [...withActuals, ...futurePoints];
+}
+
+/**
+ * Compute level-vs-momentum scatter points with quadrant centers.
+ */
+export function computeMomentumQuadrantData(
+  periods: PeriodAggregateData<DateKeyType>[],
+  primaryMetric: NumberMetric,
+  aggregationType: AggregationType,
+): MomentumQuadrantData {
+  const points = periods
+    .map((period, index) => {
+      const value = period.stats[primaryMetric] ?? 0;
+      const prior = index > 0 ? (periods[index - 1]?.stats[primaryMetric] ?? 0) : value;
+      return {
+        label: formatPeriodLabel(period.dateKey, aggregationType),
+        level: value,
+        momentum: value - prior,
+      };
+    })
+    .filter((point) => Number.isFinite(point.level) && Number.isFinite(point.momentum));
+
+  if (points.length === 0) {
+    return { points: [], levelMid: 0, momentumMid: 0 };
+  }
+
+  const levelMid = points.reduce((sum, point) => sum + point.level, 0) / points.length;
+  const momentumMid = points.reduce((sum, point) => sum + point.momentum, 0) / points.length;
+  return { points, levelMid, momentumMid };
+}
+
+/**
+ * Compute ranked achievement insights for the selected period and range.
+ */
+export function computeAchievementInsightsData(
+  results: GoalResults[],
+  aggregationType: AggregationType,
+  timeRange: TimeRange,
+): AchievementInsightsData {
+  const selectedPeriod = aggregationType === 'none' ? 'day' : aggregationType;
+  const isGoalInSelectedPeriod = (timePeriod: string): boolean => timePeriod === selectedPeriod;
+
+  const buckets = results
+    .filter((result) => isGoalInSelectedPeriod(result.goal.timePeriod))
+    .map((result) => {
+      const completed = result.achievements.filter((ach) => !!ach.completedAt);
+      const inRange = completed.filter((ach) => {
+        if (!ach.completedAt) return false;
+        try {
+          const comparable = convertDateKey(ach.completedAt, 'day');
+          const date = parseDateKey(comparable);
+          return date >= timeRange.startDate && date <= timeRange.endDate;
+        } catch {
+          return false;
+        }
+      });
+
+      return {
+        id: result.goal.id,
+        title: result.goal.title,
+        badge: result.goal.badge,
+        inRangeCount: inRange.length,
+        allTimeCount: completed.length,
+      };
+    })
+    .filter((item) => item.inRangeCount > 0 || item.allTimeCount > 0);
+
+  const maxInRange = Math.max(...buckets.map((item) => item.inRangeCount), 1);
+  const stacked = [...buckets]
+    .sort((a, b) => b.inRangeCount - a.inRangeCount)
+    .slice(0, 8)
+    .map((item) => ({
+      ...item,
+      widthPercent: Math.max(8, Math.round((item.inRangeCount / maxInRange) * 100)),
+    }));
+
+  const topByCount = [...buckets]
+    .sort((a, b) => b.inRangeCount - a.inRangeCount)
+    .slice(0, 5)
+    .map((item) => ({
+      ...item,
+      widthPercent: Math.max(8, Math.round((item.inRangeCount / maxInRange) * 100)),
+    }));
+
+  const rarestByAllTimeCount = [...buckets]
+    .filter((item) => item.inRangeCount > 0)
+    .sort((a, b) => a.allTimeCount - b.allTimeCount || b.inRangeCount - a.inRangeCount)
+    .slice(0, 5)
+    .map((item) => ({
+      ...item,
+      widthPercent: Math.max(8, Math.round((item.inRangeCount / maxInRange) * 100)),
+    }));
+
+  return { stacked, topByCount, rarestByAllTimeCount };
 }
 
 function replaceTokens(template: string, tokens: Record<string, string>): string {
