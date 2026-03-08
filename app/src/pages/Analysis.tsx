@@ -293,6 +293,7 @@ export function Analysis() {
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
   // Map analysis mode to TrendChart mode
   const trendChartMode: TrendDataMode = analysisTrendMode === 'change' ? 'change' : 'trend';
+
   const hasDataInSelection = dataPoints.length > 0;
 
   if (isLoading) {
@@ -664,7 +665,7 @@ export function Analysis() {
           <Card className="p-4">
             <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
               <BarChart3 className="w-4 h-4" />
-              {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Deviation from Average
+              {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Deviation from Baseline
               <PopoverTip>
                 <PopoverTipTrigger asChild>
                   <button
@@ -676,9 +677,9 @@ export function Analysis() {
                 </PopoverTipTrigger>
                 <PopoverTipContent>
                   <div className="space-y-1 text-sm">
-                    <p className="font-medium">Deviation from Average</p>
+                    <p className="font-medium">Deviation from Baseline</p>
                     <p className="text-muted-foreground">
-                      See how each period compares to the overall average. Bars show the difference between each period's value and the mean, helping you spot outliers and patterns.
+                      Compare each period against a selectable baseline. Switch between in-range averages, all-time averages, range open, or a target value to see how values diverge.
                     </p>
                   </div>
                 </PopoverTipContent>
@@ -687,9 +688,12 @@ export function Analysis() {
             <DeviationBarChart
               key={dataset.id}
               periods={computedAggregatesInRange}
+              allTimePeriods={allAggregatePeriods}
               aggregationType={aggregationType}
               tracking={dataset.tracking}
               valence={dataset.valence}
+              rangeLabel={activeTimeFrameLabel}
+              datasetId={dataset.id}
             />
           </Card>
 

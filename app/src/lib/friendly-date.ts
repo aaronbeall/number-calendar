@@ -5,6 +5,11 @@ import { assertExhaustive } from './utils';
 
 export type DateKeyType = 'day' | 'week' | 'month' | 'year';
 
+export interface FormatFriendlyDateOptions {
+  /** Use short format with abbreviated month names and 2-digit years (e.g., "Nov 12, '25" instead of "November 12, 2025") */
+  short?: boolean;
+}
+
 // Type guards for date keys
 export function isDayKey(key: DateKey): key is DayKey {
   return /^\d{4}-\d{2}-\d{2}$/.test(key); // YYYY-MM-DD
@@ -67,11 +72,30 @@ export function convertDateKey(dateKey: DateKey, targetType: DateKeyType): DateK
  * - For month: returns 'Month YYYY'
  * - For day: returns 'MMM d, yyyy'
  * - For other: returns as-is
+ * 
+ * @param options.short - Use abbreviated format (e.g., "Nov 12, '25" instead of "November 12, 2025")
  */
-export function formatFriendlyDate(date: DateKey): string;
-export function formatFriendlyDate(start: DateKey, end: DateKey): string;
-export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
+export function formatFriendlyDate(date: DateKey, options?: FormatFriendlyDateOptions): string;
+export function formatFriendlyDate(start: DateKey, end: DateKey, options?: FormatFriendlyDateOptions): string;
+export function formatFriendlyDate(start: DateKey, endOrOptions?: DateKey | FormatFriendlyDateOptions, maybeOptions?: FormatFriendlyDateOptions): string {
   if (!start) return '';
+  
+  // Handle overloaded parameters: formatFriendlyDate(date, options) vs formatFriendlyDate(start, end, options)
+  let end: DateKey | undefined;
+  let options: FormatFriendlyDateOptions | undefined;
+  
+  if (typeof endOrOptions === 'string') {
+    // Called as formatFriendlyDate(start, end, options)
+    end = endOrOptions as DateKey;
+    options = maybeOptions;
+  } else {
+    // Called as formatFriendlyDate(date, options)
+    options = endOrOptions as FormatFriendlyDateOptions | undefined;
+    end = undefined;
+  }
+  
+  const short = options?.short ?? false;
+  
   // If end is provided and different from start, treat as a range
   if (end && end !== start) {
     // Week range: both are weeks
@@ -81,7 +105,7 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
       const endDate = endOfWeek(parseDateKey(end));
       const startDayKey = formatDateAsKey(startDate, 'day');
       const endDayKey = formatDateAsKey(endDate, 'day');
-      return formatFriendlyDate(startDayKey, endDayKey);
+      return formatFriendlyDate(startDayKey, endDayKey, options);
     }
     // Day range
     if (isDayKey(start) && isDayKey(end)) {
@@ -92,15 +116,21 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
         if (startDate.getFullYear() === endDate.getFullYear()) {
           // Same month
           if (startDate.getMonth() === endDate.getMonth()) {
-            // November 12-13, 2025
-            return `${format(startDate, 'MMMM d')}-${format(endDate, 'd, yyyy')}`;
+            // November 12-13, 2025 or Nov 12-13, '25
+            return short
+              ? `${format(startDate, 'MMM d')} – ${format(endDate, "d, ''yy")}`
+              : `${format(startDate, 'MMMM d')} – ${format(endDate, 'd, yyyy')}`;
           } else {
-            // November 20 - December 2, 2025
-            return `${format(startDate, 'MMMM d')} – ${format(endDate, 'MMMM d, yyyy')}`;
+            // November 20 – December 2, 2025 or Nov 20 – Dec 2, '25
+            return short
+              ? `${format(startDate, 'MMM d')} – ${format(endDate, "MMM d, ''yy")}`
+              : `${format(startDate, 'MMMM d')} – ${format(endDate, 'MMMM d, yyyy')}`;
           }
         } else {
-          // November 20, 2024 – December 2, 2025
-          return `${format(startDate, 'MMMM d, yyyy')} – ${format(endDate, 'MMMM d, yyyy')}`;
+          // November 20, 2024 – December 2, 2025 or Nov 20, '24 – Dec 2, '25
+          return short
+            ? `${format(startDate, "MMM d, ''yy")} – ${format(endDate, "MMM d, ''yy")}`
+            : `${format(startDate, 'MMMM d, yyyy')} – ${format(endDate, 'MMMM d, yyyy')}`;
         }
       }
     }
@@ -110,16 +140,20 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
       const endDate = parseDateKey(end);
       if (isValid(startDate) && isValid(endDate)) {
         if (startDate.getFullYear() === endDate.getFullYear()) {
-          // November – December 2025
-          return `${format(startDate, 'MMMM')} – ${format(endDate, 'MMMM yyyy')}`;
+          // November – December 2025 or Nov – Dec '25
+          return short
+            ? `${format(startDate, 'MMM')} – ${format(endDate, "MMM ''yy")}`
+            : `${format(startDate, 'MMMM')} – ${format(endDate, 'MMMM yyyy')}`;
         } else {
-          // November 2024 – December 2025
-          return `${format(startDate, 'MMMM yyyy')} – ${format(endDate, 'MMMM yyyy')}`;
+          // November 2024 – December 2025 or Nov '24 – Dec '25
+          return short
+            ? `${format(startDate, "MMM ''yy")} – ${format(endDate, "MMM ''yy")}`
+            : `${format(startDate, 'MMMM yyyy')} – ${format(endDate, 'MMMM yyyy')}`;
         }
       }
     }
     // Fallback (start and end types are not the same?): just show both
-    return `${formatFriendlyDate(start)} – ${formatFriendlyDate(end)}`;
+    return `${formatFriendlyDate(start, options)} – ${formatFriendlyDate(end, options)}`;
   }
   // Single week: 'YYYY-Www'
   if (isWeekKey(start)) {
@@ -127,22 +161,22 @@ export function formatFriendlyDate(start: DateKey, end?: DateKey): string {
     const weekEnd = endOfWeek(parseDateKey(start));
     const startDayKey = formatDateAsKey(weekStart, 'day');
     const endDayKey = formatDateAsKey(weekEnd, 'day');
-    return formatFriendlyDate(startDayKey, endDayKey);
+    return formatFriendlyDate(startDayKey, endDayKey, options);
   }
   // Month: 'YYYY-MM'
   if (isMonthKey(start)) {
     const parsed = parseDateKey(start);
-    if (isValid(parsed)) return format(parsed, 'MMMM yyyy');
+    if (isValid(parsed)) return short ? format(parsed, "MMM ''yy") : format(parsed, 'MMMM yyyy');
   }
   // Day: 'YYYY-MM-DD'
   if (isDayKey(start)) {
     const parsed = parseDateKey(start);
-    if (isValid(parsed)) return format(parsed, 'MMMM d, yyyy');
+    if (isValid(parsed)) return short ? format(parsed, "MMM d, ''yy") : format(parsed, 'MMMM d, yyyy');
   }
   // Year: 'YYYY'
   if (isYearKey(start)) {
     const parsed = parseDateKey(start);
-    if (isValid(parsed)) return format(parsed, 'yyyy');
+    if (isValid(parsed)) return short ? format(parsed, "''yy") : format(parsed, 'yyyy');
   }
   // Fallback: return as-is
   return start;

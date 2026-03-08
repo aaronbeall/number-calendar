@@ -2,11 +2,11 @@ import type { TimePeriod, DateKey, Valence } from '@/features/db/localdb';
 import { computeAggregateCumulatives, type PeriodAggregateData } from '@/lib/period-aggregate';
 import type { NumberStats, NumberMetric } from '@/lib/stats';
 import { computeNumberStats, computeMetricStats, calculateExtremes, computeStatsDeltas, computeStatsPercents, type StatsExtremes, METRIC_DISPLAY_INFO, type AggregationType } from '@/lib/stats';
-import { parseDateKey, type DateKeyType } from '@/lib/friendly-date';
+import { parseDateKey, formatFriendlyDate, formatDateAsKey, type DateKeyType } from '@/lib/friendly-date';
 import { isBad } from '@/lib/valence';
 import { capitalize, adjectivize, pluralize } from '@/lib/utils';
 import { colord } from 'colord';
-import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format } from 'date-fns';
+import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format, getWeekYear } from 'date-fns';
 
 // Re-export AggregationType for backward compatibility
 export type { AggregationType };
@@ -37,26 +37,47 @@ export function formatPeriodLabel(dateKey: DateKey, aggregationType: Aggregation
 
 /**
  * Format a date range label for a given aggregation type.
+ * @param short - Use abbreviated format (default: true for backward compatibility)
  */
 export function formatAggregationRange(
   startDate: Date,
   endDate: Date,
   aggregation: AggregationType,
+  short: boolean = true,
 ): string {
   try {
-    switch (aggregation) {
-      case 'none':
-      case 'day':
-        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
-      case 'week':
-        return `W${format(startDate, 'ww')} '${format(startDate, 'yy')} - W${format(endDate, 'ww')} '${format(endDate, 'yy')}`;
-      case 'month':
-        return `${format(startDate, "MMM ''yy")} - ${format(endDate, "MMM ''yy")}`;
-      case 'year':
-        return `${format(startDate, 'yyyy')} - ${format(endDate, 'yyyy')}`;
-      default:
-        return `${format(startDate, "MMM d, ''yy")} - ${format(endDate, "MMM d, ''yy")}`;
+    // Convert dates to appropriate DateKey type based on aggregation
+    const keyType: DateKeyType = aggregation === 'none' ? 'day' : aggregation as DateKeyType;
+    const startKey = formatDateAsKey(startDate, keyType);
+    const endKey = formatDateAsKey(endDate, keyType);
+    
+    // Special handling for weeks to show week numbers
+    if (aggregation === 'week') {
+      const startYear = getWeekYear(startDate);
+      const endYear = getWeekYear(endDate);
+      const startWeek = format(startDate, 'ww');
+      const endWeek = format(endDate, 'ww');
+      
+      if (short) {
+        if (startYear === endYear) {
+          // Same year: W5 – W7 '25
+          return `W${startWeek} – W${endWeek} '${format(startDate, 'yy')}`;
+        } else {
+          // Different years: W5 '24 – W7 '25
+          return `W${startWeek} '${format(startDate, 'yy')} – W${endWeek} '${format(endDate, 'yy')}`;
+        }
+      } else {
+        if (startYear === endYear) {
+          // Same year: Week 5 – Week 7, 2025
+          return `Week ${startWeek} – Week ${endWeek}, ${format(startDate, 'yyyy')}`;
+        } else {
+          // Different years: Week 5, 2024 – Week 7, 2025
+          return `Week ${startWeek}, ${format(startDate, 'yyyy')} – Week ${endWeek}, ${format(endDate, 'yyyy')}`;
+        }
+      }
     }
+    
+    return formatFriendlyDate(startKey, endKey, { short });
   } catch {
     return 'Custom range';
   }

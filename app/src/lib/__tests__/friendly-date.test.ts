@@ -140,6 +140,46 @@ describe('formatFriendlyDate', () => {
 
     expect(formatFriendlyDate(weekKey)).toBe(formatFriendlyDate(weekStart, expectedEnd));
   });
+
+  describe('short format option', () => {
+    it('should format day, month, and year keys in short format', () => {
+      expect(formatFriendlyDate('2025-11-15', { short: true })).toBe("Nov 15, '25");
+      expect(formatFriendlyDate('2025-11', { short: true })).toBe("Nov '25");
+      expect(formatFriendlyDate('2025', { short: true })).toBe("'25");
+    });
+
+    it('should format day ranges with shared month in short format', () => {
+      expect(formatFriendlyDate('2025-11-12', '2025-11-13', { short: true })).toBe("Nov 12-13, '25");
+    });
+
+    it('should format day ranges across months in short format', () => {
+      expect(formatFriendlyDate('2025-11-20', '2025-12-02', { short: true })).toBe("Nov 20 – Dec 2, '25");
+    });
+
+    it('should format day ranges across years in short format', () => {
+      expect(formatFriendlyDate('2024-11-20', '2025-12-02', { short: true })).toBe("Nov 20, '24 – Dec 2, '25");
+    });
+
+    it('should format month ranges in short format', () => {
+      expect(formatFriendlyDate('2025-11', '2025-12', { short: true })).toBe("Nov – Dec '25");
+      expect(formatFriendlyDate('2024-11', '2025-12', { short: true })).toBe("Nov '24 – Dec '25");
+    });
+
+    it('should format week keys as day ranges in short format', () => {
+      const weekKey = '2025-W46';
+      const weekStart = formatDateAsKey(parseDateKey(weekKey), 'day');
+      const weekEndDate = parseDateKey(weekKey);
+      weekEndDate.setDate(weekEndDate.getDate() + 6);
+      const expectedEnd = formatDateAsKey(weekEndDate, 'day');
+
+      expect(formatFriendlyDate(weekKey, { short: true })).toBe(formatFriendlyDate(weekStart, expectedEnd, { short: true }));
+    });
+
+    it('should default to long format when short option is not provided', () => {
+      expect(formatFriendlyDate('2025-11-15')).toBe('November 15, 2025');
+      expect(formatFriendlyDate('2025-11-15', { short: false })).toBe('November 15, 2025');
+    });
+  });
 });
 
 describe('parseDateKey', () => {
