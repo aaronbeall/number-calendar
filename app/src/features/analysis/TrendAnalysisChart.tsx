@@ -1,7 +1,7 @@
 import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
-import { formatPeriodLabel, getMetricColorForValence, type AggregationType } from '@/lib/analysis';
+import { formatPeriodLabel, getAggregationPeriodLabel, getMetricColorForValence, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
@@ -304,7 +304,7 @@ export function TrendAnalysisChart({
 
   const getMetricLabel = (metric: NumberMetric): string => {
     if (aggregationType === 'none' && metric === primaryMetric) {
-      return 'Entry';
+      return getAggregationPeriodLabel(aggregationType);
     }
     return METRIC_DISPLAY_INFO[metric].label;
   };

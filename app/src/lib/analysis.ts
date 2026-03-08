@@ -36,6 +36,14 @@ export function formatPeriodLabel(dateKey: DateKey, aggregationType: Aggregation
 }
 
 /**
+ * Convert an aggregation type into a human-readable period label.
+ * Maps "none" to "Entry".
+ */
+export function getAggregationPeriodLabel(aggregationType: AggregationType): string {
+  return aggregationType === 'none' ? 'entry' : aggregationType;
+}
+
+/**
  * Format a date range label for a given aggregation type.
  * @param short - Use abbreviated format (default: true for backward compatibility)
  */

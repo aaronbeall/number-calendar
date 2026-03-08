@@ -9,7 +9,7 @@ import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIc
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
 import { useGoals } from '@/features/db/useGoalsData';
 import { usePreference } from '@/hooks/usePreference';
-import { formatPeriodLabel, getNegativeColor, type AggregationType } from '@/lib/analysis';
+import { formatPeriodLabel, getAggregationPeriodLabel, getNegativeColor, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { formatGoalTargetValue } from '@/lib/goals';
@@ -41,9 +41,10 @@ interface DeviationBarChartProps {
   valence: Valence;
   rangeLabel: string;
   datasetId: string;
+  priorTimeFrameValue?: number;
 }
 
-type DeviationBaselineMode = 'range-average' | 'all-time-average' | 'range-open' | 'target';
+type DeviationBaselineMode = 'range-average' | 'all-time-average' | 'prior' | 'target';
 
 interface BarDataPoint {
   dateKey: DateKey;
@@ -62,6 +63,7 @@ export function DeviationBarChart({
   valence,
   rangeLabel,
   datasetId,
+  priorTimeFrameValue,
 }: DeviationBarChartProps) {
   const { isDark } = useTheme();
 
@@ -182,12 +184,12 @@ export function DeviationBarChart({
       ? allTimeValues.reduce((sum, value) => sum + value, 0) / allTimeValues.length
       : 0;
 
-    const rangeOpen = values.length > 0 ? values[0] : 0;
+    const priorValue = priorTimeFrameValue ?? 0;
 
     const baselineValue = baselineMode === 'all-time-average'
       ? allTimeAverage
-      : baselineMode === 'range-open'
-        ? rangeOpen
+      : baselineMode === 'prior'
+        ? priorValue
         : baselineMode === 'target'
           ? targetBaselineValue
           : rangeAverage;
@@ -200,7 +202,7 @@ export function DeviationBarChart({
       deviation: value - baselineValue,
       baselineValue,
     }));
-  }, [periods, allTimePeriods, primaryMetric, valenceSource, aggregationType, baselineMode, targetBaselineInput]);
+  }, [periods, allTimePeriods, primaryMetric, valenceSource, aggregationType, baselineMode, targetBaselineInput, priorTimeFrameValue]);
 
   // Calculate medians for tooltip (outside useMemo to avoid recalculation)
   const rangeMedian = useMemo(() => {
@@ -259,8 +261,8 @@ export function DeviationBarChart({
     
     const baselineLabel = baselineMode === 'all-time-average'
       ? ['All Time', aggregationPrefix, 'Mean'].filter(Boolean).join(' ')
-      : baselineMode === 'range-open'
-        ? `${rangeLabel} Open`
+      : baselineMode === 'prior'
+        ? lastPriorLabel
         : baselineMode === 'target'
           ? 'Target'
           : [aggregationPrefix, 'Mean'].filter(Boolean).join(' ');
@@ -328,7 +330,9 @@ export function DeviationBarChart({
   };
 
   const rangeAverageLabel = `${rangeLabel} Average`;
-  const rangeOpenLabel = `${rangeLabel} Open`;
+  const periodName = capitalize(getAggregationPeriodLabel(aggregationType));
+  const periodly = aggregationType === 'none' ? 'individual' : adjectivize(aggregationType);
+  const lastPriorLabel = `Prior ${periodName}`;
 
   const selectedGoal = selectedGoalId ? matchingGoals.find((g) => g.id === selectedGoalId) : null;
   const targetLabel = selectedGoal ? selectedGoal.title : 'Target';
@@ -388,9 +392,9 @@ export function DeviationBarChart({
             <CalendarClock className="size-4 sm:mr-1" />
             <span className="hidden sm:inline">{rangeAverageLabel}</span>
           </ToggleGroupItem>
-          <ToggleGroupItem value="range-open" aria-label={rangeOpenLabel}>
+          <ToggleGroupItem value="prior" aria-label={lastPriorLabel}>
             <Activity className="size-4 sm:mr-1" />
-            <span className="hidden sm:inline">{rangeOpenLabel}</span>
+            <span className="hidden sm:inline">{lastPriorLabel}</span>
           </ToggleGroupItem>
           
           {/* Target mode with integrated dropdown */}
@@ -419,37 +423,37 @@ export function DeviationBarChart({
                 </div>
               </PopoverTrigger>
               <PopoverContent className="w-80 p-2" align="start">
-                <div className="space-y-1">
-                  {matchingGoals.length > 0 ? (
-                    <>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                        Select Target
-                      </div>
-                      {matchingGoals.map((goal) => (
-                        <button
-                          key={goal.id}
-                          onClick={() => {
-                            selectGoal(goal.id);
-                            setTargetPopoverOpen(false);
-                          }}
-                          className={`w-full flex items-start gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${selectedGoalId === goal.id ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                              {goal.title}
+                {aggregationType !== 'none' && (
+                  <>
+                    {matchingGoals.length > 0 ? (
+                      <>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          Select Target
+                        </div>
+                        {matchingGoals.map((goal) => (
+                          <button
+                            key={goal.id}
+                            onClick={() => {
+                              selectGoal(goal.id);
+                              setTargetPopoverOpen(false);
+                            }}
+                            className={`w-full flex items-start gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${selectedGoalId === goal.id ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                                {goal.title}
+                              </div>
+                              <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                                {formatGoalTargetValue(goal.target)}
+                              </div>
                             </div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                              {formatGoalTargetValue(goal.target)}
-                            </div>
-                          </div>
-                          <AchievementBadge badge={goal.badge} size="small" className="flex-shrink-0" />
-                        </button>
-                      ))}
-                    </>
-                  ) : (
-                    <div className="px-2 py-2 text-center">
-                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">No matching target goals</p>
-                      {aggregationType !== 'none' && (
+                            <AchievementBadge badge={goal.badge} size="small" className="flex-shrink-0" />
+                          </button>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="px-2 py-2 text-center">
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">You haven't created any {periodly} targets yet</p>
                         <Link to={`/dataset/${datasetId}/targets?add`}>
                           <Button
                             variant="outline"
@@ -460,22 +464,21 @@ export function DeviationBarChart({
                             <ExternalLink className="h-3 w-3" />
                           </Button>
                         </Link>
-                      )}
-                    </div>
-                  )}
-                  <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2">
-                    <Input
-                      type="number"
-                      value={selectedGoalId ? '' : targetBaselineInput}
-                      onChange={(e) => {
-                        setSelectedGoalId(null);
-                        setTargetBaselineInput(e.target.value);
-                      }}
-                      placeholder="Custom target value"
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                </div>
+                      </div>
+                    )}
+                    <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2" />
+                  </>
+                )}
+                <Input
+                  type="number"
+                  value={selectedGoalId ? '' : targetBaselineInput}
+                  onChange={(e) => {
+                    setSelectedGoalId(null);
+                    setTargetBaselineInput(e.target.value);
+                  }}
+                  placeholder="Custom target value"
+                  className="h-8 text-xs"
+                />
               </PopoverContent>
             </Popover>
           </ToggleGroupItem>

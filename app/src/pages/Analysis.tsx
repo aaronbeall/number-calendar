@@ -259,15 +259,25 @@ export function Analysis() {
   }, [analysisTrendMode, allAggregatePeriods, primaryMetric, timeRange]);
 
   const priorTimeFrameValue = useMemo(() => {
-    if (allAggregatePeriods.length === 0) return undefined;
+    if (allAggregatePeriods.length === 0 || computedAggregatesInRange.length === 0) return undefined;
     
+    // Always get the period immediately before the selected range starts
+    const firstInRangeDateKey = computedAggregatesInRange[0].dateKey;
+    const firstInRangeIndex = allAggregatePeriods.findIndex(p => p.dateKey === firstInRangeDateKey);
+    
+    if (firstInRangeIndex <= 0) return undefined;
+    
+    return allAggregatePeriods[firstInRangeIndex - 1].stats[primaryMetric];
+  }, [allAggregatePeriods, computedAggregatesInRange, primaryMetric]);
+
+  const trendPriorTimeFrameValue = useMemo(() => {
+    if (allAggregatePeriods.length === 0) return undefined;
+
     if (analysisTrendMode === 'all-time-trend') {
-      // Use the first value from all time
       const firstValue = allAggregatePeriods[0].stats[primaryMetric];
       return typeof firstValue === 'number' ? firstValue : undefined;
     }
-    
-    // For trend mode, use the period before the visible range
+
     const priorIndex = Math.max(allAggregatePeriods.length - computedAggregatesInRange.length - 1, 0);
     return allAggregatePeriods[priorIndex].stats[primaryMetric];
   }, [analysisTrendMode, allAggregatePeriods, computedAggregatesInRange, primaryMetric]);
@@ -657,7 +667,7 @@ export function Analysis() {
               valence={dataset.valence}
               selectedMetrics={selectedSummaryMetrics}
               datasetId={dataset.id}
-              priorTimeFrameValue={priorTimeFrameValue}
+              priorTimeFrameValue={trendPriorTimeFrameValue}
             />
           </Card>
 
@@ -694,6 +704,7 @@ export function Analysis() {
               valence={dataset.valence}
               rangeLabel={activeTimeFrameLabel}
               datasetId={dataset.id}
+              priorTimeFrameValue={priorTimeFrameValue}
             />
           </Card>
 

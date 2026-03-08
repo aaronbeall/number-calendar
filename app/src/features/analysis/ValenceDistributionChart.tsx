@@ -1,7 +1,7 @@
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { Badge } from '@/components/ui/badge';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
-import type { AggregationType } from '@/lib/analysis';
+import { getAggregationPeriodLabel, type AggregationType } from '@/lib/analysis';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
@@ -139,7 +139,7 @@ export function ValenceDistributionChart({
   });
 
   const colors = [positiveColor, negativeColor];
-  const aggregationUnit = aggregationType === 'none' ? 'entry' : aggregationType;
+  const aggregationUnit = getAggregationPeriodLabel(aggregationType).toLowerCase();
 
   const renderTooltip = ({
     active,

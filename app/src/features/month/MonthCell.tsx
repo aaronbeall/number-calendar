@@ -11,6 +11,7 @@ import { Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSidePanelParam } from '@/lib/search-params';
 import { useCalendar } from '@/context/useCalendar';
+import { pluralize } from '@/lib/utils';
 
 interface MonthCellProps {
   year: number;
@@ -115,10 +116,10 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                   <div title="Most entries">
                     <Trophy className="h-2 md:h-2.5 w-2 md:w-2.5 text-slate-600 dark:text-slate-400" />
                   </div>
-                  <span>{stats.count} {stats.count === 1 ? 'entry' : 'entries'}</span>
+                  <span>{stats.count} {pluralize('entry', stats.count)}</span>
                 </div>
               ) : (
-                <span>{stats.count} {stats.count === 1 ? 'entry' : 'entries'}</span>
+                <span>{stats.count} {pluralize('entry', stats.count)}</span>
               )}
             </div>
           </div>

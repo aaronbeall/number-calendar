@@ -13,6 +13,7 @@ import { Skull, TrendingDown, TrendingUp, TrendingUpDown, Trophy } from 'lucide-
 import React, { useMemo } from 'react';
 import { useSidePanelParam } from '../../lib/search-params';
 import { NumbersPanel } from '../panel/NumbersPanel';
+import { pluralize } from '@/lib/utils';
 
 export interface DayCellProps {
   date: Date;
@@ -181,10 +182,10 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
                   <div title="Most entries">
                     <Trophy className="h-2 md:h-2.5 w-2 md:w-2.5 text-slate-600 dark:text-slate-400" />
                   </div>
-                  <span>{count} {count === 1 ? 'entry' : 'entries'}</span>
+                  <span>{count} {pluralize('entry', count)}</span>
                 </div>
               ) : (
-                <span>{count} {count === 1 ? 'entry' : 'entries'}</span>
+                <span>{count} {pluralize('entry', count)}</span>
               )}
             </div>
 
