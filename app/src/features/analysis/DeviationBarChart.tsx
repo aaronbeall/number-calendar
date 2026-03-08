@@ -86,9 +86,8 @@ export function DeviationBarChart({
 
   // Filter goals that match the current aggregation time period, metric, and source
   const matchingGoals = useMemo(() => {
-    if (!goals) return [];
+    if (!goals || aggregationType === 'none') return [];
     const periodMap: Record<string, string> = {
-      'none': 'day',
       'day': 'day',
       'week': 'week',
       'month': 'month',
@@ -450,16 +449,18 @@ export function DeviationBarChart({
                   ) : (
                     <div className="px-2 py-2 text-center">
                       <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">No matching target goals</p>
-                      <Link to="/targets">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs gap-1 w-full"
-                        >
-                          Create Target
-                          <ExternalLink className="h-3 w-3" />
-                        </Button>
-                      </Link>
+                      {aggregationType !== 'none' && (
+                        <Link to={`/dataset/${datasetId}/targets?add`}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 text-xs gap-1 w-full"
+                          >
+                            Create Target
+                            <ExternalLink className="h-3 w-3" />
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   )}
                   <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2">
