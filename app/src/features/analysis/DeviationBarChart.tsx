@@ -9,7 +9,7 @@ import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIc
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
 import { useGoals } from '@/features/db/useGoalsData';
 import { usePreference } from '@/hooks/usePreference';
-import { formatPeriodLabel, getAggregationPeriodLabel, getNegativeColor, type AggregationType } from '@/lib/analysis';
+import { formatPeriodLabel, getAggregationPeriodLabel, getValenceColor, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { formatGoalTargetValue } from '@/lib/goals';
@@ -364,7 +364,7 @@ export function DeviationBarChart({
           <Bar dataKey="deviation" fill="#8884d8" isAnimationActive radius={[8, 8, 0, 0]}>
             {data.map((entry, index) => {
               const baseColor = getBarColor(entry.value);
-              const color = entry.deviation < 0 ? getNegativeColor(baseColor) : baseColor;
+              const color = getValenceColor(baseColor, entry.deviation, valence);
               return <Cell key={`bar-${index}`} fill={color} />;
             })}
           </Bar>

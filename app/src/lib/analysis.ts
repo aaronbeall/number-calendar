@@ -115,10 +115,14 @@ export const METRIC_COLORS: Record<NumberMetric, string> = {
 };
 
 /**
- * Darken a hex color by a given amount (0-1)
+ * Get a color with valence-aware darkening.
+ * Darkens the hex color if the value is "bad" according to the valence.
  */
-export function getNegativeColor(hex: string): string {
-  return colord(hex).darken(0.3).toHex();
+export function getValenceColor(hex: string, value: number, valence: Valence): string {
+  if (isBad(value, valence)) {
+    return colord(hex).darken(0.3).toHex();
+  }
+  return hex;
 }
 
 /**
@@ -145,7 +149,7 @@ export function getMetricColorForValence(
   
   // If the value is "bad" for the given valence, return darkened color
   if (isBad(value ?? 0, valence)) {
-    return getNegativeColor(baseColor);
+    return getValenceColor(baseColor, value ?? 0, valence);
   }
   
   return baseColor;
