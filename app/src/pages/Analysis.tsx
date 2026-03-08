@@ -38,6 +38,58 @@ import { Link } from 'react-router-dom';
 
 export type AnalysisTrendMode = 'all-time-trend' | 'in-range-trend' | 'change';
 
+// Reusable chart section components
+function ChartSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <Card className={`p-4 ${className}`}>{children}</Card>;
+}
+
+function ChartSectionHeader({
+  children,
+  actions,
+}: {
+  children: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2 flex-wrap">
+      {children}
+      {actions && <div className="flex items-center gap-2">{actions}</div>}
+    </div>
+  );
+}
+
+function ChartSectionTitle({
+  icon: Icon,
+  children,
+  helpContent,
+  helpLabel,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  children: React.ReactNode;
+  helpContent?: React.ReactNode;
+  helpLabel?: string;
+}) {
+  return (
+    <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+      <Icon className="w-4 h-4" />
+      {children}
+      {helpContent && (
+        <PopoverTip>
+          <PopoverTipTrigger asChild>
+            <button
+              className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={helpLabel || 'Help'}
+            >
+              <HelpCircle className="w-3.5 h-3.5" />
+            </button>
+          </PopoverTipTrigger>
+          <PopoverTipContent>{helpContent}</PopoverTipContent>
+        </PopoverTip>
+      )}
+    </h3>
+  );
+}
+
 // Abstract chart illustration for empty state
 function EmptyChartIllustration() {
   return (
@@ -574,46 +626,9 @@ export function Analysis() {
           />
 
           {/* Trend Chart */}
-          <Card className="p-4">
-            <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-                <LineChart className="w-4 h-4" />
-                Trend Over Time
-                <PopoverTip>
-                  <PopoverTipTrigger asChild>
-                    <button
-                      className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="Help: Trend Over Time"
-                    >
-                      <HelpCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </PopoverTipTrigger>
-                  <PopoverTipContent>
-                    <div className="space-y-1 text-sm">
-                      <p className="font-medium">Trend Over Time</p>
-                      <p className="text-muted-foreground">
-                        View how your data changes over time. Use{' '}
-                        <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                          <Infinity className="h-3.5 w-3.5" />
-                          All Time
-                        </span>{' '}
-                        for cumulative values from the beginning,{' '}
-                        <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                          <CalendarClock className="h-3.5 w-3.5" />
-                          Time Frame
-                        </span>{' '}
-                        for cumulative values within the selected range, or{' '}
-                        <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                          <Activity className="h-3.5 w-3.5" />
-                          Change
-                        </span>{' '}
-                        for period-over-period movement.
-                      </p>
-                    </div>
-                  </PopoverTipContent>
-                </PopoverTip>
-              </h3>
-              <div className="flex items-center gap-2">
+          <ChartSection>
+            <ChartSectionHeader
+              actions={
                 <ToggleGroup
                   type="single"
                   value={analysisTrendMode}
@@ -624,40 +639,70 @@ export function Analysis() {
                   variant="outline"
                   aria-label="Analysis trend mode"
                 >
-                {dataset.tracking === 'series' ? (
-                  <>
-                    <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
-                      <Infinity className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">All Time Trend</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
-                      <CalendarClock className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">{trendScopeLabel}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
-                      <Activity className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">{trendChangeModeLabel}</span>
-                    </ToggleGroupItem>
-                  </>
-                ) : (
-                  <>
-                    <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
-                      <Infinity className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">All Time Trend</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
-                      <LineChart className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">{trendScopeLabel}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
-                      <Activity className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">{trendChangeModeLabel}</span>
-                    </ToggleGroupItem>
-                  </>
-                )}
-              </ToggleGroup>
-              </div>
-            </div>
+                  {dataset.tracking === 'series' ? (
+                    <>
+                      <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
+                        <Infinity className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">All Time Trend</span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
+                        <CalendarClock className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">{trendScopeLabel}</span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
+                        <Activity className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">{trendChangeModeLabel}</span>
+                      </ToggleGroupItem>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
+                        <Infinity className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">All Time Trend</span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
+                        <LineChart className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">{trendScopeLabel}</span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="change" aria-label={trendChangeModeLabel}>
+                        <Activity className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">{trendChangeModeLabel}</span>
+                      </ToggleGroupItem>
+                    </>
+                  )}
+                </ToggleGroup>
+              }
+            >
+              <ChartSectionTitle
+                icon={LineChart}
+                helpLabel="Help: Trend Over Time"
+                helpContent={
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">Trend Over Time</p>
+                    <p className="text-muted-foreground">
+                      View how your data changes over time. Use{' '}
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <Infinity className="h-3.5 w-3.5" />
+                        All Time
+                      </span>{' '}
+                      for cumulative values from the beginning,{' '}
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        Time Frame
+                      </span>{' '}
+                      for cumulative values within the selected range, or{' '}
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <Activity className="h-3.5 w-3.5" />
+                        Change
+                      </span>{' '}
+                      for period-over-period movement.
+                    </p>
+                  </div>
+                }
+              >
+                Trend Over Time
+              </ChartSectionTitle>
+            </ChartSectionHeader>
             <TrendAnalysisChart
               key={dataset.id}
               periods={computedAggregatesInRange}
@@ -669,23 +714,15 @@ export function Analysis() {
               datasetId={dataset.id}
               priorTimeFrameValue={trendPriorTimeFrameValue}
             />
-          </Card>
+          </ChartSection>
 
           {/* Aggregation Bar Chart */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-              <BarChart3 className="w-4 h-4" />
-              {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Deviation from Baseline
-              <PopoverTip>
-                <PopoverTipTrigger asChild>
-                  <button
-                    className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Help: Deviation from Average"
-                  >
-                    <HelpCircle className="w-3.5 h-3.5" />
-                  </button>
-                </PopoverTipTrigger>
-                <PopoverTipContent>
+          <ChartSection>
+            <ChartSectionHeader>
+              <ChartSectionTitle
+                icon={BarChart3}
+                helpLabel="Help: Deviation from Average"
+                helpContent={
                   <div className="space-y-1 text-sm">
                     <p className="font-medium">Deviation from Baseline</p>
                     <p className="text-muted-foreground">
@@ -712,9 +749,11 @@ export function Analysis() {
                       for a goal value (select from saved targets or enter a custom value).
                     </p>
                   </div>
-                </PopoverTipContent>
-              </PopoverTip>
-            </h3>
+                }
+              >
+                {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Deviation from Baseline
+              </ChartSectionTitle>
+            </ChartSectionHeader>
             <DeviationBarChart
               key={dataset.id}
               periods={computedAggregatesInRange}
@@ -726,104 +765,93 @@ export function Analysis() {
               datasetId={dataset.id}
               priorTimeFrameValue={priorTimeFrameValue}
             />
-          </Card>
+          </ChartSection>
 
           {/* Distribution Histogram */}
-          <Card className="p-4">
-            <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-              <Activity className="w-4 h-4" />
-              Value Distribution
-              <PopoverTip>
-                <PopoverTipTrigger asChild>
-                  <button
-                    className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                    aria-label="Help: Value Distribution"
-                  >
-                    <HelpCircle className="w-3.5 h-3.5" />
-                  </button>
-                </PopoverTipTrigger>
-                <PopoverTipContent>
+          <ChartSection>
+            <ChartSectionHeader>
+              <ChartSectionTitle
+                icon={Activity}
+                helpLabel="Help: Value Distribution"
+                helpContent={
                   <div className="space-y-1 text-sm">
                     <p className="font-medium">Value Distribution</p>
                     <p className="text-muted-foreground">
                       Shows how frequently different values appear in your data. This histogram reveals patterns like clustering around certain values or whether your data is evenly spread out.
                     </p>
                   </div>
-                </PopoverTipContent>
-              </PopoverTip>
-            </h3>
+                }
+              >
+                Value Distribution
+              </ChartSectionTitle>
+            </ChartSectionHeader>
             <DistributionHistogram
               key={dataset.id}
               periods={computedAggregatesInRange}
               tracking={dataset.tracking}
               valence={dataset.valence}
             />
-          </Card>
+          </ChartSection>
 
           {/* Valence Distribution for non-neutral datasets */}
           {dataset.valence !== 'neutral' && (
-            <Card className="p-4">
-              <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2">
-                <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
-                  <PieChart className="w-4 h-4" />
+            <ChartSection>
+              <ChartSectionHeader
+                actions={
+                  dataset.tracking === 'series' ? (
+                    <ToggleGroup
+                      type="single"
+                      value={valenceDistributionMode}
+                      onValueChange={(value) => {
+                        if (value) setValenceDistributionMode(value as 'count' | 'total');
+                      }}
+                      size="sm"
+                      variant="outline"
+                      aria-label="Valence distribution mode"
+                    >
+                      <ToggleGroupItem value="count" aria-label="Count">
+                        <Hash className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Count</span>
+                      </ToggleGroupItem>
+                      <ToggleGroupItem value="total" aria-label="Total">
+                        <Sigma className="size-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Total</span>
+                      </ToggleGroupItem>
+                    </ToggleGroup>
+                  ) : undefined
+                }
+              >
+                <ChartSectionTitle
+                  icon={PieChart}
+                  helpLabel="Help: Valence Distribution"
+                  helpContent={
+                    <div className="space-y-1 text-sm">
+                      <p className="font-medium">Valence Distribution</p>
+                      <p className="text-muted-foreground">
+                        {dataset.tracking === 'trend' ? (
+                          'Shows the balance between periods with upward trends versus downward trends in your data.'
+                        ) : (
+                          <>
+                            Shows the balance between positive and negative values. Toggle between{' '}
+                            <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                              <Hash className="h-3.5 w-3.5" />
+                              Count
+                            </span>{' '}
+                            (number of periods) and{' '}
+                            <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                              <Sigma className="h-3.5 w-3.5" />
+                              Total
+                            </span>{' '}
+                            (sum of values) to see different perspectives.
+                          </>
+                        )}
+                      </p>
+                    </div>
+                  }
+                >
                   {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
-                  <PopoverTip>
-                    <PopoverTipTrigger asChild>
-                      <button
-                        className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                        aria-label="Help: Valence Distribution"
-                      >
-                        <HelpCircle className="w-3.5 h-3.5" />
-                      </button>
-                    </PopoverTipTrigger>
-                    <PopoverTipContent>
-                      <div className="space-y-1 text-sm">
-                        <p className="font-medium">Valence Distribution</p>
-                        <p className="text-muted-foreground">
-                          {dataset.tracking === 'trend' ? (
-                            'Shows the balance between periods with upward trends versus downward trends in your data.'
-                          ) : (
-                            <>
-                              Shows the balance between positive and negative values. Toggle between{' '}
-                              <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                                <Hash className="h-3.5 w-3.5" />
-                                Count
-                              </span>{' '}
-                              (number of periods) and{' '}
-                              <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                                <Sigma className="h-3.5 w-3.5" />
-                                Total
-                              </span>{' '}
-                              (sum of values) to see different perspectives.
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </PopoverTipContent>
-                  </PopoverTip>
-                </h3>
-                {dataset.tracking === 'series' && (
-                  <ToggleGroup
-                    type="single"
-                    value={valenceDistributionMode}
-                    onValueChange={(value) => {
-                      if (value) setValenceDistributionMode(value as 'count' | 'total');
-                    }}
-                    size="sm"
-                    variant="outline"
-                    aria-label="Valence distribution mode"
-                  >
-                    <ToggleGroupItem value="count" aria-label="Count">
-                      <Hash className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Count</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="total" aria-label="Total">
-                      <Sigma className="size-4 sm:mr-1" />
-                      <span className="hidden sm:inline">Total</span>
-                    </ToggleGroupItem>
-                  </ToggleGroup>
-                )}
-              </div>
+                </ChartSectionTitle>
+              </ChartSectionHeader>
               <ValenceDistributionChart
                 key={dataset.id}
                 periods={computedAggregatesInRange}
@@ -832,34 +860,28 @@ export function Analysis() {
                 valence={dataset.valence}
                 mode={valenceDistributionMode}
               />
-            </Card>
+            </ChartSection>
           )}
 
           {/* Period Comparison - only for aggregated data */}
           {aggregationType !== 'none' && (
-            <Card className="p-4">
-              <h3 className="font-semibold mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                <TrendingUp className="w-4 h-4" />
-                {capitalize(adjectivize(aggregationType))} Comparison
-                <PopoverTip>
-                  <PopoverTipTrigger asChild>
-                    <button
-                      className="inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="Help: Period Comparison"
-                    >
-                      <HelpCircle className="w-3.5 h-3.5" />
-                    </button>
-                  </PopoverTipTrigger>
-                  <PopoverTipContent>
+            <ChartSection>
+              <ChartSectionHeader>
+                <ChartSectionTitle
+                  icon={TrendingUp}
+                  helpLabel="Help: Period Comparison"
+                  helpContent={
                     <div className="space-y-1 text-sm">
                       <p className="font-medium">Period Comparison</p>
                       <p className="text-muted-foreground">
                         Compare aggregated metrics side-by-side across different time periods. This makes it easy to spot differences in performance, trends, or patterns between periods.
                       </p>
                     </div>
-                  </PopoverTipContent>
-                </PopoverTip>
-              </h3>
+                  }
+                >
+                  {capitalize(adjectivize(aggregationType))} Comparison
+                </ChartSectionTitle>
+              </ChartSectionHeader>
               <PeriodComparisonChart
                 key={dataset.id}
                 periods={periods}
@@ -869,7 +891,7 @@ export function Analysis() {
                 tracking={dataset.tracking}
                 datasetId={dataset.id}
               />
-            </Card>
+            </ChartSection>
           )}
         </div>
       </div>
