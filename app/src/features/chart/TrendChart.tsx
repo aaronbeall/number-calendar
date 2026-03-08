@@ -37,10 +37,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
 
   const isFullYear = !month;
 
-  const { theme } = useTheme();
-  const isDark =
-    theme === 'dark' ||
-    (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const { isDark } = useTheme();
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
 

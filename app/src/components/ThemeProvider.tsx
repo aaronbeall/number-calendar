@@ -7,6 +7,7 @@ interface ThemeContextType {
   setTheme: (theme: Theme) => void;
   prefersDark: boolean;
   appliedTheme: "light" | "dark";
+  isDark: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -34,8 +35,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("theme", theme);
   }, [appliedTheme]);
 
+  const isDark = appliedTheme === "dark";
+
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, prefersDark, appliedTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, prefersDark, appliedTheme, isDark }}>
       {children}
     </ThemeContext.Provider>
   );

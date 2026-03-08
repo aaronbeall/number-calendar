@@ -63,12 +63,7 @@ export function DeviationBarChart({
   rangeLabel,
   datasetId,
 }: DeviationBarChartProps) {
-  const { theme } = useTheme();
-  const isDark =
-    theme === 'dark' ||
-    (theme === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const { isDark } = useTheme();
 
   const primaryMetric = getPrimaryMetric(tracking);
   const valenceSource = getValenceSource(tracking);

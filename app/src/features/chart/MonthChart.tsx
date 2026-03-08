@@ -76,8 +76,7 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, valence }) => {
     return t;
   }, [days, group]);
 
-  const { theme } = useTheme();
-  const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const { isDark } = useTheme();
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb'; // slate-200 for light mode
 
