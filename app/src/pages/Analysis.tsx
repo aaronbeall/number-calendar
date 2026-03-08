@@ -22,7 +22,7 @@ import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnaly
 import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity, Target } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { DeviationBarChart } from '@/features/analysis/DeviationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -689,7 +689,27 @@ export function Analysis() {
                   <div className="space-y-1 text-sm">
                     <p className="font-medium">Deviation from Baseline</p>
                     <p className="text-muted-foreground">
-                      Compare each period against a selectable baseline. Switch between in-range averages, all-time averages, range open, or a target value to see how values diverge.
+                      See how each period deviates from a selectable baseline. Choose from{' '}
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <Infinity className="h-3.5 w-3.5" />
+                        All Time Average
+                      </span>{' '}
+                      for historical context,{' '}
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        Range Average
+                      </span>{' '}
+                      for comparison within the selected period,{' '}
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <Activity className="h-3.5 w-3.5" />
+                        Prior
+                      </span>{' '}
+                      for the previous period, or{' '}
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <Target className="h-3.5 w-3.5" />
+                        Target
+                      </span>{' '}
+                      for a goal value (select from saved targets or enter a custom value).
                     </p>
                   </div>
                 </PopoverTipContent>
