@@ -109,8 +109,8 @@ export const METRIC_COLORS: Record<NumberMetric, string> = {
 /**
  * Darken a hex color by a given amount (0-1)
  */
-function darkenColor(hex: string, amount: number = 0.3): string {
-  return colord(hex).darken(amount).toHex();
+export function getNegativeColor(hex: string): string {
+  return colord(hex).darken(0.3).toHex();
 }
 
 /**
@@ -137,7 +137,7 @@ export function getMetricColorForValence(
   
   // If the value is "bad" for the given valence, return darkened color
   if (isBad(value ?? 0, valence)) {
-    return darkenColor(baseColor);
+    return getNegativeColor(baseColor);
   }
   
   return baseColor;

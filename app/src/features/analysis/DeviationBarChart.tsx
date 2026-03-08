@@ -4,22 +4,23 @@ import { Input } from '@/components/ui/input';
 import { NumberText } from '@/components/ui/number-text';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { AchievementBadge } from '@/features/achievements/AchievementBadge';
+import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
 import { useGoals } from '@/features/db/useGoalsData';
-import { formatPeriodLabel, type AggregationType } from '@/lib/analysis';
+import { usePreference } from '@/hooks/usePreference';
+import { formatPeriodLabel, getNegativeColor, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
+import { formatGoalTargetValue } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
+import { adjectivize, capitalize } from '@/lib/utils';
 import { getValueForValence } from '@/lib/valence';
-import { useEffect, useMemo, useState } from 'react';
-import { usePreference } from '@/hooks/usePreference';
-import { ChevronDown, ExternalLink, CalendarClock, Infinity, Activity, Target } from 'lucide-react';
+import { Activity, CalendarClock, ChevronDown, ExternalLink, Infinity, Target } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AchievementBadge } from '@/features/achievements/AchievementBadge';
-import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
-import { capitalize, adjectivize } from '@/lib/utils';
 import {
   Bar,
   BarChart,
@@ -78,10 +79,11 @@ export function DeviationBarChart({
     `analysis_deviationBaselineMode_${datasetId}`,
     'range-average',
   );
-  const [targetBaselineInput, setTargetBaselineInput] = usePreference<number>(
-    `analysis_deviationTargetBaseline_${datasetId}_${aggregationType}_${primaryMetric}_${valenceSource}`,
-    0,
+  const [targetBaselineInput, setTargetBaselineInput] = usePreference<string>(
+    `analysis_deviationTargetBaseline_${datasetId}_${aggregationType}`,
+    '',
   );
+  const targetBaselineValue = targetBaselineInput ? Number(targetBaselineInput) : 0;
   const [selectedGoalId, setSelectedGoalId] = usePreference<string | null>(
     `analysis_deviationSelectedGoal_${datasetId}_${aggregationType}`,
     null,
@@ -109,6 +111,22 @@ export function DeviationBarChart({
       .sort((a, b) => a.title.localeCompare(b.title));
   }, [goals, aggregationType, primaryMetric, valenceSource]);
 
+  // Helper function to select a goal and update the target baseline
+  const selectGoal = useCallback((goalId: string) => {
+    setSelectedGoalId(goalId);
+    const goal = matchingGoals.find((g) => g.id === goalId);
+    if (!goal) return;
+    
+    const target = goal.target;
+    if (target.value !== undefined) {
+      setTargetBaselineInput(String(target.value));
+    } else if (target.range) {
+      // Use midpoint of range as target
+      const midpoint = (target.range[0] + target.range[1]) / 2;
+      setTargetBaselineInput(String(midpoint));
+    }
+  }, [matchingGoals, setSelectedGoalId, setTargetBaselineInput]);
+
   // Auto-select the latest matching goal on initialization
   useEffect(() => {
     // Only run if no goal is currently selected and we have matching goals
@@ -123,26 +141,9 @@ export function DeviationBarChart({
     const latestGoal = sortedByDate[0];
     
     if (latestGoal) {
-      setSelectedGoalId(latestGoal.id);
-      // The value will be set by the next useEffect
+      selectGoal(latestGoal.id);
     }
-  }, [matchingGoals, selectedGoalId, setSelectedGoalId]);
-
-  // Update target baseline when a goal is selected
-  useEffect(() => {
-    if (!selectedGoalId || !matchingGoals.length) return;
-    const selectedGoal = matchingGoals.find((g) => g.id === selectedGoalId);
-    if (!selectedGoal) return;
-    
-    const target = selectedGoal.target;
-    if (target.value !== undefined) {
-      setTargetBaselineInput(target.value);
-    } else if (target.range) {
-      // Use midpoint of range as target
-      const midpoint = (target.range[0] + target.range[1]) / 2;
-      setTargetBaselineInput(midpoint);
-    }
-  }, [selectedGoalId, matchingGoals, setTargetBaselineInput]);
+  }, [matchingGoals, selectGoal]);
 
   // Helper function to calculate median
   const calculateMedian = (values: number[]): number => {
@@ -194,7 +195,7 @@ export function DeviationBarChart({
       : baselineMode === 'range-open'
         ? rangeOpen
         : baselineMode === 'target'
-          ? targetBaselineInput
+          ? targetBaselineValue
           : rangeAverage;
 
     return periodValues.map(({ period, index, value }) => ({
@@ -335,19 +336,11 @@ export function DeviationBarChart({
   const rangeAverageLabel = `${rangeLabel} Average`;
   const rangeOpenLabel = `${rangeLabel} Open`;
 
-  const formatGoalValue = (goal: typeof matchingGoals[0]) => {
-    const target = goal.target;
-    if (target.value !== undefined) {
-      return formatValue(target.value);
-    } else if (target.range) {
-      return `${formatValue(target.range[0])} - ${formatValue(target.range[1])}`;
-    }
-    return '';
-  };
-
   const selectedGoal = selectedGoalId ? matchingGoals.find((g) => g.id === selectedGoalId) : null;
   const targetLabel = selectedGoal ? selectedGoal.title : 'Target';
-  const targetValue = selectedGoal ? formatGoalValue(selectedGoal) : null;
+  const targetValue = selectedGoal 
+    ? formatGoalTargetValue(selectedGoal.target) 
+    : targetBaselineValue ? formatValue(targetBaselineValue) : null;
 
   return (
     <div className="h-80 w-full flex flex-col">
@@ -371,9 +364,11 @@ export function DeviationBarChart({
           <ReferenceLine y={0} stroke={axisColor} strokeOpacity={0.5} strokeWidth={1.5} />
           <Tooltip content={renderTooltip} />
           <Bar dataKey="deviation" fill="#8884d8" isAnimationActive radius={[8, 8, 0, 0]}>
-            {data.map((entry, index) => (
-              <Cell key={`bar-${index}`} fill={getBarColor(entry.value)} />
-            ))}
+            {data.map((entry, index) => {
+              const baseColor = getBarColor(entry.value);
+              const color = entry.deviation < 0 ? getNegativeColor(baseColor) : baseColor;
+              return <Cell key={`bar-${index}`} fill={color} />;
+            })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -405,98 +400,89 @@ export function DeviationBarChart({
           </ToggleGroupItem>
           
           {/* Target mode with integrated dropdown */}
-          <Popover open={targetPopoverOpen} onOpenChange={setTargetPopoverOpen}>
-            <PopoverTrigger asChild>
-              <ToggleGroupItem 
-                value="target" 
-                aria-label="Target"
-                onClick={() => {
-                  // ToggleGroup will handle the mode change
-                  // Open popover after a short delay to ensure mode is set
-                  setTimeout(() => setTargetPopoverOpen(true), 0);
-                }}
-              >
-                {selectedGoal ? (
-                  <>
-                    <AchievementBadgeIcon badge={selectedGoal.badge} size={16} className="sm:mr-1" />
-                    <span className="hidden sm:inline truncate max-w-[120px]">{targetLabel}</span>
-                    {targetValue && <span className="hidden lg:inline text-xs opacity-70 ml-1">({targetValue})</span>}
-                  </>
-                ) : (
-                  <>
-                    <Target className="size-4 sm:mr-1" />
-                    <span className="hidden sm:inline">Target</span>
-                  </>
-                )}
-                <ChevronDown className="size-3 ml-1 opacity-50" />
-              </ToggleGroupItem>
-            </PopoverTrigger>
-            <PopoverContent className="w-80 p-2" align="start">
-              <div className="space-y-1">
-                {matchingGoals.length > 0 ? (
-                  <>
-                    <div className="px-2 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                      Select Target
-                    </div>
-                    {matchingGoals.map((goal) => (
-                      <button
-                        key={goal.id}
-                        onClick={() => {
-                          setSelectedGoalId(goal.id);
-                          setTargetPopoverOpen(false);
-                        }}
-                        className={`w-full flex items-start gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${selectedGoalId === goal.id ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                            {goal.title}
-                          </div>
-                          <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                            {formatGoalValue(goal)}
-                          </div>
-                        </div>
-                        <AchievementBadge badge={goal.badge} size="small" className="flex-shrink-0" />
-                      </button>
-                    ))}
-                  </>
-                ) : (
-                  <div className="px-2 py-2 text-center">
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">No matching target goals</p>
-                    <Link to="/targets" onClick={() => setTargetPopoverOpen(false)}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8 text-xs gap-1 w-full"
-                      >
-                        Create Target
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-                <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2">
-                  <Input
-                    type="number"
-                    value={selectedGoalId ? '' : (targetBaselineInput ?? '')}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setSelectedGoalId(null);
-                      if (value === '') {
-                        setTargetBaselineInput(0);
-                      } else {
-                        const numValue = Number(value);
-                        if (!isNaN(numValue)) {
-                          setTargetBaselineInput(numValue);
-                        }
-                      }
-                    }}
-                    placeholder="Custom target value"
-                    className="h-8 text-xs"
-                  />
+          <ToggleGroupItem 
+            value="target" 
+            aria-label="Target"
+            className='px-0'
+          >
+            <Popover open={targetPopoverOpen} onOpenChange={setTargetPopoverOpen}>
+              <PopoverTrigger asChild>
+                <div className='flex items-center px-2'>
+                  {selectedGoal ? (
+                    <>
+                      <AchievementBadgeIcon badge={selectedGoal.badge} size={16} className="sm:mr-1" />
+                      <span className="hidden sm:inline truncate max-w-[120px]">{targetLabel}</span>
+                      {targetValue && <span className="hidden lg:inline text-xs opacity-70 ml-1">({targetValue})</span>}
+                    </>
+                  ) : (
+                    <>
+                      <Target className="size-4 sm:mr-1" />
+                      <span className="hidden sm:inline">{targetLabel}</span>
+                      {targetValue && <span className="hidden lg:inline text-xs opacity-70 ml-1">({targetValue})</span>}
+                    </>
+                  )}
+                  <ChevronDown className="size-3 ml-1 opacity-50" />
                 </div>
-              </div>
-            </PopoverContent>
-          </Popover>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-2" align="start">
+                <div className="space-y-1">
+                  {matchingGoals.length > 0 ? (
+                    <>
+                      <div className="px-2 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        Select Target
+                      </div>
+                      {matchingGoals.map((goal) => (
+                        <button
+                          key={goal.id}
+                          onClick={() => {
+                            selectGoal(goal.id);
+                            setTargetPopoverOpen(false);
+                          }}
+                          className={`w-full flex items-start gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${selectedGoalId === goal.id ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
+                        >
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                              {goal.title}
+                            </div>
+                            <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                              {formatGoalTargetValue(goal.target)}
+                            </div>
+                          </div>
+                          <AchievementBadge badge={goal.badge} size="small" className="flex-shrink-0" />
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="px-2 py-2 text-center">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">No matching target goals</p>
+                      <Link to="/targets">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-8 text-xs gap-1 w-full"
+                        >
+                          Create Target
+                          <ExternalLink className="h-3 w-3" />
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                  <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2">
+                    <Input
+                      type="number"
+                      value={selectedGoalId ? '' : targetBaselineInput}
+                      onChange={(e) => {
+                        setSelectedGoalId(null);
+                        setTargetBaselineInput(e.target.value);
+                      }}
+                      placeholder="Custom target value"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </ToggleGroupItem>
         </ToggleGroup>
       </div>
     </div>
