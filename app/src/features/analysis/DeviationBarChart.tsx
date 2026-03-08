@@ -124,8 +124,8 @@ export function DeviationBarChart({
 
   // Auto-select the latest matching goal on initialization
   useEffect(() => {
-    // Only run if no goal is currently selected and we have matching goals
-    if (selectedGoalId !== null || matchingGoals.length === 0) return;
+    // Only auto-select if no goal is selected AND no custom value is set
+    if (selectedGoalId !== null || targetBaselineInput || matchingGoals.length === 0) return;
     
     // Find the most recently created goal
     const toTimestamp = (value: number | string): number =>
@@ -138,7 +138,7 @@ export function DeviationBarChart({
     if (latestGoal) {
       selectGoal(latestGoal.id);
     }
-  }, [matchingGoals, selectGoal]);
+  }, [matchingGoals, selectGoal, targetBaselineInput]);
 
   // Helper function to calculate median
   const calculateMedian = (values: number[]): number => {
