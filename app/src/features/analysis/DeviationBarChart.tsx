@@ -384,6 +384,9 @@ export function DeviationBarChart({
           variant="outline"
           aria-label="Baseline mode"
         >
+          <span className="text-[10px] uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400 px-2 flex items-center">
+            Baseline
+          </span>
           <ToggleGroupItem value="all-time-average" aria-label="All Time Average">
             <Infinity className="size-4 sm:mr-1" />
             <span className="hidden sm:inline">All Time Average</span>
