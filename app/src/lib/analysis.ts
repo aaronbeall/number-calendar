@@ -189,6 +189,8 @@ export type ProjectionMode = 'linear' | 'recent-average' | 'momentum';
 export type ProjectionHorizon = number;
 export type ProjectionRecentWindow = number;
 export type ProjectionMomentumWeight = number;
+export type ProjectionMathMode = 'additive' | 'compound';
+export type ProjectionCompoundRate = number;
 
 export interface ProjectionSeriesPoint {
   label: string;
@@ -450,6 +452,8 @@ export function computeProjectionSeries(
   horizon: ProjectionHorizon,
   recentWindow: ProjectionRecentWindow,
   momentumWeight: ProjectionMomentumWeight,
+  projectionMath: ProjectionMathMode,
+  compoundRate: ProjectionCompoundRate,
 ): ProjectionSeriesPoint[] {
   const getProjectedDate = (lastDate: Date, step: number): Date => {
     if (aggregationType === 'none' || aggregationType === 'day') return addDays(lastDate, step);
@@ -502,10 +506,24 @@ export function computeProjectionSeries(
     })()
     : 0;
 
+  const getDeltaByMode = (): number => {
+    if (mode === 'recent-average') return avgRecentDelta;
+    if (mode === 'momentum') return momentumDelta;
+    return slope;
+  };
+
   const getNextValue = (step: number): number => {
-    if (mode === 'recent-average') return lastValue + (avgRecentDelta * step);
-    if (mode === 'momentum') return lastValue + (momentumDelta * step);
-    return lastValue + (slope * step);
+    const baseDelta = getDeltaByMode();
+    if (projectionMath === 'compound') {
+      const rateDecimal = compoundRate / 100;
+      if (rateDecimal === 0) {
+        return lastValue + (baseDelta * step);
+      }
+      // Compound the per-period slope delta: d, d(1+r), d(1+r)^2 ...
+      const compoundedDelta = baseDelta * ((((1 + rateDecimal) ** step) - 1) / rateDecimal);
+      return lastValue + compoundedDelta;
+    }
+    return lastValue + (baseDelta * step);
   };
 
   const withActuals: ProjectionSeriesPoint[] = points.map((point) => ({

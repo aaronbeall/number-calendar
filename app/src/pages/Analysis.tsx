@@ -1056,6 +1056,9 @@ export function Analysis() {
                         }
                       >
                         <div className="space-y-3">
+                          <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                            Uses the average per-period change from the latest window.
+                          </p>
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Recent window</span>
                             <span className="text-xs text-slate-500 dark:text-slate-400">{projectionRecentWindow} {pluralize(projectionPeriodUnit, projectionRecentWindow)}</span>
@@ -1086,6 +1089,9 @@ export function Analysis() {
                         }
                       >
                         <div className="space-y-4">
+                          <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                            Same trend model as Recent, but with extra weight on the newest periods.
+                          </p>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Recent window</span>
@@ -1162,28 +1168,42 @@ export function Analysis() {
                   <div className="space-y-2 text-sm max-w-sm">
                     <p className="font-medium">Projections</p>
                     <p className="text-muted-foreground">
-                      Forecast how your values may continue across {aggregationPeriodPluralLabel} using the pattern in your selected range.
+                      Forecast from your fitted per-period trend across {aggregationPeriodPluralLabel} in the selected range.
                     </p>
                     <p className="text-muted-foreground">
                       <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
                         <LineChart className="h-3.5 w-3.5" />
                         <strong>Linear</strong>
                       </span>{' '}
-                      fits a straight-line trend to the full in-range history, giving the most stable long-horizon estimate.
+                      fits a straight trend from full in-range history.
                     </p>
                     <p className="text-muted-foreground">
                       <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
                         <CalendarClock className="h-3.5 w-3.5" />
                         <strong>Recent</strong>
                       </span>{' '}
-                      uses a short recent window average, so it adapts faster when your latest periods differ from your long-term trend.
+                      uses only the latest window for trend.
                     </p>
                     <p className="text-muted-foreground">
                       <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
                         <Zap className="h-3.5 w-3.5" />
                         <strong>Momentum</strong>
                       </span>{' '}
-                      gives extra weight to the most recent direction of change, so projections react quickest to accelerations or slowdowns.
+                      is Recent with recency weighting.
+                    </p>
+                    <p className="text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <TrendingUp className="h-3.5 w-3.5" />
+                        <strong>Growth</strong>
+                      </span>{' '}
+                      Additive keeps a straight trend; Compound curves by compounding growth each step.
+                    </p>
+                    <p className="text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <Target className="h-3.5 w-3.5" />
+                        <strong>Spread</strong>
+                      </span>{' '}
+                      High/Low apply +/- % to trend rate, not to absolute value.
                     </p>
                   </div>
                 }
@@ -1192,6 +1212,7 @@ export function Analysis() {
               </ChartSectionTitle>
             </ChartSectionHeader>
             <ProjectionsChart
+              datasetId={dataset.id}
               periods={computedAggregatesInRange}
               tracking={dataset.tracking}
               aggregationType={aggregationType}
