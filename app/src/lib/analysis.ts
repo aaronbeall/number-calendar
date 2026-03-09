@@ -222,6 +222,27 @@ export interface AchievementInsightsData {
   rarestByAllTimeCount: AchievementInsightItem[];
 }
 
+export interface AchievementPeriodTooltipItem {
+  id: string;
+  title: string;
+  badge: GoalResults['goal']['badge'];
+  count: number;
+  goalType: GoalResults['goal']['type'];
+}
+
+export interface AchievementPeriodSeriesPoint {
+  dateKey: DateKey;
+  label: string;
+  total: number;
+  seriesByType: Partial<Record<GoalResults['goal']['type'], number>>;
+  achievements: AchievementPeriodTooltipItem[];
+}
+
+export interface AchievementInsightsPeriodSeriesData {
+  typeKeys: Array<GoalResults['goal']['type']>;
+  points: AchievementPeriodSeriesPoint[];
+}
+
 /**
  * Get the time range for a given preset
  */
@@ -576,6 +597,85 @@ export function computeAchievementInsightsData(
     }));
 
   return { stacked, topByCount, rarestByAllTimeCount };
+}
+
+/**
+ * Compute stacked period data for achievements by goal type (milestone, target, goal).
+ * Includes goals matching the aggregation type plus anytime achievements completed in range.
+ */
+export function computeAchievementInsightsPeriodSeriesData(
+  results: GoalResults[],
+  periods: PeriodAggregateData<DateKeyType>[],
+  aggregationType: AggregationType,
+): AchievementInsightsPeriodSeriesData {
+  const selectedPeriod = aggregationType === 'none' ? 'day' : aggregationType;
+  const periodKeyType: DateKeyType = aggregationType === 'none' ? 'day' : aggregationType;
+
+  const points: AchievementPeriodSeriesPoint[] = periods.map((period) => ({
+    dateKey: period.dateKey,
+    label: formatPeriodLabel(period.dateKey, aggregationType),
+    total: 0,
+    seriesByType: {},
+    achievements: [],
+  }));
+
+  const byPeriod = new Map(points.map((point) => [point.dateKey, point]));
+
+  const typeKeys = new Set<GoalResults['goal']['type']>();
+
+  for (const result of results) {
+    // Include goals that match aggregation period OR are anytime achievements
+    const isMatchingPeriod = result.goal.timePeriod === selectedPeriod;
+    const isAnytimeAchievement = result.goal.timePeriod === 'anytime';
+    
+    if (!isMatchingPeriod && !isAnytimeAchievement) continue;
+
+    const itemCountsByPeriod = new Map<DateKey, number>();
+
+    for (const achievement of result.achievements) {
+      if (!achievement.completedAt) continue;
+
+      let periodKey: DateKey;
+      try {
+        periodKey = convertDateKey(achievement.completedAt, periodKeyType);
+      } catch {
+        continue;
+      }
+
+      const periodPoint = byPeriod.get(periodKey);
+      if (!periodPoint) continue;
+
+      const goalType = result.goal.type;
+      typeKeys.add(goalType);
+
+      periodPoint.seriesByType[goalType] = (periodPoint.seriesByType[goalType] ?? 0) + 1;
+      periodPoint.total += 1;
+
+      itemCountsByPeriod.set(periodKey, (itemCountsByPeriod.get(periodKey) ?? 0) + 1);
+    }
+
+    for (const [periodKey, count] of itemCountsByPeriod.entries()) {
+      const periodPoint = byPeriod.get(periodKey);
+      if (!periodPoint) continue;
+
+      periodPoint.achievements.push({
+        id: result.goal.id,
+        title: result.goal.title,
+        badge: result.goal.badge,
+        count,
+        goalType: result.goal.type,
+      });
+    }
+  }
+
+  for (const point of points) {
+    point.achievements.sort((a, b) => b.count - a.count || a.title.localeCompare(b.title));
+  }
+
+  return {
+    typeKeys: Array.from(typeKeys),
+    points,
+  };
 }
 
 function replaceTokens(template: string, tokens: Record<string, string>): string {

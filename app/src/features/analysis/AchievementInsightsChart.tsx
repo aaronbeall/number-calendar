@@ -1,35 +1,77 @@
 import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/ThemeProvider';
 import { useAchievements } from '@/hooks/useAchievements';
-import { computeAchievementInsightsData, type AggregationType, type TimeRange } from '@/lib/analysis';
-import { adjectivize } from '@/lib/utils';
+import { computeAchievementInsightsData, computeAchievementInsightsPeriodSeriesData, type AchievementPeriodTooltipItem, type AggregationType, type TimeRange } from '@/lib/analysis';
+import { adjectivize, pluralize } from '@/lib/utils';
 import { ExternalLink, Flag, Target, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
+import type { PeriodAggregateData } from '@/lib/period-aggregate';
+import type { GoalType } from '@/features/db/localdb';
+import { formatValue } from '@/lib/friendly-numbers';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
+const GOAL_TYPE_META: Record<GoalType, { label: string; color: string }> = {
+  // Matches PageHeader variant icon colors: achievements=yellow, targets=green, milestones=blue
+  goal: { label: 'Achievements', color: '#eab308' },
+  target: { label: 'Targets', color: '#22c55e' },
+  milestone: { label: 'Milestones', color: '#3b82f6' },
+};
 
 interface AchievementInsightsChartProps {
   datasetId: string;
   aggregationType: AggregationType;
   timeRange: TimeRange;
+  periods: PeriodAggregateData<DateKeyType>[];
 }
 
 export function AchievementInsightsChart({
   datasetId,
   aggregationType,
   timeRange,
+  periods,
 }: AchievementInsightsChartProps) {
+  const { isDark } = useTheme();
   const achievementResults = useAchievements(datasetId);
 
   const insights = useMemo(
     () => computeAchievementInsightsData(achievementResults.all, aggregationType, timeRange),
     [achievementResults.all, aggregationType, timeRange],
   );
+  const periodSeries = useMemo(
+    () => computeAchievementInsightsPeriodSeriesData(achievementResults.all, periods, aggregationType),
+    [achievementResults.all, periods, aggregationType],
+  );
+  const chartData = useMemo(
+    () => periodSeries.points.map((point) => ({
+      ...point.seriesByType,
+      dateKey: point.dateKey,
+      label: point.label,
+      total: point.total,
+      achievements: point.achievements,
+    })),
+    [periodSeries.points],
+  );
   const matchingPeriod = aggregationType === 'none' ? 'day' : aggregationType;
   const matchingGoalCount = useMemo(
-    () => achievementResults.all.filter((result) => result.goal.timePeriod === matchingPeriod).length,
+    () => achievementResults.all.filter((result) => 
+      result.goal.timePeriod === matchingPeriod || result.goal.timePeriod === 'anytime'
+    ).length,
     [achievementResults.all, matchingPeriod],
   );
   const periodly = aggregationType === 'none' ? 'individual' : adjectivize(aggregationType);
+  const axisColor = isDark ? '#64748b' : '#334155';
+  const gridColor = isDark ? '#334155' : '#e5e7eb';
 
   if (achievementResults.isLoading) {
     return <div className="text-sm text-muted-foreground">Loading achievement insights...</div>;
@@ -54,7 +96,7 @@ export function AchievementInsightsChart({
             </Link>
             <Link to={`/dataset/${datasetId}/milestones?add`}>
               <Button variant="outline" size="sm" className="h-8 text-xs gap-1 w-full">
-                <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 font-medium">
+                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium">
                   <Flag className="h-3 w-3" />
                 </span>
                 Create Milestone
@@ -78,23 +120,102 @@ export function AchievementInsightsChart({
     return <div className="text-sm text-muted-foreground">No completed {periodly} achievements in this time frame yet.</div>;
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="space-y-2.5">
-        {insights.stacked.map((item) => (
-          <div key={item.id} className="space-y-1">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="flex items-center gap-2 min-w-0">
-                <AchievementBadgeIcon badge={item.badge} size={16} className="shrink-0" />
+  const renderTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ payload?: { dateKey: string; label: string; total: number; achievements: AchievementPeriodTooltipItem[] } }>;
+  }) => {
+    if (!active || !payload?.length || !payload[0].payload) return null;
+    const point = payload[0].payload;
+    const typeBreakdown = point.achievements.reduce(
+      (acc, item) => {
+        acc[item.goalType] += item.count;
+        return acc;
+      },
+      { goal: 0, target: 0, milestone: 0 } as Record<GoalType, number>,
+    );
+
+    return (
+      <div className="rounded-md bg-white dark:bg-slate-900 px-2.5 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700 max-w-xs">
+        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">{formatFriendlyDate(point.dateKey)}</div>
+        <div className="mb-2 flex flex-wrap items-center gap-1.5">
+          {(Object.keys(GOAL_TYPE_META) as GoalType[])
+            .filter((goalType) => typeBreakdown[goalType] > 0)
+            .map((goalType) => {
+              const count = typeBreakdown[goalType];
+              const label = GOAL_TYPE_META[goalType].label;
+
+              return (
+                <span
+                  key={goalType}
+                  className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium border"
+                  style={{
+                    color: GOAL_TYPE_META[goalType].color,
+                    borderColor: GOAL_TYPE_META[goalType].color,
+                    backgroundColor: `${GOAL_TYPE_META[goalType].color}1A`,
+                  }}
+                >
+                  <span
+                    className="h-1.5 w-1.5 rounded-full"
+                    style={{ backgroundColor: GOAL_TYPE_META[goalType].color }}
+                  />
+                  {label}: {formatValue(count)}
+                </span>
+              );
+            })}
+        </div>
+        <div className="space-y-1 max-h-44 overflow-auto pr-1">
+          {point.achievements.map((item) => (
+            <div key={`${item.id}-${item.title}`} className="flex items-center justify-between gap-3 text-xs">
+              <span className="flex items-center gap-1.5 min-w-0">
+                <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
                 <span className="truncate text-slate-700 dark:text-slate-300">{item.title}</span>
               </span>
-              <span className="font-semibold text-slate-600 dark:text-slate-400">{item.inRangeCount}</span>
+              {item.count > 1 && (
+                <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-200">
+                  × {item.count}
+                </span>
+              )}
             </div>
-            <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-              <div className="h-full rounded-full bg-amber-500/80 dark:bg-amber-400/70" style={{ width: `${item.widthPercent}%` }} />
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 40, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+            <XAxis
+              dataKey="label"
+              stroke={axisColor}
+              style={{ fontSize: '12px' }}
+              tick={{ fill: axisColor }}
+              interval={Math.floor(chartData.length / 8) || 0}
+            />
+            <YAxis
+              stroke={axisColor}
+              style={{ fontSize: '12px' }}
+              tick={{ fill: axisColor }}
+              tickFormatter={(value) => formatValue(Number(value), { short: true })}
+            />
+            <Tooltip content={renderTooltip} />
+            {periodSeries.typeKeys.map((goalType) => (
+              <Bar
+                key={goalType}
+                dataKey={goalType}
+                stackId="achievements"
+                fill={GOAL_TYPE_META[goalType].color}
+                radius={[4, 4, 4, 4]}
+              />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

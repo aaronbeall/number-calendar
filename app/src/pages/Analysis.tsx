@@ -927,6 +927,7 @@ export function Analysis() {
               datasetId={dataset.id}
               aggregationType={aggregationType}
               timeRange={timeRange}
+              periods={computedAggregatesInRange}
             />
           </ChartSection>
 
