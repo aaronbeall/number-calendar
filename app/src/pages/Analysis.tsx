@@ -727,6 +727,32 @@ export function Analysis() {
             />
           </ChartSection>
 
+          {/* Achievement Insights */}
+          <ChartSection>
+            <ChartSectionHeader>
+              <ChartSectionTitle
+                icon={Award}
+                helpLabel="Help: Achievement Insights"
+                helpContent={
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium">Achievement Insights</p>
+                    <p className="text-muted-foreground">
+                      See which achievements you unlock most in this range, and which of those are rare across your all-time history.
+                    </p>
+                  </div>
+                }
+              >
+                Achievement Insights
+              </ChartSectionTitle>
+            </ChartSectionHeader>
+            <AchievementInsightsChart
+              datasetId={dataset.id}
+              aggregationType={aggregationType}
+              timeRange={timeRange}
+              periods={computedAggregatesInRange}
+            />
+          </ChartSection>
+
           {/* Aggregation Bar Chart */}
           <ChartSection>
             <ChartSectionHeader>
@@ -904,32 +930,6 @@ export function Analysis() {
               />
             </ChartSection>
           )}
-
-          {/* Achievement Insights */}
-          <ChartSection>
-            <ChartSectionHeader>
-              <ChartSectionTitle
-                icon={Award}
-                helpLabel="Help: Achievement Insights"
-                helpContent={
-                  <div className="space-y-1 text-sm">
-                    <p className="font-medium">Achievement Insights</p>
-                    <p className="text-muted-foreground">
-                      See which achievements you unlock most in this range, and which of those are rare across your all-time history.
-                    </p>
-                  </div>
-                }
-              >
-                Achievement Insights
-              </ChartSectionTitle>
-            </ChartSectionHeader>
-            <AchievementInsightsChart
-              datasetId={dataset.id}
-              aggregationType={aggregationType}
-              timeRange={timeRange}
-              periods={computedAggregatesInRange}
-            />
-          </ChartSection>
 
           {/* Projection Chart */}
           <ChartSection>

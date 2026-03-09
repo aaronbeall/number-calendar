@@ -1,15 +1,16 @@
 import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
+import { AchievementBadge } from '@/features/achievements/AchievementBadge';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAchievements } from '@/hooks/useAchievements';
 import { computeAchievementInsightsData, computeAchievementInsightsPeriodSeriesData, type AchievementPeriodTooltipItem, type AggregationType, type TimeRange } from '@/lib/analysis';
-import { adjectivize, pluralize } from '@/lib/utils';
-import { ExternalLink, Flag, Target, Trophy } from 'lucide-react';
+import { adjectivize } from '@/lib/utils';
+import { ExternalLink } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import type { GoalType } from '@/features/db/localdb';
+import type { DateKey, GoalBadge, GoalType } from '@/features/db/localdb';
 import { formatValue } from '@/lib/friendly-numbers';
 import {
   Bar,
@@ -26,6 +27,12 @@ const GOAL_TYPE_META: Record<GoalType, { label: string; color: string }> = {
   goal: { label: 'Achievements', color: '#eab308' },
   target: { label: 'Targets', color: '#22c55e' },
   milestone: { label: 'Milestones', color: '#3b82f6' },
+};
+
+const EMPTY_STATE_BADGES: Record<GoalType, GoalBadge> = {
+  goal: { style: 'medal', icon: 'trophy', color: 'gold', label: '' },
+  target: { style: 'bolt_shield', icon: 'target', color: 'emerald', label: '' },
+  milestone: { style: 'laurel_trophy', icon: 'flag', color: 'sapphire', label: '' },
 };
 
 interface AchievementInsightsChartProps {
@@ -80,38 +87,56 @@ export function AchievementInsightsChart({
   if (insights.stacked.length === 0) {
     if (matchingGoalCount === 0) {
       return (
-        <div className="rounded-md border border-slate-200 dark:border-slate-800 p-4">
-          <p className="text-sm text-slate-700 dark:text-slate-300 mb-3">
-            You have no {periodly} achievements configured yet.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900/70 dark:to-slate-900 p-4 sm:p-5">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start gap-3">
+              <div className="hidden sm:flex items-center -space-x-2 pt-0.5">
+                <AchievementBadge badge={EMPTY_STATE_BADGES.goal} size="small" />
+                <AchievementBadge badge={EMPTY_STATE_BADGES.target} size="small" />
+                <AchievementBadge badge={EMPTY_STATE_BADGES.milestone} size="small" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                  Start your first {periodly} achievement goals
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                  Add one now to unlock this chart and see completion patterns over time.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             <Link to={`/dataset/${datasetId}/achievements?add`}>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1 w-full">
-                <span className="inline-flex items-center gap-1 text-yellow-600 dark:text-yellow-400 font-medium">
-                  <Trophy className="h-3 w-3" />
+              <Button variant="outline" className="h-auto min-h-16 w-full px-3 py-2.5 justify-start gap-2.5 border-yellow-200/80 dark:border-yellow-900/60 bg-yellow-50/70 dark:bg-yellow-950/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
+                <AchievementBadge badge={EMPTY_STATE_BADGES.goal} size="small" />
+                <span className="flex-1 min-w-0 text-left">
+                  <span className="block text-xs font-semibold text-yellow-800 dark:text-yellow-200">Create Achievement</span>
+                  <span className="block text-[11px] text-yellow-700/85 dark:text-yellow-300/85">Track everyday wins</span>
                 </span>
-                Create Achievement
-                <ExternalLink className="h-3 w-3" />
+                <ExternalLink className="h-3.5 w-3.5 text-yellow-700 dark:text-yellow-300" />
               </Button>
             </Link>
             <Link to={`/dataset/${datasetId}/milestones?add`}>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1 w-full">
-                <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 font-medium">
-                  <Flag className="h-3 w-3" />
+              <Button variant="outline" className="h-auto min-h-16 w-full px-3 py-2.5 justify-start gap-2.5 border-blue-200/80 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30">
+                <AchievementBadge badge={EMPTY_STATE_BADGES.milestone} size="small" />
+                <span className="flex-1 min-w-0 text-left">
+                  <span className="block text-xs font-semibold text-blue-800 dark:text-blue-200">Create Milestone</span>
+                  <span className="block text-[11px] text-blue-700/85 dark:text-blue-300/85">Mark major moments</span>
                 </span>
-                Create Milestone
-                <ExternalLink className="h-3 w-3" />
+                <ExternalLink className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" />
               </Button>
             </Link>
             <Link to={`/dataset/${datasetId}/targets?add`}>
-              <Button variant="outline" size="sm" className="h-8 text-xs gap-1 w-full">
-                <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
-                  <Target className="h-3 w-3" />
+              <Button variant="outline" className="h-auto min-h-16 w-full px-3 py-2.5 justify-start gap-2.5 border-green-200/80 dark:border-green-900/60 bg-green-50/70 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-900/30">
+                <AchievementBadge badge={EMPTY_STATE_BADGES.target} size="small" />
+                <span className="flex-1 min-w-0 text-left">
+                  <span className="block text-xs font-semibold text-green-800 dark:text-green-200">Create Target</span>
+                  <span className="block text-[11px] text-green-700/85 dark:text-green-300/85">Stay focused by period</span>
                 </span>
-                Create Target
-                <ExternalLink className="h-3 w-3" />
+                <ExternalLink className="h-3.5 w-3.5 text-green-700 dark:text-green-300" />
               </Button>
             </Link>
+          </div>
           </div>
         </div>
       );
@@ -125,7 +150,7 @@ export function AchievementInsightsChart({
     payload,
   }: {
     active?: boolean;
-    payload?: Array<{ payload?: { dateKey: string; label: string; total: number; achievements: AchievementPeriodTooltipItem[] } }>;
+    payload?: Array<{ payload?: { dateKey: DateKey; label: string; total: number; achievements: AchievementPeriodTooltipItem[] } }>;
   }) => {
     if (!active || !payload?.length || !payload[0].payload) return null;
     const point = payload[0].payload;
