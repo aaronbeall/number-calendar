@@ -185,11 +185,12 @@ export interface TimeRange {
   endDate: Date;
 }
 
-export type ProjectionMode = 'linear' | 'recent-average' | 'momentum' | 'flat';
-export type ProjectionHorizon = 3 | 6 | 12;
+export type ProjectionMode = 'linear' | 'recent-average' | 'momentum';
+export type ProjectionHorizon = number;
 
 export interface ProjectionSeriesPoint {
   label: string;
+  dateKey?: DateKey;
   actual?: number;
   projected?: number;
   isProjection: boolean;
@@ -479,7 +480,6 @@ export function computeProjectionSeries(
     : 0;
 
   const getNextValue = (step: number): number => {
-    if (mode === 'flat') return lastValue;
     if (mode === 'recent-average') return lastValue + (avgRecentDelta * step);
     if (mode === 'momentum') return lastValue + (momentumDelta * step);
     return lastValue + (slope * step);
@@ -487,6 +487,7 @@ export function computeProjectionSeries(
 
   const withActuals: ProjectionSeriesPoint[] = points.map((point) => ({
     label: point.label,
+    dateKey: periods[point.index]?.dateKey,
     actual: point.value,
     projected: undefined,
     isProjection: false,

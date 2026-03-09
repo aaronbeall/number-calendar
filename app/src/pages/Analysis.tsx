@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { Button } from '@/components/ui/button';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
@@ -16,7 +17,7 @@ import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type TimeFramePreset } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
@@ -189,10 +190,78 @@ export function Analysis() {
     `analysis_projectionMode_${dataset.tracking}_${dataset.id}`,
     'linear',
   );
-  const [projectionHorizon, setProjectionHorizon] = usePreference<ProjectionHorizon>(
-    `analysis_projectionHorizon_${dataset.id}`,
-    6,
+  const [projectionHorizonDay, setProjectionHorizonDay] = usePreference<ProjectionHorizon>(
+    `analysis_projectionHorizon_day_${dataset.id}`,
+    30,
   );
+  const [projectionHorizonWeek, setProjectionHorizonWeek] = usePreference<ProjectionHorizon>(
+    `analysis_projectionHorizon_week_${dataset.id}`,
+    12,
+  );
+  const [projectionHorizonMonth, setProjectionHorizonMonth] = usePreference<ProjectionHorizon>(
+    `analysis_projectionHorizon_month_${dataset.id}`,
+    12,
+  );
+  const [projectionHorizonYear, setProjectionHorizonYear] = usePreference<ProjectionHorizon>(
+    `analysis_projectionHorizon_year_${dataset.id}`,
+    5,
+  );
+  const [projectionHorizonCustom, setProjectionHorizonCustom] = useState(false);
+  const [projectionHorizonCustomInput, setProjectionHorizonCustomInput] = useState('');
+  const [projectionHorizonInputFocused, setProjectionHorizonInputFocused] = useState(false);
+
+  const projectionHorizonMax = useMemo(() => {
+    if (aggregationType === 'none' || aggregationType === 'day') return 365;
+    if (aggregationType === 'week') return 52;
+    if (aggregationType === 'month') return 24;
+    return 24;
+  }, [aggregationType]);
+
+  const projectionHorizonScale = useMemo<ProjectionHorizon[]>(() => {
+    if (aggregationType === 'none' || aggregationType === 'day') {
+      return aggregationType === 'none'
+        ? [1, 2, 3, 5, 10, 20, 30, 50, 100]
+        : [1, 2, 3, 5, 7, 14, 21, 42, 182, 365];
+    }
+    if (aggregationType === 'week') {
+      return [1, 2, 3, 4, 6, 12, 26, 52];
+    }
+    if (aggregationType === 'month') {
+      return [1, 2, 3, 4, 5, 6, 12, 24];
+    }
+    return [1, 2, 3, 4, 5, 10];
+  }, [aggregationType]);
+
+  const projectionHorizon = useMemo<ProjectionHorizon>(() => {
+    if (aggregationType === 'none' || aggregationType === 'day') return Math.min(Math.max(1, projectionHorizonDay), projectionHorizonMax);
+    if (aggregationType === 'week') return Math.min(Math.max(1, projectionHorizonWeek), projectionHorizonMax);
+    if (aggregationType === 'month') return Math.min(Math.max(1, projectionHorizonMonth), projectionHorizonMax);
+    return Math.min(Math.max(1, projectionHorizonYear), projectionHorizonMax);
+  }, [aggregationType, projectionHorizonDay, projectionHorizonWeek, projectionHorizonMonth, projectionHorizonYear, projectionHorizonMax]);
+
+  const setProjectionHorizon = (next: ProjectionHorizon) => {
+    const clamped = Math.min(Math.max(1, Number(next)), projectionHorizonMax);
+    if (aggregationType === 'none' || aggregationType === 'day') {
+      setProjectionHorizonDay(clamped);
+      return;
+    }
+    if (aggregationType === 'week') {
+      setProjectionHorizonWeek(clamped);
+      return;
+    }
+    if (aggregationType === 'month') {
+      setProjectionHorizonMonth(clamped);
+      return;
+    }
+    setProjectionHorizonYear(clamped);
+  };
+
+  const projectionPeriodUnit = aggregationType === 'none' ? 'entry' : aggregationType;
+  const projectionModeOptions: Array<{ value: ProjectionMode; label: string; icon: React.ComponentType<{ className?: string }> }> = [
+    { value: 'linear', label: 'Linear', icon: LineChart },
+    { value: 'recent-average', label: 'Recent', icon: CalendarClock },
+    { value: 'momentum', label: 'Momentum', icon: Zap },
+  ];
 
   // Helpers to set custom dates
   const setCustomStart = (date: Date) => {
@@ -946,26 +1015,99 @@ export function Analysis() {
                     variant="outline"
                     aria-label="Projection mode"
                   >
-                    <ToggleGroupItem value="linear" aria-label="Linear">Linear</ToggleGroupItem>
-                    <ToggleGroupItem value="recent-average" aria-label="Recent Average">Recent</ToggleGroupItem>
-                    <ToggleGroupItem value="momentum" aria-label="Momentum">Momentum</ToggleGroupItem>
-                    <ToggleGroupItem value="flat" aria-label="Flat">Flat</ToggleGroupItem>
+                    {projectionModeOptions.map(({ value, label, icon: Icon }) => (
+                      <ToggleGroupItem key={value} value={value} aria-label={label} className="gap-1.5">
+                        <Icon className="h-3.5 w-3.5" />
+                        <span>{label}</span>
+                      </ToggleGroupItem>
+                    ))}
+                    <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
+                    <PopoverTip>
+                      <PopoverTipTrigger asChild>
+                        <button
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="Help: Projection modes"
+                        >
+                          <HelpCircle className="w-3.5 h-3.5" />
+                        </button>
+                      </PopoverTipTrigger>
+                      <PopoverTipContent>
+                        <div className="space-y-2 text-sm max-w-xs">
+                          <p className="font-medium">Projection Modes</p>
+                          <div className="text-muted-foreground space-y-1">
+                            <p><strong>Linear:</strong> follows your overall long-term direction.</p>
+                            <p><strong>Recent:</strong> extends your average pace from the latest few periods.</p>
+                            <p><strong>Momentum:</strong> leans more on the most recent movement.</p>
+                          </div>
+                        </div>
+                      </PopoverTipContent>
+                    </PopoverTip>
                   </ToggleGroup>
 
-                  <ToggleGroup
-                    type="single"
-                    value={String(projectionHorizon)}
+                  <Select
+                    value={projectionHorizonCustom ? 'custom' : String(projectionHorizon)}
                     onValueChange={(value) => {
-                      if (value) setProjectionHorizon(Number(value) as ProjectionHorizon);
+                      if (!value) return;
+                      if (value === 'custom') {
+                        setProjectionHorizonCustom(true);
+                        setProjectionHorizonCustomInput(String(projectionHorizon));
+                        return;
+                      }
+                      setProjectionHorizonCustom(false);
+                      setProjectionHorizon(Number(value) as ProjectionHorizon);
                     }}
-                    size="sm"
-                    variant="outline"
-                    aria-label="Projection horizon"
                   >
-                    <ToggleGroupItem value="3" aria-label="3 periods">+3</ToggleGroupItem>
-                    <ToggleGroupItem value="6" aria-label="6 periods">+6</ToggleGroupItem>
-                    <ToggleGroupItem value="12" aria-label="12 periods">+12</ToggleGroupItem>
-                  </ToggleGroup>
+                    <SelectTrigger className="h-8 w-[170px]" aria-label="Projection horizon">
+                      {projectionHorizonCustom ? (
+                        <div className="flex items-center gap-1 pr-2">
+                          <span className="text-xs text-muted-foreground">+</span>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={projectionHorizonMax}
+                            value={projectionHorizonCustomInput}
+                            onChange={(e) => {
+                              const digitsOnly = e.target.value.replace(/[^0-9]/g, '');
+                              setProjectionHorizonCustomInput(digitsOnly);
+                            }}
+                            onFocus={() => setProjectionHorizonInputFocused(true)}
+                            onBlur={() => {
+                              setProjectionHorizonInputFocused(false);
+                              const parsed = Number(projectionHorizonCustomInput || '1');
+                              setProjectionHorizon(parsed as ProjectionHorizon);
+                            }}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                              if (e.key === 'Enter') {
+                                const parsed = Number(projectionHorizonCustomInput || '1');
+                                setProjectionHorizon(parsed as ProjectionHorizon);
+                                (e.currentTarget as HTMLInputElement).blur();
+                              }
+                            }}
+                            className="h-6 w-14 border-0 bg-transparent px-1 text-xs focus-visible:ring-0"
+                            aria-label="Custom projection horizon"
+                          />
+                          {!projectionHorizonInputFocused && (
+                            <span className="text-xs text-muted-foreground truncate">
+                              {pluralize(projectionPeriodUnit, Number(projectionHorizonCustomInput || projectionHorizon || 1))}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <SelectValue />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projectionHorizonScale.map((option) => (
+                        <SelectItem key={option} value={String(option)}>
+                          +{option} {pluralize(projectionPeriodUnit, option)}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="custom">Custom…</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               }
             >
@@ -981,7 +1123,7 @@ export function Analysis() {
                   </div>
                 }
               >
-                Primary Metric Projections
+                Projections
               </ChartSectionTitle>
             </ChartSectionHeader>
             <ProjectionsChart
@@ -990,6 +1132,7 @@ export function Analysis() {
               aggregationType={aggregationType}
               projectionMode={projectionMode}
               projectionHorizon={projectionHorizon}
+              valence={dataset.valence}
             />
           </ChartSection>
 
