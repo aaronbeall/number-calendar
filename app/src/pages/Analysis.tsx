@@ -1261,6 +1261,7 @@ export function Analysis() {
               periods={computedAggregatesInRange}
               tracking={dataset.tracking}
               aggregationType={aggregationType}
+              valence={dataset.valence}
             />
           </ChartSection>
         </div>
