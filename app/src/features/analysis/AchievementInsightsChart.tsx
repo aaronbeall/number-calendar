@@ -40,6 +40,7 @@ interface AchievementInsightItem {
   id: string;
   title: string;
   badge: GoalBadge;
+  description?: string;
   inRangeCount: number;
   allTimeCount: number;
   periodCompletionPercent: number;
@@ -138,6 +139,9 @@ const AchievementInsightList = memo(function AchievementInsightList({
                 <AchievementBadge badge={item.badge} size="small" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-xs mb-1">{item.title}</div>
+                  {item.description && (
+                    <div className="text-xs text-slate-500 dark:text-slate-500 mb-1 italic">{item.description}</div>
+                  )}
                   <div className="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
                     <div>Completed <strong>{item.inRangeCount}</strong> {item.inRangeCount === 1 ? 'time' : 'times'} in this range</div>
                     {variant === 'topByCount' && (
@@ -220,6 +224,7 @@ export function AchievementInsightsChart({
           id: result.goal.id,
           title: result.goal.title,
           badge: result.goal.badge,
+          description: result.goal.description,
           inRangeCount: inRange.length,
           allTimeCount: completed.length,
           periodCompletionPercent: totalPeriods > 0 ? (inRange.length / totalPeriods) * 100 : 0,
