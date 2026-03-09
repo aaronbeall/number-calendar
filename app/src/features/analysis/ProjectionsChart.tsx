@@ -71,12 +71,12 @@ export function ProjectionsChart({
     true,
   );
   const [projectionSpreadPercentPref, setProjectionSpreadPercentPref] = usePreference<number>(
-    `analysis_projectionSpreadPercent_${datasetId}`,
+    `analysis_projectionSpreadPercent_${datasetId}_${aggregationType}`,
     5,
   );
-  const projectionSpreadPercent = Math.min(Math.max(1, Number(projectionSpreadPercentPref)), 100);
+  const projectionSpreadPercent = Math.min(Math.max(1, Number(projectionSpreadPercentPref)), 25);
   const [compoundGrowthRatePref, setCompoundGrowthRatePref] = usePreference<number>(
-    `analysis_compoundGrowthRate_${datasetId}`,
+    `analysis_compoundGrowthRate_${datasetId}_${aggregationType}`,
     5,
   );
   const compoundGrowthRate = Math.min(Math.max(1, Number(compoundGrowthRatePref)), 50);
@@ -85,10 +85,10 @@ export function ProjectionsChart({
     false,
   );
   const [projectionAdjustmentPercentPref, setProjectionAdjustmentPercentPref] = usePreference<number>(
-    `analysis_projectionAdjustmentPercent_${datasetId}`,
+    `analysis_projectionAdjustmentPercent_${datasetId}_${aggregationType}`,
     0,
   );
-  const projectionAdjustmentPercent = Math.min(Math.max(-100, Number(projectionAdjustmentPercentPref)), 100);
+  const projectionAdjustmentPercent = Math.min(Math.max(-25, Number(projectionAdjustmentPercentPref)), 25);
 
   const projectionSeries = useMemo(
     () => computeProjectionSeries(
@@ -555,8 +555,12 @@ export function ProjectionsChart({
           <Gauge className="size-3.5" style={{ color: projectionRateColor }} />
           <span className="font-semibold text-slate-700 dark:text-slate-200">Rate of change</span>
           <span className="text-slate-400 dark:text-slate-500">•</span>
-          <span className="font-semibold" style={{ color: projectionRateColor }}>
-            {projectionRate ? `${formatValue(projectionRate.delta)} / ${aggregationType === 'none' ? 'entry' : aggregationType}` : 'N/A'}
+          <span className="font-semibold">
+            {projectionRate ? (
+              <>
+                <NumberText value={projectionRate.delta} valenceValue={projectionRate.delta} valence={valence} animated className="inline" /> / {aggregationType === 'none' ? 'entry' : aggregationType}
+              </>
+            ) : 'N/A'}
           </span>
           {projectionRate && typeof projectionRate.percent === 'number' && (
             <span className="font-medium" style={{ color: projectionRateColor }}>
@@ -657,9 +661,9 @@ export function ProjectionsChart({
                   <span className="text-xs text-slate-500 dark:text-slate-400">{projectionAdjustmentPercent > 0 ? '+' : ''}{projectionAdjustmentPercent}%</span>
                 </div>
                 <Slider
-                  min={-100}
-                  max={100}
-                  step={1}
+                  min={-25}
+                  max={25}
+                  step={0.5}
                   value={[projectionAdjustmentPercent]}
                   onValueChange={(value) => setProjectionAdjustmentPercentPref(value[0])}
                   className="w-full"
@@ -709,7 +713,7 @@ export function ProjectionsChart({
                 </div>
                 <Slider
                   min={1}
-                  max={100}
+                  max={25}
                   step={0.5}
                   value={[projectionSpreadPercent]}
                   onValueChange={(value) => setProjectionSpreadPercentPref(value[0])}
