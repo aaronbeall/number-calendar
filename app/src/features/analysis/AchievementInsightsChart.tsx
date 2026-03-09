@@ -1,14 +1,15 @@
 import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
 import { AchievementBadge } from '@/features/achievements/AchievementBadge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAchievements } from '@/hooks/useAchievements';
 import { computeAchievementInsightsData, computeAchievementInsightsPeriodSeriesData, type AchievementPeriodTooltipItem, type AggregationType, type TimeRange } from '@/lib/analysis';
 import { adjectivize } from '@/lib/utils';
-import { ExternalLink } from 'lucide-react';
-import { useMemo } from 'react';
+import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
+import { formatFriendlyDate, type DateKeyType, convertDateKey, parseDateKey } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { DateKey, GoalBadge, GoalType } from '@/features/db/localdb';
 import { formatValue } from '@/lib/friendly-numbers';
@@ -17,7 +18,7 @@ import {
   BarChart,
   CartesianGrid,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -50,6 +51,8 @@ export function AchievementInsightsChart({
 }: AchievementInsightsChartProps) {
   const { isDark } = useTheme();
   const achievementResults = useAchievements(datasetId);
+  const [topByCountExpanded, setTopByCountExpanded] = useState(false);
+  const [bestRarityExpanded, setBestRarityExpanded] = useState(false);
 
   const insights = useMemo(
     () => computeAchievementInsightsData(achievementResults.all, aggregationType, timeRange),
@@ -69,6 +72,54 @@ export function AchievementInsightsChart({
     })),
     [periodSeries.points],
   );
+
+  // Compute full lists with period completion percentages
+  const fullInsightLists = useMemo(() => {
+    const selectedPeriod = aggregationType === 'none' ? 'day' : aggregationType;
+    const totalPeriods = periods.length;
+
+    const buckets = achievementResults.all
+      .filter((result) => result.goal.timePeriod === selectedPeriod)
+      .map((result) => {
+        const completed = result.achievements.filter((ach) => !!ach.completedAt);
+        const inRange = completed.filter((ach) => {
+          if (!ach.completedAt) return false;
+          try {
+            const comparable = convertDateKey(ach.completedAt, 'day');
+            const date = parseDateKey(comparable);
+            return date >= timeRange.startDate && date <= timeRange.endDate;
+          } catch {
+            return false;
+          }
+        });
+
+        return {
+          id: result.goal.id,
+          title: result.goal.title,
+          badge: result.goal.badge,
+          inRangeCount: inRange.length,
+          allTimeCount: completed.length,
+          periodCompletionPercent: totalPeriods > 0 ? (inRange.length / totalPeriods) * 100 : 0,
+          timePeriod: result.goal.timePeriod,
+        };
+      })
+      .filter((item) => item.inRangeCount > 0 || item.allTimeCount > 0);
+
+    const topByCount = [...buckets].sort((a, b) => b.inRangeCount - a.inRangeCount);
+    const rarestByAllTimeCount = [...buckets]
+      .filter((item) => item.inRangeCount > 0)
+      .sort((a, b) => a.allTimeCount - b.allTimeCount || b.inRangeCount - a.inRangeCount);
+
+    // Calculate rarity scores for the rarest achievements
+    const maxAllTimeInRarest = Math.max(...rarestByAllTimeCount.map(item => item.allTimeCount), 1);
+    const rarestWithScore = rarestByAllTimeCount.map(item => ({
+      ...item,
+      rarityScore: Math.max(0, Math.round((1 - (item.allTimeCount - 1) / maxAllTimeInRarest) * 100)),
+    }));
+
+    return { topByCount, rarestByAllTimeCount: rarestWithScore };
+  }, [achievementResults.all, aggregationType, timeRange, periods]);
+
   const matchingPeriod = aggregationType === 'none' ? 'day' : aggregationType;
   const matchingGoalCount = useMemo(
     () => achievementResults.all.filter((result) => 
@@ -229,7 +280,7 @@ export function AchievementInsightsChart({
               tick={{ fill: axisColor }}
               tickFormatter={(value) => formatValue(Number(value), { short: true })}
             />
-            <Tooltip content={renderTooltip} />
+            <RechartsTooltip content={renderTooltip} />
             {periodSeries.typeKeys.map((goalType) => (
               <Bar
                 key={goalType}
@@ -244,32 +295,141 @@ export function AchievementInsightsChart({
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Top By Count */}
         <div className="rounded-md border border-slate-200 dark:border-slate-800 p-3">
-          <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-2">Top By Count</div>
-          <div className="space-y-1.5">
-            {insights.topByCount.map((item) => (
-              <div key={`top-${item.id}`} className="flex items-center justify-between gap-2 text-xs">
-                <span className="flex items-center gap-2 min-w-0">
-                  <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
-                  <span className="truncate">{item.title}</span>
-                </span>
-                <span className="font-semibold">{item.inRangeCount}</span>
-              </div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">
+              Top By Count
+            </div>
+            {fullInsightLists.topByCount.length > 5 && (
+              <button
+                onClick={() => setTopByCountExpanded(!topByCountExpanded)}
+                className="text-[10px] text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-0.5 transition-colors"
+              >
+                {topByCountExpanded ? (
+                  <>
+                    <ChevronUp className="h-3 w-3" />
+                    Top 5
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3 w-3" />
+                    All ({fullInsightLists.topByCount.length})
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <div className="space-y-0.5">
+            {(topByCountExpanded ? fullInsightLists.topByCount : fullInsightLists.topByCount.slice(0, 5)).map((item) => (
+              <Tooltip key={`top-${item.id}`}>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 -mx-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-default">
+                    <span className="flex items-center gap-2 min-w-0 flex-1">
+                      <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
+                      <span className="truncate">{item.title}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {item.periodCompletionPercent > 0 && (
+                        <span
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                          style={{
+                            color: item.periodCompletionPercent >= 80 ? '#16a34a' : item.periodCompletionPercent >= 50 ? '#eab308' : '#64748b',
+                            backgroundColor: item.periodCompletionPercent >= 80 ? '#16a34a20' : item.periodCompletionPercent >= 50 ? '#eab30820' : '#64748b20',
+                          }}
+                        >
+                          {Math.round(item.periodCompletionPercent)}%
+                        </span>
+                      )}
+                      <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-200">
+                        {item.inRangeCount}
+                      </span>
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <div className="flex items-start gap-3">
+                    <AchievementBadge badge={item.badge} size="small" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-xs mb-1">{item.title}</div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+                        <div>Completed <strong>{item.inRangeCount}</strong> {item.inRangeCount === 1 ? 'time' : 'times'} in this range</div>
+                        <div>Achieved in <strong>{Math.round(item.periodCompletionPercent)}%</strong> of {periodly} periods ({item.inRangeCount} of {periods.length})</div>
+                      </div>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>
 
+        {/* Best Rarity */}
         <div className="rounded-md border border-slate-200 dark:border-slate-800 p-3">
-          <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400 mb-2">Best Rarity</div>
-          <div className="space-y-1.5">
-            {insights.rarestByAllTimeCount.map((item) => (
-              <div key={`rare-${item.id}`} className="flex items-center justify-between gap-2 text-xs">
-                <span className="flex items-center gap-2 min-w-0">
-                  <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
-                  <span className="truncate">{item.title}</span>
-                </span>
-                <span className="font-semibold" title="All-time completion count">{item.allTimeCount}</span>
-              </div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-500 dark:text-slate-400">
+              Best Rarity
+            </div>
+            {fullInsightLists.rarestByAllTimeCount.length > 5 && (
+              <button
+                onClick={() => setBestRarityExpanded(!bestRarityExpanded)}
+                className="text-[10px] text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-0.5 transition-colors"
+              >
+                {bestRarityExpanded ? (
+                  <>
+                    <ChevronUp className="h-3 w-3" />
+                    Top 5
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3 w-3" />
+                    All ({fullInsightLists.rarestByAllTimeCount.length})
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <div className="space-y-0.5">
+            {(bestRarityExpanded ? fullInsightLists.rarestByAllTimeCount : fullInsightLists.rarestByAllTimeCount.slice(0, 5)).map((item) => (
+              <Tooltip key={`rare-${item.id}`}>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 -mx-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-default">
+                    <span className="flex items-center gap-2 min-w-0 flex-1">
+                      <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
+                      <span className="truncate">{item.title}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      {item.rarityScore !== undefined && (
+                        <span
+                          className="text-[10px] font-medium px-1.5 py-0.5 rounded"
+                          style={{
+                            color: item.rarityScore >= 80 ? '#dc2626' : item.rarityScore >= 50 ? '#f59e0b' : '#64748b',
+                            backgroundColor: item.rarityScore >= 80 ? '#dc262620' : item.rarityScore >= 50 ? '#f59e0b20' : '#64748b20',
+                          }}
+                        >
+                          {item.rarityScore}%
+                        </span>
+                      )}
+                      <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-200">
+                        {item.inRangeCount}
+                      </span>
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <div className="flex items-start gap-3">
+                    <AchievementBadge badge={item.badge} size="small" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-xs mb-1">{item.title}</div>
+                      <div className="text-xs text-slate-600 dark:text-slate-400 space-y-0.5">
+                        <div>Completed <strong>{item.inRangeCount}</strong> {item.inRangeCount === 1 ? 'time' : 'times'} in this range</div>
+                        <div>Rarity score: <strong>{item.rarityScore}%</strong></div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-500">Only completed {item.allTimeCount} {item.allTimeCount === 1 ? 'time' : 'times'} all-time</div>
+                      </div>
+                    </div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             ))}
           </div>
         </div>
