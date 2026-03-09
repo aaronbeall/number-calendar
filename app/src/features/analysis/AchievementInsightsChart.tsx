@@ -51,8 +51,7 @@ export function AchievementInsightsChart({
 }: AchievementInsightsChartProps) {
   const { isDark } = useTheme();
   const achievementResults = useAchievements(datasetId);
-  const [topByCountExpanded, setTopByCountExpanded] = useState(false);
-  const [bestRarityExpanded, setBestRarityExpanded] = useState(false);
+  const [insightsExpanded, setInsightsExpanded] = useState(false);
 
   const insights = useMemo(
     () => computeAchievementInsightsData(achievementResults.all, aggregationType, timeRange),
@@ -103,11 +102,10 @@ export function AchievementInsightsChart({
           timePeriod: result.goal.timePeriod,
         };
       })
-      .filter((item) => item.inRangeCount > 0 || item.allTimeCount > 0);
+      .filter((item) => item.inRangeCount > 0);
 
     const topByCount = [...buckets].sort((a, b) => b.inRangeCount - a.inRangeCount);
     const rarestByAllTimeCount = [...buckets]
-      .filter((item) => item.inRangeCount > 0)
       .sort((a, b) => a.allTimeCount - b.allTimeCount || b.inRangeCount - a.inRangeCount);
 
     // Calculate rarity scores for the rarest achievements
@@ -243,7 +241,7 @@ export function AchievementInsightsChart({
             })}
         </div>
         <div className="space-y-1 max-h-44 overflow-auto pr-1">
-          {point.achievements.map((item) => (
+          {point.achievements.filter(item => item.count > 0).map((item) => (
             <div key={`${item.id}-${item.title}`} className="flex items-center justify-between gap-3 text-xs">
               <span className="flex items-center gap-1.5 min-w-0">
                 <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
@@ -303,10 +301,10 @@ export function AchievementInsightsChart({
             </div>
             {fullInsightLists.topByCount.length > 5 && (
               <button
-                onClick={() => setTopByCountExpanded(!topByCountExpanded)}
+                onClick={() => setInsightsExpanded(!insightsExpanded)}
                 className="text-[10px] text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-0.5 transition-colors"
               >
-                {topByCountExpanded ? (
+                {insightsExpanded ? (
                   <>
                     <ChevronUp className="h-3 w-3" />
                     Top 5
@@ -321,7 +319,7 @@ export function AchievementInsightsChart({
             )}
           </div>
           <div className="space-y-0.5">
-            {(topByCountExpanded ? fullInsightLists.topByCount : fullInsightLists.topByCount.slice(0, 5)).map((item) => (
+            {(insightsExpanded ? fullInsightLists.topByCount : fullInsightLists.topByCount.slice(0, 5)).map((item) => (
               <Tooltip key={`top-${item.id}`}>
                 <TooltipTrigger asChild>
                   <div className="flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 -mx-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-default">
@@ -372,10 +370,10 @@ export function AchievementInsightsChart({
             </div>
             {fullInsightLists.rarestByAllTimeCount.length > 5 && (
               <button
-                onClick={() => setBestRarityExpanded(!bestRarityExpanded)}
+                onClick={() => setInsightsExpanded(!insightsExpanded)}
                 className="text-[10px] text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 flex items-center gap-0.5 transition-colors"
               >
-                {bestRarityExpanded ? (
+                {insightsExpanded ? (
                   <>
                     <ChevronUp className="h-3 w-3" />
                     Top 5
@@ -390,7 +388,7 @@ export function AchievementInsightsChart({
             )}
           </div>
           <div className="space-y-0.5">
-            {(bestRarityExpanded ? fullInsightLists.rarestByAllTimeCount : fullInsightLists.rarestByAllTimeCount.slice(0, 5)).map((item) => (
+            {(insightsExpanded ? fullInsightLists.rarestByAllTimeCount : fullInsightLists.rarestByAllTimeCount.slice(0, 5)).map((item) => (
               <Tooltip key={`rare-${item.id}`}>
                 <TooltipTrigger asChild>
                   <div className="flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 -mx-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-default">
