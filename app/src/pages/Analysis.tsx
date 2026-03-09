@@ -378,21 +378,36 @@ export function Analysis() {
       : periodsForAggregation;
   }, [aggregationType, allDays, periodsForAggregation]);
 
+  // Reusable filter function
+  const filterToInRange = (periods: PeriodAggregateData<DateKeyType>[]) => {
+    return periods.filter((period) => {
+      const periodDate = parseDateKey(period.dateKey);
+      return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
+    });
+  };
+
+  // All-time running aggregates (unfiltered by time range)
+  const allTimeRunningAggregates = useMemo(() => {
+    return computeRunningAggregatePeriods(allAggregatePeriods, primaryMetric);
+  }, [allAggregatePeriods, primaryMetric]);
+
   const computedAggregatesInRange = useMemo(() => {
-    const filterToInRange = (periods: PeriodAggregateData<DateKeyType>[]) => {
-      return periods.filter((period) => {
-        const periodDate = parseDateKey(period.dateKey);
-        return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
-      });
-    }
     // For all-time, use running aggregates on all data, then filter, for in-range filter then compute running aggregates
     if (analysisTrendMode === 'all-time-trend') {
-      return filterToInRange(computeRunningAggregatePeriods(allAggregatePeriods, primaryMetric));
+      return filterToInRange(allTimeRunningAggregates);
     } 
     return computeRunningAggregatePeriods(filterToInRange(allAggregatePeriods), primaryMetric);
-  }, [analysisTrendMode, allAggregatePeriods, primaryMetric, timeRange]);
+  }, [analysisTrendMode, allAggregatePeriods, primaryMetric, timeRange, allTimeRunningAggregates]);
 
-  const projectionRecentWindowMax = Math.max(1, computedAggregatesInRange.length);
+  // Projections use all-time running aggregates filtered to current time range
+  const projectionPeriods = useMemo(() => {
+    if (analysisTrendMode === 'all-time-trend') {
+      return computedAggregatesInRange;
+    }
+    return filterToInRange(allTimeRunningAggregates);
+  }, [analysisTrendMode, computedAggregatesInRange, allTimeRunningAggregates, timeRange]);
+
+  const projectionRecentWindowMax = Math.max(1, projectionPeriods.length);
   const projectionRecentWindow = Math.min(
     Math.max(1, Math.floor(projectionRecentWindowPref)),
     projectionRecentWindowMax,
@@ -1213,7 +1228,7 @@ export function Analysis() {
             </ChartSectionHeader>
             <ProjectionsChart
               datasetId={dataset.id}
-              periods={computedAggregatesInRange}
+              periods={projectionPeriods}
               tracking={dataset.tracking}
               aggregationType={aggregationType}
               projectionMode={projectionMode}
