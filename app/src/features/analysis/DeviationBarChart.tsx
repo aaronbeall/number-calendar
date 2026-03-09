@@ -1,9 +1,8 @@
 import { useTheme } from '@/components/ThemeProvider';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { NumberText } from '@/components/ui/number-text';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { DropdownWithCustomInput } from '@/components/ui/dropdown-with-custom-input';
 import { AchievementBadge } from '@/features/achievements/AchievementBadge';
 import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
@@ -406,8 +405,12 @@ export function DeviationBarChart({
             aria-label="Target"
             className='px-0'
           >
-            <Popover open={targetPopoverOpen} onOpenChange={setTargetPopoverOpen}>
-              <PopoverTrigger asChild>
+            <DropdownWithCustomInput
+              open={targetPopoverOpen}
+              onOpenChange={setTargetPopoverOpen}
+              align="start"
+              contentClassName="w-80 p-2"
+              trigger={
                 <div className='flex items-center px-2'>
                   {selectedGoal ? (
                     <>
@@ -424,66 +427,58 @@ export function DeviationBarChart({
                   )}
                   <ChevronDown className="size-3 ml-1 opacity-50" />
                 </div>
-              </PopoverTrigger>
-              <PopoverContent className="w-80 p-2" align="start">
-                {aggregationType !== 'none' && (
+              }
+              header={aggregationType !== 'none' && matchingGoals.length > 0 ? (
+                <div className="px-2 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  Select Target
+                </div>
+              ) : undefined}
+              options={aggregationType !== 'none' ? matchingGoals.map((goal) => ({
+
+                id: goal.id,
+                onSelect: () => {
+                  selectGoal(goal.id);
+                },
+                className: `w-full flex items-start gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${selectedGoalId === goal.id ? 'bg-slate-100 dark:bg-slate-800' : ''}`,
+                content: (
                   <>
-                    {matchingGoals.length > 0 ? (
-                      <>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
-                          Select Target
-                        </div>
-                        {matchingGoals.map((goal) => (
-                          <button
-                            key={goal.id}
-                            onClick={() => {
-                              selectGoal(goal.id);
-                              setTargetPopoverOpen(false);
-                            }}
-                            className={`w-full flex items-start gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${selectedGoalId === goal.id ? 'bg-slate-100 dark:bg-slate-800' : ''}`}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                                {goal.title}
-                              </div>
-                              <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                                {formatGoalTargetValue(goal.target)}
-                              </div>
-                            </div>
-                            <AchievementBadge badge={goal.badge} size="small" className="flex-shrink-0" />
-                          </button>
-                        ))}
-                      </>
-                    ) : (
-                      <div className="px-2 py-2 text-center">
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">You haven't created any {periodly} targets yet</p>
-                        <Link to={`/dataset/${datasetId}/targets?add`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs gap-1 w-full"
-                          >
-                            Create Target
-                            <ExternalLink className="h-3 w-3" />
-                          </Button>
-                        </Link>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                        {goal.title}
                       </div>
-                    )}
-                    <div className="border-t border-slate-200 dark:border-slate-700 mt-2 pt-2" />
+                      <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                        {formatGoalTargetValue(goal.target)}
+                      </div>
+                    </div>
+                    <AchievementBadge badge={goal.badge} size="small" className="flex-shrink-0" />
                   </>
-                )}
-                <Input
-                  type="number"
-                  value={selectedGoalId ? '' : targetBaselineInput}
-                  onChange={(e) => {
-                    setSelectedGoalId(null);
-                    setTargetBaselineInput(e.target.value);
-                  }}
-                  placeholder="Custom target value"
-                  className="h-8 text-xs"
-                />
-              </PopoverContent>
-            </Popover>
+                ),
+              })) : []}
+              emptyContent={aggregationType !== 'none' ? (
+                <div className="px-2 py-2 text-center">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">You haven't created any {periodly} targets yet</p>
+                  <Link to={`/dataset/${datasetId}/targets?add`}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs gap-1 w-full"
+                    >
+                      Create Target
+                      <ExternalLink className="h-3 w-3" />
+                    </Button>
+                  </Link>
+                </div>
+              ) : undefined}
+              customInputType="number"
+              customInputValue={selectedGoalId ? '' : targetBaselineInput}
+              onCustomInputChange={(value) => {
+                setSelectedGoalId(null);
+                setTargetBaselineInput(value);
+              }}
+              customInputPlaceholder="Custom target value"
+              customInputClassName="h-8 text-xs"
+              customInputAriaLabel="Custom target value"
+            />
           </ToggleGroupItem>
         </ToggleGroup>
       </div>

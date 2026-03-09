@@ -7,7 +7,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '@/components/ui/empty';
 import { Button } from '@/components/ui/button';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
@@ -17,13 +16,13 @@ import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type TimeFramePreset } from '@/lib/analysis';
+import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity, Target, Award, Sparkles, Compass } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity, Target, Award, Sparkles, Compass, ChevronDown } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { DeviationBarChart } from '@/features/analysis/DeviationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -34,6 +33,7 @@ import { CustomRangePicker } from '@/features/analysis/CustomRangePicker';
 import { AchievementInsightsChart } from '@/features/analysis/AchievementInsightsChart';
 import { ProjectionsChart } from '@/features/analysis/ProjectionsChart';
 import { MomentumQuadrantChart } from '@/features/analysis/MomentumQuadrantChart';
+import { DropdownWithCustomInput } from '@/components/ui/dropdown-with-custom-input';
 import { adjectivize, capitalize, pluralize } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
@@ -206,9 +206,6 @@ export function Analysis() {
     `analysis_projectionHorizon_year_${dataset.id}`,
     5,
   );
-  const [projectionHorizonCustom, setProjectionHorizonCustom] = useState(false);
-  const [projectionHorizonCustomInput, setProjectionHorizonCustomInput] = useState('');
-  const [projectionHorizonInputFocused, setProjectionHorizonInputFocused] = useState(false);
 
   const projectionHorizonMax = useMemo(() => {
     if (aggregationType === 'none' || aggregationType === 'day') return 365;
@@ -432,6 +429,8 @@ export function Analysis() {
     aggregationType === 'none'
       ? 'Entries'
       : capitalize(adjectivize(aggregationType));
+  const aggregationPeriodLabel = capitalize(adjectivize(getAggregationPeriodLabel(aggregationType)));
+  const aggregationPeriodPluralLabel = pluralize(getAggregationPeriodLabel(aggregationType));
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
   // Map analysis mode to TrendChart mode
   const trendChartMode: TrendDataMode = analysisTrendMode === 'change' ? 'change' : 'trend';
@@ -857,7 +856,7 @@ export function Analysis() {
                   </div>
                 }
               >
-                {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Deviation from Baseline
+                {capitalize(adjectivize(getAggregationPeriodLabel(aggregationType)))} Deviation
               </ChartSectionTitle>
             </ChartSectionHeader>
             <DeviationBarChart
@@ -881,14 +880,17 @@ export function Analysis() {
                 helpLabel="Help: Value Distribution"
                 helpContent={
                   <div className="space-y-1 text-sm">
-                    <p className="font-medium">Value Distribution</p>
+                    <p className="font-medium">{aggregationPeriodLabel} Value Distribution</p>
                     <p className="text-muted-foreground">
-                      Shows how frequently different values appear in your data. This histogram reveals patterns like clustering around certain values or whether your data is evenly spread out.
+                      Shows how frequently different values appear across the selected {aggregationPeriodPluralLabel}.
+                      {aggregationType === 'none'
+                        ? ' Each bar is a value bucket, and its height is how many entries fall into that bucket.'
+                        : ` Each bar is a value bucket of ${adjectivize(aggregationType)} aggregated values, and its height is how many ${aggregationPeriodPluralLabel} fall into that bucket.`}
                     </p>
                   </div>
                 }
               >
-                Value Distribution
+                {aggregationPeriodLabel} Value Distribution
               </ChartSectionTitle>
             </ChartSectionHeader>
             <DistributionHistogram
@@ -955,7 +957,7 @@ export function Analysis() {
                     </div>
                   }
                 >
-                  {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} {dataset.tracking === 'trend' ? 'Uptrend/Downtrend' : 'Positive/Negative'} Distribution
+                  {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Valence Distribution
                 </ChartSectionTitle>
               </ChartSectionHeader>
               <ValenceDistributionChart
@@ -1021,93 +1023,40 @@ export function Analysis() {
                         <span>{label}</span>
                       </ToggleGroupItem>
                     ))}
-                    <div className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-                    <PopoverTip>
-                      <PopoverTipTrigger asChild>
-                        <button
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground transition-colors"
-                          aria-label="Help: Projection modes"
-                        >
-                          <HelpCircle className="w-3.5 h-3.5" />
-                        </button>
-                      </PopoverTipTrigger>
-                      <PopoverTipContent>
-                        <div className="space-y-2 text-sm max-w-xs">
-                          <p className="font-medium">Projection Modes</p>
-                          <div className="text-muted-foreground space-y-1">
-                            <p><strong>Linear:</strong> follows your overall long-term direction.</p>
-                            <p><strong>Recent:</strong> extends your average pace from the latest few periods.</p>
-                            <p><strong>Momentum:</strong> leans more on the most recent movement.</p>
-                          </div>
-                        </div>
-                      </PopoverTipContent>
-                    </PopoverTip>
                   </ToggleGroup>
 
-                  <Select
-                    value={projectionHorizonCustom ? 'custom' : String(projectionHorizon)}
-                    onValueChange={(value) => {
-                      if (!value) return;
-                      if (value === 'custom') {
-                        setProjectionHorizonCustom(true);
-                        setProjectionHorizonCustomInput(String(projectionHorizon));
-                        return;
-                      }
-                      setProjectionHorizonCustom(false);
-                      setProjectionHorizon(Number(value) as ProjectionHorizon);
+                  <DropdownWithCustomInput
+                    trigger={
+                      <button
+                        type="button"
+                        className="h-8 w-[170px] inline-flex items-center justify-between rounded-md border border-input bg-background px-3 text-xs"
+                        aria-label="Projection horizon"
+                      >
+                        <span>+{projectionHorizon} {pluralize(projectionPeriodUnit, projectionHorizon)}</span>
+                        <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+                      </button>
+                    }
+                    align="end"
+                    contentClassName="w-[220px] p-2"
+                    options={projectionHorizonScale.map((option) => ({
+                      id: String(option),
+                      onSelect: () => setProjectionHorizon(option),
+                      className: `w-full rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-slate-100 dark:hover:bg-slate-800 ${projectionHorizon === option ? 'bg-slate-100 dark:bg-slate-800' : ''}`,
+                      content: <span>+{option} {pluralize(projectionPeriodUnit, option)}</span>,
+                    }))}
+                    customInputType="number"
+                    customInputValue={String(projectionHorizon)}
+                    onCustomInputChange={(value) => {
+                      const digitsOnly = value.replace(/[^0-9]/g, '');
+                      if (!digitsOnly) return;
+                      setProjectionHorizon(Number(digitsOnly) as ProjectionHorizon);
                     }}
-                  >
-                    <SelectTrigger className="h-8 w-[170px]" aria-label="Projection horizon">
-                      {projectionHorizonCustom ? (
-                        <div className="flex items-center gap-1 pr-2">
-                          <span className="text-xs text-muted-foreground">+</span>
-                          <Input
-                            type="number"
-                            min={1}
-                            max={projectionHorizonMax}
-                            value={projectionHorizonCustomInput}
-                            onChange={(e) => {
-                              const digitsOnly = e.target.value.replace(/[^0-9]/g, '');
-                              setProjectionHorizonCustomInput(digitsOnly);
-                            }}
-                            onFocus={() => setProjectionHorizonInputFocused(true)}
-                            onBlur={() => {
-                              setProjectionHorizonInputFocused(false);
-                              const parsed = Number(projectionHorizonCustomInput || '1');
-                              setProjectionHorizon(parsed as ProjectionHorizon);
-                            }}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => {
-                              e.stopPropagation();
-                              if (e.key === 'Enter') {
-                                const parsed = Number(projectionHorizonCustomInput || '1');
-                                setProjectionHorizon(parsed as ProjectionHorizon);
-                                (e.currentTarget as HTMLInputElement).blur();
-                              }
-                            }}
-                            className="h-6 w-14 border-0 bg-transparent px-1 text-xs focus-visible:ring-0"
-                            aria-label="Custom projection horizon"
-                          />
-                          {!projectionHorizonInputFocused && (
-                            <span className="text-xs text-muted-foreground truncate">
-                              {pluralize(projectionPeriodUnit, Number(projectionHorizonCustomInput || projectionHorizon || 1))}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <SelectValue />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {projectionHorizonScale.map((option) => (
-                        <SelectItem key={option} value={String(option)}>
-                          +{option} {pluralize(projectionPeriodUnit, option)}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="custom">Custom…</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    customInputPlaceholder={`Custom ${pluralize(projectionPeriodUnit, 2)}`}
+                    customInputAriaLabel="Custom projection horizon"
+                    customInputMin={1}
+                    customInputMax={projectionHorizonMax}
+                    customInputClassName="h-8 text-xs"
+                  />
                 </div>
               }
             >
@@ -1115,10 +1064,31 @@ export function Analysis() {
                 icon={Sparkles}
                 helpLabel="Help: Projections"
                 helpContent={
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-2 text-sm max-w-sm">
                     <p className="font-medium">Projections</p>
                     <p className="text-muted-foreground">
-                      Project your primary metric into future periods. For series datasets this uses cumulative values, and for trend datasets it uses period-close values.
+                      Forecast how your values may continue across {aggregationPeriodPluralLabel} using the pattern in your selected range.
+                    </p>
+                    <p className="text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <LineChart className="h-3.5 w-3.5" />
+                        <strong>Linear</strong>
+                      </span>{' '}
+                      fits a straight-line trend to the full in-range history, giving the most stable long-horizon estimate.
+                    </p>
+                    <p className="text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        <strong>Recent</strong>
+                      </span>{' '}
+                      uses a short recent window average, so it adapts faster when your latest periods differ from your long-term trend.
+                    </p>
+                    <p className="text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                        <Zap className="h-3.5 w-3.5" />
+                        <strong>Momentum</strong>
+                      </span>{' '}
+                      gives extra weight to the most recent direction of change, so projections react quickest to accelerations or slowdowns.
                     </p>
                   </div>
                 }

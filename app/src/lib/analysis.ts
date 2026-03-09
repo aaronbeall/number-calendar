@@ -489,7 +489,8 @@ export function computeProjectionSeries(
     label: point.label,
     dateKey: periods[point.index]?.dateKey,
     actual: point.value,
-    projected: undefined,
+    // Seed projected on the final actual point so the projected line connects without a visual gap.
+    projected: point.index === points.length - 1 ? point.value : undefined,
     isProjection: false,
   }));
 

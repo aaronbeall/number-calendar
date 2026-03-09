@@ -62,6 +62,11 @@ export const adjectivize = (str: string): string => {
     return `${str.slice(0, -1)}ily`;
   }
 
+  // Irregular: entry -> entry (already adjective-like, no change)
+  if (lower === 'entry') {
+    return str;
+  }
+
   // Default: add ly
   return `${str}ly`;
 }
