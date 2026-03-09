@@ -118,7 +118,7 @@ describe('formatFriendlyDate', () => {
   });
 
   it('should format day ranges with shared month', () => {
-    expect(formatFriendlyDate('2025-11-12', '2025-11-13')).toBe('November 12-13, 2025');
+    expect(formatFriendlyDate('2025-11-12', '2025-11-13')).toBe('November 12 – 13, 2025');
   });
 
   it('should format day ranges across months and years', () => {
@@ -149,7 +149,7 @@ describe('formatFriendlyDate', () => {
     });
 
     it('should format day ranges with shared month in short format', () => {
-      expect(formatFriendlyDate('2025-11-12', '2025-11-13', { short: true })).toBe("Nov 12-13, '25");
+      expect(formatFriendlyDate('2025-11-12', '2025-11-13', { short: true })).toBe("Nov 12 – 13, '25");
     });
 
     it('should format day ranges across months in short format', () => {
