@@ -1130,7 +1130,7 @@ export function Analysis() {
                     trigger={
                       <button
                         type="button"
-                        className="h-8 w-[170px] inline-flex items-center justify-between rounded-md border border-input bg-background px-3 text-xs"
+                        className="h-8 w-[150px] inline-flex items-center justify-between rounded-md border border-input bg-background px-3 text-xs"
                         aria-label="Projection horizon"
                       >
                         <span>+{projectionHorizon} {pluralize(projectionPeriodUnit, projectionHorizon)}</span>

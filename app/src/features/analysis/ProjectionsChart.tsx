@@ -188,7 +188,17 @@ export function ProjectionsChart({
 
     const anchorValue = anchorPoint.projected;
     const baseSlope = projectionStart.projected - anchorValue;
-    const spreadRatio = projectionSpreadPercent / 100;
+    const baseRatePercent = anchorValue !== 0
+      ? (baseSlope / Math.abs(anchorValue)) * 100
+      : 0;
+
+    const toSlopeFromRatePercent = (targetRatePercent: number): number => {
+      // Spread is in percentage points, similar to scenario adjustment.
+      const multiplier = baseRatePercent === 0
+        ? 1 + ((targetRatePercent - baseRatePercent) / 100)
+        : (targetRatePercent / baseRatePercent);
+      return baseSlope * multiplier;
+    };
 
     const projectBySlope = (step: number, slope: number): number => {
       if (projectionMath === 'compound') {
@@ -213,8 +223,10 @@ export function ProjectionsChart({
       }
 
       const step = Math.max(1, point.projectionStep);
-      const highCandidate = projectBySlope(step, baseSlope * (1 + spreadRatio));
-      const lowCandidate = projectBySlope(step, baseSlope * (1 - spreadRatio));
+      const highSlope = toSlopeFromRatePercent(baseRatePercent + projectionSpreadPercent);
+      const lowSlope = toSlopeFromRatePercent(baseRatePercent - projectionSpreadPercent);
+      const highCandidate = projectBySlope(step, highSlope);
+      const lowCandidate = projectBySlope(step, lowSlope);
 
       return {
         ...point,
@@ -266,6 +278,14 @@ export function ProjectionsChart({
       }
     });
     return steps;
+  }, [chartSeries]);
+
+  const pointIndexByLabel = useMemo(() => {
+    const indices = new Map<string, number>();
+    chartSeries.forEach((point, index) => {
+      indices.set(point.label, index);
+    });
+    return indices;
   }, [chartSeries]);
 
   if (chartSeries.length < 2) {
@@ -330,6 +350,22 @@ export function ProjectionsChart({
     const projected = point.projected;
     const projectedLow = point.projectedLow;
     const projectedHigh = point.projectedHigh;
+    const pointIndex = pointIndexByLabel.get(point.label);
+    const previousPoint = typeof pointIndex === 'number' && pointIndex > 0
+      ? chartSeries[pointIndex - 1]
+      : undefined;
+    const actualDelta = typeof actual === 'number' && typeof previousPoint?.actual === 'number'
+      ? actual - previousPoint.actual
+      : undefined;
+    const projectedDelta = typeof projected === 'number' && typeof previousPoint?.projected === 'number'
+      ? projected - previousPoint.projected
+      : undefined;
+    const projectedHighDelta = typeof projectedHigh === 'number' && typeof previousPoint?.projectedHigh === 'number'
+      ? projectedHigh - previousPoint.projectedHigh
+      : undefined;
+    const projectedLowDelta = typeof projectedLow === 'number' && typeof previousPoint?.projectedLow === 'number'
+      ? projectedLow - previousPoint.projectedLow
+      : undefined;
     const displayLabel = point.dateKey
       ? formatFriendlyDate(point.dateKey, { short: true })
       : point.label;
@@ -352,6 +388,11 @@ export function ProjectionsChart({
             </span>
             <span className="font-semibold">
               <NumberText value={actual} valenceValue={actual} valence={valence} />
+              {typeof actualDelta === 'number' && (
+                <span className="ml-1 text-xs font-medium opacity-80">
+                  (<NumberText value={actualDelta} valenceValue={actualDelta} valence={valence} delta className="inline" />)
+                </span>
+              )}
             </span>
           </div>
         )}
@@ -363,6 +404,11 @@ export function ProjectionsChart({
             </span>
             <span className="font-semibold">
               <NumberText value={projected} valenceValue={projected} valence={valence} />
+              {typeof projectedDelta === 'number' && (
+                <span className="ml-1 text-xs font-medium opacity-80">
+                  (<NumberText value={projectedDelta} valenceValue={projectedDelta} valence={valence} delta className="inline" />)
+                </span>
+              )}
             </span>
           </div>
         )}
@@ -375,6 +421,11 @@ export function ProjectionsChart({
               </span>
               <span className="font-medium">
                 <NumberText value={projectedHigh} valenceValue={projectedHigh} valence={valence} />
+                {typeof projectedHighDelta === 'number' && (
+                  <span className="ml-1 opacity-80">
+                    (<NumberText value={projectedHighDelta} valenceValue={projectedHighDelta} valence={valence} delta className="inline" />)
+                  </span>
+                )}
               </span>
             </div>
             <div className="flex items-center justify-between gap-3 text-xs">
@@ -384,6 +435,11 @@ export function ProjectionsChart({
               </span>
               <span className="font-medium">
                 <NumberText value={projectedLow} valenceValue={projectedLow} valence={valence} />
+                {typeof projectedLowDelta === 'number' && (
+                  <span className="ml-1 opacity-80">
+                    (<NumberText value={projectedLowDelta} valenceValue={projectedLowDelta} valence={valence} delta className="inline" />)
+                  </span>
+                )}
               </span>
             </div>
           </>
@@ -487,9 +543,9 @@ export function ProjectionsChart({
               strokeWidth={2}
               connectNulls
             />
-            <Area type="monotone" dataKey="projected" name={`Projected ${primaryMetricLabel}`} stroke="#f59e0b" fill="#fbbf24" fillOpacity={0.18} strokeWidth={2} strokeDasharray="5 5" connectNulls />
             {showProjectionSpread && <Line type="monotone" dataKey="projectedHigh" name="High Projection" stroke="#0ea5e9" strokeWidth={1.5} strokeDasharray="2 4" dot={false} connectNulls />}
             {showProjectionSpread && <Line type="monotone" dataKey="projectedLow" name="Low Projection" stroke="#a78bfa" strokeWidth={1.5} strokeDasharray="2 4" dot={false} connectNulls />}
+            <Area type="monotone" dataKey="projected" name={`Projected ${primaryMetricLabel}`} stroke="#f59e0b" fill="#fbbf24" fillOpacity={0.18} strokeWidth={2} strokeDasharray="5 5" connectNulls />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -645,7 +701,7 @@ export function ProjectionsChart({
             >
               <div className="space-y-3">
                 <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                  High/Low apply +/- % to trend rate.
+                  High/Low apply +/- percentage points to trend rate.
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Spread amount</span>
