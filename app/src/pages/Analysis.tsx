@@ -18,7 +18,7 @@ import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateK
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
+import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type ProjectionMomentumWeight, type ProjectionRecentWindow, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
@@ -34,7 +34,9 @@ import { AchievementInsightsChart } from '@/features/analysis/AchievementInsight
 import { ProjectionsChart } from '@/features/analysis/ProjectionsChart';
 import { MomentumQuadrantChart } from '@/features/analysis/MomentumQuadrantChart';
 import { DropdownWithCustomInput } from '@/components/ui/dropdown-with-custom-input';
+import { ToggleOptionPopover } from '@/components/ui/toggle-option-popover';
 import { adjectivize, capitalize, pluralize } from '@/lib/utils';
+import { Slider } from '@/components/ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
 import { buildSingleNumberAggregates, computeRunningAggregatePeriods, type PeriodAggregateData } from '@/lib/period-aggregate';
@@ -206,6 +208,14 @@ export function Analysis() {
     `analysis_projectionHorizon_year_${dataset.id}`,
     5,
   );
+  const [projectionRecentWindowPref, setProjectionRecentWindowPref] = usePreference<ProjectionRecentWindow>(
+    `analysis_projectionRecentWindow_${dataset.id}`,
+    3,
+  );
+  const [projectionMomentumWeightPref, setProjectionMomentumWeightPref] = usePreference<ProjectionMomentumWeight>(
+    `analysis_projectionMomentumWeight_${dataset.id}`,
+    1,
+  );
 
   const projectionHorizonMax = useMemo(() => {
     if (aggregationType === 'none' || aggregationType === 'day') return 365;
@@ -254,11 +264,6 @@ export function Analysis() {
   };
 
   const projectionPeriodUnit = aggregationType === 'none' ? 'entry' : aggregationType;
-  const projectionModeOptions: Array<{ value: ProjectionMode; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-    { value: 'linear', label: 'Linear', icon: LineChart },
-    { value: 'recent-average', label: 'Recent', icon: CalendarClock },
-    { value: 'momentum', label: 'Momentum', icon: Zap },
-  ];
 
   // Helpers to set custom dates
   const setCustomStart = (date: Date) => {
@@ -386,6 +391,21 @@ export function Analysis() {
     } 
     return computeRunningAggregatePeriods(filterToInRange(allAggregatePeriods), primaryMetric);
   }, [analysisTrendMode, allAggregatePeriods, primaryMetric, timeRange]);
+
+  const projectionRecentWindowMax = Math.max(1, computedAggregatesInRange.length);
+  const projectionRecentWindow = Math.min(
+    Math.max(1, Math.floor(projectionRecentWindowPref)),
+    projectionRecentWindowMax,
+  );
+  const projectionMomentumWeightMin = 1;
+  const projectionMomentumWeightMax = 3;
+  const projectionMomentumWeight = Math.min(
+    Math.max(projectionMomentumWeightMin, Number(projectionMomentumWeightPref)),
+    projectionMomentumWeightMax,
+  );
+  const projectionMomentumWeightLabel = Number.isInteger(projectionMomentumWeight)
+    ? String(projectionMomentumWeight)
+    : projectionMomentumWeight.toFixed(1);
 
   const priorTimeFrameValue = useMemo(() => {
     if (allAggregatePeriods.length === 0 || computedAggregatesInRange.length === 0) return undefined;
@@ -1017,12 +1037,87 @@ export function Analysis() {
                     variant="outline"
                     aria-label="Projection mode"
                   >
-                    {projectionModeOptions.map(({ value, label, icon: Icon }) => (
-                      <ToggleGroupItem key={value} value={value} aria-label={label} className="gap-1.5">
-                        <Icon className="h-3.5 w-3.5" />
-                        <span>{label}</span>
-                      </ToggleGroupItem>
-                    ))}
+                    <ToggleGroupItem value="linear" aria-label="Linear" className="gap-1.5">
+                      <LineChart className="h-3.5 w-3.5" />
+                      <span>Linear</span>
+                    </ToggleGroupItem>
+
+                    <ToggleGroupItem value="recent-average" aria-label="Recent" className="px-0">
+                      <ToggleOptionPopover
+                        align="start"
+                        contentClassName="w-64 p-3"
+                        trigger={
+                          <div className="inline-flex items-center gap-1.5 px-2">
+                            <CalendarClock className="h-3.5 w-3.5" />
+                            <span>Recent</span>
+                            <span className="hidden lg:inline text-xs opacity-70">({projectionRecentWindow} {pluralize(projectionPeriodUnit, projectionRecentWindow)})</span>
+                            <ChevronDown className="size-3 opacity-50" />
+                          </div>
+                        }
+                      >
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Recent window</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{projectionRecentWindow} {pluralize(projectionPeriodUnit, projectionRecentWindow)}</span>
+                          </div>
+                          <Slider
+                            min={1}
+                            max={projectionRecentWindowMax}
+                            step={1}
+                            value={[projectionRecentWindow]}
+                            onValueChange={(value) => setProjectionRecentWindowPref(value[0] as ProjectionRecentWindow)}
+                            className="w-full"
+                          />
+                        </div>
+                      </ToggleOptionPopover>
+                    </ToggleGroupItem>
+
+                    <ToggleGroupItem value="momentum" aria-label="Momentum" className="px-0">
+                      <ToggleOptionPopover
+                        align="start"
+                        contentClassName="w-72 p-3"
+                        trigger={
+                          <div className="inline-flex items-center gap-1.5 px-2">
+                            <Zap className="h-3.5 w-3.5" />
+                            <span>Momentum</span>
+                            <span className="hidden lg:inline text-xs opacity-70">({projectionMomentumWeightLabel}x)</span>
+                            <ChevronDown className="size-3 opacity-50" />
+                          </div>
+                        }
+                      >
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Recent window</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{projectionRecentWindow} {pluralize(projectionPeriodUnit, projectionRecentWindow)}</span>
+                            </div>
+                            <Slider
+                              min={1}
+                              max={projectionRecentWindowMax}
+                              step={1}
+                              value={[projectionRecentWindow]}
+                              onValueChange={(value) => setProjectionRecentWindowPref(value[0] as ProjectionRecentWindow)}
+                              className="w-full"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Recency weighting</span>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">{projectionMomentumWeight.toFixed(1)}x</span>
+                            </div>
+                            <Slider
+                              min={projectionMomentumWeightMin}
+                              max={projectionMomentumWeightMax}
+                              step={0.1}
+                              value={[projectionMomentumWeight]}
+                              onValueChange={(value) => setProjectionMomentumWeightPref(value[0] as ProjectionMomentumWeight)}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                      </ToggleOptionPopover>
+                    </ToggleGroupItem>
                   </ToggleGroup>
 
                   <DropdownWithCustomInput
@@ -1102,6 +1197,8 @@ export function Analysis() {
               aggregationType={aggregationType}
               projectionMode={projectionMode}
               projectionHorizon={projectionHorizon}
+              projectionRecentWindow={projectionRecentWindow}
+              projectionMomentumWeight={projectionMomentumWeight}
               valence={dataset.valence}
             />
           </ChartSection>

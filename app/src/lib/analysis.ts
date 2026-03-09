@@ -187,6 +187,8 @@ export interface TimeRange {
 
 export type ProjectionMode = 'linear' | 'recent-average' | 'momentum';
 export type ProjectionHorizon = number;
+export type ProjectionRecentWindow = number;
+export type ProjectionMomentumWeight = number;
 
 export interface ProjectionSeriesPoint {
   label: string;
@@ -446,6 +448,8 @@ export function computeProjectionSeries(
   aggregationType: AggregationType,
   mode: ProjectionMode,
   horizon: ProjectionHorizon,
+  recentWindow: ProjectionRecentWindow,
+  momentumWeight: ProjectionMomentumWeight,
 ): ProjectionSeriesPoint[] {
   const getProjectedDate = (lastDate: Date, step: number): Date => {
     if (aggregationType === 'none' || aggregationType === 'day') return addDays(lastDate, step);
@@ -473,7 +477,9 @@ export function computeProjectionSeries(
   const indices = points.map((point) => point.index);
   const lastValue = values[values.length - 1] ?? 0;
   const deltas = values.slice(1).map((value, i) => value - values[i]);
-  const recentDeltas = deltas.slice(-Math.min(3, deltas.length));
+  const clampedRecentWindow = Math.min(Math.max(1, Math.floor(recentWindow)), deltas.length || 1);
+  const clampedMomentumWeight = Math.min(Math.max(1, Number(momentumWeight)), 3);
+  const recentDeltas = deltas.slice(-Math.min(clampedRecentWindow, deltas.length));
   const avgRecentDelta = recentDeltas.length > 0
     ? recentDeltas.reduce((sum, value) => sum + value, 0) / recentDeltas.length
     : 0;
@@ -484,7 +490,16 @@ export function computeProjectionSeries(
   const denominator = indices.reduce((sum, x) => sum + ((x - xMean) ** 2), 0);
   const slope = denominator === 0 ? 0 : numerator / denominator;
   const momentumDelta = recentDeltas.length > 0
-    ? recentDeltas.reduce((sum, delta, i) => sum + (delta * (i + 1)), 0) / (recentDeltas.length * (recentDeltas.length + 1) / 2)
+    ? (() => {
+      const weighted = recentDeltas.map((delta, i) => {
+        const recencyWeight = (i + 1) ** clampedMomentumWeight;
+        return { delta, recencyWeight };
+      });
+      const totalWeight = weighted.reduce((sum, item) => sum + item.recencyWeight, 0);
+      return totalWeight > 0
+        ? weighted.reduce((sum, item) => sum + (item.delta * item.recencyWeight), 0) / totalWeight
+        : 0;
+    })()
     : 0;
 
   const getNextValue = (step: number): number => {

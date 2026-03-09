@@ -4,7 +4,9 @@ import {
   computeProjectionSeries,
   type AggregationType,
   type ProjectionHorizon,
+  type ProjectionMomentumWeight,
   type ProjectionMode,
+  type ProjectionRecentWindow,
   type ProjectionSeriesPoint,
 } from '@/lib/analysis';
 import { formatValue } from '@/lib/friendly-numbers';
@@ -32,6 +34,8 @@ interface ProjectionsChartProps {
   aggregationType: AggregationType;
   projectionMode: ProjectionMode;
   projectionHorizon: ProjectionHorizon;
+  projectionRecentWindow: ProjectionRecentWindow;
+  projectionMomentumWeight: ProjectionMomentumWeight;
   valence: Valence;
 }
 
@@ -41,6 +45,8 @@ export function ProjectionsChart({
   aggregationType,
   projectionMode,
   projectionHorizon,
+  projectionRecentWindow,
+  projectionMomentumWeight,
   valence,
 }: ProjectionsChartProps) {
   const { isDark } = useTheme();
@@ -49,8 +55,26 @@ export function ProjectionsChart({
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
 
   const projectionSeries = useMemo(
-    () => computeProjectionSeries(periods, tracking, primaryMetric, aggregationType, projectionMode, projectionHorizon),
-    [periods, tracking, primaryMetric, aggregationType, projectionMode, projectionHorizon],
+    () => computeProjectionSeries(
+      periods,
+      tracking,
+      primaryMetric,
+      aggregationType,
+      projectionMode,
+      projectionHorizon,
+      projectionRecentWindow,
+      projectionMomentumWeight,
+    ),
+    [
+      periods,
+      tracking,
+      primaryMetric,
+      aggregationType,
+      projectionMode,
+      projectionHorizon,
+      projectionRecentWindow,
+      projectionMomentumWeight,
+    ],
   );
 
   const splitLabel = useMemo(() => {
