@@ -11,7 +11,7 @@ import {
   type ProjectionSeriesPoint,
 } from '@/lib/analysis';
 import { formatValue } from '@/lib/friendly-numbers';
-import { type DateKeyType } from '@/lib/friendly-date';
+import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
@@ -250,7 +250,9 @@ export function ProjectionsChart({
     const projected = point.projected;
     const projectedLow = point.projectedLow;
     const projectedHigh = point.projectedHigh;
-    const displayLabel = point.label;
+    const displayLabel = point.dateKey
+      ? formatFriendlyDate(point.dateKey, { short: true })
+      : point.label;
 
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2.5 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
