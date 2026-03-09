@@ -20,7 +20,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Slider } from '@/components/ui/slider';
 import { ToggleOptionPopover } from '@/components/ui/toggle-option-popover';
 import { usePreference } from '@/hooks/usePreference';
-import { ChevronDown, Percent, Plus, Target } from 'lucide-react';
+import { ChevronDown, Gauge, Percent, Plus, SlidersHorizontal, Target } from 'lucide-react';
 import { useId, useMemo } from 'react';
 import {
   Area,
@@ -80,6 +80,15 @@ export function ProjectionsChart({
     5,
   );
   const compoundGrowthRate = Math.min(Math.max(1, Number(compoundGrowthRatePref)), 50);
+  const [showProjectionAdjustment, setShowProjectionAdjustment] = usePreference<boolean>(
+    `analysis_projectionAdjustmentEnabled_${datasetId}`,
+    false,
+  );
+  const [projectionAdjustmentPercentPref, setProjectionAdjustmentPercentPref] = usePreference<number>(
+    `analysis_projectionAdjustmentPercent_${datasetId}`,
+    0,
+  );
+  const projectionAdjustmentPercent = Math.min(Math.max(-100, Number(projectionAdjustmentPercentPref)), 100);
 
   const projectionSeries = useMemo(
     () => computeProjectionSeries(
@@ -108,13 +117,8 @@ export function ProjectionsChart({
     ],
   );
 
-  type ProjectionChartPoint = ProjectionSeriesPoint & {
-    projectedLow?: number;
-    projectedHigh?: number;
-  };
-
-  const chartSeries = useMemo<ProjectionChartPoint[]>(() => {
-    if (!showProjectionSpread || projectionSpreadPercent <= 0) {
+  const adjustedProjectionSeries = useMemo(() => {
+    if (!showProjectionAdjustment || projectionAdjustmentPercent === 0) {
       return projectionSeries;
     }
 
@@ -125,12 +129,61 @@ export function ProjectionsChart({
       .reverse()
       .find((point) => !point.isProjection && typeof point.projected === 'number');
 
-    if (!projectionStart || !anchorPoint || typeof anchorPoint.projected !== 'number') {
+    if (
+      !projectionStart
+      || typeof projectionStart.projected !== 'number'
+      || !anchorPoint
+      || typeof anchorPoint.projected !== 'number'
+    ) {
       return projectionSeries;
     }
 
+    const anchorValue = anchorPoint.projected;
+    const firstStepDelta = projectionStart.projected - anchorValue;
+    const baseRatePercent = anchorValue !== 0
+      ? (firstStepDelta / Math.abs(anchorValue)) * 100
+      : 0;
+    const adjustedRatePercent = baseRatePercent + projectionAdjustmentPercent;
+
+    // Scenario adjustment is in percentage points (e.g. 2% + 100 => 102%).
+    const rateMultiplier = baseRatePercent === 0
+      ? 1 + (projectionAdjustmentPercent / 100)
+      : (adjustedRatePercent / baseRatePercent);
+
+    return projectionSeries.map((point) => {
+      if (typeof point.projected !== 'number') {
+        return point;
+      }
+      return {
+        ...point,
+        projected: anchorValue + ((point.projected - anchorValue) * rateMultiplier),
+      };
+    });
+  }, [projectionSeries, showProjectionAdjustment, projectionAdjustmentPercent]);
+
+  type ProjectionChartPoint = ProjectionSeriesPoint & {
+    projectedLow?: number;
+    projectedHigh?: number;
+  };
+
+  const chartSeries = useMemo<ProjectionChartPoint[]>(() => {
+    if (!showProjectionSpread || projectionSpreadPercent <= 0) {
+      return adjustedProjectionSeries;
+    }
+
+    const projectionStart = adjustedProjectionSeries.find(
+      (point) => point.isProjection && point.projectionStep === 1 && typeof point.projected === 'number',
+    );
+    const anchorPoint = [...adjustedProjectionSeries]
+      .reverse()
+      .find((point) => !point.isProjection && typeof point.projected === 'number');
+
+    if (!projectionStart || !anchorPoint || typeof anchorPoint.projected !== 'number') {
+      return adjustedProjectionSeries;
+    }
+
     if (typeof projectionStart.projected !== 'number') {
-      return projectionSeries;
+      return adjustedProjectionSeries;
     }
 
     const anchorValue = anchorPoint.projected;
@@ -146,7 +199,7 @@ export function ProjectionsChart({
       return anchorValue + (slope * step);
     };
 
-    return projectionSeries.map((point) => {
+    return adjustedProjectionSeries.map((point) => {
       if (typeof point.projected !== 'number') {
         return point;
       }
@@ -170,12 +223,34 @@ export function ProjectionsChart({
       };
     });
   }, [
-    projectionSeries,
+    adjustedProjectionSeries,
     showProjectionSpread,
     projectionSpreadPercent,
     projectionMath,
     compoundGrowthRate,
   ]);
+
+  const projectionRate = useMemo(() => {
+    const projectionStart = adjustedProjectionSeries.find(
+      (point) => point.isProjection && point.projectionStep === 1 && typeof point.projected === 'number',
+    );
+    const anchorPoint = [...adjustedProjectionSeries]
+      .reverse()
+      .find((point) => !point.isProjection && typeof point.projected === 'number');
+
+    if (!projectionStart || !anchorPoint || typeof projectionStart.projected !== 'number' || typeof anchorPoint.projected !== 'number') {
+      return undefined;
+    }
+
+    const delta = projectionStart.projected - anchorPoint.projected;
+    if (!Number.isFinite(delta)) return undefined;
+
+    const percent = anchorPoint.projected !== 0
+      ? (delta / Math.abs(anchorPoint.projected)) * 100
+      : undefined;
+
+    return { delta, percent };
+  }, [adjustedProjectionSeries]);
 
   const splitLabel = useMemo(() => {
     const splitIndex = chartSeries.findIndex((point) => point.isProjection) - 1;
@@ -224,6 +299,11 @@ export function ProjectionsChart({
   });
   
   const negativeColor = getValueForValence(-1, valence, {
+    good: '#22c55e',
+    bad: '#ef4444',
+    neutral: '#3b82f6',
+  });
+  const projectionRateColor = getValueForValence(projectionRate?.delta ?? 0, valence, {
     good: '#22c55e',
     bad: '#ef4444',
     neutral: '#3b82f6',
@@ -414,6 +494,22 @@ export function ProjectionsChart({
         </ResponsiveContainer>
       </div>
 
+      <div className="mt-1 mb-2 flex justify-center">
+        <div className="inline-flex items-center gap-2 rounded-md border border-slate-200/90 bg-slate-50/80 px-3 py-1.5 text-xs shadow-sm dark:border-slate-700/80 dark:bg-slate-800/60">
+          <Gauge className="size-3.5" style={{ color: projectionRateColor }} />
+          <span className="font-semibold text-slate-700 dark:text-slate-200">Rate of change</span>
+          <span className="text-slate-400 dark:text-slate-500">•</span>
+          <span className="font-semibold" style={{ color: projectionRateColor }}>
+            {projectionRate ? `${formatValue(projectionRate.delta)} / ${aggregationType === 'none' ? 'entry' : aggregationType}` : 'N/A'}
+          </span>
+          {projectionRate && typeof projectionRate.percent === 'number' && (
+            <span className="font-medium" style={{ color: projectionRateColor }}>
+              ({projectionRate.percent.toFixed(2)}%)
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <ToggleGroup
           type="single"
@@ -459,6 +555,57 @@ export function ProjectionsChart({
                   step={0.5}
                   value={[compoundGrowthRate]}
                   onValueChange={(value) => setCompoundGrowthRatePref(value[0])}
+                  className="w-full"
+                />
+              </div>
+            </ToggleOptionPopover>
+          </ToggleGroupItem>
+        </ToggleGroup>
+
+        <ToggleGroup
+          type="single"
+          value={showProjectionAdjustment ? 'adjust' : 'base'}
+          onValueChange={(value) => {
+            if (!value) return;
+            setShowProjectionAdjustment(value === 'adjust');
+          }}
+          size="sm"
+          variant="outline"
+          aria-label="Projection scenario settings"
+        >
+          <span className="text-[10px] uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400 px-2 flex items-center">
+            Scenario
+          </span>
+          <ToggleGroupItem value="base" aria-label="Base projection">
+            Base
+          </ToggleGroupItem>
+          <ToggleGroupItem value="adjust" aria-label="Adjusted projection" className="px-0">
+            <ToggleOptionPopover
+              align="start"
+              contentClassName="w-64 p-3"
+              trigger={
+                <div className="inline-flex items-center gap-1.5 px-2">
+                  <SlidersHorizontal className="size-3.5" />
+                  <span>Adjust</span>
+                  <span className="hidden lg:inline text-xs opacity-70">({projectionAdjustmentPercent > 0 ? '+' : ''}{projectionAdjustmentPercent}%)</span>
+                  <ChevronDown className="size-3 opacity-50" />
+                </div>
+              }
+            >
+              <div className="space-y-3">
+                <p className="text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
+                  What-if control: add/subtract percentage points from projected trend rate.
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">Trend adjustment</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">{projectionAdjustmentPercent > 0 ? '+' : ''}{projectionAdjustmentPercent}%</span>
+                </div>
+                <Slider
+                  min={-100}
+                  max={100}
+                  step={1}
+                  value={[projectionAdjustmentPercent]}
+                  onValueChange={(value) => setProjectionAdjustmentPercentPref(value[0])}
                   className="w-full"
                 />
               </div>
