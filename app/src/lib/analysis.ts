@@ -6,7 +6,7 @@ import { convertDateKey, parseDateKey, formatFriendlyDate, formatDateAsKey, type
 import { isBad } from '@/lib/valence';
 import { capitalize, adjectivize, pluralize } from '@/lib/utils';
 import { colord } from 'colord';
-import { subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format, getWeekYear } from 'date-fns';
+import { addDays, addWeeks, addMonths, addYears, subDays, subWeeks, subMonths, startOfWeek, startOfMonth, startOfYear, endOfWeek, endOfMonth, endOfYear, format, getWeekYear } from 'date-fns';
 import type { Tracking } from '@/features/db/localdb';
 import type { GoalResults } from './goals';
 
@@ -194,6 +194,7 @@ export interface ProjectionSeriesPoint {
   actual?: number;
   projected?: number;
   isProjection: boolean;
+  projectionStep?: number;
 }
 
 export interface MomentumQuadrantPoint {
@@ -446,6 +447,13 @@ export function computeProjectionSeries(
   mode: ProjectionMode,
   horizon: ProjectionHorizon,
 ): ProjectionSeriesPoint[] {
+  const getProjectedDate = (lastDate: Date, step: number): Date => {
+    if (aggregationType === 'none' || aggregationType === 'day') return addDays(lastDate, step);
+    if (aggregationType === 'week') return addWeeks(lastDate, step);
+    if (aggregationType === 'month') return addMonths(lastDate, step);
+    return addYears(lastDate, step);
+  };
+
   const points = periods
     .map((period, index) => {
       const value = tracking === 'series'
@@ -492,15 +500,25 @@ export function computeProjectionSeries(
     // Seed projected on the final actual point so the projected line connects without a visual gap.
     projected: point.index === points.length - 1 ? point.value : undefined,
     isProjection: false,
+    projectionStep: undefined,
   }));
+
+  const lastActualDateKey = periods[points[points.length - 1].index]?.dateKey;
+  const lastActualDate = lastActualDateKey ? parseDateKey(lastActualDateKey) : undefined;
 
   const futurePoints: ProjectionSeriesPoint[] = Array.from({ length: horizon }, (_, i) => {
     const step = i + 1;
+    const projectedDate = lastActualDate ? getProjectedDate(lastActualDate, step) : undefined;
+    const projectedDateKey = projectedDate
+      ? formatDateAsKey(projectedDate, aggregationType === 'none' ? 'day' : aggregationType)
+      : undefined;
     return {
-      label: `+${step}`,
+      label: projectedDateKey ? formatPeriodLabel(projectedDateKey, aggregationType) : `+${step}`,
+      dateKey: projectedDateKey,
       actual: undefined,
       projected: getNextValue(step),
       isProjection: true,
+      projectionStep: step,
     };
   });
 
