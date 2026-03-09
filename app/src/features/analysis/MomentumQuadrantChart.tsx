@@ -10,6 +10,7 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { NumberText } from '@/components/ui/number-text';
+import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useMemo } from 'react';
 import {
   CartesianGrid,
@@ -114,7 +115,7 @@ export function MomentumQuadrantChart({
         <div className="flex items-center justify-between gap-3 text-sm">
           <span className="text-slate-600 dark:text-slate-400">Change</span>
           <span className="font-semibold">
-            <NumberText value={point.momentum} valenceValue={point.momentum} valence={valence} />
+            <NumberText value={point.momentum} valenceValue={point.momentum} valence={valence} delta={true} />
           </span>
         </div>
       </div>
@@ -129,6 +130,128 @@ export function MomentumQuadrantChart({
     const low = scatterData.points.filter(p => p.level < scatterData.levelMid && p.momentum < scatterData.momentumMid).length;
     return { high, improving, declining, low };
   }, [scatterData]);
+
+  // Define color palettes for each regime
+  const colorPalettes = {
+    // Peak colors: positive=emerald, negative=red, neutral=blue
+    peak: {
+      positive: {
+        border: 'border-emerald-200 dark:border-emerald-900/40',
+        bg: 'bg-emerald-50 dark:bg-emerald-950/20',
+        text: 'text-emerald-900 dark:text-emerald-100',
+        label: 'text-emerald-600 dark:text-emerald-400',
+        number: 'text-emerald-700 dark:text-emerald-300',
+      },
+      negative: {
+        border: 'border-red-200 dark:border-red-900/40',
+        bg: 'bg-red-50 dark:bg-red-950/20',
+        text: 'text-red-900 dark:text-red-100',
+        label: 'text-red-600 dark:text-red-400',
+        number: 'text-red-700 dark:text-red-300',
+      },
+      neutral: {
+        border: 'border-blue-200 dark:border-blue-900/40',
+        bg: 'bg-blue-50 dark:bg-blue-950/20',
+        text: 'text-blue-900 dark:text-blue-100',
+        label: 'text-blue-600 dark:text-blue-400',
+        number: 'text-blue-700 dark:text-blue-300',
+      },
+    },
+    // Growth colors: positive=cyan, negative=orange, neutral=blue
+    growth: {
+      positive: {
+        border: 'border-cyan-200 dark:border-cyan-900/40',
+        bg: 'bg-cyan-50 dark:bg-cyan-950/20',
+        text: 'text-cyan-900 dark:text-cyan-100',
+        label: 'text-cyan-600 dark:text-cyan-400',
+        number: 'text-cyan-700 dark:text-cyan-300',
+      },
+      negative: {
+        border: 'border-orange-200 dark:border-orange-900/40',
+        bg: 'bg-orange-50 dark:bg-orange-950/20',
+        text: 'text-orange-900 dark:text-orange-100',
+        label: 'text-orange-600 dark:text-orange-400',
+        number: 'text-orange-700 dark:text-orange-300',
+      },
+      neutral: {
+        border: 'border-blue-200 dark:border-blue-900/40',
+        bg: 'bg-blue-50 dark:bg-blue-950/20',
+        text: 'text-blue-900 dark:text-blue-100',
+        label: 'text-blue-600 dark:text-blue-400',
+        number: 'text-blue-700 dark:text-blue-300',
+      },
+    },
+    // Decline colors: positive=orange, negative=blue, neutral=orange
+    decline: {
+      positive: {
+        border: 'border-orange-200 dark:border-orange-900/40',
+        bg: 'bg-orange-50 dark:bg-orange-950/20',
+        text: 'text-orange-900 dark:text-orange-100',
+        label: 'text-orange-600 dark:text-orange-400',
+        number: 'text-orange-700 dark:text-orange-300',
+      },
+      negative: {
+        border: 'border-blue-200 dark:border-blue-900/40',
+        bg: 'bg-blue-50 dark:bg-blue-950/20',
+        text: 'text-blue-900 dark:text-blue-100',
+        label: 'text-blue-600 dark:text-blue-400',
+        number: 'text-blue-700 dark:text-blue-300',
+      },
+      neutral: {
+        border: 'border-orange-200 dark:border-orange-900/40',
+        bg: 'bg-orange-50 dark:bg-orange-950/20',
+        text: 'text-orange-900 dark:text-orange-100',
+        label: 'text-orange-600 dark:text-orange-400',
+        number: 'text-orange-700 dark:text-orange-300',
+      },
+    },
+    // Trough colors: positive=red, negative=emerald, neutral=red
+    trough: {
+      positive: {
+        border: 'border-red-200 dark:border-red-900/40',
+        bg: 'bg-red-50 dark:bg-red-950/20',
+        text: 'text-red-900 dark:text-red-100',
+        label: 'text-red-600 dark:text-red-400',
+        number: 'text-red-700 dark:text-red-300',
+      },
+      negative: {
+        border: 'border-emerald-200 dark:border-emerald-900/40',
+        bg: 'bg-emerald-50 dark:bg-emerald-950/20',
+        text: 'text-emerald-900 dark:text-emerald-100',
+        label: 'text-emerald-600 dark:text-emerald-400',
+        number: 'text-emerald-700 dark:text-emerald-300',
+      },
+      neutral: {
+        border: 'border-red-200 dark:border-red-900/40',
+        bg: 'bg-red-50 dark:bg-red-950/20',
+        text: 'text-red-900 dark:text-red-100',
+        label: 'text-red-600 dark:text-red-400',
+        number: 'text-red-700 dark:text-red-300',
+      },
+    },
+  };
+
+  // Determine colors based on valence and regime
+  const getRegimeColors = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
+    const goodPalette = isHighLevel ? colorPalettes.peak : colorPalettes.growth;
+    const badPalette = isHighLevel ? colorPalettes.decline : colorPalettes.trough;
+    
+    // Use momentum direction to determine if this regime is good/bad for the valence
+    const momentumValue = isPositiveMomentum ? 1 : -1;
+    const selectedPalette = getValueForValence(momentumValue, valence, {
+      good: goodPalette,
+      bad: badPalette,
+      neutral: isPositiveMomentum ? goodPalette : badPalette,
+    });
+    
+    // Extract the color set for the current valence from the selected palette
+    return selectedPalette[valence];
+  };
+
+  const peakColors = getRegimeColors(true, true);
+  const growthColors = getRegimeColors(false, true);
+  const declineColors = getRegimeColors(true, false);
+  const troughColors = getRegimeColors(false, false);
 
   const renderCustomDot = (props: any) => {
     const { cx, cy, payload } = props;
@@ -181,30 +304,61 @@ export function MomentumQuadrantChart({
         </ResponsiveContainer>
       </div>
 
-      <div className="mt-3 grid grid-cols-4 gap-2 text-xs">
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">High & Up</div>
-          <div style={{ color: getValueForValence(1, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' }) }}>
+      <div className="mt-4 grid grid-cols-4 gap-3">
+        {/* High & Up: Strongest regime */}
+        <div className={`rounded-lg ${peakColors.border} ${peakColors.bg} px-3 py-2.5`}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className={`font-semibold text-xs ${peakColors.text} uppercase tracking-tight`}>
+              Peak
+            </div>
+            <TrendingUp className={`w-4 h-4 ${peakColors.label}`} />
+          </div>
+          <div className={`text-2xl font-bold ${peakColors.number} mb-0.5`}>
             {quadrants.high}
           </div>
+          <div className={`text-xs ${peakColors.label}`}>High & Rising</div>
         </div>
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">Low & Up</div>
-          <div style={{ color: getValueForValence(0, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' }) }}>
+
+        {/* Low & Up: Building regime */}
+        <div className={`rounded-lg ${growthColors.border} ${growthColors.bg} px-3 py-2.5`}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className={`font-semibold text-xs ${growthColors.text} uppercase tracking-tight`}>
+              Growth
+            </div>
+            <ArrowUp className={`w-4 h-4 ${growthColors.label}`} />
+          </div>
+          <div className={`text-2xl font-bold ${growthColors.number} mb-0.5`}>
             {quadrants.improving}
           </div>
+          <div className={`text-xs ${growthColors.label}`}>Low & Rising</div>
         </div>
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">High & Down</div>
-          <div style={{ color: getValueForValence(-1, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' }) }}>
+
+        {/* High & Down: Declining regime */}
+        <div className={`rounded-lg ${declineColors.border} ${declineColors.bg} px-3 py-2.5`}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className={`font-semibold text-xs ${declineColors.text} uppercase tracking-tight`}>
+              Decline
+            </div>
+            <ArrowDown className={`w-4 h-4 ${declineColors.label}`} />
+          </div>
+          <div className={`text-2xl font-bold ${declineColors.number} mb-0.5`}>
             {quadrants.declining}
           </div>
+          <div className={`text-xs ${declineColors.label}`}>High & Falling</div>
         </div>
-        <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 px-2.5 py-1.5">
-          <div className="font-semibold text-slate-700 dark:text-slate-300">Low & Down</div>
-          <div style={{ color: getValueForValence(-1, valence, { good: '#22c55e', bad: '#ef4444', neutral: '#3b82f6' }) }}>
+
+        {/* Low & Down: Worst regime */}
+        <div className={`rounded-lg ${troughColors.border} ${troughColors.bg} px-3 py-2.5`}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className={`font-semibold text-xs ${troughColors.text} uppercase tracking-tight`}>
+              Trough
+            </div>
+            <TrendingDown className={`w-4 h-4 ${troughColors.label}`} />
+          </div>
+          <div className={`text-2xl font-bold ${troughColors.number} mb-0.5`}>
             {quadrants.low}
           </div>
+          <div className={`text-xs ${troughColors.label}`}>Low & Falling</div>
         </div>
       </div>
     </div>
