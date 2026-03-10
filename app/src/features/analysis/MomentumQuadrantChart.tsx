@@ -1,10 +1,11 @@
 import { useTheme } from '@/components/ThemeProvider';
-import type { Tracking, Valence } from '@/features/db/localdb';
+import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
 import {
   computeMomentumQuadrantData,
   type AggregationType,
 } from '@/lib/analysis';
-import type { DateKeyType } from '@/lib/friendly-date';
+import { getNormalizedMagnitude } from '@/lib/charts';
+import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
@@ -47,21 +48,21 @@ export function MomentumQuadrantChart({
   const primaryMetricLabel = getPrimaryMetricLabel(tracking);
 
   const scatterData = useMemo(
-    () => computeMomentumQuadrantData(periods, primaryMetric, aggregationType),
-    [periods, primaryMetric, aggregationType],
+    () => computeMomentumQuadrantData(periods, primaryMetric, aggregationType, tracking),
+    [periods, primaryMetric, aggregationType, tracking],
   );
 
   const scatterDataWithStyling = useMemo(() => {
     const maxIndex = scatterData.points.length - 1;
-    
-    // Calculate max absolute level for size scaling
-    const levels = scatterData.points.map(p => p.level);
-    const maxAbsLevel = Math.max(...levels.map(l => Math.abs(l)), 1);
+
+    const sizeValues = scatterData.points.map((p) => p.level);
+    const sizeRange = {
+      min: Math.min(...sizeValues),
+      max: Math.max(...sizeValues),
+    };
     
     return scatterData.points.map((point, index) => {
-      // Size based on absolute value
-      const levelRatio = Math.abs(point.level) / maxAbsLevel;
-      const size = SIZE_MIN + (SIZE_MAX - SIZE_MIN) * levelRatio;
+      const size = getNormalizedMagnitude(point.level, sizeRange, SIZE_MIN, SIZE_MAX);
       
       // Opacity based on time (oldest = transparent, newest = opaque)
       const timeRatio = maxIndex === 0 ? 1 : index / maxIndex;
@@ -94,7 +95,7 @@ export function MomentumQuadrantChart({
     payload,
   }: {
     active?: boolean;
-    payload?: Array<{ payload?: { label: string; level: number; momentum: number; fill: string } }>;
+    payload?: Array<{ payload?: { label: string; dateKey: DateKey; level: number; momentum: number; fill: string } }>;
   }) => {
     if (!active || !payload?.length || !payload[0].payload) return null;
 
@@ -102,14 +103,13 @@ export function MomentumQuadrantChart({
 
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2.5 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
-        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">{point.label}</div>
+        <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">{formatFriendlyDate(point.dateKey)}</div>
         <div className="flex items-center justify-between gap-3 text-sm mb-1">
-          <span className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-            <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: point.fill }} />
+          <span className="text-slate-600 dark:text-slate-400">
             {primaryMetricLabel}
           </span>
           <span className="font-semibold">
-            <NumberText value={point.level} valenceValue={point.level} valence={valence} />
+            <NumberText value={point.level} valenceValue={point.level} valence={valence} delta={tracking === 'trend'} />
           </span>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm">
@@ -131,121 +131,57 @@ export function MomentumQuadrantChart({
     return { high, improving, declining, low };
   }, [scatterData]);
 
-  // Define color palettes for each regime
-  const colorPalettes = {
-    // Peak colors: positive=emerald, negative=red, neutral=blue
-    peak: {
-      positive: {
-        border: 'border-emerald-200 dark:border-emerald-900/40',
-        bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-        text: 'text-emerald-900 dark:text-emerald-100',
-        label: 'text-emerald-600 dark:text-emerald-400',
-        number: 'text-emerald-700 dark:text-emerald-300',
-      },
-      negative: {
-        border: 'border-red-200 dark:border-red-900/40',
-        bg: 'bg-red-50 dark:bg-red-950/20',
-        text: 'text-red-900 dark:text-red-100',
-        label: 'text-red-600 dark:text-red-400',
-        number: 'text-red-700 dark:text-red-300',
-      },
-      neutral: {
-        border: 'border-blue-200 dark:border-blue-900/40',
-        bg: 'bg-blue-50 dark:bg-blue-950/20',
-        text: 'text-blue-900 dark:text-blue-100',
-        label: 'text-blue-600 dark:text-blue-400',
-        number: 'text-blue-700 dark:text-blue-300',
-      },
-    },
-    // Growth colors: positive=cyan, negative=orange, neutral=blue
-    growth: {
-      positive: {
-        border: 'border-cyan-200 dark:border-cyan-900/40',
-        bg: 'bg-cyan-50 dark:bg-cyan-950/20',
-        text: 'text-cyan-900 dark:text-cyan-100',
-        label: 'text-cyan-600 dark:text-cyan-400',
-        number: 'text-cyan-700 dark:text-cyan-300',
-      },
-      negative: {
-        border: 'border-orange-200 dark:border-orange-900/40',
-        bg: 'bg-orange-50 dark:bg-orange-950/20',
-        text: 'text-orange-900 dark:text-orange-100',
-        label: 'text-orange-600 dark:text-orange-400',
-        number: 'text-orange-700 dark:text-orange-300',
-      },
-      neutral: {
-        border: 'border-blue-200 dark:border-blue-900/40',
-        bg: 'bg-blue-50 dark:bg-blue-950/20',
-        text: 'text-blue-900 dark:text-blue-100',
-        label: 'text-blue-600 dark:text-blue-400',
-        number: 'text-blue-700 dark:text-blue-300',
-      },
-    },
-    // Decline colors: positive=orange, negative=blue, neutral=orange
-    decline: {
-      positive: {
-        border: 'border-orange-200 dark:border-orange-900/40',
-        bg: 'bg-orange-50 dark:bg-orange-950/20',
-        text: 'text-orange-900 dark:text-orange-100',
-        label: 'text-orange-600 dark:text-orange-400',
-        number: 'text-orange-700 dark:text-orange-300',
-      },
-      negative: {
-        border: 'border-blue-200 dark:border-blue-900/40',
-        bg: 'bg-blue-50 dark:bg-blue-950/20',
-        text: 'text-blue-900 dark:text-blue-100',
-        label: 'text-blue-600 dark:text-blue-400',
-        number: 'text-blue-700 dark:text-blue-300',
-      },
-      neutral: {
-        border: 'border-orange-200 dark:border-orange-900/40',
-        bg: 'bg-orange-50 dark:bg-orange-950/20',
-        text: 'text-orange-900 dark:text-orange-100',
-        label: 'text-orange-600 dark:text-orange-400',
-        number: 'text-orange-700 dark:text-orange-300',
-      },
-    },
-    // Trough colors: positive=red, negative=emerald, neutral=red
-    trough: {
-      positive: {
-        border: 'border-red-200 dark:border-red-900/40',
-        bg: 'bg-red-50 dark:bg-red-950/20',
-        text: 'text-red-900 dark:text-red-100',
-        label: 'text-red-600 dark:text-red-400',
-        number: 'text-red-700 dark:text-red-300',
-      },
-      negative: {
-        border: 'border-emerald-200 dark:border-emerald-900/40',
-        bg: 'bg-emerald-50 dark:bg-emerald-950/20',
-        text: 'text-emerald-900 dark:text-emerald-100',
-        label: 'text-emerald-600 dark:text-emerald-400',
-        number: 'text-emerald-700 dark:text-emerald-300',
-      },
-      neutral: {
-        border: 'border-red-200 dark:border-red-900/40',
-        bg: 'bg-red-50 dark:bg-red-950/20',
-        text: 'text-red-900 dark:text-red-100',
-        label: 'text-red-600 dark:text-red-400',
-        number: 'text-red-700 dark:text-red-300',
-      },
-    },
+  // Define color sets
+  const emerald = {
+    border: 'border-emerald-200 dark:border-emerald-900/40',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/20',
+    text: 'text-emerald-900 dark:text-emerald-100',
+    label: 'text-emerald-600 dark:text-emerald-400',
+    number: 'text-emerald-700 dark:text-emerald-300',
+  };
+  const cyan = {
+    border: 'border-cyan-200 dark:border-cyan-900/40',
+    bg: 'bg-cyan-50 dark:bg-cyan-950/20',
+    text: 'text-cyan-900 dark:text-cyan-100',
+    label: 'text-cyan-600 dark:text-cyan-400',
+    number: 'text-cyan-700 dark:text-cyan-300',
+  };
+  const blue = {
+    border: 'border-blue-200 dark:border-blue-900/40',
+    bg: 'bg-blue-50 dark:bg-blue-950/20',
+    text: 'text-blue-900 dark:text-blue-100',
+    label: 'text-blue-600 dark:text-blue-400',
+    number: 'text-blue-700 dark:text-blue-300',
+  };
+  const orange = {
+    border: 'border-orange-200 dark:border-orange-900/40',
+    bg: 'bg-orange-50 dark:bg-orange-950/20',
+    text: 'text-orange-900 dark:text-orange-100',
+    label: 'text-orange-600 dark:text-orange-400',
+    number: 'text-orange-700 dark:text-orange-300',
+  };
+  const red = {
+    border: 'border-red-200 dark:border-red-900/40',
+    bg: 'bg-red-50 dark:bg-red-950/20',
+    text: 'text-red-900 dark:text-red-100',
+    label: 'text-red-600 dark:text-red-400',
+    number: 'text-red-700 dark:text-red-300',
   };
 
-  // Determine colors based on valence and regime
+  // Determine colors based on valence source, valence, and regime
   const getRegimeColors = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
-    const goodPalette = isHighLevel ? colorPalettes.peak : colorPalettes.growth;
-    const badPalette = isHighLevel ? colorPalettes.decline : colorPalettes.trough;
+    const levelValue = isHighLevel ? 1 : -1;
     
-    // Use momentum direction to determine if this regime is good/bad for the valence
-    const momentumValue = isPositiveMomentum ? 1 : -1;
-    const selectedPalette = getValueForValence(momentumValue, valence, {
-      good: goodPalette,
-      bad: badPalette,
-      neutral: isPositiveMomentum ? goodPalette : badPalette,
-    });
+    // Define palette for this quadrant
+    const palette = isHighLevel && isPositiveMomentum
+      ? { good: emerald, bad: red, neutral: blue }        // Peak
+      : !isHighLevel && isPositiveMomentum
+      ? { good: cyan, bad: orange, neutral: blue }        // Growth
+      : isHighLevel && !isPositiveMomentum
+      ? { good: blue, bad: orange, neutral: orange }      // Decline
+      : { good: emerald, bad: red, neutral: red };        // Trough
     
-    // Extract the color set for the current valence from the selected palette
-    return selectedPalette[valence];
+    return getValueForValence(levelValue, valence, palette);
   };
 
   const peakColors = getRegimeColors(true, true);
@@ -284,6 +220,7 @@ export function MomentumQuadrantChart({
               type="number"
               dataKey="level"
               name={primaryMetricLabel}
+              domain={['dataMin', 'dataMax']}
               tickFormatter={(value) => formatValue(Number(value), { short: true })}
               tick={{ fill: axisColor, fontSize: 11 }}
               stroke={axisColor}
@@ -292,6 +229,7 @@ export function MomentumQuadrantChart({
               type="number"
               dataKey="momentum"
               name="Change"
+              domain={['dataMin', 'dataMax']}
               tickFormatter={(value) => formatValue(Number(value), { short: true })}
               tick={{ fill: axisColor, fontSize: 11 }}
               stroke={axisColor}

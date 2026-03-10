@@ -203,6 +203,7 @@ export interface ProjectionSeriesPoint {
 
 export interface MomentumQuadrantPoint {
   label: string;
+  dateKey: DateKey;
   level: number;
   momentum: number;
 }
@@ -565,15 +566,24 @@ export function computeMomentumQuadrantData(
   periods: PeriodAggregateData<DateKeyType>[],
   primaryMetric: NumberMetric,
   aggregationType: AggregationType,
+  tracking: Tracking,
 ): MomentumQuadrantData {
   const points = periods
     .map((period, index) => {
-      const value = period.stats[primaryMetric] ?? 0;
-      const prior = index > 0 ? (periods[index - 1]?.stats[primaryMetric] ?? 0) : value;
+      const level = tracking === 'series'
+        ? (period.cumulatives[primaryMetric] ?? 0)
+        : (period.deltas[primaryMetric] ?? 0);
+      const momentum = tracking === 'series'
+        ? (period.stats[primaryMetric] ?? 0)
+        : (() => {
+            const priorDelta = index > 0 ? (periods[index - 1]?.deltas[primaryMetric] ?? 0) : (period.deltas[primaryMetric] ?? 0);
+            return (period.deltas[primaryMetric] ?? 0) - priorDelta;
+          })();
       return {
         label: formatPeriodLabel(period.dateKey, aggregationType),
-        level: value,
-        momentum: value - prior,
+        dateKey: period.dateKey,
+        level,
+        momentum,
       };
     })
     .filter((point) => Number.isFinite(point.level) && Number.isFinite(point.momentum));
