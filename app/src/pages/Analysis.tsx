@@ -284,7 +284,7 @@ export function Analysis() {
     setProjectionHorizonYear(clamped);
   };
 
-  const projectionPeriodUnit = aggregationType === 'none' ? 'entry' : aggregationType;
+  const projectionPeriodUnit = getAggregationPeriodLabel(aggregationType);
 
   // Helpers to set custom dates
   const setCustomStart = useCallback((date: Date) => {
@@ -1309,15 +1309,15 @@ export function Analysis() {
                   <div className="space-y-2 text-sm">
                     <p className="font-medium">Momentum Quadrant</p>
                     <p className="text-muted-foreground">
-                      Each point is one selected {aggregationType === 'none' ? 'entry' : aggregationType}. Center lines show average Level and Momentum.
+                      Each point is one selected {getAggregationPeriodLabel(aggregationType)}. Center lines show average Level and Momentum.
                     </p>
                     {dataset.tracking === 'series' ? (
                       <p className="text-muted-foreground">
-                        <strong>Level</strong> is the running all-time cumulative value; <strong>Momentum</strong> is the current {aggregationType === 'none' ? 'entry' : aggregationType} value.
+                        <strong>Level</strong> is the running all-time cumulative value; <strong>Momentum</strong> is the current {getAggregationPeriodLabel(aggregationType)} value.
                       </p>
                     ) : (
                       <p className="text-muted-foreground">
-                        <strong>Level</strong> is the per-{aggregationType === 'none' ? 'entry' : aggregationType} delta; <strong>Momentum</strong> is change in delta vs the previous {aggregationType === 'none' ? 'entry' : aggregationType}.
+                        <strong>Level</strong> is the per-{getAggregationPeriodLabel(aggregationType)} delta; <strong>Momentum</strong> is change in delta vs the previous {getAggregationPeriodLabel(aggregationType)}.
                       </p>
                     )}
                     <p className="text-muted-foreground">

@@ -10,6 +10,7 @@ import {
   type ProjectionMode,
   type ProjectionRecentWindow,
   type ProjectionSeriesPoint,
+  getAggregationPeriodLabel,
 } from '@/lib/analysis';
 import { formatValue } from '@/lib/friendly-numbers';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
@@ -716,7 +717,7 @@ export function ProjectionsChart({
           <span className="font-semibold">
             {projectionRate ? (
               <>
-                <NumberText value={projectionRate.delta} valenceValue={projectionRate.delta} valence={valence} animated className="inline" /> / {aggregationType === 'none' ? 'entry' : aggregationType}
+                <NumberText value={projectionRate.delta} valenceValue={projectionRate.delta} valence={valence} animated className="inline" /> / {getAggregationPeriodLabel(aggregationType)}
               </>
             ) : 'N/A'}
           </span>
