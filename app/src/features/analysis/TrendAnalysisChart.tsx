@@ -8,7 +8,7 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { useId, useMemo } from 'react';
+import { memo, useCallback, useId, useMemo } from 'react';
 import { usePreference } from '@/hooks/usePreference';
 import {
   Area,
@@ -97,13 +97,13 @@ export function TrendAnalysisChart({
 
   const visibleMetrics = useMemo(() => new Set(visibleMetricsArray), [visibleMetricsArray]);
 
-  const setVisibleMetrics = (updater: (prev: Set<NumberMetric>) => Set<NumberMetric>) => {
+  const setVisibleMetrics = useCallback((updater: (prev: Set<NumberMetric>) => Set<NumberMetric>) => {
     setVisibleMetricsArray((prev) => {
       const prevSet = new Set(prev);
       const newSet = updater(prevSet);
       return Array.from(newSet);
     });
-  };
+  }, [setVisibleMetricsArray]);
 
   const data: TrendPoint[] = useMemo(() => {
     const result = periods
@@ -180,11 +180,7 @@ export function TrendAnalysisChart({
       });
     
     return result;
-  }, [periods, valenceSource, mode, displayMetrics, aggregationType, primaryMetric]);
-
-  if (data.length === 0) {
-    return <div>No data available</div>;
-  }
+  }, [periods, valenceSource, mode, displayMetrics, aggregationType]);
 
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
@@ -309,7 +305,7 @@ export function TrendAnalysisChart({
     return METRIC_DISPLAY_INFO[metric].label;
   };
 
-  const toggleMetric = (metric: NumberMetric) => {
+  const toggleMetric = useCallback((metric: NumberMetric) => {
     setVisibleMetrics((prev) => {
       const next = new Set(prev);
       if (next.has(metric)) {
@@ -319,7 +315,7 @@ export function TrendAnalysisChart({
       }
       return next;
     });
-  };
+  }, [setVisibleMetrics]);
 
   const hasVisibleMetrics = displayMetrics.some((metric) => visibleMetrics.has(metric));
 
@@ -394,6 +390,10 @@ export function TrendAnalysisChart({
       </div>
     );
   };
+
+  if (data.length === 0) {
+    return <div>No data available</div>;
+  }
 
   return (
     <div className="h-80 w-full flex flex-col">
@@ -516,3 +516,5 @@ export function TrendAnalysisChart({
     </div>
   );
 }
+
+export default memo(TrendAnalysisChart);

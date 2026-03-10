@@ -95,15 +95,16 @@ function BadgeLabel({
 }
 
 export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoal, shareOnly = false }: AchievementDetailsDrawerProps) {
-  if (!result) return null;
-
-  const { goal, achievements, completedCount, currentProgress, lastCompletedAt, firstCompletedAt } = result;
   const archiveGoalMutation = useArchiveGoal();
   const updateGoalMutation = useUpdateGoal();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const shareRef = useRef<HTMLDivElement | null>(null);
+
+  if (!result) return null;
+
+  const { goal, achievements, completedCount, currentProgress, lastCompletedAt, firstCompletedAt } = result;
   const badge = goal.badge;
   const inProgress = achievements.find((achievement) => !!achievement.startedAt && !achievement.completedAt);
   const completedAchievements = achievements

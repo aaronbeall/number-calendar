@@ -24,7 +24,7 @@ import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnaly
 import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
-import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity, Target, Award, Sparkles, Compass, ChevronDown } from 'lucide-react';
+import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity as InfinityIcon, Target, Award, Sparkles, Compass, ChevronDown } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
 import { DeviationBarChart } from '@/features/analysis/DeviationBarChart';
 import { ValenceDistributionChart } from '@/features/analysis/ValenceDistributionChart';
@@ -287,13 +287,13 @@ export function Analysis() {
   const projectionPeriodUnit = aggregationType === 'none' ? 'entry' : aggregationType;
 
   // Helpers to set custom dates
-  const setCustomStart = (date: Date) => {
+  const setCustomStart = useCallback((date: Date) => {
     setCustomStartDayKey(dateToDayKey(date));
-  };
+  }, [setCustomStartDayKey]);
 
-  const setCustomEnd = (date: Date) => {
+  const setCustomEnd = useCallback((date: Date) => {
     setCustomEndDayKey(dateToDayKey(date));
-  };
+  }, [setCustomEndDayKey]);
 
   // Get periods based on aggregation type
   const periodsForAggregation = useMemo(() => {
@@ -429,7 +429,7 @@ export function Analysis() {
       return filterToInRange(allTimeRunningAggregates);
     } 
     return computeRunningAggregatePeriods(filterToInRange(allAggregatePeriods), primaryMetric);
-  }, [analysisTrendMode, allAggregatePeriods, primaryMetric, timeRange, allTimeRunningAggregates]);
+  }, [analysisTrendMode, allAggregatePeriods, primaryMetric, allTimeRunningAggregates, filterToInRange]);
 
   // Projections use all-time running aggregates filtered to current time range
   const projectionPeriods = useMemo(() => {
@@ -437,7 +437,7 @@ export function Analysis() {
       return computedAggregatesInRange;
     }
     return filterToInRange(allTimeRunningAggregates);
-  }, [analysisTrendMode, computedAggregatesInRange, allTimeRunningAggregates, timeRange]);
+  }, [analysisTrendMode, computedAggregatesInRange, allTimeRunningAggregates, filterToInRange]);
 
   const projectionRecentWindowMax = Math.max(1, projectionPeriods.length);
   const projectionRecentWindow = Math.min(
@@ -493,48 +493,6 @@ export function Analysis() {
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
   // Map analysis mode to TrendChart mode
   const trendChartMode: TrendDataMode = analysisTrendMode === 'change' ? 'change' : 'trend';
-
-  const hasDataInSelection = dataPoints.length > 0;
-
-  if (isLoading) {
-    return <LoadingState title="Loading analysis" message="Preparing your data visualizations..." />;
-  }
-
-  if (!dataset || aggregateData.days.length === 0) {
-    return (
-      <div className="max-w-6xl mx-auto p-6">
-        <Empty className="min-h-[60vh]">
-          <EmptyHeader>
-            <div className="mb-6">
-              <EmptyChartIllustration />
-            </div>
-            <EmptyTitle className="text-xl">No Data to Analyze</EmptyTitle>
-            <EmptyDescription className="text-base mt-3">
-              Start tracking numbers to unlock powerful insights and visualizations.
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <div className="flex flex-col sm:flex-row gap-3 mt-2">
-              {dataset && (
-                <Button asChild size="lg">
-                  <Link to={`/dataset/${dataset.id}`}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Go to Calendar
-                  </Link>
-                </Button>
-              )}
-              <Button asChild variant="outline" size="lg">
-                <Link to="/">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  View Dashboard
-                </Link>
-              </Button>
-            </div>
-          </EmptyContent>
-        </Empty>
-      </div>
-    );
-  }
 
   const handlePresetChange = useCallback((value: string) => {
     const newPreset = value as TimeFramePreset;
@@ -657,8 +615,8 @@ export function Analysis() {
       </div>
     </>
   ), [
-    activeTimeFrameLabel,
     aggregationType,
+    availablePresets,
     dataPoints.length,
     dataset.id,
     dataset.tracking,
@@ -671,8 +629,49 @@ export function Analysis() {
     presetRange,
     timeRange.endDate,
     timeRange.startDate,
-    availablePresets,
   ]);
+
+  const hasDataInSelection = dataPoints.length > 0;
+
+  if (isLoading) {
+    return <LoadingState title="Loading analysis" message="Preparing your data visualizations..." />;
+  }
+
+  if (!dataset || aggregateData.days.length === 0) {
+    return (
+      <div className="max-w-6xl mx-auto p-6">
+        <Empty className="min-h-[60vh]">
+          <EmptyHeader>
+            <div className="mb-6">
+              <EmptyChartIllustration />
+            </div>
+            <EmptyTitle className="text-xl">No Data to Analyze</EmptyTitle>
+            <EmptyDescription className="text-base mt-3">
+              Start tracking numbers to unlock powerful insights and visualizations.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <div className="flex flex-col sm:flex-row gap-3 mt-2">
+              {dataset && (
+                <Button asChild size="lg">
+                  <Link to={`/dataset/${dataset.id}`}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Go to Calendar
+                  </Link>
+                </Button>
+              )}
+              <Button asChild variant="outline" size="lg">
+                <Link to="/">
+                  <BarChart3 className="w-4 h-4 mr-2" />
+                  View Dashboard
+                </Link>
+              </Button>
+            </div>
+          </EmptyContent>
+        </Empty>
+      </div>
+    );
+  }
 
   if (!hasDataInSelection) {
     return (
@@ -723,7 +722,9 @@ export function Analysis() {
                     size="lg"
                     onClick={handleSelectAllTime}
                   >
-                    <Infinity className="w-4 h-4 mr-2" />
+                    <InfinityIcon className="w-4 h-4 mr-2" />
+                                        <InfinityIcon className="w-4 h-4 mr-2" />
+                                        <InfinityIcon className="w-4 h-4 mr-2" />
                     Select All Time
                   </Button>
                 </div>
@@ -802,7 +803,9 @@ export function Analysis() {
                   {dataset.tracking === 'series' ? (
                     <>
                       <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
-                        <Infinity className="size-4 sm:mr-1" />
+                        <InfinityIcon className="size-4 sm:mr-1" />
+                                                <InfinityIcon className="size-4 sm:mr-1" />
+                                                <InfinityIcon className="size-4 sm:mr-1" />
                         <span className="hidden sm:inline">All Time Trend</span>
                       </ToggleGroupItem>
                       <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
@@ -817,7 +820,7 @@ export function Analysis() {
                   ) : (
                     <>
                       <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
-                        <Infinity className="size-4 sm:mr-1" />
+                        <InfinityIcon className="size-4 sm:mr-1" />
                         <span className="hidden sm:inline">All Time Trend</span>
                       </ToggleGroupItem>
                       <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
@@ -842,7 +845,9 @@ export function Analysis() {
                     <p className="text-muted-foreground">
                       View how your data changes over time. Use{' '}
                       <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                        <Infinity className="h-3.5 w-3.5" />
+                        <InfinityIcon className="h-3.5 w-3.5" />
+                                                <InfinityIcon className="h-3.5 w-3.5" />
+                                                <InfinityIcon className="h-3.5 w-3.5" />
                         All Time
                       </span>{' '}
                       for cumulative values from the beginning,{' '}
@@ -918,7 +923,7 @@ export function Analysis() {
                     <p className="text-muted-foreground">
                       See how each period deviates from a selectable baseline. Choose from{' '}
                       <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                        <Infinity className="h-3.5 w-3.5" />
+                        <InfinityIcon className="h-3.5 w-3.5" />
                         All Time Average
                       </span>{' '}
                       for historical context,{' '}

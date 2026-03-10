@@ -8,7 +8,7 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import type { StatsExtremes } from '@/lib/stats';
 import { getValueForValence } from '@/lib/valence';
 import { CheckCircle, Clock, Minus, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { useSidePanelParam } from '@/lib/search-params';
@@ -26,9 +26,8 @@ export interface WeekSummaryProps {
 }
 
 export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, monthExtremes, weekNumber, isCurrentWeek, valence, tracking, dateKey, achievementResults }) => {
-  const numbers = data.numbers;
+  const numbers = data.numbers ?? [];
   const priorNumbers = priorData?.numbers;
-  if (!numbers || numbers.length === 0) return null;
 
   const [panelView, setPanelView] = useSidePanelParam();
   const panelOpen = typeof panelView === 'string' && panelView === dateKey;
@@ -44,7 +43,33 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
     isLowestPrimary,
   } = useMemo(() => getCalendarData(data, monthExtremes, tracking), [data, monthExtremes, tracking]);
 
-  if (!stats) return null;
+  const chartData = useMemo(() => getChartData(getChartNumbers(numbers, priorNumbers, tracking), tracking), [numbers, priorNumbers, tracking]);
+
+  const statusIcon = useMemo(() => {
+    if (isCurrentWeek) {
+      return <Clock className="w-4 h-4 text-blue-600" />;
+    }
+    return getValueForValence(primaryValenceMetric, valence, {
+      good: <CheckCircle className="w-4 h-4 text-green-600" />,
+      bad: <XCircle className="w-4 h-4 text-red-600" />,
+      neutral: (primaryValenceMetric ?? 0) > 0
+        ? <TrendingUp className="w-4 h-4 text-slate-600" />
+        : (primaryValenceMetric ?? 0) < 0
+          ? <TrendingDown className="w-4 h-4 text-slate-600" />
+          : <Minus className="w-4 h-4 text-slate-600" />,
+    });
+  }, [isCurrentWeek, primaryValenceMetric, valence]);
+
+  const handleOpenPanel = useCallback(() => {
+    setPanelView(dateKey);
+  }, [dateKey, setPanelView]);
+
+  const handleClosePanel = useCallback(() => {
+    setPanelView(null);
+  }, [setPanelView]);
+
+  if (numbers.length === 0 || !stats) return null;
+
   const { mean, median, min, max, count } = stats;
   
   // Use valence metric for coloring, as in DayCell
@@ -74,25 +99,6 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
     neutral: '#2563eb', // blue-600
   });
 
-  // Chart data using getChartData utility
-  const chartData = useMemo(() => getChartData(getChartNumbers(numbers, priorNumbers, tracking), tracking), [numbers, priorNumbers, tracking]);
-
-  // Choose icon based on valence and valence metric
-  const getStatusIcon = () => {
-    if (isCurrentWeek) {
-      return <Clock className="w-4 h-4 text-blue-600" />;
-    }
-    return getValueForValence(primaryValenceMetric, valence, {
-      good: <CheckCircle className="w-4 h-4 text-green-600" />, 
-      bad: <XCircle className="w-4 h-4 text-red-600" />, 
-      neutral: (primaryValenceMetric ?? 0) > 0 
-        ? <TrendingUp className="w-4 h-4 text-slate-600" /> 
-        : (primaryValenceMetric ?? 0) < 0 
-          ? <TrendingDown className="w-4 h-4 text-slate-600" /> 
-          : <Minus className="w-4 h-4 text-slate-600" />, 
-    });
-  };
-
   // Selected highlight (blue ring) when panel is open
   const selectedRing = panelOpen ? 'ring-2 ring-blue-400/80 ring-offset-2 ring-offset-white dark:ring-blue-300/70 dark:ring-offset-slate-900' : '';
 
@@ -100,14 +106,14 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
     <div className={`relative rounded-md ${bgClasses} ${borderClasses} shadow-sm dark:shadow-md hover:shadow-md dark:hover:shadow-lg transition-shadow ${selectedRing}`} aria-label="Weekly summary">
       <div
         className="w-full flex flex-row items-center justify-between gap-3 px-3 py-2 cursor-pointer"
-        onClick={() => setPanelView(dateKey)}
+        onClick={handleOpenPanel}
         tabIndex={0}
         role="button"
         aria-label={`Show week ${weekNumber} details`}
       >
         {/* Title - left side */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          {getStatusIcon()}
+          {statusIcon}
           <div className="leading-tight">
             <div className="text-xs font-medium text-slate-600 dark:text-slate-300">Week {weekNumber || '?'}</div>
             <div className="text-[10px] text-slate-500 dark:text-slate-400">{count} entries</div>
@@ -197,7 +203,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
       </div>
       <NumbersPanel
         isOpen={panelOpen}
-        onClose={() => setPanelView(null)}
+        onClose={handleClosePanel}
         title={`Week ${weekNumber}`}
         data={data}
         priorData={priorData}
@@ -212,4 +218,4 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
     </div>
   );
 };
-export default WeekSummary;
+export default React.memo(WeekSummary);

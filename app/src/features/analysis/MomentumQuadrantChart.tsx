@@ -12,7 +12,7 @@ import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { NumberText } from '@/components/ui/number-text';
 import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react';
-import { useMemo } from 'react';
+import { memo, useCallback, useMemo } from 'react';
 import {
   CartesianGrid,
   ReferenceArea,
@@ -83,10 +83,6 @@ export function MomentumQuadrantChart({
       };
     });
   }, [scatterData.points, valence]);
-
-  if (scatterData.points.length < 2) {
-    return <div className="text-sm text-muted-foreground">Need at least two periods to show momentum regimes.</div>;
-  }
 
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
@@ -227,6 +223,14 @@ export function MomentumQuadrantChart({
   const chartBounds = useMemo(() => {
     const levels = scatterData.points.map((p) => p.level);
     const momentums = scatterData.points.map((p) => p.momentum);
+    if (levels.length === 0 || momentums.length === 0) {
+      return {
+        levelMin: 0,
+        levelMax: 0,
+        momentumMin: 0,
+        momentumMax: 0,
+      };
+    }
     return {
       levelMin: Math.min(...levels),
       levelMax: Math.max(...levels),
@@ -235,7 +239,11 @@ export function MomentumQuadrantChart({
     };
   }, [scatterData.points]);
 
-  const renderCustomDot = (props: any) => {
+  const renderCustomDot = useCallback((props: {
+    cx?: number;
+    cy?: number;
+    payload?: { size?: number; opacity?: number; fill?: string };
+  }) => {
     const { cx, cy, payload } = props;
     if (typeof cx !== 'number' || typeof cy !== 'number') {
       return <circle cx={0} cy={0} r={0} />;
@@ -254,7 +262,11 @@ export function MomentumQuadrantChart({
         fillOpacity={opacity}
       />
     );
-  };
+  }, []);
+
+  if (scatterData.points.length < 2) {
+    return <div className="text-sm text-muted-foreground">Need at least two periods to show momentum regimes.</div>;
+  }
 
   return (
     <div className="w-full flex flex-col">
@@ -384,3 +396,5 @@ export function MomentumQuadrantChart({
     </div>
   );
 }
+
+export default memo(MomentumQuadrantChart);

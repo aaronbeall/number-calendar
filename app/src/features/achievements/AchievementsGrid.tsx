@@ -3,7 +3,7 @@ import type { GoalResults } from '@/lib/goals';
 import { sortGoalResults } from '@/lib/goals';
 import { useAchievementDrawerParam } from '@/lib/search-params';
 import { Clock, Loader2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { AchievementCard, type AchievementCardProps } from './AchievementCard';
 import { AchievementDetailsDrawer } from './AchievementDetailsDrawer';
 import { AchievementDialog } from './AchievementDialog';
@@ -81,6 +81,17 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
     return { unlocked, inProgress, locked, provisional };
   }, [gridItems]);
 
+  const activeResult = useMemo(
+    () => results.find((result) => result.goal.id === activeGoalId) ?? null,
+    [results, activeGoalId]
+  );
+
+  const handleEditGoal = useCallback((result: GoalResults) => {
+    if (!dataset) return;
+    setEditResult(result);
+    setEditOpen(true);
+  }, [dataset]);
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -88,17 +99,6 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
       </div>
     );
   }
-
-  const activeResult = useMemo(
-    () => results.find((result) => result.goal.id === activeGoalId) ?? null,
-    [results, activeGoalId]
-  );
-
-  const handleEditGoal = (result: GoalResults) => {
-    if (!dataset) return;
-    setEditResult(result);
-    setEditOpen(true);
-  };
 
   return (
     <div className="space-y-8">
@@ -211,5 +211,5 @@ export function AchievementsGrid({ results, loading, dataset }: AchievementsGrid
   );
 }
 
-export default AchievementsGrid;
+export default memo(AchievementsGrid);
 
