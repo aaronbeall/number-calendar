@@ -1,5 +1,6 @@
 import { useTheme } from '@/components/ThemeProvider';
 import type { Tracking, Valence } from '@/features/db/localdb';
+import type { GoalResults } from '@/lib/goals';
 import {
   computeProjectionSeries,
   type AggregationType,
@@ -20,14 +21,17 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Slider } from '@/components/ui/slider';
 import { ToggleOptionPopover } from '@/components/ui/toggle-option-popover';
 import { usePreference } from '@/hooks/usePreference';
-import { ChevronDown, Gauge, Percent, Plus, SlidersHorizontal, Target } from 'lucide-react';
+import { CheckCircle, ChevronDown, Gauge, Percent, Plus, SlidersHorizontal, Target } from 'lucide-react';
 import { useId, useMemo } from 'react';
+import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
+import { AchievementBadge } from '@/features/achievements/AchievementBadge';
 import {
   Area,
   CartesianGrid,
   ComposedChart,
   Legend,
   Line,
+  ReferenceDot,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -45,6 +49,7 @@ interface ProjectionsChartProps {
   projectionRecentWindow: ProjectionRecentWindow;
   projectionMomentumWeight: ProjectionMomentumWeight;
   valence: Valence;
+  milestones: GoalResults[];
 }
 
 export function ProjectionsChart({
@@ -57,6 +62,7 @@ export function ProjectionsChart({
   projectionRecentWindow,
   projectionMomentumWeight,
   valence,
+  milestones,
 }: ProjectionsChartProps) {
   const { isDark } = useTheme();
   const gradientId = useId();
@@ -288,6 +294,85 @@ export function ProjectionsChart({
     return indices;
   }, [chartSeries]);
 
+  // Sort milestones by value based on valence (worst to best)
+  const sortedMilestones = useMemo(() => {
+    return [...milestones]
+      .filter((result) => {
+        const targetValue = result.goal.target.value;
+        return typeof targetValue === 'number';
+      })
+      .sort((a, b) => {
+        const aValue = a.goal.target.value as number;
+        const bValue = b.goal.target.value as number;
+        // For positive valence: smallest to highest
+        // For negative valence: highest to smallest
+        return valence === 'positive' ? aValue - bValue : bValue - aValue;
+      });
+  }, [milestones, valence]);
+
+  // Find the next incomplete milestone
+  const nextIncompleteMilestone = useMemo(() => {
+    return sortedMilestones.find((result) => result.completedCount === 0)?.goal.id;
+  }, [sortedMilestones]);
+
+  // Selected milestones preference (multi-select)
+  const [selectedMilestoneIds, setSelectedMilestoneIds] = usePreference<string[]>(
+    `analysis_selectedMilestones_${datasetId}`,
+    nextIncompleteMilestone ? [nextIncompleteMilestone] : [],
+  );
+
+  const selectedMilestones = useMemo(() => {
+    return sortedMilestones.filter((result) => selectedMilestoneIds.includes(result.goal.id));
+  }, [sortedMilestones, selectedMilestoneIds]);
+
+  // Find intersection points for all selected milestones
+  const milestoneData = useMemo(() => {
+    const intersections: Array<{ label: string; value: number; milestoneId: string }> = [];
+    const noIntersectionMilestones: Set<string> = new Set();
+    
+    selectedMilestones.forEach((milestone) => {
+      const targetValue = milestone.goal.target.value as number;
+      const isComplete = milestone.completedCount > 0;
+      let foundIntersection = false;
+
+      chartSeries.forEach((point, index) => {
+        // For incomplete milestones, check projected data
+        // For complete milestones, check actual data
+        const dataValue = isComplete ? point.actual : point.projected;
+        if (typeof dataValue !== 'number') return;
+        
+        const prevPoint = index > 0 ? chartSeries[index - 1] : null;
+        if (!prevPoint) return;
+        
+        const prevDataValue = isComplete ? prevPoint.actual : prevPoint.projected;
+        if (typeof prevDataValue !== 'number') return;
+
+        // Check if the line crosses the milestone value in the correct direction
+        const crossesUp = prevDataValue < targetValue && dataValue >= targetValue;
+        const crossesDown = prevDataValue > targetValue && dataValue <= targetValue;
+
+        // For positive valence, we want to reach from below (crossesUp)
+        // For negative valence, we want to reach from above (crossesDown)
+        const isCorrectDirection = valence === 'positive' ? crossesUp : crossesDown;
+
+        if (isCorrectDirection) {
+          intersections.push({
+            label: point.label,
+            value: targetValue,
+            milestoneId: milestone.goal.id,
+          });
+          foundIntersection = true;
+        }
+      });
+      
+      if (!foundIntersection) {
+        noIntersectionMilestones.add(milestone.goal.id);
+      }
+    });
+
+    return { intersections, noIntersectionMilestones };
+  }, [selectedMilestones, chartSeries, valence]);
+
   if (chartSeries.length < 2) {
     return <div className="text-sm text-muted-foreground">Not enough data points to project yet.</div>;
   }
@@ -369,6 +454,12 @@ export function ProjectionsChart({
     const displayLabel = point.dateKey
       ? formatFriendlyDate(point.dateKey, { short: true })
       : point.label;
+    
+    // Find any milestone intersections at this point
+    const milestonesAtPoint = milestoneData.intersections
+      .filter(intersection => intersection.label === point.label)
+      .map(intersection => selectedMilestones.find(m => m.goal.id === intersection.milestoneId))
+      .filter((m): m is typeof selectedMilestones[0] => m !== undefined);
 
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2.5 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
@@ -410,6 +501,21 @@ export function ProjectionsChart({
                 </span>
               )}
             </span>
+          </div>
+        )}
+        {milestonesAtPoint.length > 0 && (
+          <div className="mt-1 pt-1">
+            {milestonesAtPoint.map((milestone) => (
+              <div key={milestone.goal.id} className="flex items-center gap-2 mt-1">
+                <AchievementBadge badge={milestone.goal.badge} size="small" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{milestone.goal.title}</span>
+                  {milestone.goal.description && (
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{milestone.goal.description}</span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
         {showProjectionSpread && typeof projectedLow === 'number' && typeof projectedHigh === 'number' && (
@@ -533,6 +639,56 @@ export function ProjectionsChart({
             <Tooltip content={renderTooltip} />
             <Legend formatter={legendFormatter} />
             {splitLabel && <ReferenceLine x={splitLabel} stroke="#94a3b8" strokeDasharray="4 4" />}
+            {selectedMilestones.map((milestone) => {
+              const hasIntersection = milestoneData.intersections.some(
+                (intersection) => intersection.milestoneId === milestone.goal.id
+              );
+              
+              return (
+                <ReferenceLine
+                  key={`milestone-line-${milestone.goal.id}`}
+                  y={milestone.goal.target.value as number}
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  label={
+                    !hasIntersection
+                      ? {
+                          value: milestone.goal.title,
+                          position: 'insideTopRight' as const,
+                          fill: isDark ? '#93c5fd' : '#3b82f6',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          offset: -4,
+                        }
+                      : undefined
+                  }
+                />
+              );
+            })}
+            {milestoneData.intersections.map((intersection: { label: string; value: number; milestoneId: string }) => {
+              const milestone = selectedMilestones.find(m => m.goal.id === intersection.milestoneId);
+              return (
+                <ReferenceDot
+                  key={`intersection-${intersection.milestoneId}-${intersection.label}`}
+                  x={intersection.label}
+                  y={intersection.value}
+                  r={5}
+                  fill="#3b82f6"
+                  stroke="#fff"
+                  strokeWidth={2}
+                  isFront
+                  label={{
+                    value: milestone?.goal.title || 'Milestone',
+                    position: 'top',
+                    fill: isDark ? '#93c5fd' : '#3b82f6',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    offset: 8,
+                  }}
+                />
+              );
+            })}
             <Area
               type="monotone"
               dataKey="actual"
@@ -724,6 +880,55 @@ export function ProjectionsChart({
           </ToggleGroupItem>
         </ToggleGroup>
       </div>
+
+      {/* Milestone toggle list */}
+      {sortedMilestones.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+          <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400 mb-2">
+            Milestones
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sortedMilestones.map((result) => {
+              const isSelected = selectedMilestoneIds.includes(result.goal.id);
+              const isCompleted = result.completedCount > 0;
+              const targetValue = result.goal.target.value as number;
+              
+              const toggleMilestone = () => {
+                if (isSelected) {
+                  setSelectedMilestoneIds(selectedMilestoneIds.filter(id => id !== result.goal.id));
+                } else {
+                  setSelectedMilestoneIds([...selectedMilestoneIds, result.goal.id]);
+                }
+              };
+              
+              return (
+                <button
+                  key={result.goal.id}
+                  type="button"
+                  onClick={toggleMilestone}
+                  className={`relative inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs transition-colors ${
+                    isSelected
+                      ? 'bg-blue-50 dark:bg-blue-950 border-blue-300 dark:border-blue-700'
+                      : 'bg-transparent border-slate-200 dark:border-slate-800 opacity-70 hover:opacity-100'
+                  }`}
+                  title={isSelected ? 'Hide milestone line' : 'Show milestone line'}
+                >
+                  <AchievementBadgeIcon badge={result.goal.badge} size={16} />
+                  <span className="text-slate-700 dark:text-slate-300">
+                    {result.goal.title}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    ({formatValue(targetValue)})
+                  </span>
+                  {isCompleted && (
+                    <CheckCircle className="absolute -top-1.5 -right-1.5 size-4 text-green-500 bg-white dark:bg-slate-900 rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

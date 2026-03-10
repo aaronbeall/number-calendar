@@ -185,7 +185,7 @@ export function ValenceDistributionChart({
         {payload.map((entry: any, index: number) => {
           const dataPoint = data[index];
           return (
-            <div key={`legend-${index}`} className="flex items-center gap-2 rounded-md border border-slate-200 bg-white/70 px-2 py-1 dark:border-slate-800 dark:bg-slate-900/60">
+            <div key={`legend-${dataPoint?.name || index}`} className="flex items-center gap-2 rounded-md border border-slate-200 bg-white/70 px-2 py-1 dark:border-slate-800 dark:bg-slate-900/60">
               <span
                 className="inline-block h-3 w-3 rounded-full"
                 style={{ backgroundColor: entry.color }}
@@ -297,8 +297,8 @@ export function ValenceDistributionChart({
             labelLine={false}
             label={({ percentage }) => formatValue(percentage ?? 0, { percent: true })}
           >
-            {data.map((_, index) => (
-              <Cell key={`cell-${index}`} fill={colors[index]} stroke="none" />
+            {data.map((entry) => (
+              <Cell key={`cell-${entry.name}`} fill={colors[data.indexOf(entry)]} stroke="none" />
             ))}
           </Pie>
           <Tooltip content={renderTooltip} />

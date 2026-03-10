@@ -14,6 +14,7 @@ import { LoadingState } from '@/components/PageStates';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
+import { useAchievements } from '@/hooks/useAchievements';
 import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useMemo } from 'react';
@@ -144,6 +145,7 @@ function EmptyChartIllustration() {
 export function Analysis() {
   const { dataset } = useDatasetContext();
   const { allDays, isLoading, ...aggregateData } = useAllPeriodsAggregateData();
+  const { milestones: milestonesResults } = useAchievements(dataset.id);
   const isMobile = useIsMobile();
   const primaryMetric = getPrimaryMetric(dataset.tracking);
 
@@ -1236,6 +1238,7 @@ export function Analysis() {
               projectionRecentWindow={projectionRecentWindow}
               projectionMomentumWeight={projectionMomentumWeight}
               valence={dataset.valence}
+              milestones={milestonesResults}
             />
           </ChartSection>
 

@@ -288,9 +288,9 @@ export function CustomRangePicker({
           {tracking === 'series' ? (
             <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
               <Bar dataKey="value" radius={[2, 2, 0, 0]} isAnimationActive={false}>
-                {chartData.map((item, index) => (
+                {chartData.map((item) => (
                   <Cell
-                    key={`cell-${index}`}
+                    key={`cell-${item.dateKey}`}
                     fill={getBarColor(item.value)}
                     opacity={item.isInRange ? 1 : 0.25}
                   />

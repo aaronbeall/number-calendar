@@ -234,7 +234,7 @@ export function PeriodComparisonChart({
                   radius={[8, 8, 0, 0]}
                   hide={!visibleMetrics.has(metric)}
                 >
-                  {valence && tracking && data.map((point, index) => {
+                  {valence && tracking && data.map((point) => {
                     const metricValence = getMetricValence(metric, valence);
                     const colorValue = getValenceColorValue(metric, (point[metric] as number) ?? 0);
                     
@@ -248,7 +248,7 @@ export function PeriodComparisonChart({
                     
                     return (
                       <Cell
-                        key={`cell-${metric}-${index}`}
+                        key={`cell-${metric}-${point.dateKey}`}
                         fill={cellColor}
                       />
                     );

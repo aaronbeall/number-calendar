@@ -361,10 +361,10 @@ export function DeviationBarChart({
           <ReferenceLine y={0} stroke={axisColor} strokeOpacity={0.5} strokeWidth={1.5} />
           <Tooltip content={renderTooltip} />
           <Bar dataKey="deviation" fill="#8884d8" isAnimationActive radius={[8, 8, 0, 0]}>
-            {data.map((entry, index) => {
+            {data.map((entry) => {
               const baseColor = getBarColor(entry.value);
               const color = getValenceAdjustedColor(baseColor, entry.deviation, valence);
-              return <Cell key={`bar-${index}`} fill={color} />;
+              return <Cell key={`bar-${entry.dateKey}`} fill={color} />;
             })}
           </Bar>
         </BarChart>
