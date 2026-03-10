@@ -170,8 +170,15 @@ export function MomentumQuadrantChart({
   };
 
   // Determine colors based on valence source, valence, and regime
-  const getRegimeColors = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
+  const getRegimeValenceValue = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
     const levelValue = isHighLevel ? 1 : -1;
+    const momentumValue = isPositiveMomentum ? 1 : -1;
+    // Transition quadrants (Growth/Decline) should evaluate by direction.
+    return isHighLevel !== isPositiveMomentum ? momentumValue : levelValue;
+  };
+
+  const getRegimeColors = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
+    const regimeValenceValue = getRegimeValenceValue(isHighLevel, isPositiveMomentum);
     
     // Define palette for this quadrant
     const palette = isHighLevel && isPositiveMomentum
@@ -182,7 +189,7 @@ export function MomentumQuadrantChart({
       ? { good: blue, bad: orange, neutral: orange }      // Decline
       : { good: emerald, bad: red, neutral: red };        // Trough
     
-    return getValueForValence(levelValue, valence, palette);
+    return getValueForValence(regimeValenceValue, valence, palette);
   };
 
   const peakColors = getRegimeColors(true, true);
@@ -205,7 +212,7 @@ export function MomentumQuadrantChart({
       };
 
   const getRegimeTint = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
-    const levelValue = isHighLevel ? 1 : -1;
+    const regimeValenceValue = getRegimeValenceValue(isHighLevel, isPositiveMomentum);
     const palette = isHighLevel && isPositiveMomentum
       ? { good: '#10b981', bad: '#ef4444', neutral: '#3b82f6' } // Peak
       : !isHighLevel && isPositiveMomentum
@@ -214,7 +221,7 @@ export function MomentumQuadrantChart({
       ? { good: '#3b82f6', bad: '#f97316', neutral: '#f97316' } // Decline
       : { good: '#10b981', bad: '#ef4444', neutral: '#ef4444' }; // Trough
 
-    return getValueForValence(levelValue, valence, palette);
+    return getValueForValence(regimeValenceValue, valence, palette);
   };
 
   const chartBounds = useMemo(() => {
