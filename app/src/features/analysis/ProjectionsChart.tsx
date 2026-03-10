@@ -651,7 +651,7 @@ export function ProjectionsChart({
                   key={`milestone-line-${milestone.goal.id}`}
                   y={milestone.goal.target.value as number}
                   stroke="#3b82f6"
-                  strokeWidth={2}
+                  strokeWidth={1}
                   strokeDasharray="4 4"
                   label={
                     !hasIntersection
