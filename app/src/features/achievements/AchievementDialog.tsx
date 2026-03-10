@@ -126,7 +126,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
     prevTargetRef.current = (initialData?.goal ?? getDefaultGoal())?.target ?? null;
   }, [open, initialGoal, initialData, getDefaultGoal]);
 
-  const handleGoalChange = (nextGoal: Partial<GoalRequirements>) => {
+  const handleGoalChange = (nextGoal: DeepPartial<GoalRequirements>) => {
     if (!isEditMode || !nextGoal.target) {
       setGoal(nextGoal);
       prevTargetRef.current = nextGoal.target ?? null;

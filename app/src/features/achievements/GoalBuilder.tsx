@@ -8,6 +8,7 @@ import { getPrimaryMetric } from '@/lib/tracking';
 import { entriesOf } from '@/lib/utils';
 import { useState } from 'react';
 import type { GoalRequirements, GoalTarget, TimePeriod, Tracking, Valence } from '../db/localdb';
+import type { DeepPartial } from '@/lib/types';
 
 // Shared filtering functions for all goal builders
 export const filterMetricsForTracking = (metric: NumberMetric, tracking?: Tracking, source?: NumberSource): boolean => {
@@ -30,8 +31,8 @@ export const filterSourcesForTracking = (source: NumberSource, tracking?: Tracki
 };
 
 type GoalBuilderProps = {
-  value: Partial<GoalRequirements>;
-  onChange: (v: Partial<GoalRequirements>) => void;
+  value: DeepPartial<GoalRequirements>;
+  onChange: (v: DeepPartial<GoalRequirements>) => void;
   tracking?: Tracking;
   valence?: Valence;
 };
@@ -67,12 +68,12 @@ export function GoalBuilder({ value, onChange, tracking }: GoalBuilderProps) {
   const val = goal && 'value' in goal ? goal.value : undefined;
   const range = goal && 'range' in goal ? goal.range : undefined;
 
-  const updateValueField = <K extends keyof GoalRequirements>(field: K, fieldValue: GoalRequirements[K]) => {
+  const updateValueField = <K extends keyof GoalRequirements>(field: K, fieldValue: DeepPartial<GoalRequirements>[K]) => {
     onChange({ ...value, [field]: fieldValue });
   }
 
-  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: GoalTarget[K]) => {
-    onChange({ ...value, target: { ...goal, [field]: fieldValue } as GoalTarget });
+  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: DeepPartial<GoalTarget>[K]) => {
+    onChange({ ...value, target: { ...goal, [field]: fieldValue } });
   }
 
   const [freq, setFreq] = useState<keyof typeof FREQUENCIES>(count && count > 1 ? 'times' : 'once');

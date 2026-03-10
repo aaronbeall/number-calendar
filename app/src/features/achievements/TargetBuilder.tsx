@@ -7,10 +7,11 @@ import { getPrimaryMetric } from '@/lib/tracking';
 import { entriesOf } from '@/lib/utils';
 import type { GoalRequirements, GoalTarget, TimePeriod, Tracking, Valence } from '../db/localdb';
 import { filterMetricsForTracking, filterSourcesForTracking } from './GoalBuilder';
+import type { DeepPartial } from '@/lib/types';
 
 type TargetBuilderProps = {
-  value: Partial<GoalRequirements>;
-  onChange: (v: Partial<GoalRequirements>) => void;
+  value: DeepPartial<GoalRequirements>;
+  onChange: (v: DeepPartial<GoalRequirements>) => void;
   tracking?: Tracking;
   valence?: Valence;
 };
@@ -41,14 +42,14 @@ export function TargetBuilder({ value, onChange, tracking, valence }: TargetBuil
   const rangeVal = goal?.range ? goal.range : [undefined, undefined];
   const isRange = isRangeCondition(condition);
 
-  const updateValueField = <K extends keyof GoalRequirements>(field: K, fieldValue: GoalRequirements[K]) => {
+  const updateValueField = <K extends keyof GoalRequirements>(field: K, fieldValue: DeepPartial<GoalRequirements>[K]) => {
     onChange({ ...value, [field]: fieldValue, count: 1 });
   }
 
-  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: GoalTarget[K]) => {
+  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: DeepPartial<GoalTarget>[K]) => {
     onChange({ 
       ...value, 
-      target: { ...goal, [field]: fieldValue } as GoalTarget,
+      target: { ...goal, [field]: fieldValue },
       count: 1,
     });
   }

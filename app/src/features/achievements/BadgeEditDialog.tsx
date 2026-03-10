@@ -175,7 +175,7 @@ function IconSelector<T extends string>({ options, value, onChange, label, class
       </div>
       <div className="grid grid-cols-8 gap-1.5 md:grid-cols-6 max-h-28 overflow-y-auto p-1 border border-slate-200 dark:border-slate-700 rounded-md bg-white dark:bg-slate-900">
         {filtered.map(k => {
-          const Icon = options[k];
+          const Icon = options[k] as (props: { className?: string }) => React.JSX.Element;
           const selected = value === k;
           return (
             <button

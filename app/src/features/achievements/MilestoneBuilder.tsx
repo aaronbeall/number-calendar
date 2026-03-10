@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { getPrimaryMetric } from '@/lib/tracking';
 import { filterMetricsForTracking, filterSourcesForTracking } from './GoalBuilder';
+import type { DeepPartial } from '@/lib/types';
 
 type MilestoneBuilderProps = {
-  value: Partial<GoalRequirements>;
-  onChange: (v: Partial<GoalRequirements>) => void;
+  value: DeepPartial<GoalRequirements>;
+  onChange: (v: DeepPartial<GoalRequirements>) => void;
   tracking?: Tracking;
   valence?: Valence;
 };
@@ -29,10 +30,10 @@ export function MilestoneBuilder({ value, onChange, tracking, valence }: Milesto
   const { condition, metric, source } = goal ?? {};
   const val = goal && 'value' in goal ? goal.value : undefined;
 
-  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: GoalTarget[K]) => {
+  const updateMetricGoalField = <K extends keyof GoalTarget>(field: K, fieldValue: DeepPartial<GoalTarget>[K]) => {
     onChange({ 
       ...value, 
-      target: { ...goal, [field]: fieldValue } as GoalTarget,
+      target: { ...goal, [field]: fieldValue },
       timePeriod: 'anytime',
       count: 1,
     });

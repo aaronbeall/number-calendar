@@ -105,17 +105,17 @@ export function createGoalTextReplacements(
   }
 
   // Add condition replacements
-  if (prevTarget.condition !== nextTarget.condition) {
+  if (prevTarget.condition && nextTarget.condition && prevTarget.condition !== nextTarget.condition) {
     wordReplacements.push({ old: prevTarget.condition, new: nextTarget.condition });
   }
 
   // Add metric replacements
-  if (prevTarget.metric !== nextTarget.metric) {
+  if (prevTarget.metric && nextTarget.metric && prevTarget.metric !== nextTarget.metric) {
     wordReplacements.push({ old: prevTarget.metric, new: nextTarget.metric });
   }
 
   // Add source replacements
-  if (prevTarget.source !== nextTarget.source) {
+  if (prevTarget.source && nextTarget.source && prevTarget.source !== nextTarget.source) {
     wordReplacements.push({ old: prevTarget.source, new: nextTarget.source });
   }
 

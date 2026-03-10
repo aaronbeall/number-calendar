@@ -437,7 +437,7 @@ export function processAchievements({
 // Sustain 90 Days:       { type: 'goal', timePeriod: 'daily', count: 90, consecutive: true, goal: { condition: 'above', metric: 'total', source: 'deltas', value: 0 } }
 // Perfect Month:         { type: 'goal', timePeriod: 'monthly', count: 1, goal: { condition: 'above', metric: 'min', source: 'stats', value: 0 } }
 
-export function isValidGoalAttributes(goal: Partial<GoalRequirements>): goal is GoalRequirements {
+export function isValidGoalAttributes(goal: DeepPartial<GoalRequirements>): goal is GoalRequirements {
   const { target: metricGoal, timePeriod, count } = goal;
   if (!metricGoal || !timePeriod || !count) return false;
   const { condition, metric, source } = metricGoal;
@@ -463,13 +463,13 @@ export function formatGoalTargetValue({ value, range, source }: DeepPartial<Goal
  */
 function formatTargetValue({ value, range, source }: DeepPartial<Pick<GoalTarget, 'value' | 'range' | 'source'>>, { short }: { short?: boolean; } = {}): string {
   const options: FormatValueOptions = { short, percent: source === 'percents' || source === 'cumulativePercents', delta: source === 'deltas' || source === 'cumulativePercents' };
-  if (range) {
-    return formatRange(range, options);
+  if (Array.isArray(range) && typeof range[0] === 'number' && typeof range[1] === 'number') {
+    return formatRange([range[0], range[1]], options);
   }
   return formatValue(value, options);
 }
 
-export function getSuggestedGoalContent(goal: Partial<Goal>) {
+export function getSuggestedGoalContent(goal: DeepPartial<Goal>) {
   const { target: metricGoal, timePeriod = 'anytime', count = 1, consecutive = false, type = 'goal' } = goal;
   const { condition, metric, source } = metricGoal ?? {};
   const value = metricGoal?.value;
