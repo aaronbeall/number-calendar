@@ -190,6 +190,20 @@ export function MomentumQuadrantChart({
   const declineColors = getRegimeColors(true, false);
   const troughColors = getRegimeColors(false, false);
 
+  const regimeTitles = valence === 'negative'
+    ? {
+        growth: 'Rising',
+        peak: 'Elevated',
+        decline: 'Easing',
+        trough: 'Low',
+      }
+    : {
+        growth: 'Growth',
+        peak: 'Peak',
+        decline: 'Decline',
+        trough: 'Trough',
+      };
+
   const getRegimeTint = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
     const levelValue = isHighLevel ? 1 : -1;
     const palette = isHighLevel && isPositiveMomentum
@@ -308,7 +322,7 @@ export function MomentumQuadrantChart({
         <div className={`rounded-lg ${growthColors.border} ${growthColors.bg} px-3 py-2.5`}>
           <div className="flex items-center justify-between mb-1.5">
             <div className={`font-semibold text-xs ${growthColors.text} uppercase tracking-tight`}>
-              Growth
+              {regimeTitles.growth}
             </div>
             <ArrowUp className={`w-4 h-4 ${growthColors.label}`} />
           </div>
@@ -322,7 +336,7 @@ export function MomentumQuadrantChart({
         <div className={`rounded-lg ${peakColors.border} ${peakColors.bg} px-3 py-2.5`}>
           <div className="flex items-center justify-between mb-1.5">
             <div className={`font-semibold text-xs ${peakColors.text} uppercase tracking-tight`}>
-              Peak
+              {regimeTitles.peak}
             </div>
             <TrendingUp className={`w-4 h-4 ${peakColors.label}`} />
           </div>
@@ -336,7 +350,7 @@ export function MomentumQuadrantChart({
         <div className={`rounded-lg ${declineColors.border} ${declineColors.bg} px-3 py-2.5`}>
           <div className="flex items-center justify-between mb-1.5">
             <div className={`font-semibold text-xs ${declineColors.text} uppercase tracking-tight`}>
-              Decline
+              {regimeTitles.decline}
             </div>
             <ArrowDown className={`w-4 h-4 ${declineColors.label}`} />
           </div>
@@ -350,7 +364,7 @@ export function MomentumQuadrantChart({
         <div className={`rounded-lg ${troughColors.border} ${troughColors.bg} px-3 py-2.5`}>
           <div className="flex items-center justify-between mb-1.5">
             <div className={`font-semibold text-xs ${troughColors.text} uppercase tracking-tight`}>
-              Trough
+              {regimeTitles.trough}
             </div>
             <TrendingDown className={`w-4 h-4 ${troughColors.label}`} />
           </div>
