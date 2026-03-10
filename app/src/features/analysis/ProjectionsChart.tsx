@@ -20,9 +20,11 @@ import { NumberText } from '@/components/ui/number-text';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Slider } from '@/components/ui/slider';
 import { ToggleOptionPopover } from '@/components/ui/toggle-option-popover';
+import { Button } from '@/components/ui/button';
 import { usePreference } from '@/hooks/usePreference';
-import { CheckCircle, ChevronDown, Gauge, Percent, Plus, SlidersHorizontal, Target } from 'lucide-react';
+import { CheckCircle, ChevronDown, ExternalLink, Gauge, Percent, Plus, SlidersHorizontal, Target } from 'lucide-react';
 import { useId, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { AchievementBadgeIcon } from '@/features/achievements/AchievementBadgeIcon';
 import { AchievementBadge } from '@/features/achievements/AchievementBadge';
 import {
@@ -882,7 +884,7 @@ export function ProjectionsChart({
       </div>
 
       {/* Milestone toggle list */}
-      {sortedMilestones.length > 0 && (
+      {sortedMilestones.length > 0 ? (
         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
           <div className="text-[10px] uppercase tracking-wide font-semibold text-slate-600 dark:text-slate-400 mb-2">
             Milestones
@@ -926,6 +928,34 @@ export function ProjectionsChart({
                 </button>
               );
             })}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+          <div className="rounded-xl border border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-white dark:from-blue-900/20 dark:to-slate-900 p-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <AchievementBadge badge={{ style: 'laurel_trophy', icon: 'flag', color: 'sapphire', label: '' }} size="small" />
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                    Add milestones to visualize targets on this chart
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
+                    Create milestone goals to see projection intersections and track when you'll reach major targets.
+                  </p>
+                </div>
+              </div>
+              <Link to={`/dataset/${datasetId}/milestones?add`}>
+                <Button variant="outline" className="w-full h-auto px-3 py-2.5 justify-start gap-2.5 border-blue-200/80 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30">
+                  <AchievementBadge badge={{ style: 'laurel_trophy', icon: 'flag', color: 'sapphire', label: '' }} size="small" />
+                  <span className="flex-1 min-w-0 text-left">
+                    <span className="block text-xs font-semibold text-blue-800 dark:text-blue-200">Create Milestone</span>
+                    <span className="block text-[11px] text-blue-700/85 dark:text-blue-300/85">Mark major achievement targets</span>
+                  </span>
+                  <ExternalLink className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       )}
