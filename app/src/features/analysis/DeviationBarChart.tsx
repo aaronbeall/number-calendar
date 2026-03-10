@@ -138,7 +138,7 @@ export function DeviationBarChart({
     if (latestGoal) {
       selectGoal(latestGoal.id);
     }
-  }, [matchingGoals, selectGoal, targetBaselineInput]);
+  }, [matchingGoals, selectGoal, selectedGoalId, targetBaselineInput]);
 
   // Helper function to calculate median
   const calculateMedian = (values: number[]): number => {

@@ -117,7 +117,7 @@ export function AppHeader({
       setOverlayAchievements(overlayItems);
       setOverlayOpen(true);
     }
-  }, [newResults]);
+  }, [allResults, newResults]);
   
   return (
     <>

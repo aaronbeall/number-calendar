@@ -41,7 +41,7 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
         if (addMode !== 'entry') setAddMode('entry');
       }
     }
-  }, [input, addMode, tracking]);
+  }, [input, addMode, tracking, priorNumber]);
 
   // Parse and preview number from input
   let previewNumber: number | null = null;

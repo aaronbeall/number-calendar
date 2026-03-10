@@ -10,7 +10,7 @@ import { createGoalTextReplacements, applyGoalTextReplacements } from '@/lib/goa
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { capitalize, randomKeyOf } from '@/lib/utils';
 import { AlertTriangle, Award, Dices, Palette, Undo2 } from 'lucide-react';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AchievementBadge from './AchievementBadge';
 import { BadgeEditDialog } from './BadgeEditDialog';
 import { GoalBuilder } from './GoalBuilder';
@@ -47,7 +47,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
   const {tracking, valence} = dataset;
   
   // Create sensible defaults based on goal type and dataset
-  const getDefaultGoal = (): Partial<GoalRequirements> => {
+  const getDefaultGoal = useCallback((): Partial<GoalRequirements> => {
     const primaryMetric = getPrimaryMetric(tracking);
     const defaultCondition = valence === 'negative' ? 'below' : 'above';
     const defaultSource = type == 'milestone' ? 'stats' : getValenceSource(tracking);
@@ -86,7 +86,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
         count: 1,
       };
     }
-  };
+  }, [tracking, valence, type]);
   
   const [goal, setGoal] = useState<Partial<GoalRequirements>>(
     initialGoal
@@ -123,7 +123,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
     setBadge(initialData?.badge ?? { style: 'badge', color: 'gold', icon: 'star', label: undefined });
     setGoal(initialData?.goal ?? getDefaultGoal());
     prevTargetRef.current = (initialData?.goal ?? getDefaultGoal())?.target ?? null;
-  }, [open, initialGoal, initialData, type, tracking, valence]);
+  }, [open, initialGoal, initialData, getDefaultGoal]);
 
   const handleGoalChange = (nextGoal: Partial<GoalRequirements>) => {
     if (!isEditMode || !nextGoal.target) {

@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     window.document.documentElement.classList.toggle("dark", appliedTheme === "dark");
     localStorage.setItem("theme", theme);
-  }, [appliedTheme]);
+  }, [appliedTheme, theme]);
 
   const isDark = appliedTheme === "dark";
 
