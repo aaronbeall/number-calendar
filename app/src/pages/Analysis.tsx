@@ -723,8 +723,6 @@ export function Analysis() {
                     onClick={handleSelectAllTime}
                   >
                     <InfinityIcon className="w-4 h-4 mr-2" />
-                                        <InfinityIcon className="w-4 h-4 mr-2" />
-                                        <InfinityIcon className="w-4 h-4 mr-2" />
                     Select All Time
                   </Button>
                 </div>
@@ -804,8 +802,6 @@ export function Analysis() {
                     <>
                       <ToggleGroupItem value="all-time-trend" aria-label="All Time Trend">
                         <InfinityIcon className="size-4 sm:mr-1" />
-                                                <InfinityIcon className="size-4 sm:mr-1" />
-                                                <InfinityIcon className="size-4 sm:mr-1" />
                         <span className="hidden sm:inline">All Time Trend</span>
                       </ToggleGroupItem>
                       <ToggleGroupItem value="trend" aria-label={trendScopeLabel}>
@@ -846,8 +842,6 @@ export function Analysis() {
                       View how your data changes over time. Use{' '}
                       <span className="inline-flex items-center gap-1 rounded border border-border bg-muted px-1.5 py-0.5 font-medium text-foreground">
                         <InfinityIcon className="h-3.5 w-3.5" />
-                                                <InfinityIcon className="h-3.5 w-3.5" />
-                                                <InfinityIcon className="h-3.5 w-3.5" />
                         All Time
                       </span>{' '}
                       for cumulative values from the beginning,{' '}
