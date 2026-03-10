@@ -11,6 +11,7 @@ import { Empty, EmptyHeader, EmptyTitle, EmptyDescription, EmptyContent } from '
 import { Button } from '@/components/ui/button';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import { LoadingState } from '@/components/PageStates';
+import { LazyChart } from '@/components/LazyChart';
 import { useDatasetContext } from '@/context/DatasetContext';
 import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
@@ -139,6 +140,16 @@ function EmptyChartIllustration() {
       <circle cx="205" cy="95" r="4" fill="currentColor" fillOpacity="0.25" />
       <circle cx="255" cy="125" r="4" fill="currentColor" fillOpacity="0.25" />
     </svg>
+  );
+}
+
+function ChartLoadingPlaceholder({ minHeight = 320 }: { minHeight?: number }) {
+  return (
+    <div
+      className="w-full rounded-md bg-slate-100/80 dark:bg-slate-800/50 animate-pulse"
+      style={{ height: minHeight }}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -819,17 +830,19 @@ export function Analysis() {
                 Trend Over Time
               </ChartSectionTitle>
             </ChartSectionHeader>
-            <TrendAnalysisChart
-              key={dataset.id}
-              periods={computedAggregatesInRange}
-              aggregationType={aggregationType}
-              tracking={dataset.tracking}
-              mode={trendChartMode}
-              valence={dataset.valence}
-              selectedMetrics={selectedSummaryMetrics}
-              datasetId={dataset.id}
-              priorTimeFrameValue={trendPriorTimeFrameValue}
-            />
+            <LazyChart minHeight={320} fallback={<ChartLoadingPlaceholder minHeight={320} />}>
+              <TrendAnalysisChart
+                key={dataset.id}
+                periods={computedAggregatesInRange}
+                aggregationType={aggregationType}
+                tracking={dataset.tracking}
+                mode={trendChartMode}
+                valence={dataset.valence}
+                selectedMetrics={selectedSummaryMetrics}
+                datasetId={dataset.id}
+                priorTimeFrameValue={trendPriorTimeFrameValue}
+              />
+            </LazyChart>
           </ChartSection>
 
           {/* Achievement Insights */}
@@ -850,12 +863,14 @@ export function Analysis() {
                 Achievement Insights
               </ChartSectionTitle>
             </ChartSectionHeader>
-            <AchievementInsightsChart
-              datasetId={dataset.id}
-              aggregationType={aggregationType}
-              timeRange={timeRange}
-              periods={computedAggregatesInRange}
-            />
+            <LazyChart minHeight={320} fallback={<ChartLoadingPlaceholder minHeight={320} />}>
+              <AchievementInsightsChart
+                datasetId={dataset.id}
+                aggregationType={aggregationType}
+                timeRange={timeRange}
+                periods={computedAggregatesInRange}
+              />
+            </LazyChart>
           </ChartSection>
 
           {/* Aggregation Bar Chart */}
@@ -896,17 +911,19 @@ export function Analysis() {
                 {capitalize(adjectivize(getAggregationPeriodLabel(aggregationType)))} Deviation
               </ChartSectionTitle>
             </ChartSectionHeader>
-            <DeviationBarChart
-              key={dataset.id}
-              periods={computedAggregatesInRange}
-              allTimePeriods={allAggregatePeriods}
-              aggregationType={aggregationType}
-              tracking={dataset.tracking}
-              valence={dataset.valence}
-              rangeLabel={activeTimeFrameLabel}
-              datasetId={dataset.id}
-              priorTimeFrameValue={priorTimeFrameValue}
-            />
+            <LazyChart minHeight={320} fallback={<ChartLoadingPlaceholder minHeight={320} />}>
+              <DeviationBarChart
+                key={dataset.id}
+                periods={computedAggregatesInRange}
+                allTimePeriods={allAggregatePeriods}
+                aggregationType={aggregationType}
+                tracking={dataset.tracking}
+                valence={dataset.valence}
+                rangeLabel={activeTimeFrameLabel}
+                datasetId={dataset.id}
+                priorTimeFrameValue={priorTimeFrameValue}
+              />
+            </LazyChart>
           </ChartSection>
 
           {/* Distribution Histogram */}
@@ -930,12 +947,14 @@ export function Analysis() {
                 {aggregationPeriodLabel} Value Distribution
               </ChartSectionTitle>
             </ChartSectionHeader>
-            <DistributionHistogram
-              key={dataset.id}
-              periods={computedAggregatesInRange}
-              tracking={dataset.tracking}
-              valence={dataset.valence}
-            />
+            <LazyChart minHeight={320} fallback={<ChartLoadingPlaceholder minHeight={320} />}>
+              <DistributionHistogram
+                key={dataset.id}
+                periods={computedAggregatesInRange}
+                tracking={dataset.tracking}
+                valence={dataset.valence}
+              />
+            </LazyChart>
           </ChartSection>
 
           {/* Valence Distribution for non-neutral datasets */}
@@ -997,14 +1016,16 @@ export function Analysis() {
                   {aggregationType === 'none' ? 'Entry' : capitalize(adjectivize(aggregationType))} Valence Distribution
                 </ChartSectionTitle>
               </ChartSectionHeader>
-              <ValenceDistributionChart
-                key={dataset.id}
-                periods={computedAggregatesInRange}
-                aggregationType={aggregationType}
-                tracking={dataset.tracking}
-                valence={dataset.valence}
-                mode={valenceDistributionMode}
-              />
+              <LazyChart minHeight={300} fallback={<ChartLoadingPlaceholder minHeight={300} />}>
+                <ValenceDistributionChart
+                  key={dataset.id}
+                  periods={computedAggregatesInRange}
+                  aggregationType={aggregationType}
+                  tracking={dataset.tracking}
+                  valence={dataset.valence}
+                  mode={valenceDistributionMode}
+                />
+              </LazyChart>
             </ChartSection>
           )}
 
@@ -1027,15 +1048,17 @@ export function Analysis() {
                   {capitalize(adjectivize(aggregationType))} Comparison
                 </ChartSectionTitle>
               </ChartSectionHeader>
-              <PeriodComparisonChart
-                key={dataset.id}
-                periods={periods}
-                aggregationType={aggregationType}
-                selectedMetrics={selectedSummaryMetrics}
-                valence={dataset.valence}
-                tracking={dataset.tracking}
-                datasetId={dataset.id}
-              />
+              <LazyChart minHeight={320} fallback={<ChartLoadingPlaceholder minHeight={320} />}>
+                <PeriodComparisonChart
+                  key={dataset.id}
+                  periods={periods}
+                  aggregationType={aggregationType}
+                  selectedMetrics={selectedSummaryMetrics}
+                  valence={dataset.valence}
+                  tracking={dataset.tracking}
+                  datasetId={dataset.id}
+                />
+              </LazyChart>
             </ChartSection>
           )}
 
@@ -1228,18 +1251,20 @@ export function Analysis() {
                 Projections
               </ChartSectionTitle>
             </ChartSectionHeader>
-            <ProjectionsChart
-              datasetId={dataset.id}
-              periods={projectionPeriods}
-              tracking={dataset.tracking}
-              aggregationType={aggregationType}
-              projectionMode={projectionMode}
-              projectionHorizon={projectionHorizon}
-              projectionRecentWindow={projectionRecentWindow}
-              projectionMomentumWeight={projectionMomentumWeight}
-              valence={dataset.valence}
-              milestones={milestonesResults}
-            />
+            <LazyChart minHeight={360} fallback={<ChartLoadingPlaceholder minHeight={360} />}>
+              <ProjectionsChart
+                datasetId={dataset.id}
+                periods={projectionPeriods}
+                tracking={dataset.tracking}
+                aggregationType={aggregationType}
+                projectionMode={projectionMode}
+                projectionHorizon={projectionHorizon}
+                projectionRecentWindow={projectionRecentWindow}
+                projectionMomentumWeight={projectionMomentumWeight}
+                valence={dataset.valence}
+                milestones={milestonesResults}
+              />
+            </LazyChart>
           </ChartSection>
 
           {/* Unique chart: Momentum Quadrant */}
@@ -1272,12 +1297,14 @@ export function Analysis() {
                 Momentum Quadrant
               </ChartSectionTitle>
             </ChartSectionHeader>
-            <MomentumQuadrantChart
-              periods={computedAggregatesInRange}
-              tracking={dataset.tracking}
-              aggregationType={aggregationType}
-              valence={dataset.valence}
-            />
+            <LazyChart minHeight={360} fallback={<ChartLoadingPlaceholder minHeight={360} />}>
+              <MomentumQuadrantChart
+                periods={computedAggregatesInRange}
+                tracking={dataset.tracking}
+                aggregationType={aggregationType}
+                valence={dataset.valence}
+              />
+            </LazyChart>
           </ChartSection>
         </div>
       </div>
