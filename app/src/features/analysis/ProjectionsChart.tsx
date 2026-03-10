@@ -505,21 +505,6 @@ export function ProjectionsChart({
             </span>
           </div>
         )}
-        {milestonesAtPoint.length > 0 && (
-          <div className="mt-1 pt-1">
-            {milestonesAtPoint.map((milestone) => (
-              <div key={milestone.goal.id} className="flex items-center gap-2 mt-1">
-                <AchievementBadge badge={milestone.goal.badge} size="small" />
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{milestone.goal.title}</span>
-                  {milestone.goal.description && (
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{milestone.goal.description}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
         {showProjectionSpread && typeof projectedLow === 'number' && typeof projectedHigh === 'number' && (
           <>
             <div className="flex items-center justify-between gap-3 text-xs mt-1">
@@ -551,6 +536,21 @@ export function ProjectionsChart({
               </span>
             </div>
           </>
+        )}
+        {milestonesAtPoint.length > 0 && (
+          <div className="mt-1 pt-1">
+            {milestonesAtPoint.map((milestone) => (
+              <div key={milestone.goal.id} className="flex items-center gap-2 mt-1">
+                <AchievementBadge badge={milestone.goal.badge} size="small" />
+                <div className="flex flex-col">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{milestone.goal.title}</span>
+                  {milestone.goal.description && (
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400">{milestone.goal.description}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     );
