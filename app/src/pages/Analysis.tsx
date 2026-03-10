@@ -16,10 +16,10 @@ import { useDatasetContext } from '@/context/DatasetContext';
 import { usePreference } from '@/hooks/usePreference';
 import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { useAchievements } from '@/hooks/useAchievements';
+import { useMatchMedia } from '@/hooks/useMatchMedia';
 import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useCallback, useEffect, useMemo } from 'react';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type ProjectionMomentumWeight, type ProjectionRecentWindow, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
@@ -165,7 +165,7 @@ export function Analysis() {
   const { dataset } = useDatasetContext();
   const { allDays, isLoading, ...aggregateData } = useAllPeriodsAggregateData();
   const { milestones: milestonesResults } = useAchievements(dataset.id);
-  const isMobile = useIsMobile();
+  const isSidebarLayout = useMatchMedia('(min-width: 1024px)');
   const primaryMetric = getPrimaryMetric(dataset.tracking);
 
   // Persisted analysis controls (per dataset)
@@ -680,7 +680,7 @@ export function Analysis() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Controls Panel */}
           <Card className="lg:col-span-1 p-3 sm:p-4 space-y-3 h-fit sticky top-2 z-20 lg:top-6">
-            {isMobile ? (
+            {!isSidebarLayout ? (
               <Accordion type="single" collapsible defaultValue="controls">
                 <AccordionItem value="controls" className="border-none">
                   <AccordionTrigger className="py-1.5 px-0 text-sm">
@@ -740,7 +740,7 @@ export function Analysis() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
         {/* Controls Panel */}
         <Card className="lg:col-span-1 p-3 sm:p-4 space-y-3 h-fit sticky top-2 z-20 lg:top-6">
-          {isMobile ? (
+          {!isSidebarLayout ? (
             <Accordion type="single" collapsible defaultValue="controls">
               <AccordionItem value="controls" className="border-none">
                 <AccordionTrigger className="py-1.5 px-0 text-sm">

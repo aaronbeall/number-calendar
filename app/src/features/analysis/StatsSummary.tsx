@@ -163,10 +163,10 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
         </Button>
       </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:h-full lg:overflow-hidden">
           {/* Left Column: Primary Metric + Secondary Stats Options */}
-          <div className="overflow-y-auto pr-2 space-y-4">
+          <div className="space-y-4 lg:overflow-y-auto lg:pr-2">
             {/* Primary metric - highlighted */}
             <div className="rounded-md bg-slate-100 dark:bg-slate-800 p-2">
               <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">PRIMARY METRIC</div>
@@ -241,7 +241,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
           </div>
 
           {/* Right Column: Secondary Metrics */}
-          <div className="overflow-y-auto pl-2">
+          <div className="lg:overflow-y-auto lg:pl-2">
             <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-2">METRICS</div>
             <div className="space-y-2">
               {(Object.keys(METRIC_DISPLAY_INFO) as NumberMetric[])
