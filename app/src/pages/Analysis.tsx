@@ -18,7 +18,7 @@ import { useAllPeriodsAggregateData } from '@/hooks/useAggregateData';
 import { useAchievements } from '@/hooks/useAchievements';
 import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type ProjectionMomentumWeight, type ProjectionRecentWindow, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
@@ -45,6 +45,14 @@ import { buildSingleNumberAggregates, computeRunningAggregatePeriods, type Perio
 import { Link } from 'react-router-dom';
 
 export type AnalysisTrendMode = 'all-time-trend' | 'in-range-trend' | 'change';
+
+const AGGREGATION_OPTIONS = [
+  { value: 'none', label: 'None', icon: Ban },
+  { value: 'day', label: 'Day', icon: CalendarDays },
+  { value: 'week', label: 'Week', icon: CalendarRange },
+  { value: 'month', label: 'Month', icon: Calendar },
+  { value: 'year', label: 'Year', icon: CalendarClock },
+] as const;
 
 // Reusable chart section components
 function ChartSection({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -306,16 +314,16 @@ export function Analysis() {
   );
 
   // Ensure current preset is valid for aggregation type
-  useMemo(() => {
+  useEffect(() => {
     if (!presetRange) return;
     const isValid = availablePresets.some(p => p.preset === presetRange);
     if (!isValid && availablePresets.length > 0) {
       setPresetRange(availablePresets[0].preset);
     }
-  }, [aggregationType, availablePresets, presetRange]);
+  }, [availablePresets, presetRange, setPresetRange]);
 
   // Determine active time range
-  const today = new Date();
+  const today = useMemo(() => new Date(), []);
   const timeRange = useMemo(() => {
     if (!presetRange) {
       return { startDate: customStart, endDate: customEnd };
@@ -323,7 +331,7 @@ export function Analysis() {
     return getTimeRange(presetRange, today);
   }, [presetRange, customStart, customEnd, today]);
 
-  const handleAggregationChange = (nextAggregation: AggregationType) => {
+  const handleAggregationChange = useCallback((nextAggregation: AggregationType) => {
     setAggregationType(nextAggregation);
 
     if (presetRange) return;
@@ -365,7 +373,18 @@ export function Analysis() {
         // Invalid date, ignore
       }
     }
-  };
+  }, [
+    aggregateData.days,
+    aggregateData.months,
+    aggregateData.weeks,
+    aggregateData.years,
+    customEnd,
+    customStart,
+    presetRange,
+    setAggregationType,
+    setCustomEnd,
+    setCustomStart,
+  ]);
 
   // Compute analysis data for selected time range
   const analysisData = useMemo(() => 
@@ -392,12 +411,12 @@ export function Analysis() {
   }, [aggregationType, allDays, periodsForAggregation]);
 
   // Reusable filter function
-  const filterToInRange = (periods: PeriodAggregateData<DateKeyType>[]) => {
+  const filterToInRange = useCallback((periods: PeriodAggregateData<DateKeyType>[]) => {
     return periods.filter((period) => {
       const periodDate = parseDateKey(period.dateKey);
       return periodDate >= timeRange.startDate && periodDate <= timeRange.endDate;
     });
-  };
+  }, [timeRange.endDate, timeRange.startDate]);
 
   // All-time running aggregates (unfiltered by time range)
   const allTimeRunningAggregates = useMemo(() => {
@@ -459,16 +478,8 @@ export function Analysis() {
     return allAggregatePeriods[priorIndex].stats[primaryMetric];
   }, [analysisTrendMode, allAggregatePeriods, computedAggregatesInRange, primaryMetric]);
 
-  const aggregationOptions = [
-    { value: 'none', label: 'None', icon: Ban },
-    { value: 'day', label: 'Day', icon: CalendarDays },
-    { value: 'week', label: 'Week', icon: CalendarRange },
-    { value: 'month', label: 'Month', icon: Calendar },
-    { value: 'year', label: 'Year', icon: CalendarClock },
-  ] as const;
-
   const activeAggregationLabel =
-    aggregationOptions.find(option => option.value === aggregationType)?.label ?? 'Month';
+    AGGREGATION_OPTIONS.find(option => option.value === aggregationType)?.label ?? 'Month';
   const activeTimeFrameLabel =
     availablePresets.find(preset => preset.preset === presetRange)?.label 
     ?? formatAggregationRange(timeRange.startDate, timeRange.endDate, aggregationType);
@@ -577,7 +588,7 @@ export function Analysis() {
           Aggregation
         </h3>
         <div className="grid [grid-template-columns:repeat(auto-fit,minmax(90px,1fr))] gap-1 rounded-md bg-slate-200 dark:bg-slate-800 p-1">
-          {aggregationOptions.map((option) => {
+          {AGGREGATION_OPTIONS.map((option) => {
             const isActive = aggregationType === option.value;
             const Icon = option.icon;
 
