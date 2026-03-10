@@ -454,7 +454,7 @@ export function ProjectionsChart({
       ? projectedLow - previousPoint.projectedLow
       : undefined;
     const displayLabel = point.dateKey
-      ? formatFriendlyDate(point.dateKey, { short: true })
+      ? formatFriendlyDate(point.dateKey)
       : point.label;
     
     // Find any milestone intersections at this point
