@@ -536,7 +536,41 @@ export function Analysis() {
     );
   }
 
-  const controlsContent = (
+  const handlePresetChange = useCallback((value: string) => {
+    const newPreset = value as TimeFramePreset;
+    const presetTimeRange = getTimeRange(newPreset, today);
+    setCustomStart(presetTimeRange.startDate);
+    setCustomEnd(presetTimeRange.endDate);
+    setPresetRange(newPreset);
+  }, [setCustomEnd, setCustomStart, setPresetRange, today]);
+
+  const handleCustomRangeChange = useCallback((start: Date, end: Date) => {
+    setCustomStart(start);
+    setCustomEnd(end);
+    if (presetRange) setPresetRange(null);
+  }, [presetRange, setCustomEnd, setCustomStart, setPresetRange]);
+
+  const handleSelectAllTime = useCallback(() => {
+    const timestamps = allDays
+      .map((day) => {
+        try {
+          return parseDateKey(day.date).getTime();
+        } catch {
+          return NaN;
+        }
+      })
+      .filter((ts) => Number.isFinite(ts));
+
+    if (timestamps.length === 0) return;
+
+    const minTs = Math.min(...timestamps);
+    const maxTs = Math.max(...timestamps);
+    setPresetRange(null);
+    setCustomStart(new Date(minTs));
+    setCustomEnd(new Date(maxTs));
+  }, [allDays, setCustomEnd, setCustomStart, setPresetRange]);
+
+  const controlsContent = useMemo(() => (
     <>
       {/* Time Frame Section */}
       <div className="pb-3 border-b">
@@ -544,13 +578,7 @@ export function Analysis() {
           <Calendar className="w-3.5 h-3.5" />
           Time Frame
         </h3>
-        <Select key={presetRange || 'custom'} value={presetRange || ''} onValueChange={(value) => {
-          const newPreset = value as TimeFramePreset;
-          const presetTimeRange = getTimeRange(newPreset, today);
-          setCustomStart(presetTimeRange.startDate);
-          setCustomEnd(presetTimeRange.endDate);
-          setPresetRange(newPreset);
-        }}>
+        <Select key={presetRange || 'custom'} value={presetRange || ''} onValueChange={handlePresetChange}>
           <SelectTrigger className="w-full text-xs h-9 sm:h-8">
             <SelectValue placeholder={formatAggregationRange(timeRange.startDate, timeRange.endDate, aggregationType)} />
           </SelectTrigger>
@@ -573,11 +601,7 @@ export function Analysis() {
           allPeriods={periodsForAggregation}
           startDate={timeRange.startDate}
           endDate={timeRange.endDate}
-          onRangeChange={(start, end) => {
-            setCustomStart(start);
-            setCustomEnd(end);
-            if (presetRange) setPresetRange(null);
-          }}
+          onRangeChange={handleCustomRangeChange}
         />
       </div>
 
@@ -632,7 +656,23 @@ export function Analysis() {
         </div>
       </div>
     </>
-  );
+  ), [
+    activeTimeFrameLabel,
+    aggregationType,
+    dataPoints.length,
+    dataset.id,
+    dataset.tracking,
+    dataset.valence,
+    handleAggregationChange,
+    handleCustomRangeChange,
+    handlePresetChange,
+    periodCount,
+    periodsForAggregation,
+    presetRange,
+    timeRange.endDate,
+    timeRange.startDate,
+    availablePresets,
+  ]);
 
   if (!hasDataInSelection) {
     return (
@@ -681,25 +721,7 @@ export function Analysis() {
                 <div className="flex flex-col sm:flex-row gap-3 mt-2">
                   <Button
                     size="lg"
-                    onClick={() => {
-                      const timestamps = allDays
-                        .map((day) => {
-                          try {
-                            return parseDateKey(day.date).getTime();
-                          } catch {
-                            return NaN;
-                          }
-                        })
-                        .filter((ts) => Number.isFinite(ts));
-
-                      if (timestamps.length === 0) return;
-
-                      const minTs = Math.min(...timestamps);
-                      const maxTs = Math.max(...timestamps);
-                      setPresetRange(null);
-                      setCustomStart(new Date(minTs));
-                      setCustomEnd(new Date(maxTs));
-                    }}
+                    onClick={handleSelectAllTime}
                   >
                     <Infinity className="w-4 h-4 mr-2" />
                     Select All Time
