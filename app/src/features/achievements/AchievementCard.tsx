@@ -50,9 +50,9 @@ export function AchievementCard({
   else if (startedAt || progress) status = 'in-progress';
 
   // Determine border/theme color by goal type
-  let borderColor = 'border-slate-200 dark:border-slate-700';
-  let completedLabelColor = 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700';
-  let backgroundColor = 'bg-slate-50/80 dark:bg-slate-900/80';
+  const borderColor = 'border-slate-200 dark:border-slate-700';
+  const completedLabelColor = 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700';
+  const backgroundColor = 'bg-slate-50/80 dark:bg-slate-900/80';
   if (goalType === 'target') {
     // backgroundColor = 'bg-green-50/50 dark:bg-green-900/50';
     // borderColor = 'border-green-400 dark:border-green-700';

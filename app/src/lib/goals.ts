@@ -254,7 +254,7 @@ export function processAchievements({
     let currentProgress = 0;
     let lastCompletedAt: DateKey | undefined = undefined;
     let firstCompletedAt: DateKey | undefined = undefined;
-    let achievements: AchievementResult[] = [];
+    const achievements: AchievementResult[] = [];
     const currentPeriodKey = goal.timePeriod === 'anytime'
       ? null
       : formatDateAsKey(new Date(), goal.timePeriod);
@@ -498,7 +498,7 @@ export function getSuggestedGoalContent(goal: Partial<Goal>) {
   const isStreak = !!count && count > 1 && !!consecutive;
 
   // Interval string
-  let intervalStr = isStreak 
+  const intervalStr = isStreak 
     ? `${formatValue(count)}-${capitalize(timePeriod)}` /* e.g., "7-Day", "4-Week" */
     : isMultiPeriod 
     ? `${formatValue(count)}${value !== 0 && source !== 'deltas' ? ' ×' : ''}`

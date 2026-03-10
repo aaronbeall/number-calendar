@@ -36,15 +36,15 @@ export function parseTrendExpression(expr: string): number[] | null {
       .replace(/,/g, '')
       .trim();
 
-    let cleaned = normalize(expr);
+    const cleaned = normalize(expr);
 
     // Split on space, semicolon, or pipe (but not comma),
     // and also split out any += or -= delta syntax attached to a number
-    let rawParts = cleaned.split(/\s+|;|\|/).filter(Boolean);
+    const rawParts = cleaned.split(/\s+|;|\|/).filter(Boolean);
     if (!rawParts.length) return [];
 
     // Further split any part that contains a delta (e.g. 240+=2 => [240, "+=2"])
-    let parts: string[] = [];
+    const parts: string[] = [];
     for (const part of rawParts) {
       // Match e.g. 240+=2 or 240-=2
       const match = part.match(/^(-?\d+(?:\.\d+)?)([+-]=.+)$/);
@@ -57,7 +57,7 @@ export function parseTrendExpression(expr: string): number[] | null {
     }
     if (!parts.length) return [];
 
-    let numbers: number[] = [];
+    const numbers: number[] = [];
 
     for (const part of parts) {
       // Check for += or -=
@@ -87,7 +87,7 @@ export function parseSingleNumberExpression(expr: string): number | null {
   if (!expr.trim()) return null;
   try {
     // Remove currency symbols and locale-specific thousands separators
-    let cleaned = expr.replace(/[$€£¥₹]/g, '')
+    const cleaned = expr.replace(/[$€£¥₹]/g, '')
       .replace(/(?<=\d)[,\s](?=\d{3}\b)/g, '')
       .replace(/,/g, '')
       .replace(/\s+/g, '');
@@ -100,7 +100,7 @@ export function parseSingleNumberExpression(expr: string): number | null {
     // Example: '10+8-2*3/2' => 13
     // Use Function constructor for simple arithmetic
     // (no variables, no function calls)
-    // eslint-disable-next-line no-new-func
+     
     const result = Function(`"use strict";return (${cleaned})`)();
     if (typeof result === 'number' && !isNaN(result)) {
       return round(result);
