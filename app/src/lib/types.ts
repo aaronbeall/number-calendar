@@ -1,5 +1,6 @@
 /**
- * Utility type to make all properties of a type optional, recursively.
+ * Recursively makes object properties optional.
+ * Leaves functions and arrays/tuples unchanged.
  */
 export type DeepPartial<T> =
   T extends (...args: never[]) => unknown
