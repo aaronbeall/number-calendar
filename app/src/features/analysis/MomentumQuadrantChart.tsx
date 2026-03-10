@@ -15,6 +15,7 @@ import { TrendingUp, TrendingDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { useMemo } from 'react';
 import {
   CartesianGrid,
+  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Scatter,
@@ -189,6 +190,30 @@ export function MomentumQuadrantChart({
   const declineColors = getRegimeColors(true, false);
   const troughColors = getRegimeColors(false, false);
 
+  const getRegimeTint = (isHighLevel: boolean, isPositiveMomentum: boolean) => {
+    const levelValue = isHighLevel ? 1 : -1;
+    const palette = isHighLevel && isPositiveMomentum
+      ? { good: '#10b981', bad: '#ef4444', neutral: '#3b82f6' } // Peak
+      : !isHighLevel && isPositiveMomentum
+      ? { good: '#06b6d4', bad: '#f97316', neutral: '#3b82f6' } // Growth
+      : isHighLevel && !isPositiveMomentum
+      ? { good: '#3b82f6', bad: '#f97316', neutral: '#f97316' } // Decline
+      : { good: '#10b981', bad: '#ef4444', neutral: '#ef4444' }; // Trough
+
+    return getValueForValence(levelValue, valence, palette);
+  };
+
+  const chartBounds = useMemo(() => {
+    const levels = scatterData.points.map((p) => p.level);
+    const momentums = scatterData.points.map((p) => p.momentum);
+    return {
+      levelMin: Math.min(...levels),
+      levelMax: Math.max(...levels),
+      momentumMin: Math.min(...momentums),
+      momentumMax: Math.max(...momentums),
+    };
+  }, [scatterData.points]);
+
   const renderCustomDot = (props: any) => {
     const { cx, cy, payload } = props;
     if (typeof cx !== 'number' || typeof cy !== 'number') {
@@ -215,6 +240,42 @@ export function MomentumQuadrantChart({
       <div className="flex-1 min-h-0">
         <ResponsiveContainer width="100%" height={320}>
           <ScatterChart margin={{ top: 8, right: 20, left: 0, bottom: 8 }}>
+            <ReferenceArea
+              x1={scatterData.levelMid}
+              x2={chartBounds.levelMax}
+              y1={scatterData.momentumMid}
+              y2={chartBounds.momentumMax}
+              fill={getRegimeTint(true, true)}
+              fillOpacity={isDark ? 0.12 : 0.07}
+              ifOverflow="extendDomain"
+            />
+            <ReferenceArea
+              x1={chartBounds.levelMin}
+              x2={scatterData.levelMid}
+              y1={scatterData.momentumMid}
+              y2={chartBounds.momentumMax}
+              fill={getRegimeTint(false, true)}
+              fillOpacity={isDark ? 0.12 : 0.07}
+              ifOverflow="extendDomain"
+            />
+            <ReferenceArea
+              x1={scatterData.levelMid}
+              x2={chartBounds.levelMax}
+              y1={chartBounds.momentumMin}
+              y2={scatterData.momentumMid}
+              fill={getRegimeTint(true, false)}
+              fillOpacity={isDark ? 0.12 : 0.07}
+              ifOverflow="extendDomain"
+            />
+            <ReferenceArea
+              x1={chartBounds.levelMin}
+              x2={scatterData.levelMid}
+              y1={chartBounds.momentumMin}
+              y2={scatterData.momentumMid}
+              fill={getRegimeTint(false, false)}
+              fillOpacity={isDark ? 0.12 : 0.07}
+              ifOverflow="extendDomain"
+            />
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
             <XAxis
               type="number"
@@ -243,20 +304,6 @@ export function MomentumQuadrantChart({
       </div>
 
       <div className="mt-4 grid grid-cols-4 gap-3">
-        {/* High & Up: Strongest regime */}
-        <div className={`rounded-lg ${peakColors.border} ${peakColors.bg} px-3 py-2.5`}>
-          <div className="flex items-center justify-between mb-1.5">
-            <div className={`font-semibold text-xs ${peakColors.text} uppercase tracking-tight`}>
-              Peak
-            </div>
-            <TrendingUp className={`w-4 h-4 ${peakColors.label}`} />
-          </div>
-          <div className={`text-2xl font-bold ${peakColors.number} mb-0.5`}>
-            {quadrants.high}
-          </div>
-          <div className={`text-xs ${peakColors.label}`}>High & Rising</div>
-        </div>
-
         {/* Low & Up: Building regime */}
         <div className={`rounded-lg ${growthColors.border} ${growthColors.bg} px-3 py-2.5`}>
           <div className="flex items-center justify-between mb-1.5">
@@ -269,6 +316,20 @@ export function MomentumQuadrantChart({
             {quadrants.improving}
           </div>
           <div className={`text-xs ${growthColors.label}`}>Low & Rising</div>
+        </div>
+
+        {/* High & Up: Strongest regime */}
+        <div className={`rounded-lg ${peakColors.border} ${peakColors.bg} px-3 py-2.5`}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className={`font-semibold text-xs ${peakColors.text} uppercase tracking-tight`}>
+              Peak
+            </div>
+            <TrendingUp className={`w-4 h-4 ${peakColors.label}`} />
+          </div>
+          <div className={`text-2xl font-bold ${peakColors.number} mb-0.5`}>
+            {quadrants.high}
+          </div>
+          <div className={`text-xs ${peakColors.label}`}>High & Rising</div>
         </div>
 
         {/* High & Down: Declining regime */}

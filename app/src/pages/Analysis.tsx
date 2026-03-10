@@ -1246,10 +1246,22 @@ export function Analysis() {
                 icon={Compass}
                 helpLabel="Help: Momentum Quadrant"
                 helpContent={
-                  <div className="space-y-1 text-sm">
+                  <div className="space-y-2 text-sm">
                     <p className="font-medium">Momentum Quadrant</p>
                     <p className="text-muted-foreground">
-                      Each point is a period. Right means higher-than-average level, and up means improving momentum. This helps spot strong, improving, or at-risk regimes at a glance.
+                      Each point is one selected {aggregationType === 'none' ? 'entry' : aggregationType}. Center lines show average Level and Momentum.
+                    </p>
+                    {dataset.tracking === 'series' ? (
+                      <p className="text-muted-foreground">
+                        <strong>Level</strong> is the running all-time cumulative value; <strong>Momentum</strong> is the current {aggregationType === 'none' ? 'entry' : aggregationType} value.
+                      </p>
+                    ) : (
+                      <p className="text-muted-foreground">
+                        <strong>Level</strong> is the per-{aggregationType === 'none' ? 'entry' : aggregationType} delta; <strong>Momentum</strong> is change in delta vs the previous {aggregationType === 'none' ? 'entry' : aggregationType}.
+                      </p>
+                    )}
+                    <p className="text-muted-foreground">
+                      Right/left = above/below-average Level. Up/down = above/below-average Momentum. Use it to spot strengthening, fading, recovering, and worsening periods.
                     </p>
                   </div>
                 }
