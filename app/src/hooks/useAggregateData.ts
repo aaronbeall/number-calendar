@@ -269,5 +269,5 @@ export function useAllPeriodsAggregateData(): AllPeriodsAggregateData {
       allDays: sortedAllDays,
       isLoading,
     };
-  }, [allDays, dataset.id, isLoading]);
+  }, [allDays, isLoading]);
 }

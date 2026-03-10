@@ -217,12 +217,12 @@ export function formatValue(num: number | undefined, { short = false, percent = 
 /**
  * Helper to format ranges for display, using formatValue for each number and handling percent/delta formatting
  */
-export function formatRange(range: [number, number] | undefined, { short, percent, delta, absolute }: FormatValueOptions = {}): string {
+export function formatRange(range: [number | undefined, number | undefined] | undefined, { short, percent, delta, absolute }: FormatValueOptions = {}): string {
   if (!range) return '';
   const [min, max] = range;
   // For deltas or ranges with negatives use `→` to avoid confusion with minus sign, 
   // otherwise en dash (e.g. `5–10`)
-  const separator = delta || (min < 0 || max < 0) ? '→' : '–';
+  const separator = delta || (!min || !max || min < 0 || max < 0) ? '→' : '–';
   // For percents, omit the leading % symbol if using en dash, for brevity (e.g. `5–10%` instead of `5%–10%`))
   const options = { short, percent, delta, absolute };
   const minOptions = percent && separator === '–' ? { short, delta, absolute } : options;

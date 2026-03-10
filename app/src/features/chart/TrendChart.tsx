@@ -102,7 +102,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
       }
     }
     return pts;
-  }, [dayKeys, data, priorDay, mode, month, isFullYear, group]);
+  }, [dayKeys, data, priorDay, mode, month, isFullYear, group, year]);
 
   const firstDay = 1;
   const lastDay = month ? new Date(year, month, 0).getDate() : 31;

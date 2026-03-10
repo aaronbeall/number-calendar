@@ -99,8 +99,8 @@ export function Calendar({
   const monthExtremes = monthAggregate.extremes;
   const yearExtremes = yearAggregate.extremes;
 
-  const monthNames = ["January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"];
+  const monthNames = useMemo(() => ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"], []);
 
   const buildMonthDaysDataForKey = useCallback((monthKeyValue: MonthKey) => {
     const { year: keyYear, month: keyMonth } = parseMonthKey(monthKeyValue);

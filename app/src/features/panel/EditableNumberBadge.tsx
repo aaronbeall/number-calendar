@@ -35,7 +35,7 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
     handledRef.current = 'commit';
     const raw = draft.trim();
     if (raw === '') {
-      onCommit && onCommit(null);
+      onCommit?.(null);
       cancel();
       return;
     }
@@ -45,7 +45,7 @@ export const EditableNumberBadge: React.FC<EditableNumberBadgeProps> = ({ value,
       cancel();
       return;
     }
-    onCommit && onCommit(n);
+    onCommit?.(n);
     cancel();
   };
 

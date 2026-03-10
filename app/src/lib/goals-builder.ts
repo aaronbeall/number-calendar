@@ -8,6 +8,7 @@ import { getMetricDisplayName } from './stats';
 import { formatGoalConditionLabel, formatGoalTargetValue } from './goals';
 import { adjectivize, capitalize, pluralize, randomValueOf, sequenceFromNow, escapeRegex } from './utils';
 import { getValueForGood } from './valence';
+import type { DeepPartial } from './types';
 
 // Target type for goal builder
 export type GoalBuilderTarget = 'period-target' | 'alltime-target' | 'period-range' | 'period-percent';
@@ -68,8 +69,8 @@ interface GoalTextReplacements {
  * @returns Object containing replacement arrays for word-based and formatted replacements
  */
 export function createGoalTextReplacements(
-  prevGoal: Partial<GoalRequirements>,
-  nextGoal: Partial<GoalRequirements>
+  prevGoal: DeepPartial<GoalRequirements>,
+  nextGoal: DeepPartial<GoalRequirements>
 ): GoalTextReplacements {
   const prevTarget = prevGoal.target;
   const nextTarget = nextGoal.target;

@@ -125,7 +125,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
   const provisionalAchievements = achievements.filter((achievement) => achievement.provisional);
   const hasProvisional = provisionalAchievements.length > 0;
   const provisionalDate = hasProvisional
-    ? formatFriendlyDate(provisionalAchievements[0]?.completedAt!, provisionalAchievements[0]?.startedAt!)
+    ? formatFriendlyDate(provisionalAchievements[0].completedAt!, provisionalAchievements[0].startedAt!)
     : '';
   const confirmedCompletions = achievements
     .filter((achievement) => achievement.completedAt && !achievement.provisional)
@@ -538,7 +538,7 @@ function buildTimelineItems({
     const progressMeta = goal.count > 1 ? `Progress: ${inProgress.progress}/${goal.count}` : undefined;
     const progressDate = toDateFromKey(inProgress.startedAt ?? inProgress.completedAt);
     addHeading(progressDate);
-    // @ts-ignore -- control flow analysis is broken here
+    // @ts-expect-error -- control flow analysis is broken here
     if (progressDate && (!latestEventDate || progressDate > latestEventDate)) {
       latestEventDate = progressDate;
     }

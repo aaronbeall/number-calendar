@@ -57,7 +57,7 @@ export function useAchievements(datasetId: string): UseAchievementsResult {
         })
         .map(ach => ({ ...ach, goal: result.goal }))
     );
-  }, [allResults]);
+  }, [allResults, datasetId]);
 
   useEffect(() => {
     previousResultsRef.current = allResults;

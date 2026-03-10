@@ -26,7 +26,7 @@ export interface WeekSummaryProps {
 }
 
 export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, monthExtremes, weekNumber, isCurrentWeek, valence, tracking, dateKey, achievementResults }) => {
-  const numbers = data.numbers ?? [];
+  const numbers = useMemo(() => data.numbers ?? [], [data.numbers]);
   const priorNumbers = priorData?.numbers;
 
   const [panelView, setPanelView] = useSidePanelParam();

@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { type Dataset, type Goal, type GoalBadge, type GoalRequirements, type GoalType } from '@/features/db/localdb';
+import { type Dataset, type Goal, type GoalBadge, type GoalRequirements, type GoalTarget, type GoalType } from '@/features/db/localdb';
 import { useCreateGoal, useUpdateGoal } from '@/features/db/useGoalsData';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { getSuggestedGoalContent, isValidGoalAttributes } from '@/lib/goals';
@@ -16,6 +16,7 @@ import { BadgeEditDialog } from './BadgeEditDialog';
 import { GoalBuilder } from './GoalBuilder';
 import { MilestoneBuilder } from './MilestoneBuilder';
 import { TargetBuilder } from './TargetBuilder';
+import type { DeepPartial } from '@/lib/types';
 
 interface AchievementDialogProps {
   open: boolean;
@@ -47,7 +48,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
   const {tracking, valence} = dataset;
   
   // Create sensible defaults based on goal type and dataset
-  const getDefaultGoal = useCallback((): Partial<GoalRequirements> => {
+  const getDefaultGoal = useCallback((): DeepPartial<GoalRequirements> => {
     const primaryMetric = getPrimaryMetric(tracking);
     const defaultCondition = valence === 'negative' ? 'below' : 'above';
     const defaultSource = type == 'milestone' ? 'stats' : getValenceSource(tracking);
@@ -59,7 +60,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
           source: defaultSource,
           condition: defaultCondition,
           value: undefined,
-        } as any,
+        },
         timePeriod: 'anytime',
         count: 1,
       };
@@ -70,7 +71,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
           source: defaultSource,
           condition: defaultCondition,
           value: undefined,
-        } as any,
+        },
         timePeriod: 'week',
         count: 1,
       };
@@ -82,13 +83,13 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
           source: defaultSource,
           condition: defaultCondition,
           value: undefined,
-        } as any,
+        },
         count: 1,
       };
     }
   }, [tracking, valence, type]);
   
-  const [goal, setGoal] = useState<Partial<GoalRequirements>>(
+  const [goal, setGoal] = useState<DeepPartial<GoalRequirements>>(
     initialGoal
       ? {
           target: initialGoal.target,
@@ -100,7 +101,7 @@ export function AchievementDialog({ open, onOpenChange, initialData, initialGoal
       : (initialData?.goal ?? getDefaultGoal())
   );
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
-  const prevTargetRef = useRef<Goal['target'] | null>(null);
+  const prevTargetRef = useRef<DeepPartial<GoalTarget> | null>(null);
 
   useEffect(() => {
     if (!open) return;

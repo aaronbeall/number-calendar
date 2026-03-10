@@ -121,8 +121,6 @@ export const YearOverview = memo(({
   tracking,
   onYearChange
 }: YearOverviewProps) => {
-  const today = new Date();
-
   const { handleSwipeStart, handleSwipeMove, handleSwipeEnd, getAnimationStyle } = useSwipe({
     onSwipeLeft: () => onYearChange?.(year + 1),
     onSwipeRight: () => onYearChange?.(year - 1),
@@ -130,6 +128,7 @@ export const YearOverview = memo(({
 
   // Memoize all dot data for the year: { [month]: [{ day, color, valenceValue, isFuture, hasData, value }] }
   const dotDataByMonth = useMemo(() => {
+    const today = new Date();
     const result: Record<number, Array<{
       day: number;
       valenceValue: number;

@@ -482,7 +482,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       return `e.g. ${formatValue(questions.startingValue.suggested, { delta: dataset.tracking === 'trend' })}`;
     }
     return 'e.g. 0';
-  }, [questions?.startingValue?.suggested, resolvedStartingValue, currentValue, isAllTimeTarget, resolvedAlltimeTargetValue, dataset.tracking]);
+  }, [questions?.startingValue?.suggested, resolvedStartingValue, currentValue, isAllTimeTarget, resolvedAlltimeTargetValue, dataset.tracking, dataset.valence]);
   const timelinePrompt = resolveText(questions?.timeline.prompt, 'How long?');
   const timelineDescription = resolveText(questions?.timeline.description, 'Time to reach goal (optional)');
   const activityHeaderPrompt = resolveText(questions?.activity.prompt, 'How actively will you make progress?');
@@ -513,7 +513,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
       startingValue: resolvedStartingValue ?? 0,
       targetDays: parsedDurationDays,
     };
-  }, [activePeriods, activeValue, resolvedStartingValue, dataset.id, dataset.tracking, dataset.valence, hasStartingValueQuestion, isStartingValueRequired, parsedRangeMax, parsedRangeMin, parsedStartingValue, period, rangeCondition, startingValue, parsedDurationDays, actualTargetType]);
+  }, [activePeriods, activeValue, resolvedStartingValue, dataset.id, dataset.tracking, dataset.valence, isStartingValueRequired, parsedRangeMax, parsedRangeMin, parsedStartingValue, period, rangeCondition, parsedDurationDays, actualTargetType, targetType]);
   
   const summaryBaselines = builderInput && !isRangeTarget ? calculateBaselines(builderInput) : null;
   const conversionLabel = (() => {

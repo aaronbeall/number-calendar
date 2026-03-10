@@ -96,7 +96,7 @@ export function ValenceDistributionChart({
       negativeTotal: negTotal,
       metrics,
     };
-  }, [periods, tracking, valence]);
+  }, [periods, tracking]);
 
   const positiveValue = effectiveMode === 'count' ? positiveCount : positiveTotal;
   const negativeValue = effectiveMode === 'count' ? negativeCount : negativeTotal;

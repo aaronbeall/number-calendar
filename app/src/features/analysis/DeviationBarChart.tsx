@@ -201,7 +201,7 @@ export function DeviationBarChart({
       deviation: value - baselineValue,
       baselineValue,
     }));
-  }, [periods, allTimePeriods, primaryMetric, valenceSource, aggregationType, baselineMode, targetBaselineInput, priorTimeFrameValue]);
+  }, [periods, allTimePeriods, primaryMetric, valenceSource, aggregationType, baselineMode, targetBaselineValue, priorTimeFrameValue]);
 
   // Calculate medians for tooltip (outside useMemo to avoid recalculation)
   const rangeMedian = useMemo(() => {

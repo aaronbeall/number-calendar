@@ -38,7 +38,7 @@ export function DatasetCard({
   const IconComponent = getDatasetIcon(dataset.icon);
   const { bg: iconBg, text: iconText } = getSeededColorTheme(dataset.id);
 
-  const days = getMonthDays(year, month);
+  const days = useMemo(() => getMonthDays(year, month), [year, month]);
 
   const priorMonthDataMap = useMemo(() => 
     getPriorMonthNumbersMap(days, monthData, priorMonthData, { days: true, month: true }),
@@ -103,7 +103,7 @@ export function DatasetCard({
       maxDaily: activeDays > 0 ? maxDaily : 0,
       minDaily: activeDays > 0 && minDaily !== Number.POSITIVE_INFINITY ? minDaily : 0,
     };
-  }, [monthData, year, month]);
+  }, [monthData, year, month, days, priorMonthData, priorMonthDataMap]);
 
   const {
     primaryMetric,

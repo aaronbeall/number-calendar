@@ -323,7 +323,7 @@ const TimelineEntryCard = React.memo(({
   const isMonth = entry.kind === 'month';
   const isWeek = entry.kind === 'week';
   const isToday = isDay && entry.isToday;
-  const numbers = entry.data?.numbers ?? [];
+  const numbers = useMemo(() => entry.data?.numbers ?? [], [entry.data?.numbers]);
   const showMicroChart = (isYear || isMonth) && numbers.length > 1;
   const entryChartData = useMemo(() => {
     if (!showMicroChart) return [] as NumbersChartDataPoint[];
@@ -968,7 +968,7 @@ export function Timeline() {
         return todayKey;
       }
     }
-  }, [periodDays, noteDaySet]);
+  }, [periodDays, noteDaySet, todayKey]);
 
   const maxVisibleDayKey = !latestKey || todayKey > latestKey ? todayKey : latestKey;
 

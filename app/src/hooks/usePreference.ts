@@ -28,13 +28,15 @@ function getInitial<T>(key: string, initialValue: T | (() => T)): T {
  */
 export function usePreference<T>(key: string, initialValue: T | (() => T)) {
   const keyRef = useRef(key);
+  const initialValueRef = useRef(initialValue);
+  initialValueRef.current = initialValue;
   const [value, setValue] = useState<T>(() => getInitial(key, initialValue));
 
   // React to key changes by updating ref and re-reading localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
     keyRef.current = key;
-    setValue(getInitial(key, initialValue));
+    setValue(getInitial(key, initialValueRef.current));
   }, [key]);
 
   // Update localStorage whenever the value changes (use ref for key to avoid race conditions)

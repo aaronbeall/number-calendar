@@ -4,6 +4,7 @@ import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './f
 import { computeCumulatives, computeNumberStats, getMetricDisplayName, computeStatsDeltas, computeStatsPercents, type NumberStats } from './stats';
 import { adjectivize, capitalize, entriesOf, keysOf, pluralize } from './utils';
 import { type FormatValueOptions, formatRange, formatValue } from './friendly-numbers';
+import type { DeepPartial } from './types';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
 export function evalCondition(cond: GoalCondition, value: number): boolean {
@@ -453,14 +454,14 @@ export function isValidGoalAttributes(goal: Partial<GoalRequirements>): goal is 
  * Helper to format a goal target value, either a single value or a range, 
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
-export function formatGoalTargetValue({ value, range, source }: GoalTarget, { short }: { short?: boolean; } = {}): string {
+export function formatGoalTargetValue({ value, range, source }: DeepPartial<GoalTarget>, { short }: { short?: boolean; } = {}): string {
   return formatTargetValue({ value, range, source }, { short });
 }
 
 /**
  * Helper to format a partial goal target value, which may be missing value or range,
  */
-function formatTargetValue({ value, range, source }: Partial<Pick<GoalTarget, 'value' | 'range' | 'source'>>, { short }: { short?: boolean; } = {}): string {
+function formatTargetValue({ value, range, source }: DeepPartial<Pick<GoalTarget, 'value' | 'range' | 'source'>>, { short }: { short?: boolean; } = {}): string {
   const options: FormatValueOptions = { short, percent: source === 'percents' || source === 'cumulativePercents', delta: source === 'deltas' || source === 'cumulativePercents' };
   if (range) {
     return formatRange(range, options);

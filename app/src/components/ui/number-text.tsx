@@ -43,6 +43,8 @@ export const NumberText: React.FC<NumberTextProps> = ({
   // State for animated value
   const [displayValue, setDisplayValue] = useState(value);
   const animationFrameRef = useRef<number | undefined>(undefined);
+  const displayValueRef = useRef<number | undefined | null>(undefined);
+  displayValueRef.current = displayValue;
   
   // Animate number changes when animated is true
   useEffect(() => {
@@ -51,8 +53,8 @@ export const NumberText: React.FC<NumberTextProps> = ({
       return;
     }
     
-    const startValue = typeof displayValue === 'number' && Number.isFinite(displayValue) 
-      ? displayValue 
+    const startValue = typeof displayValueRef.current === 'number' && Number.isFinite(displayValueRef.current) 
+      ? displayValueRef.current 
       : value;
     const endValue = value;
     
