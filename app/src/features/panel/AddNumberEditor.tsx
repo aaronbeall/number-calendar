@@ -98,7 +98,11 @@ export const AddNumberEditor: React.FC<AddNumberEditorProps> = ({ onAdd, onCance
         <ToggleGroup
           type="single"
           value={addMode}
-          onValueChange={v => v && setAddMode(v as any)}
+          onValueChange={(v) => {
+            if (v === 'entry' || v === 'total' || v === 'delta') {
+              setAddMode(v);
+            }
+          }}
           size="sm"
           variant="outline"
         >

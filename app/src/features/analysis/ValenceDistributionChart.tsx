@@ -40,6 +40,10 @@ interface MetricsData {
   intensitySkew: number;
 }
 
+type LegendProps = {
+  payload?: Array<{ color?: string; value?: string | number }>;
+};
+
 export function ValenceDistributionChart({
   periods,
   aggregationType,
@@ -178,11 +182,10 @@ export function ValenceDistributionChart({
     );
   };
 
-  const renderLegend = (props: any) => {
-    const { payload } = props;
+  const renderLegend = ({ payload = [] }: LegendProps) => {
     return (
       <div className="flex justify-center gap-4 mt-2">
-        {payload.map((entry: any, index: number) => {
+        {payload.map((entry, index: number) => {
           const dataPoint = data[index];
           return (
             <div key={`legend-${dataPoint?.name || index}`} className="flex items-center gap-2 rounded-md border border-slate-200 bg-white/70 px-2 py-1 dark:border-slate-800 dark:bg-slate-900/60">

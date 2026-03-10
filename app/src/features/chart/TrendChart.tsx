@@ -261,7 +261,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                     return (
                       <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          {formatFriendlyDate(p.x as any)}
+                          {formatFriendlyDate(p.x as DayKey)}
                         </div>
                         <div className="font-semibold" style={{ color: deltaColor }}>
                           {formatValue(p.value)}
@@ -365,7 +365,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                     return (
                       <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          {formatFriendlyDate(p.x as any)}
+                          {formatFriendlyDate(p.x as DayKey)}
                         </div>
                         <span style={{ color: deltaColor, fontWeight: 600, fontSize: 16 }}>
                           {formatValue(p.delta, { delta: true })}

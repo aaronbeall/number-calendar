@@ -97,7 +97,7 @@ export function useSaveDay() {
         // Update dataset caches to reflect updatedAt touched during saveDay
         queryClient.setQueryData(['datasets'], (existing: Dataset[] | undefined) => {
           if (!Array.isArray(existing)) return existing;
-          return existing.map((d: any) => (d?.id === datasetId ? { ...d, updatedAt: Date.now() } : d));
+          return existing.map((d: Dataset) => (d.id === datasetId ? { ...d, updatedAt: Date.now() } : d));
         });
         queryClient.setQueryData(['dataset', datasetId], (existing: Dataset | undefined) => {
           if (!existing) return existing;

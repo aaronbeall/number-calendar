@@ -5,7 +5,7 @@ import { formatPeriodLabel, getMetricColorForValence, METRIC_COLORS, type Aggreg
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
-import type { Valence, Tracking } from '@/features/db/localdb';
+import type { DateKey, Valence, Tracking } from '@/features/db/localdb';
 import { getValenceSource, getPrimaryMetric } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
 import { useMemo } from 'react';
@@ -35,6 +35,12 @@ type ComparisonDataPoint = {
   label: string;
   dateKey: string;
 } & Partial<Record<NumberMetric, number>>;
+
+type ComparisonTooltipProps = {
+  active?: boolean;
+  payload?: Array<{ value?: number | string }>;
+  label?: string;
+};
 
 export function PeriodComparisonChart({
   periods,
@@ -157,7 +163,7 @@ export function PeriodComparisonChart({
     active,
     payload,
     label,
-  }: any) => {
+  }: ComparisonTooltipProps) => {
     if (!active || !payload?.length) return null;
 
     const dataPoint = data.find((d) => d.label === label);
@@ -166,7 +172,7 @@ export function PeriodComparisonChart({
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
         <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-          {formatFriendlyDate(dataPoint.dateKey as any)}
+          {formatFriendlyDate(dataPoint.dateKey as DateKey)}
         </div>
         <div className="space-y-0.5">
           {displayMetrics.filter((metric) => visibleMetrics.has(metric)).map((metric) => {
@@ -218,7 +224,7 @@ export function PeriodComparisonChart({
               tick={{ fill: axisColor }}
               tickFormatter={(value) => formatValue(Number(value), { short: true })}
             />
-            <Tooltip content={renderTooltip as any} />
+            <Tooltip content={renderTooltip} />
             <Legend wrapperStyle={{ display: 'none' }} />
             {displayMetrics.map((metric) => {
               // Only render bars for metrics that have data in at least one point

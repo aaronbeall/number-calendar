@@ -3,7 +3,7 @@ import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
 import { formatValue } from '@/lib/friendly-numbers';
-import type { DayKey, Valence } from '@/features/db/localdb';
+import type { DayKey, MonthKey, Valence } from '@/features/db/localdb';
 import { parseDayKey, toDayKey, formatFriendlyDate } from '@/lib/friendly-date';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
@@ -138,7 +138,7 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, valence })
                 dataKey="label"
                 tickFormatter={d => {
                   if (group === 'monthly') return d;
-                  return formatFriendlyDate(d as any);
+                  return formatFriendlyDate(d as DayKey);
                 }}
                 fontSize={12}
                 minTickGap={20}
@@ -156,14 +156,15 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, valence })
                     let formattedDate = '';
                     if (group === 'monthly') {
                       // label is month name like 'Jan', 'Feb', etc.
-                      const monthIndex = monthNames.indexOf(label);
+                      const labelText = typeof label === 'string' ? label : '';
+                      const monthIndex = monthNames.indexOf(labelText);
                       if (monthIndex >= 0) {
                         const monthKey = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
-                        formattedDate = formatFriendlyDate(monthKey as any);
+                        formattedDate = formatFriendlyDate(monthKey as MonthKey);
                       }
                     } else {
                       // label is 'YYYY-MM-DD'
-                      formattedDate = formatFriendlyDate(label as any);
+                      formattedDate = formatFriendlyDate((typeof label === 'string' ? label : '') as DayKey);
                     }
                     return (
                       <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">

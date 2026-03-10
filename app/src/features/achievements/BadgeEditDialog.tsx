@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { achievementBadgeColors, achievementBadgeIcons, achievementBadgeStyles } from '@/lib/achievements';
 import { cn, keysOf, titleCase } from '@/lib/utils';
 import { Dices } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ElementType } from 'react';
 import type { GoalBadge } from '../db/localdb';
 import AchievementBadge from './AchievementBadge';
 
@@ -151,7 +151,7 @@ export function BadgeEditDialog({ open, onOpenChange, badge, onSave, saveLabel =
 
 // Reusable icon selector
 type IconSelectorProps<T extends string> = {
-  options: Record<T, any>;
+  options: Record<T, ElementType>;
   value: T | undefined;
   onChange: (val: T) => void;
   label?: string;

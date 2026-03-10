@@ -6,21 +6,21 @@ import { useRef, useCallback, useEffect } from 'react';
  * @param delay - Delay in milliseconds
  * @returns A tuple of [debouncedFunction, cancelFunction]
  */
-export function useDebouncedCallback<T extends (...args: any[]) => void>(
-  callback: T,
+export function useDebouncedCallback<TArgs extends unknown[]>(
+  callback: (...args: TArgs) => void,
   delay: number
-): [T, () => void] {
+): [(...args: TArgs) => void, () => void] {
   const timerRef = useRef<number | null>(null);
 
   const debouncedCallback = useCallback(
-    ((...args: Parameters<T>) => {
+    ((...args: TArgs) => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
       timerRef.current = window.setTimeout(() => {
         callback(...args);
       }, delay);
-    }) as T,
+    }) as (...args: TArgs) => void,
     [callback, delay]
   );
 

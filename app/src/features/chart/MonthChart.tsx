@@ -154,13 +154,14 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, valence }) => {
                   if (typeof value !== 'number') return null;
                   const color = getValueForValence(value, valence, barColors);
                   let formattedDate = '';
+                  const labelString = typeof label === 'string' ? label : '';
                   if (group === 'daily') {
-                    formattedDate = formatFriendlyDate(label as any);
+                    formattedDate = formatFriendlyDate(labelString as DayKey);
                   } else {
-                    const parts = label.split('-');
+                    const parts = labelString.split('-');
                     const dateStr = parts.slice(0, 3).join('-');
                     const numberIndex = parts[3];
-                    const formatted = formatFriendlyDate(dateStr as any);
+                    const formatted = formatFriendlyDate(dateStr as DayKey);
                     formattedDate = `${formatted} • Entry ${parseInt(numberIndex) + 1}`;
                   }
                   return (
