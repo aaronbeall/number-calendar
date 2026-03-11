@@ -36,9 +36,12 @@ const EMPTY_STATE_BADGES: Record<GoalType, GoalBadge> = {
   milestone: { style: 'laurel_trophy', icon: 'flag', color: 'sapphire', label: '' },
 };
 
+const TOOLTIP_GOAL_TYPE_ORDER: GoalType[] = ['milestone', 'target', 'goal'];
+
 interface AchievementInsightItem {
   id: string;
   title: string;
+  goalType: GoalType;
   badge: GoalBadge;
   description?: string;
   inRangeCount: number;
@@ -103,7 +106,15 @@ const AchievementInsightList = memo(function AchievementInsightList({
               <div className="flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 -mx-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-default">
                 <span className="flex items-center gap-2 min-w-0 flex-1">
                   <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
-                  <span className="truncate">{item.title}</span>
+                  <span
+                    className="inline-flex items-center truncate rounded px-1 py-0.5"
+                    style={{
+                      color: GOAL_TYPE_META[item.goalType].color,
+                      backgroundColor: `${GOAL_TYPE_META[item.goalType].color}1A`,
+                    }}
+                  >
+                    {item.title}
+                  </span>
                 </span>
                 <span className="flex items-center gap-1.5 shrink-0">
                   {variant === 'topByCount' && item.periodCompletionPercent > 0 && (
@@ -206,7 +217,10 @@ export function AchievementInsightsChart({
     const totalPeriods = periods.length;
 
     const buckets = achievementResults.all
-      .filter((result) => result.goal.timePeriod === selectedPeriod)
+      .filter((result) =>
+        result.goal.timePeriod === selectedPeriod
+        || result.goal.timePeriod === 'anytime'
+      )
       .map((result) => {
         const completed = result.achievements.filter((ach) => !!ach.completedAt);
         const inRange = completed.filter((ach) => {
@@ -223,6 +237,7 @@ export function AchievementInsightsChart({
         return {
           id: result.goal.id,
           title: result.goal.title,
+          goalType: result.goal.type,
           badge: result.goal.badge,
           description: result.goal.description,
           inRangeCount: inRange.length,
@@ -339,48 +354,48 @@ export function AchievementInsightsChart({
       },
       { goal: 0, target: 0, milestone: 0 } as Record<GoalType, number>,
     );
+    const groupedAchievements = TOOLTIP_GOAL_TYPE_ORDER
+      .map((goalType) => ({
+        goalType,
+        items: point.achievements.filter((item) => item.goalType === goalType && item.count > 0),
+      }))
+      .filter((group) => typeBreakdown[group.goalType] > 0);
 
     return (
-      <div className="rounded-md bg-white dark:bg-slate-900 px-2.5 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700 max-w-xs">
+      <div className="rounded-md bg-white dark:bg-slate-900 px-2.5 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700 max-w-sm">
         <div className="text-xs text-slate-500 dark:text-slate-400 mb-2">{formatFriendlyDate(point.dateKey)}</div>
-        <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          {(Object.keys(GOAL_TYPE_META) as GoalType[])
-            .filter((goalType) => typeBreakdown[goalType] > 0)
-            .map((goalType) => {
-              const count = typeBreakdown[goalType];
-              const label = GOAL_TYPE_META[goalType].label;
-
-              return (
+        <div className="space-y-1.5">
+          {groupedAchievements.map((group) => (
+            <div key={`tooltip-group-${group.goalType}`} className="space-y-0.5">
+              <div className="inline-flex items-center gap-1.5">
+                <div
+                  className="text-[10px] font-semibold uppercase tracking-wide"
+                  style={{ color: GOAL_TYPE_META[group.goalType].color }}
+                >
+                  {GOAL_TYPE_META[group.goalType].label}
+                </div>
                 <span
-                  key={goalType}
-                  className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium border"
+                  className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold"
                   style={{
-                    color: GOAL_TYPE_META[goalType].color,
-                    borderColor: GOAL_TYPE_META[goalType].color,
-                    backgroundColor: `${GOAL_TYPE_META[goalType].color}1A`,
+                    color: GOAL_TYPE_META[group.goalType].color,
+                    backgroundColor: `${GOAL_TYPE_META[group.goalType].color}1A`,
                   }}
                 >
+                  {formatValue(typeBreakdown[group.goalType])}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {group.items.map((item) => (
                   <span
-                    className="h-1.5 w-1.5 rounded-full"
-                    style={{ backgroundColor: GOAL_TYPE_META[goalType].color }}
-                  />
-                  {label}: {formatValue(count)}
-                </span>
-              );
-            })}
-        </div>
-        <div className="space-y-1 max-h-44 overflow-auto pr-1">
-          {point.achievements.filter(item => item.count > 0).map((item) => (
-            <div key={`${item.id}-${item.title}`} className="flex items-center justify-between gap-3 text-xs">
-              <span className="flex items-center gap-1.5 min-w-0">
-                <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
-                <span className="truncate text-slate-700 dark:text-slate-300">{item.title}</span>
-              </span>
-              {item.count > 1 && (
-                <span className="inline-flex items-center rounded-full border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-200">
-                  × {item.count}
-                </span>
-              )}
+                    key={`${item.id}-${item.title}`}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-300"
+                  >
+                    <AchievementBadgeIcon badge={item.badge} size={12} className="shrink-0" />
+                    <span>{item.title}</span>
+                    {item.count > 1 && <span className="font-semibold">×{item.count}</span>}
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>
