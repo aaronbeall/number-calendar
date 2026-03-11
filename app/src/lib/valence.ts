@@ -147,6 +147,8 @@ export function getValueForNeutral<T>(valence: Valence, { positive, negative, ne
 
 /**
  * Returns a degradation signal for two-level valence.
+ * 
+ * For example, if valence is positive, "positive but decreasing" is a bad signal, while "positive and increasing" is not a bad signal. If valence is negative, "negative but increasing" is a bad signal, while "negative and decreasing" is good.
  *
  * Degradation should occur when the value and its delta point in opposite
  * directions (e.g., positive but degrading, or negative but improving).
