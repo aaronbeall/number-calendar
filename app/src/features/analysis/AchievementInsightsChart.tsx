@@ -61,6 +61,8 @@ interface AchievementInsightListProps {
   onToggleExpanded: () => void;
   periodName: string;
   totalPeriods: number;
+  selectedIds: string[];
+  onToggleItem: (id: string) => void;
 }
 
 const AchievementInsightList = memo(function AchievementInsightList({
@@ -71,8 +73,11 @@ const AchievementInsightList = memo(function AchievementInsightList({
   onToggleExpanded,
   periodName,
   totalPeriods,
+  selectedIds,
+  onToggleItem,
 }: AchievementInsightListProps) {
   const displayItems = expanded ? items : items.slice(0, 5);
+  const hasSelection = selectedIds.length > 0;
   
   return (
     <div className="rounded-md border border-slate-200 dark:border-slate-800 p-3">
@@ -103,7 +108,11 @@ const AchievementInsightList = memo(function AchievementInsightList({
         {displayItems.map((item) => (
           <Tooltip key={`${variant}-${item.id}`}>
             <TooltipTrigger asChild>
-              <div className="flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 -mx-1.5 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors cursor-default">
+              <button
+                type="button"
+                onClick={() => onToggleItem(item.id)}
+                className={`w-full text-left flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 transition-colors ${hasSelection && !selectedIds.includes(item.id) ? 'opacity-45' : 'opacity-100'} hover:bg-slate-100 dark:hover:bg-slate-800/50`}
+              >
                 <span className="flex items-center gap-2 min-w-0 flex-1">
                   <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
                   <span
@@ -143,7 +152,7 @@ const AchievementInsightList = memo(function AchievementInsightList({
                     {item.inRangeCount}
                   </span>
                 </span>
-              </div>
+              </button>
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
               <div className="flex items-start gap-3">
@@ -191,6 +200,7 @@ export function AchievementInsightsChart({
   const { isDark } = useTheme();
   const achievementResults = useAchievements(datasetId);
   const [insightsExpanded, setInsightsExpanded] = useState(false);
+  const [selectedAchievementIds, setSelectedAchievementIds] = useState<string[]>([]);
 
   const insights = useMemo(
     () => computeAchievementInsightsData(achievementResults.all, aggregationType, timeRange),
@@ -210,6 +220,45 @@ export function AchievementInsightsChart({
     })),
     [periodSeries.points],
   );
+
+  const filteredChartData = useMemo(() => {
+    if (selectedAchievementIds.length === 0) return chartData;
+
+    const selected = new Set(selectedAchievementIds);
+    return chartData.map((point) => {
+      const filteredAchievements = point.achievements.filter((achievement) => selected.has(achievement.id));
+      const typeCounts = filteredAchievements.reduce(
+        (acc, item) => {
+          acc[item.goalType] += item.count;
+          return acc;
+        },
+        { goal: 0, target: 0, milestone: 0 } as Record<GoalType, number>,
+      );
+
+      return {
+        ...point,
+        goal: typeCounts.goal,
+        target: typeCounts.target,
+        milestone: typeCounts.milestone,
+        total: filteredAchievements.reduce((sum, item) => sum + item.count, 0),
+        achievements: filteredAchievements,
+      };
+    });
+  }, [chartData, selectedAchievementIds]);
+
+  const fullDataYAxisMax = useMemo(() => {
+    const maxTotal = chartData.reduce((max, point) => Math.max(max, Number(point.total ?? 0)), 0);
+    return Math.max(1, maxTotal);
+  }, [chartData]);
+
+  const visibleGoalTypes = useMemo(() => {
+    const ordered: GoalType[] = ['milestone', 'target', 'goal'];
+    return ordered.filter((goalType) => filteredChartData.some((point) => Number(point[goalType] ?? 0) > 0));
+  }, [filteredChartData]);
+
+  const toggleSelectedAchievement = (id: string) => {
+    setSelectedAchievementIds((prev) => (prev.includes(id) ? prev.filter((itemId) => itemId !== id) : [...prev, id]));
+  };
 
   // Compute full lists with period completion percentages
   const fullInsightLists = useMemo(() => {
@@ -403,27 +452,50 @@ export function AchievementInsightsChart({
     );
   };
 
+  const totalAchievementCount = fullInsightLists.topByCount.length;
+
+  const achievementBreakdown = useMemo(() => {
+    const breakdown = { goal: 0, target: 0, milestone: 0 } as Record<GoalType, number>;
+    fullInsightLists.topByCount.forEach((item) => {
+      breakdown[item.goalType]++;
+    });
+    return breakdown;
+  }, [fullInsightLists]);
+
+  const selectedBreakdown = useMemo(() => {
+    if (selectedAchievementIds.length === 0) return achievementBreakdown;
+    const breakdown = { goal: 0, target: 0, milestone: 0 } as Record<GoalType, number>;
+    const selected = new Set(selectedAchievementIds);
+    fullInsightLists.topByCount.forEach((item) => {
+      if (selected.has(item.id)) {
+        breakdown[item.goalType]++;
+      }
+    });
+    return breakdown;
+  }, [selectedAchievementIds, fullInsightLists]);
+
   return (
     <div className="space-y-4">
       <div className="h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} margin={{ top: 5, right: 20, bottom: 40, left: 0 }}>
+          <BarChart data={filteredChartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
             <XAxis
               dataKey="label"
               stroke={axisColor}
               style={{ fontSize: '12px' }}
               tick={{ fill: axisColor }}
-              interval={Math.floor(chartData.length / 8) || 0}
+              interval={Math.floor(filteredChartData.length / 8) || 0}
             />
             <YAxis
               stroke={axisColor}
               style={{ fontSize: '12px' }}
               tick={{ fill: axisColor }}
+              domain={[0, fullDataYAxisMax]}
               tickFormatter={(value) => formatValue(Number(value), { short: true })}
             />
             <RechartsTooltip content={renderTooltip} />
-            {periodSeries.typeKeys.map((goalType) => (
+            {visibleGoalTypes.map((goalType) => (
               <Bar
                 key={goalType}
                 dataKey={goalType}
@@ -436,6 +508,60 @@ export function AchievementInsightsChart({
         </ResponsiveContainer>
       </div>
 
+      <div className="flex justify-center">
+        <div className="inline-flex items-center gap-2.5 rounded-md border border-slate-200/90 bg-slate-50/80 px-3 py-1.5 text-xs shadow-sm dark:border-slate-700/80 dark:bg-slate-800/60">
+          {selectedAchievementIds.length === 0 ? (
+            <>
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                {totalAchievementCount} total
+              </span>
+              {(['milestone', 'target', 'goal'] as const).map((goalType) =>
+                achievementBreakdown[goalType] > 0 ? (
+                  <div
+                    key={goalType}
+                    className="flex items-center gap-1 rounded px-1.5 py-0.5"
+                    style={{
+                      color: GOAL_TYPE_META[goalType].color,
+                      backgroundColor: `${GOAL_TYPE_META[goalType].color}1A`,
+                    }}
+                  >
+                    <span className="font-semibold">{achievementBreakdown[goalType]}</span>
+                    <span className="text-[10px]">{GOAL_TYPE_META[goalType].label}</span>
+                  </div>
+                ) : null
+              )}
+            </>
+          ) : (
+            <>
+              <span className="font-semibold text-slate-700 dark:text-slate-200">
+                {selectedAchievementIds.length} of {totalAchievementCount} selected
+              </span>
+              {(['milestone', 'target', 'goal'] as const).map((goalType) =>
+                selectedBreakdown[goalType] > 0 ? (
+                  <div
+                    key={goalType}
+                    className="flex items-center gap-1 rounded px-1.5 py-0.5"
+                    style={{
+                      color: GOAL_TYPE_META[goalType].color,
+                      backgroundColor: `${GOAL_TYPE_META[goalType].color}1A`,
+                    }}
+                  >
+                    <span className="font-semibold">{selectedBreakdown[goalType]}</span>
+                    <span className="text-[10px]">{GOAL_TYPE_META[goalType].label}</span>
+                  </div>
+                ) : null
+              )}
+              <button
+                onClick={() => setSelectedAchievementIds([])}
+                className="font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
+              >
+                Clear
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <AchievementInsightList
           title="Top By Count"
@@ -445,6 +571,8 @@ export function AchievementInsightsChart({
           onToggleExpanded={() => setInsightsExpanded(!insightsExpanded)}
           periodName={periodly}
           totalPeriods={periods.length}
+          selectedIds={selectedAchievementIds}
+          onToggleItem={toggleSelectedAchievement}
         />
         <AchievementInsightList
           title="Best Rarity"
@@ -454,6 +582,8 @@ export function AchievementInsightsChart({
           onToggleExpanded={() => setInsightsExpanded(!insightsExpanded)}
           periodName={periodly}
           totalPeriods={periods.length}
+          selectedIds={selectedAchievementIds}
+          onToggleItem={toggleSelectedAchievement}
         />
       </div>
     </div>
