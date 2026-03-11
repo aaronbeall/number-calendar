@@ -1,36 +1,52 @@
 import { describe, expect, it } from 'vitest';
-import { getValenceDegradationSignal, isBad } from '../valence';
+import {
+  getValueForValenceStrength,
+  isBad,
+  isValenceDegraded,
+} from '../valence';
 
-describe('valence:getValenceDegradationSignal', () => {
-  it('returns a bad signal for positive valence when value is positive and delta is negative', () => {
-    const signal = getValenceDegradationSignal(10, -2, 'positive');
-    expect(signal).toBeLessThan(0);
-    expect(isBad(signal, 'positive')).toBe(true);
+describe('valence:isValenceDegraded', () => {
+  it('is true when value and delta are opposite directions', () => {
+    expect(isValenceDegraded(10, -2, 'positive')).toBe(true);
+    expect(isValenceDegraded(-10, 2, 'positive')).toBe(true);
+    expect(isValenceDegraded(10, -2, 'negative')).toBe(true);
+    expect(isValenceDegraded(-10, 2, 'negative')).toBe(true);
   });
 
-  it('returns a bad signal for positive valence when value is negative and delta is positive', () => {
-    const signal = getValenceDegradationSignal(-10, 2, 'positive');
-    expect(signal).toBeLessThan(0);
-    expect(isBad(signal, 'positive')).toBe(true);
+  it('is false when value and delta are same direction or neutral cases', () => {
+    expect(isValenceDegraded(10, 2, 'positive')).toBe(false);
+    expect(isValenceDegraded(-10, -2, 'negative')).toBe(false);
+    expect(isValenceDegraded(0, -2, 'positive')).toBe(false);
+    expect(isValenceDegraded(10, 0, 'positive')).toBe(false);
+    expect(isValenceDegraded(10, -2, 'neutral')).toBe(false);
+  });
+});
+
+describe('valence:getValueForValenceStrength', () => {
+  const values = {
+    good: 'good',
+    degradedGood: 'degradedGood',
+    bad: 'bad',
+    degradedBad: 'degradedBad',
+    neutral: 'neutral',
+  } as const;
+
+  it('matches positive valence matrix', () => {
+    expect(getValueForValenceStrength(10, 2, 'positive', values)).toBe('good');
+    expect(getValueForValenceStrength(10, -2, 'positive', values)).toBe('degradedGood');
+    expect(getValueForValenceStrength(-10, -2, 'positive', values)).toBe('bad');
+    expect(getValueForValenceStrength(-10, 2, 'positive', values)).toBe('degradedBad');
   });
 
-  it('returns no darkening signal when value and delta move in same direction for positive valence', () => {
-    expect(getValenceDegradationSignal(10, 2, 'positive')).toBe(0);
-    expect(getValenceDegradationSignal(-10, -2, 'positive')).toBe(0);
+  it('matches negative valence matrix', () => {
+    expect(getValueForValenceStrength(-10, -2, 'negative', values)).toBe('good');
+    expect(getValueForValenceStrength(-10, 2, 'negative', values)).toBe('degradedGood');
+    expect(getValueForValenceStrength(10, 2, 'negative', values)).toBe('bad');
+    expect(getValueForValenceStrength(10, -2, 'negative', values)).toBe('degradedBad');
   });
 
-  it('returns a bad signal for negative valence when value and delta move in opposite directions', () => {
-    const signalA = getValenceDegradationSignal(10, -2, 'negative');
-    const signalB = getValenceDegradationSignal(-10, 2, 'negative');
-    expect(signalA).toBeGreaterThan(0);
-    expect(signalB).toBeGreaterThan(0);
-    expect(isBad(signalA, 'negative')).toBe(true);
-    expect(isBad(signalB, 'negative')).toBe(true);
-  });
-
-  it('returns zero when valence is neutral or value/delta are zero', () => {
-    expect(getValenceDegradationSignal(10, -2, 'neutral')).toBe(0);
-    expect(getValenceDegradationSignal(0, -2, 'positive')).toBe(0);
-    expect(getValenceDegradationSignal(10, 0, 'positive')).toBe(0);
+  it('returns neutral for neutral/zero-value cases', () => {
+    expect(getValueForValenceStrength(10, -2, 'neutral', values)).toBe('neutral');
+    expect(getValueForValenceStrength(0, -2, 'positive', values)).toBe('neutral');
   });
 });

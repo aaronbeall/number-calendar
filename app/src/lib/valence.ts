@@ -146,36 +146,68 @@ export function getValueForNeutral<T>(valence: Valence, { positive, negative, ne
 }
 
 /**
- * Returns a degradation signal for two-level valence.
- * 
- * For example, if valence is positive, "positive but decreasing" is a bad signal, while "positive and increasing" is not a bad signal. 
- * If valence is negative, "negative but increasing" is a bad signal, while "negative and decreasing" is good.
+ * Returns whether a value is degraded by its strength for the given valence context.
  *
- * Degradation should occur when the value and its delta point in opposite
- * directions (e.g., positive but degrading, or negative but improving).
- * The returned signal is always "bad" for the provided valence so callers
- * can pass it into valence-based darkening helpers for example.
+ * Degraded means the value and strength (usually delta) move in opposite directions:
+ * - positive value + negative strength
+ * - negative value + positive strength
  */
-export function getValenceDegradationSignal(
+export function isValenceDegraded(
   value: number | null | undefined,
-  delta: number | null | undefined,
+  strength: number | null | undefined,
   valence: Valence,
-): number {
+): boolean {
   const current = value ?? 0;
-  const change = delta ?? 0;
+  const change = strength ?? 0;
 
-  if (current === 0 || change === 0 || valence === 'neutral') {
-    return 0;
+  if (valence === 'neutral' || current === 0 || change === 0) {
+    return false;
   }
 
-  const hasOppositeDirection = (current > 0 && change < 0) || (current < 0 && change > 0);
-  if (!hasOppositeDirection) {
-    return 0;
+  return (current > 0 && change < 0) || (current < 0 && change > 0);
+}
+
+/**
+ * Returns one of the provided values based on valence strength:
+ * - good
+ * - degradedGood
+ * - bad
+ * - degradedBad
+ * - neutral
+ */
+export function getValueForValenceStrength<T>(
+  value: number | null | undefined,
+  strength: number | null | undefined,
+  valence: Valence,
+  {
+    good,
+    degradedGood,
+    bad,
+    degradedBad,
+    neutral,
+  }: {
+    good: T;
+    degradedGood: T;
+    bad: T;
+    degradedBad: T;
+    neutral: T;
+  }
+): T {
+  const current = value ?? 0;
+
+  if (valence === 'neutral' || current === 0) {
+    return neutral;
   }
 
-  return getValueForBad(valence, {
-    positive: 1,
-    negative: -1,
-    neutral: 0,
-  });
+  const degraded = isValenceDegraded(current, strength, valence);
+
+  if (isGood(current, valence)) {
+    return degraded ? degradedGood : good;
+  }
+
+  if (isBad(current, valence)) {
+    return degraded ? degradedBad : bad;
+  }
+
+  return neutral;
 }

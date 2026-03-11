@@ -8,7 +8,7 @@ import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
-import { getValenceDegradationSignal, getValueForValence } from '@/lib/valence';
+import { getValueForBad, getValueForValence, getValueForValenceStrength } from '@/lib/valence';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { memo, useCallback, useId, useMemo } from 'react';
 import { usePreference } from '@/hooks/usePreference';
@@ -116,8 +116,8 @@ export function TrendAnalysisChart({
   }, [setVisibleMetricsArray]);
 
   const data: TrendPoint[] = useMemo(() => {
-    const result = periods
-      .filter((period) => period.stats.count > 0)
+    const visiblePeriods = periods.filter((period) => period.stats.count > 0);
+    const result = visiblePeriods
       .map((period, index) => {
         const point: TrendPoint = {
           dateKey: period.dateKey,
@@ -170,9 +170,12 @@ export function TrendAnalysisChart({
             // valenceSource === 'deltas'
             if (mode === 'trend') {
               // Show `stats (deltas)` and color by deltas
+              const baselineValue = metric === primaryMetric
+                ? (priorTimeFrameValue ?? (visiblePeriods[0]?.stats?.[metric] ?? 0))
+                : 0;
               point.primaryValue[metric] = period.stats?.[metric] ?? 0;
               point.secondaryValue[metric] = period.deltas?.[metric] ?? 0;
-              point.primaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
+              point.primaryValenceValue[metric] = (period.stats?.[metric] ?? 0) - baselineValue;
               point.secondaryValenceValue[metric] = period.deltas?.[metric] ?? 0;
               point.primaryShowDelta[metric] = false;
               point.secondaryShowDelta[metric] = true;
@@ -196,7 +199,7 @@ export function TrendAnalysisChart({
       });
     
     return result;
-  }, [periods, valenceSource, mode, displayMetrics, aggregationType]);
+  }, [periods, valenceSource, mode, displayMetrics, aggregationType, primaryMetric, priorTimeFrameValue]);
 
   const axisColor = isDark ? '#64748b' : '#334155';
   const gridColor = isDark ? '#334155' : '#e5e7eb';
@@ -205,15 +208,15 @@ export function TrendAnalysisChart({
   const primaryValenceSourceValues = data
     .map((point) => point.primaryValenceValue[primaryMetric])
     .filter((value): value is number => typeof value === 'number');
-  
-  const latestValenceValue = primaryValenceSourceValues.length > 0
-    ? primaryValenceSourceValues[primaryValenceSourceValues.length - 1]
-    : 0;
-  
+
   const primaryDisplayedValues = data
     .map((point) => point[primaryMetric])
     .filter((value): value is number => typeof value === 'number');
   
+  const latestValenceValue = primaryValenceSourceValues.length > 0
+    ? primaryValenceSourceValues[primaryValenceSourceValues.length - 1]
+    : 0;
+
   const primaryMinDisplayed = primaryDisplayedValues.length ? Math.min(...primaryDisplayedValues) : 0;
   const primaryMaxDisplayed = primaryDisplayedValues.length ? Math.max(...primaryDisplayedValues) : 0;
   
@@ -270,7 +273,7 @@ export function TrendAnalysisChart({
     bad: '#ef4444',
     neutral: '#3b82f6',
   });
-  
+
   const primaryColor = getValueForValence(latestValenceValue, valence, {
     good: '#22c55e',
     bad: '#ef4444',
@@ -359,8 +362,13 @@ export function TrendAnalysisChart({
           : 0)
       : (point.barDeltaValue ?? 0);
 
-    const darkeningSignal = getValenceDegradationSignal(primaryValue, deltaValue, valence);
-    return getValenceAdjustedColor(baseColor, darkeningSignal, valence);
+    return getValueForValenceStrength(valueForBaseColor, deltaValue, valence, {
+      good: '#22c55e',
+      degradedGood: getValenceAdjustedColor('#22c55e', deltaValue, valence),
+      bad: '#ef4444',
+      degradedBad: getValenceAdjustedColor('#ef4444', -deltaValue, valence),
+      neutral: '#3b82f6',
+    });
   }, [primaryMetric, valence, valenceSource, priorTimeFrameValue, data, mode]);
 
   const renderTooltip = ({
@@ -395,7 +403,7 @@ export function TrendAnalysisChart({
             
             // Check if metric has valence
             const metricValence = getMetricValence(metric, valence);
-            
+
             // Calculate swatch color using valence-aware coloring for secondary metrics
             const swatchColor = metric === primaryMetric
               ? getValueForValence(primaryValenceValue, metricValence, {
