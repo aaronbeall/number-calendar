@@ -374,7 +374,11 @@ export function TrendAnalysisChart({
           : 0)
       : (point.barDeltaValue ?? 0);
 
-    return getValueForValenceStrength(valueForBaseColor, deltaValue, valence, {
+    const barValenceValue = valueForBaseColor === 0 && valence !== 'neutral'
+      ? deltaValue
+      : valueForBaseColor;
+
+    return getValueForValenceStrength(barValenceValue, deltaValue, valence, {
       good: '#22c55e',
       degradedGood: getValenceAdjustedColor('#22c55e', deltaValue, valence),
       bad: '#ef4444',
