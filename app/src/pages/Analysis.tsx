@@ -20,7 +20,7 @@ import { useMatchMedia } from '@/hooks/useMatchMedia';
 import { formatFriendlyDate, dateToDayKey, getTodayKey, parseDateKey, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import { useCallback, useEffect, useMemo } from 'react';
-import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, type AggregationType, type ProjectionHorizon, type ProjectionMode, type ProjectionMomentumWeight, type ProjectionRecentWindow, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
+import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, computeTrendSummary, type AggregationType, type ProjectionHorizon, type ProjectionMode, type ProjectionMomentumWeight, type ProjectionRecentWindow, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
 import { getPrimaryMetric } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
@@ -479,50 +479,17 @@ export function Analysis() {
 
   const trendSummary = useMemo<TrendSummary | undefined>(() => {
     const firstAggregate = allAggregatePeriods.length > 0 ? allAggregatePeriods[0] : undefined;
-
-    const primaryValue = (() => {
-      if (dataset.tracking === 'series') {
-        if (analysisTrendMode === 'all-time-trend') {
-          return cumulatives?.[primaryMetric];
-        }
-        return stats?.[primaryMetric];
-      }
-
-      if (analysisTrendMode === 'all-time-trend') {
-        const summaryStatsPrimary = stats?.[primaryMetric];
-        const firstStatsPrimary = firstAggregate?.stats?.[primaryMetric];
-        if (typeof summaryStatsPrimary === 'number' && typeof firstStatsPrimary === 'number') {
-          return summaryStatsPrimary - firstStatsPrimary;
-        }
-        return undefined;
-      }
-
-      return deltas?.[primaryMetric];
-    })();
-
-    const percent = (() => {
-      if (dataset.tracking === 'series') {
-        return cumulativePercents?.[primaryMetric];
-      }
-
-      if (
-        typeof primaryValue === 'number'
-        && typeof trendPriorTimeFrameValue === 'number'
-        && trendPriorTimeFrameValue !== 0
-      ) {
-        return (primaryValue / Math.abs(trendPriorTimeFrameValue)) * 100;
-      }
-
-      return undefined;
-    })();
-
-    return {
-      primaryValue,
-      primaryValenceValue: primaryValue,
-      primaryDelta: dataset.tracking === 'trend',
-      changePercent: percent,
-      changePercentValenceValue: percent,
-    };
+    return computeTrendSummary({
+      tracking: dataset.tracking,
+      mode: analysisTrendMode,
+      primaryMetric,
+      stats,
+      cumulatives,
+      deltas,
+      cumulativePercents,
+      trendPriorTimeFrameValue,
+      firstAggregate,
+    });
   }, [
     analysisTrendMode,
     allAggregatePeriods,

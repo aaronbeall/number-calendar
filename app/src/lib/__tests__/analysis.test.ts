@@ -1,7 +1,30 @@
 import { describe, it, expect } from 'vitest';
-import { getTimeRange, getAvailablePresets, filterPeriodsByTimeRange, computeAnalysisData } from '../analysis';
+import { getTimeRange, getAvailablePresets, filterPeriodsByTimeRange, computeAnalysisData, computeTrendSummary } from '../analysis';
 import type { PeriodAggregateData } from '../period-aggregate';
 import { createEmptyAggregate } from '../period-aggregate';
+import type { NumberStats } from '../stats';
+
+function makeStats(total: number): NumberStats {
+  return {
+    count: 1,
+    total,
+    mean: total,
+    median: total,
+    min: total,
+    max: total,
+    first: total,
+    last: total,
+    range: 0,
+    change: 0,
+    changePercent: 0,
+    mode: total,
+    slope: 0,
+    midrange: total,
+    variance: 0,
+    standardDeviation: 0,
+    interquartileRange: 0,
+  };
+}
 
 describe('analysis', () => {
   const testDate = new Date('2024-03-15T12:00:00Z');
@@ -242,6 +265,75 @@ describe('analysis', () => {
       expect(result.cumulatives?.total).toBe(-29300);
       expect(result.priorPeriod?.cumulatives.total).toBe(-7400);
       expect(result.cumulativePercents?.total).toBeCloseTo(-295.95, 1);
+    });
+  });
+
+  describe('computeTrendSummary', () => {
+    it('uses cumulative percent for series tracking', () => {
+      const result = computeTrendSummary({
+        tracking: 'series',
+        mode: 'all-time-trend',
+        primaryMetric: 'total',
+        cumulatives: makeStats(60),
+        cumulativePercents: { total: 500 },
+      });
+
+      expect(result.primaryValue).toBe(60);
+      expect(result.changePercent).toBe(500);
+      expect(result.primaryDelta).toBe(false);
+    });
+
+    it('uses trend prior timeframe baseline for trend percent', () => {
+      const result = computeTrendSummary({
+        tracking: 'trend',
+        mode: 'change',
+        primaryMetric: 'total',
+        deltas: makeStats(-20),
+        trendPriorTimeFrameValue: 40,
+      });
+
+      // -20 change from a 40 prior baseline = -50%
+      expect(result.primaryValue).toBe(-20);
+      expect(result.changePercent).toBe(-50);
+      expect(result.primaryDelta).toBe(true);
+    });
+
+    it('computes all-time trend primary value for trend tracking from first aggregate', () => {
+      const result = computeTrendSummary({
+        tracking: 'trend',
+        mode: 'all-time-trend',
+        primaryMetric: 'total',
+        stats: makeStats(120),
+        firstAggregate: {
+          ...createEmptyAggregate('2024-01-01', 'day'),
+          stats: makeStats(20),
+        },
+        trendPriorTimeFrameValue: 20,
+      });
+
+      // 120 - 20 = 100 primary value; 100 / |20| = 500%
+      expect(result.primaryValue).toBe(100);
+      expect(result.changePercent).toBe(500);
+    });
+
+    it('returns undefined trend percent when prior baseline is missing or zero', () => {
+      const missingBaseline = computeTrendSummary({
+        tracking: 'trend',
+        mode: 'change',
+        primaryMetric: 'total',
+        deltas: makeStats(10),
+      });
+
+      const zeroBaseline = computeTrendSummary({
+        tracking: 'trend',
+        mode: 'change',
+        primaryMetric: 'total',
+        deltas: makeStats(10),
+        trendPriorTimeFrameValue: 0,
+      });
+
+      expect(missingBaseline.changePercent).toBeUndefined();
+      expect(zeroBaseline.changePercent).toBeUndefined();
     });
   });
 });

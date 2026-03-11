@@ -345,6 +345,86 @@ export interface AnalysisData {
   periodCount: number;
 }
 
+export interface TrendSummaryData {
+  primaryValue?: number;
+  primaryValenceValue?: number;
+  primaryDelta?: boolean;
+  changePercent?: number;
+  changePercentValenceValue?: number;
+}
+
+type TrendSummaryMode = 'all-time-trend' | 'trend' | 'change' | 'in-range-trend';
+
+type ComputeTrendSummaryOptions = {
+  tracking: Tracking;
+  mode: TrendSummaryMode;
+  primaryMetric: NumberMetric;
+  stats?: NumberStats | null;
+  cumulatives?: NumberStats;
+  deltas?: NumberStats;
+  cumulativePercents?: Partial<NumberStats>;
+  trendPriorTimeFrameValue?: number;
+  firstAggregate?: PeriodAggregateData<DateKeyType>;
+};
+
+export function computeTrendSummary(options: ComputeTrendSummaryOptions): TrendSummaryData {
+  const {
+    tracking,
+    mode,
+    primaryMetric,
+    stats,
+    cumulatives,
+    deltas,
+    cumulativePercents,
+    trendPriorTimeFrameValue,
+    firstAggregate,
+  } = options;
+
+  const primaryValue = (() => {
+    if (tracking === 'series') {
+      if (mode === 'all-time-trend') {
+        return cumulatives?.[primaryMetric];
+      }
+      return stats?.[primaryMetric];
+    }
+
+    if (mode === 'all-time-trend') {
+      const summaryStatsPrimary = stats?.[primaryMetric];
+      const firstStatsPrimary = firstAggregate?.stats?.[primaryMetric];
+      if (typeof summaryStatsPrimary === 'number' && typeof firstStatsPrimary === 'number') {
+        return summaryStatsPrimary - firstStatsPrimary;
+      }
+      return undefined;
+    }
+
+    return deltas?.[primaryMetric];
+  })();
+
+  const percent = (() => {
+    if (tracking === 'series') {
+      return cumulativePercents?.[primaryMetric];
+    }
+
+    if (
+      typeof primaryValue === 'number'
+      && typeof trendPriorTimeFrameValue === 'number'
+      && trendPriorTimeFrameValue !== 0
+    ) {
+      return (primaryValue / Math.abs(trendPriorTimeFrameValue)) * 100;
+    }
+
+    return undefined;
+  })();
+
+  return {
+    primaryValue,
+    primaryValenceValue: primaryValue,
+    primaryDelta: tracking === 'trend',
+    changePercent: percent,
+    changePercentValenceValue: percent,
+  };
+}
+
 type AnalysisOptions = {
   aggregation?: AggregationType;
   primaryMetric?: NumberMetric;
