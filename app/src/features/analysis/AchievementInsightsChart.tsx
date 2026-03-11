@@ -6,7 +6,7 @@ import { useTheme } from '@/components/ThemeProvider';
 import { useAchievements } from '@/hooks/useAchievements';
 import { computeAchievementInsightsData, computeAchievementInsightsPeriodSeriesData, type AchievementPeriodTooltipItem, type AggregationType, type TimeRange } from '@/lib/analysis';
 import { adjectivize } from '@/lib/utils';
-import { ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronUp, ExternalLink, Filter } from 'lucide-react';
 import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatFriendlyDate, type DateKeyType, convertDateKey, parseDateKey } from '@/lib/friendly-date';
@@ -509,7 +509,11 @@ export function AchievementInsightsChart({
       </div>
 
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-2.5 rounded-md border border-slate-200/90 bg-slate-50/80 px-3 py-1.5 text-xs shadow-sm dark:border-slate-700/80 dark:bg-slate-800/60">
+        <div className={`inline-flex items-center gap-2.5 rounded-md border px-3 py-1.5 text-xs shadow-sm transition-colors ${
+          selectedAchievementIds.length === 0
+            ? 'border-slate-200/90 bg-slate-50/80 dark:border-slate-700/80 dark:bg-slate-800/60'
+            : 'border-indigo-200/80 bg-indigo-50/80 dark:border-indigo-900/60 dark:bg-indigo-950/40'
+        }`}>
           {selectedAchievementIds.length === 0 ? (
             <>
               <span className="font-semibold text-slate-700 dark:text-slate-200">
@@ -533,27 +537,30 @@ export function AchievementInsightsChart({
             </>
           ) : (
             <>
-              <span className="font-semibold text-slate-700 dark:text-slate-200">
+              <Filter className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span className="font-semibold text-indigo-700 dark:text-indigo-200">
                 {selectedAchievementIds.length} of {totalAchievementCount} selected
               </span>
               {(['milestone', 'target', 'goal'] as const).map((goalType) =>
                 selectedBreakdown[goalType] > 0 ? (
                   <div
                     key={goalType}
-                    className="flex items-center gap-1 rounded px-1.5 py-0.5"
+                    className="flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold"
                     style={{
                       color: GOAL_TYPE_META[goalType].color,
-                      backgroundColor: `${GOAL_TYPE_META[goalType].color}1A`,
+                      backgroundColor: `${GOAL_TYPE_META[goalType].color}20`,
+                      borderWidth: '1px',
+                      borderColor: GOAL_TYPE_META[goalType].color,
                     }}
                   >
-                    <span className="font-semibold">{selectedBreakdown[goalType]}</span>
-                    <span className="text-[10px]">{GOAL_TYPE_META[goalType].label}</span>
+                    <span>{selectedBreakdown[goalType]}</span>
+                    <span className="text-[10px] font-normal">{GOAL_TYPE_META[goalType].label}</span>
                   </div>
                 ) : null
               )}
               <button
                 onClick={() => setSelectedAchievementIds([])}
-                className="font-medium text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 transition-colors"
+                className="ml-1 font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-300 dark:hover:text-indigo-200 transition-colors"
               >
                 Clear
               </button>
