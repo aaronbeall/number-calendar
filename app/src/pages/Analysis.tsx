@@ -500,9 +500,21 @@ export function Analysis() {
       return deltas?.[primaryMetric];
     })();
 
-    const percent = dataset.tracking === 'series'
-      ? cumulativePercents?.[primaryMetric]
-      : percents?.[primaryMetric];
+    const percent = (() => {
+      if (dataset.tracking === 'series') {
+        return cumulativePercents?.[primaryMetric];
+      }
+
+      if (
+        typeof primaryValue === 'number'
+        && typeof trendPriorTimeFrameValue === 'number'
+        && trendPriorTimeFrameValue !== 0
+      ) {
+        return (primaryValue / Math.abs(trendPriorTimeFrameValue)) * 100;
+      }
+
+      return undefined;
+    })();
 
     return {
       primaryValue,
@@ -518,9 +530,9 @@ export function Analysis() {
     cumulatives,
     dataset.tracking,
     deltas,
-    percents,
     primaryMetric,
     stats,
+    trendPriorTimeFrameValue,
   ]);
 
   const activeAggregationLabel =
