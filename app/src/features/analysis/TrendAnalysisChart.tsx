@@ -2,13 +2,13 @@ import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
-import { formatPeriodLabel, getAggregationPeriodLabel, getMetricColorForValence, type AggregationType } from '@/lib/analysis';
+import { formatPeriodLabel, getAggregationPeriodLabel, getMetricColorForValence, getValenceAdjustedColor, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
-import { getValueForValence } from '@/lib/valence';
+import { getValenceDegradationSignal, getValueForValence } from '@/lib/valence';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { memo, useCallback, useId, useMemo } from 'react';
 import { usePreference } from '@/hooks/usePreference';
@@ -45,6 +45,7 @@ type TrendPoint = {
   dateKey: DateKey;
   label: string;
   entryNumber?: number;
+  barDeltaValue?: number;
   // Normalized tooltip data per metric
   primaryValue: Partial<Record<NumberMetric, number>>;
   secondaryValue: Partial<Record<NumberMetric, number>>;
@@ -137,6 +138,12 @@ export function TrendAnalysisChart({
         // Valence = deltas + change: primary=deltas/color-by-deltas, secondary=stats/color-by-deltas
         
         for (const metric of displayMetrics) {
+          if (metric === primaryMetric) {
+            point.barDeltaValue = valenceSource === 'stats'
+              ? period.cumulativeDeltas?.[metric] ?? 0
+              : period.deltas?.[metric] ?? 0;
+          }
+
           if (valenceSource === 'stats') {
             if (mode === 'trend') {
               // Show `cumulatives (cumulative deltas)`
@@ -210,11 +217,11 @@ export function TrendAnalysisChart({
   const primaryMinDisplayed = primaryDisplayedValues.length ? Math.min(...primaryDisplayedValues) : 0;
   const primaryMaxDisplayed = primaryDisplayedValues.length ? Math.max(...primaryDisplayedValues) : 0;
   
-  // Gradient center point:
+  // Primary base value -- gradient center point:
   // - Tracking=trend (deltas) in trend mode: center on prior time frame value if provided,
   //   otherwise use first visible data point's value (starting baseline)
   // - Tracking=series (stats) or change mode: center on 0
-  const primaryGradientCenterValue = valenceSource === 'deltas' && mode === 'trend'
+  const primaryBaseValue = valenceSource === 'deltas' && mode === 'trend'
     ? (priorTimeFrameValue !== undefined
         ? priorTimeFrameValue
         : (data.length > 0 ? data[0][primaryMetric] ?? 0 : 0))
@@ -222,11 +229,11 @@ export function TrendAnalysisChart({
   
   // Calculate gradient offset for primary metric
   const primaryZeroOffset =
-    primaryMaxDisplayed <= primaryGradientCenterValue 
+    primaryMaxDisplayed <= primaryBaseValue 
       ? 0 
-      : primaryMinDisplayed >= primaryGradientCenterValue 
+      : primaryMinDisplayed >= primaryBaseValue 
         ? 1 
-        : (primaryMaxDisplayed - primaryGradientCenterValue) / (primaryMaxDisplayed - primaryMinDisplayed);
+        : (primaryMaxDisplayed - primaryBaseValue) / (primaryMaxDisplayed - primaryMinDisplayed);
   
   // Helper to calculate gradient offsets for secondary metrics
   const getSecondaryMetricGradientOffset = (metric: NumberMetric): number => {
@@ -247,15 +254,10 @@ export function TrendAnalysisChart({
     return (maxVal - centerVal) / (maxVal - minVal);
   };
 
-  const yAxisDomain = useMemo<AxisDomain>(() => 
-    primaryRenderMode === 'bars'
-      ? [
-          (dataMin: number) => Math.min(0, dataMin),
-          (dataMax: number) => Math.max(0, dataMax),
-        ]
-      : (tracking === 'series' ? [0, 'auto'] : ['dataMin', 'dataMax']),
-    [primaryRenderMode, tracking]
-  );
+  const yAxisDomain = useMemo<AxisDomain>(() => [
+    (dataMin: number) => Math.min(primaryBaseValue, dataMin),
+    (dataMax: number) => Math.max(primaryBaseValue, dataMax),
+  ], [primaryBaseValue]);
 
   // Primary metric uses good/bad colors (not metric color)
   const primaryPositiveColor = getValueForValence(1, valence, {
@@ -337,13 +339,29 @@ export function TrendAnalysisChart({
 
   const hasVisibleMetrics = displayMetrics.some((metric) => visibleMetrics.has(metric));
 
-  const getPrimaryBarColor = useCallback((point: TrendPoint): string => (
-    getValueForValence(point.primaryValenceValue[primaryMetric] ?? 0, valence, {
+  const getPrimaryBarColor = useCallback((point: TrendPoint, index: number): string => {
+    const primaryValue = point[primaryMetric] ?? 0;
+    const baselineValue = valenceSource === 'deltas'
+      ? (priorTimeFrameValue ?? (data.length > 0 ? data[0][primaryMetric] ?? 0 : 0))
+      : 0;
+    const valueForBaseColor = mode === 'change'
+      ? primaryValue
+      : (primaryValue - baselineValue);
+    const baseColor = getValueForValence(valueForBaseColor, valence, {
       good: '#22c55e',
       bad: '#ef4444',
       neutral: '#3b82f6',
-    })
-  ), [primaryMetric, valence]);
+    });
+
+    const deltaValue = mode === 'change'
+      ? (index > 0
+          ? primaryValue - (data[index - 1][primaryMetric] ?? 0)
+          : 0)
+      : (point.barDeltaValue ?? 0);
+
+    const darkeningSignal = getValenceDegradationSignal(primaryValue, deltaValue, valence);
+    return getValenceAdjustedColor(baseColor, darkeningSignal, valence);
+  }, [primaryMetric, valence, valenceSource, priorTimeFrameValue, data, mode]);
 
   const renderTooltip = ({
     active,
@@ -483,7 +501,7 @@ export function TrendAnalysisChart({
                 dataKey={primaryMetric}
                 stroke={`url(#trend-gradient-stroke-${gradientId})`}
                 fill={`url(#trend-gradient-${gradientId})`}
-                baseValue={primaryGradientCenterValue}
+                baseValue={primaryBaseValue}
                 dot={false}
                 strokeWidth={2.5}
                 isAnimationActive
@@ -498,10 +516,10 @@ export function TrendAnalysisChart({
                 isAnimationActive
                 name={getMetricLabel(primaryMetric)}
               >
-                {data.map((point) => (
+                {data.map((point, index) => (
                   <Cell
                     key={`${point.dateKey}-${primaryMetric}`}
-                    fill={getPrimaryBarColor(point)}
+                    fill={getPrimaryBarColor(point, index)}
                   />
                 ))}
               </Bar>

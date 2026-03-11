@@ -144,3 +144,35 @@ export function getValueForNeutral<T>(valence: Valence, { positive, negative, ne
   if (isNeutral(-1, valence)) return negative;
   return neutral;
 }
+
+/**
+ * Returns a degradation signal for two-level valence.
+ *
+ * Degradation should occur when the value and its delta point in opposite
+ * directions (e.g., positive but degrading, or negative but improving).
+ * The returned signal is always "bad" for the provided valence so callers
+ * can pass it into valence-based darkening helpers for example.
+ */
+export function getValenceDegradationSignal(
+  value: number | null | undefined,
+  delta: number | null | undefined,
+  valence: Valence,
+): number {
+  const current = value ?? 0;
+  const change = delta ?? 0;
+
+  if (current === 0 || change === 0 || valence === 'neutral') {
+    return 0;
+  }
+
+  const hasOppositeDirection = (current > 0 && change < 0) || (current < 0 && change > 0);
+  if (!hasOppositeDirection) {
+    return 0;
+  }
+
+  return getValueForBad(valence, {
+    positive: 1,
+    negative: -1,
+    neutral: 0,
+  });
+}
