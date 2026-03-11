@@ -40,7 +40,7 @@ import { ToggleOptionPopover } from '@/components/ui/toggle-option-popover';
 import { adjectivize, capitalize, pluralize } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import type { TrendDataMode } from '@/features/analysis/TrendAnalysisChart';
+import type { TrendDataMode, TrendSummary } from '@/features/analysis/TrendAnalysisChart';
 import { buildSingleNumberAggregates, computeRunningAggregatePeriods, type PeriodAggregateData } from '@/lib/period-aggregate';
 import { Link } from 'react-router-dom';
 
@@ -473,10 +473,55 @@ export function Analysis() {
       const firstValue = allAggregatePeriods[0].stats[primaryMetric];
       return typeof firstValue === 'number' ? firstValue : undefined;
     }
-
-    const priorIndex = Math.max(allAggregatePeriods.length - computedAggregatesInRange.length - 1, 0);
-    return allAggregatePeriods[priorIndex].stats[primaryMetric];
+    
+    return priorTimeFrameValue;
   }, [analysisTrendMode, allAggregatePeriods, computedAggregatesInRange, primaryMetric]);
+
+  const trendSummary = useMemo<TrendSummary | undefined>(() => {
+    const firstAggregate = allAggregatePeriods.length > 0 ? allAggregatePeriods[0] : undefined;
+
+    const primaryValue = (() => {
+      if (dataset.tracking === 'series') {
+        if (analysisTrendMode === 'all-time-trend') {
+          return cumulatives?.[primaryMetric];
+        }
+        return stats?.[primaryMetric];
+      }
+
+      if (analysisTrendMode === 'all-time-trend') {
+        const summaryStatsPrimary = stats?.[primaryMetric];
+        const firstStatsPrimary = firstAggregate?.stats?.[primaryMetric];
+        if (typeof summaryStatsPrimary === 'number' && typeof firstStatsPrimary === 'number') {
+          return summaryStatsPrimary - firstStatsPrimary;
+        }
+        return undefined;
+      }
+
+      return deltas?.[primaryMetric];
+    })();
+
+    const percent = dataset.tracking === 'series'
+      ? cumulativePercents?.[primaryMetric]
+      : percents?.[primaryMetric];
+
+    return {
+      primaryValue,
+      primaryValenceValue: primaryValue,
+      primaryDelta: dataset.tracking === 'trend',
+      changePercent: percent,
+      changePercentValenceValue: percent,
+    };
+  }, [
+    analysisTrendMode,
+    allAggregatePeriods,
+    cumulativePercents,
+    cumulatives,
+    dataset.tracking,
+    deltas,
+    percents,
+    primaryMetric,
+    stats,
+  ]);
 
   const activeAggregationLabel =
     AGGREGATION_OPTIONS.find(option => option.value === aggregationType)?.label ?? 'Month';
@@ -873,6 +918,7 @@ export function Analysis() {
                 selectedMetrics={selectedSummaryMetrics}
                 datasetId={dataset.id}
                 priorTimeFrameValue={trendPriorTimeFrameValue}
+                summary={trendSummary}
               />
             </LazyChart>
           </ChartSection>

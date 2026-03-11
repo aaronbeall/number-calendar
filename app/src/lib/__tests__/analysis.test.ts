@@ -172,7 +172,7 @@ describe('analysis', () => {
       expect(result.percents?.total).toBe(400);
     });
 
-    it('should calculate cumulative percents comparing range stats to cumulative stats', () => {
+    it('should calculate cumulative percents comparing end-of-range cumulative to prior cumulative', () => {
       const periods: PeriodAggregateData<'day'>[] = [
         { 
           ...createEmptyAggregate('2024-01-01', 'day'), 
@@ -199,13 +199,13 @@ describe('analysis', () => {
         endDate: new Date('2024-01-03'),
       });
 
-      // Range contains days 2-3, cumulative at end of range = 60
-      // Prior period (day 1) has cumulative = 10
-      // Cumulative percent for total: (50 - 60) / 60 * 100 = -16.67%
+      // Cumulative at end of range = 60
+      // Prior period (day 1) cumulative = 10
+      // Cumulative percent for total: (60 - 10) / 10 * 100 = 500%
       expect(result.stats?.total).toBe(50);
       expect(result.cumulatives?.total).toBe(60);
       expect(result.priorPeriod?.cumulatives.total).toBe(10);
-      expect(result.cumulativePercents?.total).toBeCloseTo(-16.67, 1);
+      expect(result.cumulativePercents?.total).toBeCloseTo(500, 1);
     });
 
     it('should show negative cumulative percent when cumulative decreases', () => {
@@ -235,14 +235,13 @@ describe('analysis', () => {
         endDate: new Date('2025-01-31'),
       });
 
-      // Range: Dec 2024 - Jan 2025, total = -21900
       // Cumulative at end (Jan 2025): -29300
       // Prior cumulative (Nov 2024): -7400
-      // Cumulative percent: (-21900 - (-29300)) / |-29300| * 100 = 7400 / 29300 * 100 = 25.26%
+      // Cumulative percent: (-29300 - (-7400)) / |-7400| * 100 = -21900 / 7400 * 100 = -295.95%
       expect(result.stats?.total).toBe(-21900);
       expect(result.cumulatives?.total).toBe(-29300);
       expect(result.priorPeriod?.cumulatives.total).toBe(-7400);
-      expect(result.cumulativePercents?.total).toBeCloseTo(25.26, 1);
+      expect(result.cumulativePercents?.total).toBeCloseTo(-295.95, 1);
     });
   });
 });

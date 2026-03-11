@@ -339,7 +339,7 @@ export interface AnalysisData {
   extremes?: StatsExtremes;
   /** Cumulative stats (for series tracking) */
   cumulatives?: NumberStats;
-  /** Percent change in cumulative from start to end of time range (compares cumulative before range vs cumulative at end of range) */
+  /** Percent change in cumulative vs prior cumulative immediately before the range */
   cumulativePercents?: Partial<NumberStats>;
   /** Number of periods in the range */
   periodCount: number;
@@ -406,9 +406,9 @@ export function computeAnalysisData<T extends DateKeyType>(
       // Compare summary stats for entire range vs prior period
       deltas = priorStats ? computeStatsDeltas(stats, priorStats) : undefined;
       percents = priorStats ? computeStatsPercents(stats, priorStats) : undefined;
-      // Cumulative percent: compare current range stats vs cumulative at end of range
-      cumulativePercents = cumulatives && stats
-        ? computeStatsPercents(stats, cumulatives)
+      // Cumulative percent: compare cumulative at end of range vs cumulative right before range
+      cumulativePercents = cumulatives && priorPeriod?.cumulatives
+        ? computeStatsPercents(cumulatives, priorPeriod.cumulatives)
         : undefined;
     } else {
       // Seed deltas/percents when there is no prior period available.

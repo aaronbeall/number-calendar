@@ -8,7 +8,7 @@ import { formatValue } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
-import { getValueForBad, getValueForValence, getValueForValenceStrength } from '@/lib/valence';
+import { getValueForValence, getValueForValenceStrength } from '@/lib/valence';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import { memo, useCallback, useId, useMemo } from 'react';
 import { usePreference } from '@/hooks/usePreference';
@@ -37,9 +37,18 @@ interface TrendAnalysisChartProps {
   selectedMetrics?: NumberMetric[];
   datasetId: string;
   priorTimeFrameValue?: number;
+  summary?: TrendSummary;
 }
 
 export type TrendDataMode = 'trend' | 'change';
+
+export interface TrendSummary {
+  primaryValue?: number;
+  primaryValenceValue?: number;
+  primaryDelta?: boolean;
+  changePercent?: number;
+  changePercentValenceValue?: number;
+}
 
 type TrendPoint = {
   dateKey: DateKey;
@@ -67,6 +76,7 @@ export function TrendAnalysisChart({
   selectedMetrics = [],
   datasetId,
   priorTimeFrameValue,
+  summary,
 }: TrendAnalysisChartProps) {
   const { isDark } = useTheme();
   const gradientId = useId();
@@ -217,6 +227,13 @@ export function TrendAnalysisChart({
     ? primaryValenceSourceValues[primaryValenceSourceValues.length - 1]
     : 0;
 
+  const primaryMetricValence = getMetricValence(primaryMetric, valence);
+
+  const summaryPrimaryValue = summary?.primaryValue;
+  const summaryPrimaryValenceValue = summary?.primaryValenceValue ?? latestValenceValue;
+  const summaryChangePercent = summary?.changePercent;
+  const summaryChangePercentValenceValue = summary?.changePercentValenceValue ?? summaryChangePercent ?? 0;
+
   const primaryMinDisplayed = primaryDisplayedValues.length ? Math.min(...primaryDisplayedValues) : 0;
   const primaryMaxDisplayed = primaryDisplayedValues.length ? Math.max(...primaryDisplayedValues) : 0;
   
@@ -350,11 +367,6 @@ export function TrendAnalysisChart({
     const valueForBaseColor = mode === 'change'
       ? primaryValue
       : (primaryValue - baselineValue);
-    const baseColor = getValueForValence(valueForBaseColor, valence, {
-      good: '#22c55e',
-      bad: '#ef4444',
-      neutral: '#3b82f6',
-    });
 
     const deltaValue = mode === 'change'
       ? (index > 0
@@ -555,6 +567,30 @@ export function TrendAnalysisChart({
             No metrics selected. Use the legend below to enable one or more lines.
           </div>
         )}
+      </div>
+      <div className="mt-2 flex justify-center">
+        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/70 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900/60">
+          <NumberText
+            value={summaryPrimaryValue}
+            valenceValue={summaryPrimaryValenceValue}
+            valence={primaryMetricValence}
+            className="text-sm font-extrabold"
+            short
+            delta={summary?.primaryDelta}
+            animated
+          />
+          {typeof summaryChangePercent === 'number' && (
+            <NumberText
+              value={summaryChangePercent}
+              valenceValue={summaryChangePercentValenceValue}
+              valence={primaryMetricValence}
+              percent
+              delta
+              className="font-semibold"
+              animated
+            />
+          )}
+        </div>
       </div>
       <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap items-center gap-2 pr-1">
         <Tooltip>
