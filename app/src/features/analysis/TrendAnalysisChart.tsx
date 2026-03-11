@@ -465,8 +465,8 @@ export function TrendAnalysisChart({
   }
 
   return (
-    <div className="h-80 w-full flex flex-col">
-      <div className="min-h-0 flex-1 w-full relative">
+    <div className="w-full flex flex-col">
+      <div className="h-80 w-full relative">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
           <defs>
