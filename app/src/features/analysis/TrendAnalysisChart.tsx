@@ -1,6 +1,7 @@
 import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { TrendSummaryBadge } from '@/features/analysis/TrendSummaryBadge';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
 import { formatPeriodLabel, getAggregationPeriodLabel, getMetricColorForValence, getValenceAdjustedColor, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
@@ -572,30 +573,15 @@ export function TrendAnalysisChart({
           </div>
         )}
       </div>
-      <div className="mt-2 flex justify-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50/70 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-900/60">
-          <NumberText
-            value={summaryPrimaryValue}
-            valenceValue={summaryPrimaryValenceValue}
-            valence={primaryMetricValence}
-            className="text-sm font-extrabold"
-            short
-            delta={summary?.primaryDelta}
-            animated
-          />
-          {typeof summaryChangePercent === 'number' && (
-            <NumberText
-              value={summaryChangePercent}
-              valenceValue={summaryChangePercentValenceValue}
-              valence={primaryMetricValence}
-              percent
-              delta
-              className="font-semibold"
-              animated
-            />
-          )}
-        </div>
-      </div>
+      <TrendSummaryBadge
+        primaryMetricLabel={getMetricLabel(primaryMetric)}
+        valence={primaryMetricValence}
+        primaryValue={summaryPrimaryValue}
+        primaryValenceValue={summaryPrimaryValenceValue}
+        primaryDelta={summary?.primaryDelta}
+        changePercent={summaryChangePercent}
+        changePercentValenceValue={summaryChangePercentValenceValue}
+      />
       <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap items-center gap-2 pr-1">
         <Tooltip>
           <TooltipTrigger asChild>
