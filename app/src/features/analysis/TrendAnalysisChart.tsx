@@ -1,5 +1,6 @@
 import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
 import { formatPeriodLabel, getAggregationPeriodLabel, getMetricColorForValence, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
@@ -8,17 +9,20 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
+import { BarChart3, TrendingUp } from 'lucide-react';
 import { memo, useCallback, useId, useMemo } from 'react';
 import { usePreference } from '@/hooks/usePreference';
 import {
   Area,
+  Bar,
   CartesianGrid,
+  Cell,
   ComposedChart,
   ReferenceLine,
   Legend,
   Line,
   ResponsiveContainer,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   XAxis,
   YAxis,
 } from 'recharts';
@@ -51,6 +55,7 @@ type TrendPoint = {
 } & Partial<Record<NumberMetric, number>>;
 
 const SECONDARY_DASHES = ['4 2', '2 2', '6 3', '3 2', '5 2', '2 1'];
+type PrimaryRenderMode = 'area' | 'bars';
 
 export function TrendAnalysisChart({
   periods,
@@ -93,6 +98,10 @@ export function TrendAnalysisChart({
   const [visibleMetricsArray, setVisibleMetricsArray] = usePreference<NumberMetric[]>(
     `analysis_trendVisibleMetrics_${datasetId}`,
     defaultVisibleMetrics,
+  );
+  const [primaryRenderMode, setPrimaryRenderMode] = usePreference<PrimaryRenderMode>(
+    `analysis_trendPrimaryRenderMode_${datasetId}`,
+    'area',
   );
 
   const visibleMetrics = useMemo(() => new Set(visibleMetricsArray), [visibleMetricsArray]);
@@ -239,8 +248,13 @@ export function TrendAnalysisChart({
   };
 
   const yAxisDomain = useMemo<AxisDomain>(() => 
-    tracking === 'series' ? [0, 'auto'] : ['dataMin', 'dataMax'], 
-    [tracking]
+    primaryRenderMode === 'bars'
+      ? [
+          (dataMin: number) => Math.min(0, dataMin),
+          (dataMax: number) => Math.max(0, dataMax),
+        ]
+      : (tracking === 'series' ? [0, 'auto'] : ['dataMin', 'dataMax']),
+    [primaryRenderMode, tracking]
   );
 
   // Primary metric uses good/bad colors (not metric color)
@@ -317,7 +331,19 @@ export function TrendAnalysisChart({
     });
   }, [setVisibleMetrics]);
 
+  const togglePrimaryRenderMode = useCallback(() => {
+    setPrimaryRenderMode((prev) => (prev === 'area' ? 'bars' : 'area'));
+  }, [setPrimaryRenderMode]);
+
   const hasVisibleMetrics = displayMetrics.some((metric) => visibleMetrics.has(metric));
+
+  const getPrimaryBarColor = useCallback((point: TrendPoint): string => (
+    getValueForValence(point.primaryValenceValue[primaryMetric] ?? 0, valence, {
+      good: '#22c55e',
+      bad: '#ef4444',
+      neutral: '#3b82f6',
+    })
+  ), [primaryMetric, valence]);
 
   const renderTooltip = ({
     active,
@@ -447,10 +473,10 @@ export function TrendAnalysisChart({
             {valenceSource === 'stats' && mode === 'trend' && (
               <ReferenceLine y={0} stroke={axisColor} strokeOpacity={0.35} strokeDasharray="3 3" />
             )}
-            <Tooltip content={renderTooltip} />
+            <RechartsTooltip content={renderTooltip} />
             <Legend wrapperStyle={{ display: 'none' }} />
-            {/* Render primary metric area first (underneath) */}
-            {visibleMetrics.has(primaryMetric) && (
+            {/* Render primary metric first (underneath) */}
+            {visibleMetrics.has(primaryMetric) && primaryRenderMode === 'area' && (
               <Area
                 key={primaryMetric}
                 type="monotone"
@@ -463,6 +489,22 @@ export function TrendAnalysisChart({
                 isAnimationActive
                 name={getMetricLabel(primaryMetric)}
               />
+            )}
+            {visibleMetrics.has(primaryMetric) && primaryRenderMode === 'bars' && (
+              <Bar
+                key={`${primaryMetric}-bars`}
+                dataKey={primaryMetric}
+                radius={[3, 3, 0, 0]}
+                isAnimationActive
+                name={getMetricLabel(primaryMetric)}
+              >
+                {data.map((point) => (
+                  <Cell
+                    key={`${point.dateKey}-${primaryMetric}`}
+                    fill={getPrimaryBarColor(point)}
+                  />
+                ))}
+              </Bar>
             )}
             {/* Then render secondary metric lines on top */}
             {displayMetrics
@@ -488,7 +530,22 @@ export function TrendAnalysisChart({
           </div>
         )}
       </div>
-      <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap gap-2 pr-1">
+      <div className="mt-2 max-h-20 overflow-y-auto flex flex-wrap items-center gap-2 pr-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              onClick={togglePrimaryRenderMode}
+              aria-label={primaryRenderMode === 'area' ? 'Switch to bars' : 'Switch to area'}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-300 bg-slate-100 text-slate-700 transition-colors hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            >
+              {primaryRenderMode === 'area' ? <BarChart3 size={14} /> : <TrendingUp size={14} />}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="text-xs">
+            {primaryRenderMode === 'area' ? 'Switch primary metric to bars' : 'Switch primary metric to area/line'}
+          </TooltipContent>
+        </Tooltip>
         {displayMetrics.map((metric) => {
           const isVisible = visibleMetrics.has(metric);
           return (

@@ -141,13 +141,13 @@ I'm liking this one.
 - [ ] Premium features
   - [ ] No ads
   - [ ] Number of datasets
+  - [ ] Combined dataset
   - [ ] AI assistance (bleh) -- analysis feedback?
   - [ ] Data Syncing (via Supabase, Dropbox, Jsonbin)
   - [ ] Data export/import
   - [ ] Data integrations
   - [ ] Advanced Insights/Reporting
   - [ ] Advanced metrics (StdDev, IQR)
-  - [ ] Combined dataset
   - [ ] Dataset sharing
 
 ## Issues
