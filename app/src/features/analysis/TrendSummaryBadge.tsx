@@ -1,6 +1,7 @@
-import { useTheme } from '@/components/ThemeProvider';
 import { NumberText } from '@/components/ui/number-text';
+import { getValueForValence } from '@/lib/valence';
 import type { Valence } from '@/features/db/localdb';
+import { cn } from '@/lib/utils';
 
 interface TrendSummaryBadgeProps {
   primaryMetricLabel: string;
@@ -21,8 +22,12 @@ export function TrendSummaryBadge({
   changePercent,
   changePercentValenceValue,
 }: TrendSummaryBadgeProps) {
-  const { isDark } = useTheme();
-  const percentAccentColor = isDark ? '#22d3ee' : '#0e7490';
+  const percentClasses = {
+    good: 'text-green-500 dark:text-green-400',
+    bad: 'text-red-500 dark:text-red-400',
+    neutral: 'text-blue-500 dark:text-blue-400',
+  }
+  const changePercentColor = getValueForValence(changePercentValenceValue ?? 0, valence, percentClasses);
 
   return (
     <div className="mt-1 mb-2 flex justify-center">
@@ -34,13 +39,12 @@ export function TrendSummaryBadge({
             valenceValue={primaryValenceValue}
             valence={valence}
             delta={primaryDelta}
-            short
             animated
             className="inline"
           />
         </span>
         {typeof changePercent === 'number' && (
-          <span className="font-medium" style={{ color: percentAccentColor }}>
+          <span className={cn('font-medium', changePercentColor)}>
             (
             <NumberText
               value={changePercent}
@@ -50,6 +54,9 @@ export function TrendSummaryBadge({
               delta
               animated
               className="inline"
+              goodClassName={percentClasses.good}
+              badClassName={percentClasses.bad}
+              neutralClassName={percentClasses.neutral}
             />
             )
           </span>
