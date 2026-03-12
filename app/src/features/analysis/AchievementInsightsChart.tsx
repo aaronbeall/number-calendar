@@ -111,9 +111,19 @@ const AchievementInsightList = memo(function AchievementInsightList({
               <button
                 type="button"
                 onClick={() => onToggleItem(item.id)}
-                className={`w-full text-left flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 transition-colors ${hasSelection && !selectedIds.includes(item.id) ? 'opacity-45' : 'opacity-100'} hover:bg-slate-100 dark:hover:bg-slate-800/50`}
+                className={`relative overflow-hidden w-full text-left flex items-center justify-between gap-2 text-xs rounded px-1.5 py-0.5 transition-colors ${hasSelection && !selectedIds.includes(item.id) ? 'opacity-45' : 'opacity-100'} hover:bg-slate-100 dark:hover:bg-slate-800/50`}
               >
-                <span className="flex items-center gap-2 min-w-0 flex-1">
+                <span
+                  className="pointer-events-none absolute inset-y-0 left-0 rounded"
+                  style={{
+                    width: `${Math.max(
+                      0,
+                      Math.min(100, variant === 'bestRarity' ? (item.rarityScore ?? 0) : item.periodCompletionPercent),
+                    )}%`,
+                    backgroundColor: `${GOAL_TYPE_META[item.goalType].color}1A`,
+                  }}
+                />
+                <span className="relative z-10 flex items-center gap-2 min-w-0 flex-1">
                   <AchievementBadgeIcon badge={item.badge} size={14} className="shrink-0" />
                   <span
                     className="inline-flex items-center truncate rounded px-1 py-0.5"
@@ -125,7 +135,7 @@ const AchievementInsightList = memo(function AchievementInsightList({
                     {item.title}
                   </span>
                 </span>
-                <span className="flex items-center gap-1.5 shrink-0">
+                <span className="relative z-10 flex items-center gap-1.5 shrink-0">
                   {variant === 'topByCount' && item.periodCompletionPercent > 0 && (
                     <span
                       className="text-[10px] font-medium px-1.5 py-0.5 rounded"
