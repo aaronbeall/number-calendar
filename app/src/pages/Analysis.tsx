@@ -22,7 +22,7 @@ import { formatValue } from '@/lib/friendly-numbers';
 import { useCallback, useEffect, useMemo } from 'react';
 import { formatAggregationRange, getTimeRange, getAvailablePresets, computeAnalysisData, computeTrendSummary, type AggregationType, type ProjectionHorizon, type ProjectionMode, type ProjectionMomentumWeight, type ProjectionRecentWindow, type TimeFramePreset, getAggregationPeriodLabel } from '@/lib/analysis';
 import type { DayKey } from '@/features/db/localdb';
-import { getPrimaryMetric } from '@/lib/tracking';
+import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import type { NumberMetric } from '@/lib/stats';
 import { Calendar, TrendingUp, BarChart3, Zap, LineChart, PieChart, Activity, CalendarDays, CalendarRange, CalendarClock, Ban, Hash, Sigma, HelpCircle, Infinity as InfinityIcon, Target, Award, Sparkles, Compass, ChevronDown } from 'lucide-react';
 import { TrendAnalysisChart } from '@/features/analysis/TrendAnalysisChart';
@@ -167,6 +167,7 @@ export function Analysis() {
   const { milestones: milestonesResults } = useAchievements(dataset.id);
   const isSidebarLayout = useMatchMedia('(min-width: 1024px)');
   const primaryMetric = getPrimaryMetric(dataset.tracking);
+  const primaryMetricLabel = getPrimaryMetricLabel(dataset.tracking);
 
   // Persisted analysis controls (per dataset)
   const [aggregationType, setAggregationType] = usePreference<AggregationType>(
@@ -517,6 +518,12 @@ export function Analysis() {
   const trendChangeModeLabel = `${aggregationModeLabel} Change`;
   // Map analysis mode to TrendChart mode
   const trendChartMode: TrendDataMode = analysisTrendMode === 'change' ? 'change' : 'trend';
+  const includeMetricInTrendSummaryLabel = dataset.tracking === 'series';
+  const trendSummaryLabel = analysisTrendMode === 'all-time-trend'
+    ? (includeMetricInTrendSummaryLabel ? `All-time ${primaryMetricLabel}` : 'All-time')
+    : analysisTrendMode === 'change'
+      ? `${activeTimeFrameLabel} Change`
+      : (includeMetricInTrendSummaryLabel ? `${activeTimeFrameLabel} ${primaryMetricLabel}` : activeTimeFrameLabel);
 
   const handlePresetChange = useCallback((value: string) => {
     const newPreset = value as TimeFramePreset;
@@ -893,6 +900,7 @@ export function Analysis() {
                 aggregationType={aggregationType}
                 tracking={dataset.tracking}
                 mode={trendChartMode}
+                summaryLabel={trendSummaryLabel}
                 valence={dataset.valence}
                 selectedMetrics={selectedSummaryMetrics}
                 datasetId={dataset.id}

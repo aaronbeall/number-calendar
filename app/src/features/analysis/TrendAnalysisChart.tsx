@@ -34,6 +34,7 @@ interface TrendAnalysisChartProps {
   aggregationType: AggregationType;
   tracking: Tracking;
   mode: TrendDataMode;
+  summaryLabel?: string;
   valence?: Valence;
   selectedMetrics?: NumberMetric[];
   datasetId: string;
@@ -73,6 +74,7 @@ export function TrendAnalysisChart({
   aggregationType,
   tracking,
   mode,
+  summaryLabel,
   valence = 'neutral',
   selectedMetrics = [],
   datasetId,
@@ -574,7 +576,7 @@ export function TrendAnalysisChart({
         )}
       </div>
       <TrendSummaryBadge
-        primaryMetricLabel={getMetricLabel(primaryMetric)}
+        primaryMetricLabel={summaryLabel ?? getMetricLabel(primaryMetric)}
         valence={primaryMetricValence}
         primaryValue={summaryPrimaryValue}
         primaryValenceValue={summaryPrimaryValenceValue}
