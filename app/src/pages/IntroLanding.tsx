@@ -7,45 +7,44 @@ import { cn } from '@/lib/utils';
 import {
   ArrowDown,
   ArrowRight,
-  BarChart3,
   Calculator,
-  CalendarDays,
   Check,
   Download,
+  Flag,
+  LineChart,
   Lock,
-  Minus,
+  Medal,
+  PartyPopper,
   Plus,
-  Smartphone,
   Sparkles,
+  Target,
   TrendingDown,
   TrendingUp,
   Trophy,
-  X,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 // Screenshots captured from the real app with sample data, in light and dark variants.
+// See scripts/landing-screenshots to regenerate them.
 const shotUrls = import.meta.glob('../assets/landing/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 
 type ShotName =
   | 'calendar'
-  | 'valence-pnl'
-  | 'valence-weight'
-  | 'chart'
-  | 'month-summary'
-  | 'year'
-  | 'entry'
-  | 'achievements'
-  | 'dashboard'
   | 'phone-calendar'
-  | 'phone-weight'
-  | 'phone-entry'
-  | 'phone-dashboard'
-  | 'm-valence-pnl'
-  | 'm-valence-weight'
-  | 'm-report'
-  | 'm-year';
+  | 'week-pnl'
+  | 'week-weight'
+  | 'm-week-pnl'
+  | 'm-week-weight'
+  | 'entry'
+  | 'celebrate'
+  | 'm-celebrate'
+  | 'targets'
+  | 'an-projections'
+  | 'an-deviation'
+  | 'an-momentum'
+  | 'm-an-projections'
+  | 'm-an-momentum';
 
 function shotUrl(name: ShotName, dark: boolean) {
   return shotUrls[`../assets/landing/${name}-${dark ? 'dark' : 'light'}.webp`];
@@ -101,109 +100,26 @@ function PhoneFrame({ children, className }: { children: ReactNode; className?: 
 /** Rounded card for a cropped piece of the UI. */
 function ShotCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-lg shadow-slate-900/5 dark:shadow-black/30', className)}>
+    <div className={cn('rounded-xl sm:rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-lg shadow-slate-900/5 dark:shadow-black/30', className)}>
       {children}
     </div>
   );
 }
 
-function Eyebrow({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+function SectionHeading({ eyebrow, icon, title, children, center }: { eyebrow: string; icon: ReactNode; title: ReactNode; children?: ReactNode; center?: boolean }) {
   return (
-    <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-      {icon}
-      {children}
-    </div>
-  );
-}
-
-function SectionHeading({ eyebrow, icon, title, children }: { eyebrow: string; icon: ReactNode; title: ReactNode; children?: ReactNode }) {
-  return (
-    <div className="max-w-2xl">
-      <Eyebrow icon={icon}>{eyebrow}</Eyebrow>
-      <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white text-balance">{title}</h2>
-      {children && <p className="mt-4 text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300">{children}</p>}
+    <div className={cn('max-w-2xl', center && 'mx-auto text-center')}>
+      <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
+        {icon}
+        {eyebrow}
+      </div>
+      <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>{title}</h2>
+      {children && <p className="mt-4 text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300 text-pretty">{children}</p>}
     </div>
   );
 }
 
 const fmt = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
-const fmtSigned = (n: number) => (n > 0 ? `+${fmt(n)}` : fmt(n));
-
-/** Live demo: the same week of numbers, coloured by which direction is good. */
-function ValenceDemo() {
-  const [lowerIsBetter, setLowerIsBetter] = useState(true);
-  const days = [
-    { day: 'Mon', value: 184.2 },
-    { day: 'Tue', value: 183.6 },
-    { day: 'Wed', value: 184.1 },
-    { day: 'Thu', value: 183.2 },
-    { day: 'Fri', value: 182.8 },
-    { day: 'Sat', value: 183.3 },
-    { day: 'Sun', value: 182.4 },
-  ];
-  const prior = 184.6;
-  return (
-    <div className="rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 p-4 sm:p-6 shadow-lg shadow-slate-900/5 dark:shadow-black/30">
-      <div className="flex flex-col gap-3">
-        <div>
-          <div className="text-sm font-semibold text-slate-900 dark:text-white">One week of weigh-ins</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">Same numbers. Flip what counts as good.</div>
-        </div>
-        <div role="radiogroup" aria-label="Which direction is good" className="inline-flex p-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-medium self-start">
-          {[
-            { label: 'Higher is better', value: false, Icon: TrendingUp },
-            { label: 'Lower is better', value: true, Icon: TrendingDown },
-          ].map(({ label, value, Icon }) => (
-            <button
-              key={label}
-              role="radio"
-              aria-checked={lowerIsBetter === value}
-              onClick={() => setLowerIsBetter(value)}
-              className={cn(
-                'inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors cursor-pointer',
-                lowerIsBetter === value
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-              )}
-            >
-              <Icon className="w-3.5 h-3.5" />
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="mt-5 grid grid-cols-7 gap-1 sm:gap-2">
-        {days.map(({ day, value }, i) => {
-          const delta = Math.round((value - (i === 0 ? prior : days[i - 1].value)) * 10) / 10;
-          const good = lowerIsBetter ? delta < 0 : delta > 0;
-          return (
-            <div
-              key={day}
-              className={cn(
-                'rounded-lg px-0.5 py-2 sm:py-3 text-center border transition-colors duration-300',
-                good
-                  ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/50 dark:border-emerald-800/70'
-                  : 'bg-red-50 border-red-200 dark:bg-red-950/40 dark:border-red-800/60'
-              )}
-            >
-              <div className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400">{day}</div>
-              <div className={cn('mt-1 font-mono font-bold text-[11px] sm:text-base transition-colors duration-300', good ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')}>
-                {value.toFixed(1)}
-              </div>
-              <div className={cn('font-mono text-[9px] sm:text-[11px] transition-colors duration-300', good ? 'text-emerald-600/80 dark:text-emerald-500' : 'text-red-500/80 dark:text-red-400/80')}>
-                {fmtSigned(delta)}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-        Week: <span className={cn('font-mono font-semibold', lowerIsBetter ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400')}>−2.2 lb</span>{' '}
-        {lowerIsBetter ? 'is a great week if you are cutting.' : 'is a bad week if you are bulking.'}
-      </div>
-    </div>
-  );
-}
 
 /** Live demo: type a day as math and watch it become entries and stats. */
 function ExpressionDemo() {
@@ -270,55 +186,26 @@ function ExpressionDemo() {
   );
 }
 
-type Cell = true | false | string;
-
-const comparisonRows: { label: string; cells: [Cell, Cell, Cell, Cell] }[] = [
-  { label: 'Any number, as many per day as you like', cells: [true, 'Mostly yes/no', 'Trades only', true] },
-  { label: 'Week, month and year stats out of the box', cells: ['You build them', 'Streaks', true, true] },
-  { label: 'Knows whether up or down is good', cells: ['You write colour rules', false, 'Assumes profit', true] },
-  { label: 'Calendar view with charts', cells: ['You build it', true, true, true] },
-  { label: 'Free, with no caps', cells: [true, 'About 3 habits free', '$30–$99 a month', true] },
-  { label: 'No account needed', cells: ['Depends', 'Usually needs one', false, true] },
+const templates: { name: string; lower?: boolean }[] = [
+  { name: 'Trading P&L' },
+  { name: 'Weight loss', lower: true },
+  { name: 'Steps' },
+  { name: 'Sleep' },
+  { name: 'Revenue' },
+  { name: 'Expenses', lower: true },
+  { name: 'Screen time', lower: true },
+  { name: 'Running' },
+  { name: 'Savings' },
+  { name: 'Debt payoff', lower: true },
+  { name: 'Study time' },
+  { name: 'Mood' },
 ];
 
-const comparisonColumns = ['Spreadsheet', 'Habit tracker', 'Trading journal', 'Numbers Go Up'];
-
-function ComparisonCell({ value, highlight, compact }: { value: Cell; highlight?: boolean; compact?: boolean }) {
-  if (value === true) {
-    return (
-      <span className={cn('inline-flex items-center justify-center w-6 h-6 rounded-full', highlight ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-400')}>
-        <Check className="w-3.5 h-3.5" strokeWidth={3} aria-label="Yes" />
-      </span>
-    );
-  }
-  if (value === false) {
-    return (
-      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500">
-        <X className="w-3.5 h-3.5" strokeWidth={3} aria-label="No" />
-      </span>
-    );
-  }
-  return (
-    <span className={cn('inline-flex items-start gap-1 text-slate-500 dark:text-slate-400', compact ? 'text-xs' : 'text-sm')}>
-      <Minus className="w-3 h-3 mt-1 shrink-0 text-amber-500" aria-hidden />
-      {value}
-    </span>
-  );
-}
-
-const useCases = [
-  { name: 'Trading P&L', note: 'higher is better' },
-  { name: 'Weight loss', note: 'lower is better' },
-  { name: 'Steps', note: 'higher is better' },
-  { name: 'Sleep hours', note: 'higher is better' },
-  { name: 'Revenue', note: 'higher is better' },
-  { name: 'Expenses', note: 'lower is better' },
-  { name: 'Screen time', note: 'lower is better' },
-  { name: 'Running distance', note: 'higher is better' },
-  { name: 'Savings', note: 'higher is better' },
-  { name: 'Debt payoff', note: 'lower is better' },
-  { name: 'Study time', note: 'higher is better' },
-  { name: 'Mood', note: 'higher is better' },
+const wins = [
+  { Icon: Target, title: 'Targets', text: 'Daily, weekly and monthly goals, suggested from your own history.' },
+  { Icon: Flag, title: 'Milestones', text: 'Big totals to reach, with a badge for each one along the way.' },
+  { Icon: Medal, title: 'Records', text: 'Best days, weeks and months, marked right on the calendar.' },
+  { Icon: Trophy, title: 'Achievements', text: 'Streaks and badges that unlock with a little celebration.' },
 ];
 
 export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingData: boolean; onOpenCreate: () => void }) {
@@ -329,7 +216,7 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
   };
   const ctaLabel = hasExistingData ? 'Create a new calendar' : 'Start tracking free';
 
-  const PrimaryCta = ({ className }: { className?: string }) => (
+  const primaryCta = (className?: string) => (
     <button
       onClick={onOpenCreate}
       className={cn(
@@ -353,9 +240,9 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
             <span className="font-bold text-base sm:text-lg truncate" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>Numbers Go Up</span>
           </a>
           <nav className="hidden md:flex items-center gap-6 ml-8 text-sm text-slate-600 dark:text-slate-300">
-            <a href="#direction" className="hover:text-slate-900 dark:hover:text-white">How it works</a>
-            <a href="#why" className="hover:text-slate-900 dark:hover:text-white">Why it exists</a>
-            <a href="#mobile" className="hover:text-slate-900 dark:hover:text-white">On your phone</a>
+            <a href="#how" className="hover:text-slate-900 dark:hover:text-white">How it works</a>
+            <a href="#wins" className="hover:text-slate-900 dark:hover:text-white">Wins</a>
+            <a href="#insights" className="hover:text-slate-900 dark:hover:text-white">Insights</a>
           </nav>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
@@ -376,21 +263,20 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
         <section className="relative">
           <div className="absolute inset-x-0 top-0 h-[640px] bg-gradient-to-b from-emerald-50/80 via-white to-white dark:from-emerald-950/30 dark:via-slate-950 dark:to-slate-950 pointer-events-none" />
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 px-3 py-1 text-xs sm:text-sm text-slate-600 dark:text-slate-300">
-              <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+            <p className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
               A calendar for numberphiles
-            </div>
-            <h1 className="mt-5 mx-auto max-w-4xl text-[2.5rem] leading-[1.08] sm:text-6xl lg:text-7xl font-bold tracking-tight text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+            </p>
+            <h1 className="mt-3 mx-auto max-w-4xl text-[2.5rem] leading-[1.08] sm:text-6xl lg:text-7xl font-bold tracking-tight text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
               Every day's numbers, on a calendar that knows{' '}
               <span className="text-emerald-600 dark:text-emerald-400">good</span> from{' '}
               <span className="text-red-500 dark:text-red-400">bad</span>.
             </h1>
             <p className="mt-6 mx-auto max-w-2xl text-lg sm:text-xl leading-relaxed text-slate-600 dark:text-slate-300 text-pretty">
-              Log your P&amp;L, your weight, your steps or any number you care about. Numbers Go Up totals every week, month and year, and colours each day by whether it moved the right way.
+              All the power of a tracking spreadsheet with none of the setup: a free calendar for any number, with stats, goals and colours that know whether up or down is good.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-              <PrimaryCta />
-              <a href="#direction" className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+              {primaryCta()}
+              <a href="#how" className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                 See how it works
                 <ArrowDown className="w-4 h-4" />
               </a>
@@ -431,279 +317,152 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
           </div>
         </section>
 
-        {/* Direction / valence: the unique bit */}
-        <section id="direction" className="scroll-mt-20 max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
+        {/* Any number + direction */}
+        <section id="how" className="scroll-mt-20 max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
           <SectionHeading
-            eyebrow="The part nobody else does"
+            eyebrow="Any number"
             icon={<TrendingUp className="w-4 h-4" />}
-            title={<>Up isn't always good. Numbers Go Up knows the difference.</>}
+            title="Track anything. It knows which way is up."
           >
-            Every calendar knows its direction: higher is better, lower is better, or neutral. The colours, records and goals all follow from it, so a $300 day is green on your trading calendar and a 1 lb drop is green on your scale.
+            Tell each calendar whether higher or lower is better, and every day, week and record is coloured to match.
           </SectionHeading>
 
-          <div className="mt-10 grid lg:grid-cols-5 gap-6 lg:gap-10 items-start">
-            <div className="lg:col-span-2 lg:sticky lg:top-24">
-              <ValenceDemo />
-            </div>
-            <div className="lg:col-span-3 grid gap-5">
-              <figure>
-                <ShotCard><Shot name="valence-pnl" mobile="m-valence-pnl" alt="Trading P&L weeks: profitable days in green, losing days in red" /></ShotCard>
-                <figcaption className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span><span className="font-semibold text-slate-900 dark:text-white">Trading P&amp;L</span>, higher is better. Weekly totals add up on every row.</span>
-                </figcaption>
-              </figure>
-              <figure>
-                <ShotCard><Shot name="valence-weight" mobile="m-valence-weight" alt="Weight weeks: days the scale went down in green, days it went up in red" /></ShotCard>
-                <figcaption className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                  <TrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  <span><span className="font-semibold text-slate-900 dark:text-white">Weight</span>, lower is better. The scale going down is the green day.</span>
-                </figcaption>
-              </figure>
-            </div>
+          <div className="mt-10 grid md:grid-cols-2 gap-6">
+            <figure>
+              <figcaption className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/50"><TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /></span>
+                Trading P&amp;L
+                <span className="font-normal text-slate-500 dark:text-slate-400">higher is better</span>
+              </figcaption>
+              <ShotCard><Shot name="week-pnl" mobile="m-week-pnl" alt="One week of Trading P&L: profitable days in green, a losing day in red, and the weekly total" /></ShotCard>
+            </figure>
+            <figure>
+              <figcaption className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/50"><TrendingDown className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /></span>
+                Weight
+                <span className="font-normal text-slate-500 dark:text-slate-400">lower is better</span>
+              </figcaption>
+              <ShotCard><Shot name="week-weight" mobile="m-week-weight" alt="One week of weigh-ins: days the scale went down in green, days it went up in red" /></ShotCard>
+            </figure>
           </div>
+
+          <ul className="mt-8 flex flex-wrap gap-2" aria-label="Some of the 26 ready-made templates">
+            {templates.map(({ name, lower }) => (
+              <li key={name} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
+                {lower
+                  ? <TrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  : <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
+                {name}
+              </li>
+            ))}
+            <li className="inline-flex items-center px-3 py-1.5 text-sm text-slate-500 dark:text-slate-400">+ 14 more templates, or your own</li>
+          </ul>
         </section>
 
         {/* Expression entry */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
             <div>
               <SectionHeading
                 eyebrow="Fast entry"
                 icon={<Calculator className="w-4 h-4" />}
                 title="Type a day the way you'd say it."
               >
-                Enter a day as plain math. Four trades become <code className="font-mono text-[0.9em] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">420+440-315+145</code>, three walks become one line, and every stat updates as you type. No cell per value, no formulas.
+                Plain math, as many numbers as you like. Every stat updates as you type.
               </SectionHeading>
               <div className="mt-8">
                 <ExpressionDemo />
               </div>
             </div>
-            <figure className="flex justify-center lg:justify-end lg:pt-10">
+            <figure className="flex justify-center lg:justify-end">
               <ShotCard className="w-full max-w-[380px]">
-                <Shot name="entry" alt="The day editor: an expression input, the entries it produced, and that day's total, mean, median, min, max and achievements" />
+                <Shot name="entry" alt="The day editor: an expression, the entries it produced, that day's total, mean, median, min and max, and the achievements it earned" />
               </ShotCard>
             </figure>
           </div>
         </section>
 
-        {/* The calendar is the report */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
-          <SectionHeading
-            eyebrow="Zero setup"
-            icon={<BarChart3 className="w-4 h-4" />}
-            title="The calendar is the report."
-          >
-            Totals, averages, medians, best and worst days for every week, month and year, with a chart under every month. The analysis you'd build in a spreadsheet is already there on day one.
-          </SectionHeading>
-
-          <div className="mt-10 grid lg:grid-cols-5 gap-5">
-            <div className="lg:col-span-3 grid gap-5 content-start">
-              <figure className="sm:hidden">
-                <ShotCard><Shot name="m-report" alt="Month summary with mean, median, min, max and total, above a bar chart of each day" /></ShotCard>
-                <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">A summary for every month, and every day as a bar.</figcaption>
-              </figure>
-              <figure className="hidden sm:block">
-                <ShotCard><Shot name="month-summary" alt="Month summary bar: mean, median, min, max and total for October" /></ShotCard>
-                <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">A summary for every month, with the change from last month.</figcaption>
-              </figure>
-              <figure className="hidden sm:block">
-                <ShotCard><Shot name="chart" alt="Bar chart of each day in the month, green above zero and red below" /></ShotCard>
-                <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">Every day as a bar, or switch to the running total.</figcaption>
-              </figure>
-              <figure>
-                <ShotCard className="max-h-[520px] sm:max-h-none"><Shot name="dashboard" mobile="phone-dashboard" alt="Dashboard with cards for Trading P&L, Sleep and Steps, each showing totals and a trend line" /></ShotCard>
-                <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">All your numbers side by side on one dashboard.</figcaption>
-              </figure>
-            </div>
-            <figure className="lg:col-span-2">
-              <ShotCard><Shot name="year" mobile="m-year" alt="Year view: a card per month with totals, mini heatmaps and stats, and the year total" /></ShotCard>
-              <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">The whole year at a glance, with records marked.</figcaption>
-            </figure>
-          </div>
-        </section>
-
-        {/* Why it exists: soft comparison */}
-        <section id="why" className="scroll-mt-20 mt-24 sm:mt-32 bg-slate-50 dark:bg-slate-900/60 border-y border-slate-200 dark:border-slate-800">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 sm:py-24">
+        {/* Celebrating wins */}
+        <section id="wins" className="scroll-mt-20 mt-24 sm:mt-32 py-20 sm:py-28 bg-gradient-to-b from-amber-50/70 via-white to-white dark:from-amber-950/20 dark:via-slate-950 dark:to-slate-950 border-t border-amber-100 dark:border-amber-900/30">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <SectionHeading
-              eyebrow="Why this exists"
-              icon={<CalendarDays className="w-4 h-4" />}
-              title="You could keep using a spreadsheet."
-            />
-            <div className="mt-4 max-w-3xl space-y-4 text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-              <p>
-                Most people who track a number every day already do, and spreadsheets can do anything. But you build the calendar, the weekly totals, the colour rules and the charts yourself, and they're a pain on a phone.
-              </p>
-              <p>
-                Habit apps are lovely if the answer is yes or no. Trading journals are great if you want trade-by-trade analytics and are happy to pay for them. Numbers Go Up sits in between: <span className="font-semibold text-slate-900 dark:text-white">the spreadsheet you wish you'd built</span>, ready the moment you open it.
-              </p>
-            </div>
+              center
+              eyebrow="Wins worth chasing"
+              icon={<PartyPopper className="w-4 h-4 text-amber-500" />}
+              title="Every good day gets a celebration."
+            >
+              Hit a target, pass a milestone or set a record, and Numbers Go Up makes a moment of it.
+            </SectionHeading>
 
-            {/* Phones: one card per question */}
-            <ul className="mt-8 grid gap-3 sm:hidden">
-              {comparisonRows.map((row) => (
-                <li key={row.label} className="rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="text-sm font-semibold text-slate-900 dark:text-white">{row.label}</div>
-                    <ComparisonCell value={row.cells[3]} highlight />
-                  </div>
-                  <dl className="mt-3 grid grid-cols-3 gap-2">
-                    {comparisonColumns.slice(0, 3).map((col, i) => (
-                      <div key={col} className="min-w-0">
-                        <dt className="text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500">{col}</dt>
-                        <dd className="mt-1"><ComparisonCell value={row.cells[i]} compact /></dd>
-                      </div>
-                    ))}
-                  </dl>
-                </li>
-              ))}
-            </ul>
+            <figure className="mt-10 mx-auto max-w-4xl">
+              <ShotCard className="shadow-2xl shadow-amber-900/10 dark:shadow-black/50 border-amber-200/70 dark:border-slate-700">
+                <Shot name="celebrate" mobile="m-celebrate" alt="Achievement unlocked: the Seeker badge for reaching a 47,000 total, with four more new badges lined up and a 10 Weekly Targets toast" />
+              </ShotCard>
+            </figure>
 
-            <div className="mt-10 hidden sm:block">
-              <div>
-                <table className="w-full text-left border-separate border-spacing-0 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-900">
-                  <thead>
-                    <tr>
-                      <th className="p-3 sm:p-4 text-xs font-medium text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700/80 w-[30%]"><span className="sr-only">Feature</span></th>
-                      {comparisonColumns.map((c, i) => (
-                        <th
-                          key={c}
-                          className={cn(
-                            'p-3 sm:p-4 text-sm font-semibold border-b border-slate-200 dark:border-slate-700/80',
-                            i === 3 ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300' : 'text-slate-700 dark:text-slate-200'
-                          )}
-                        >
-                          {c}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {comparisonRows.map((row, r) => (
-                      <tr key={row.label}>
-                        <th scope="row" className={cn('p-3 sm:p-4 text-sm font-medium text-slate-800 dark:text-slate-200', r < comparisonRows.length - 1 && 'border-b border-slate-100 dark:border-slate-800')}>
-                          {row.label}
-                        </th>
-                        {row.cells.map((cell, i) => (
-                          <td
-                            key={i}
-                            className={cn(
-                              'p-3 sm:p-4 align-middle',
-                              r < comparisonRows.length - 1 && 'border-b border-slate-100 dark:border-slate-800',
-                              i === 3 && 'bg-emerald-50/70 dark:bg-emerald-950/30'
-                            )}
-                          >
-                            <ComparisonCell value={cell} highlight={i === 3} />
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
-              Typical of each kind of tool; individual apps vary. If you want data pulled in automatically from devices or a broker, those tools do that better.
-            </p>
-          </div>
-        </section>
-
-        {/* Use cases */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
-          <SectionHeading
-            eyebrow="Whatever you count"
-            icon={<Sparkles className="w-4 h-4" />}
-            title="If it's a number, track it here."
-          >
-            Start from one of 26 ready-made templates, each with the right direction already set, or make your own. Keep as many calendars as you like.
-          </SectionHeading>
-          <ul className="mt-8 flex flex-wrap gap-2">
-            {useCases.map(({ name, note }) => {
-              const lower = note.startsWith('lower');
-              return (
-                <li key={name} className="inline-flex items-center gap-2 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-3 pr-3.5 py-1.5 text-sm">
-                  {lower
-                    ? <TrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    : <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-                  <span className="font-medium text-slate-800 dark:text-slate-100">{name}</span>
-                  <span className="text-slate-400 dark:text-slate-500 hidden sm:inline">{note}</span>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-
-        {/* Goals */}
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
-          <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
-            <div className="lg:order-2">
-              <SectionHeading
-                eyebrow="Wins worth chasing"
-                icon={<Trophy className="w-4 h-4" />}
-                title="Set targets, hit milestones, break records."
-              >
-                The goal builder looks at your history and suggests targets you can actually hit. Records and achievements unlock as you go, so a chore you'd log in a spreadsheet starts to feel like a game.
-              </SectionHeading>
-              <ul className="mt-6 grid sm:grid-cols-2 gap-3 text-sm text-slate-700 dark:text-slate-300">
-                {['Daily, weekly and monthly targets', 'One-time milestones', 'Best and worst day records', 'Badges with an unlock celebration'].map((t) => (
-                  <li key={t} className="flex items-start gap-2">
-                    <Check className="w-4 h-4 mt-0.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    {t}
+            <div className="mt-12 grid lg:grid-cols-5 gap-8 lg:gap-12 items-center">
+              <ul className="lg:col-span-2 grid sm:grid-cols-2 lg:grid-cols-1 gap-5">
+                {wins.map(({ Icon, title, text }) => (
+                  <li key={title} className="flex gap-3">
+                    <span className="shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400">
+                      <Icon className="w-5 h-5" />
+                    </span>
+                    <div>
+                      <div className="font-semibold text-slate-900 dark:text-white">{title}</div>
+                      <div className="text-sm text-slate-600 dark:text-slate-400">{text}</div>
+                    </div>
                   </li>
                 ))}
               </ul>
+              <figure className="hidden sm:block lg:col-span-3">
+                <ShotCard><Shot name="targets" alt="Daily, weekly and monthly target badges, completed 102, 19 and 4 times" /></ShotCard>
+              </figure>
             </div>
-            <figure className="lg:order-1">
-              <ShotCard className="relative max-h-[520px]">
-                <Shot name="achievements" alt="Achievements page with earned badges like Positive Week, 5 Positive Months and 2-Month Streak" />
-                <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white dark:from-slate-900 to-transparent" />
-              </ShotCard>
-            </figure>
           </div>
         </section>
 
-        {/* Mobile */}
-        <section id="mobile" className="scroll-mt-20 max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
+        {/* Analysis */}
+        <section id="insights" className="scroll-mt-20 max-w-6xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12">
           <SectionHeading
-            eyebrow="On your phone"
-            icon={<Smartphone className="w-4 h-4" />}
-            title="Log it in seconds, wherever you are."
+            eyebrow="Insights"
+            icon={<LineChart className="w-4 h-4" />}
+            title="See where your numbers are heading."
           >
-            Numbers Go Up works in your phone's browser with nothing to install. Swipe between months, tap a day, type the number.
+            When you want to dig in, the analysis page has projections, momentum, deviation and more for any time range.
           </SectionHeading>
-          <div className="mt-10 -mx-4 px-4 sm:mx-0 sm:px-0 flex sm:grid sm:grid-cols-3 gap-5 sm:gap-8 overflow-x-auto sm:overflow-visible snap-x snap-mandatory pt-2 pb-8">
-            {([
-              { name: 'phone-calendar', caption: 'Trading P&L by the month', alt: 'Trading P&L calendar on a phone' },
-              { name: 'phone-entry', caption: 'Type a day, see its stats', alt: 'Day editor on a phone with entries and stats' },
-              { name: 'phone-weight', caption: 'Weight, where down is green', alt: 'Weight calendar on a phone, with lower days in green' },
-            ] as { name: ShotName; caption: string; alt: string }[]).map(({ name, caption, alt }) => (
-              <figure key={name} className="snap-center shrink-0 w-[68%] sm:w-auto max-w-[300px] mx-auto">
-                <PhoneFrame><Shot name={name} alt={alt} /></PhoneFrame>
-                <figcaption className="mt-3 text-center text-sm text-slate-600 dark:text-slate-400">{caption}</figcaption>
-              </figure>
-            ))}
+
+          <div className="mt-10 grid lg:grid-cols-2 gap-5">
+            <figure className="lg:row-span-2">
+              <ShotCard><Shot name="an-projections" mobile="m-an-projections" alt="Projections chart: the running total so far and projected high, low and expected totals for the next 12 months, with milestones marked" /></ShotCard>
+              <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">Projections show when you'll hit your next milestone.</figcaption>
+            </figure>
+            <figure>
+              <ShotCard><Shot name="an-momentum" mobile="m-an-momentum" alt="Momentum quadrant: each month plotted by level and change, grouped into growth, peak, decline and trough" /></ShotCard>
+              <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">Momentum sorts every month into growth, peak, decline or trough.</figcaption>
+            </figure>
+            <figure className="hidden sm:block">
+              <ShotCard><Shot name="an-deviation" alt="Monthly deviation chart: how far each month landed above or below its six-month average" /></ShotCard>
+              <figcaption className="mt-2 text-sm text-slate-600 dark:text-slate-400">Deviation shows which months beat your average.</figcaption>
+            </figure>
           </div>
         </section>
 
         {/* Final CTA */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-12">
-          <div className="relative overflow-hidden rounded-3xl bg-slate-900 dark:bg-slate-900 border border-slate-800 px-6 py-14 sm:px-12 sm:py-16 text-center">
+          <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 px-6 py-14 sm:px-12 sm:py-16 text-center">
             <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-red-500/10 blur-3xl pointer-events-none" />
-            <h2 className="relative text-3xl sm:text-5xl font-bold tracking-tight text-white text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+            <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
+            <Sparkles className="relative mx-auto w-8 h-8 text-purple-300" />
+            <h2 className="relative mt-4 text-3xl sm:text-5xl font-bold tracking-tight text-white text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
               Your numbers are going somewhere. <span className="text-emerald-400">See where.</span>
             </h2>
-            <p className="relative mt-4 mx-auto max-w-xl text-slate-300">
-              Pick a template, type today's number, and the calendar does the rest.
-            </p>
             <div className="relative mt-8 flex justify-center">
-              <PrimaryCta className="w-full sm:w-auto" />
+              {primaryCta('w-full sm:w-auto')}
             </div>
-            <ul className="relative mt-8 grid sm:grid-cols-3 gap-4 max-w-3xl mx-auto text-sm text-slate-300 text-left sm:text-center">
-              <li className="flex sm:flex-col items-center gap-2"><Check className="w-5 h-5 text-emerald-400 shrink-0" />Free, no limits on calendars or history</li>
-              <li className="flex sm:flex-col items-center gap-2"><Lock className="w-5 h-5 text-emerald-400 shrink-0" />No account; your data stays in your browser</li>
-              <li className="flex sm:flex-col items-center gap-2"><Download className="w-5 h-5 text-emerald-400 shrink-0" />Import and export CSV or JSON any time</li>
+            <ul className="relative mt-8 flex flex-col sm:flex-row flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-slate-300">
+              <li className="inline-flex items-center justify-center gap-2"><Check className="w-4 h-4 text-emerald-400" />Free, no limits</li>
+              <li className="inline-flex items-center justify-center gap-2"><Lock className="w-4 h-4 text-emerald-400" />No account, data stays in your browser</li>
+              <li className="inline-flex items-center justify-center gap-2"><Download className="w-4 h-4 text-emerald-400" />CSV and JSON import and export</li>
             </ul>
           </div>
         </section>
