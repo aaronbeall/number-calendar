@@ -5,9 +5,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
 import { usePreference } from '@/hooks/usePreference';
-import { ArrowRight, BarChart as BarChartIcon, Home, Plus, Search, Sparkles, Target, TrendingUp } from 'lucide-react';
+import { Home, Plus, Search } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { IntroLanding } from './IntroLanding';
 
 export function Landing({ 
   datasets, 
@@ -47,119 +48,6 @@ export function Landing({
       onOpenExport={onOpenExport}
       onDuplicateDataset={onDuplicateDataset}
     />
-  );
-}
-
-function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingData: boolean; onOpenCreate: () => void }) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 dark:from-slate-900 dark:via-purple-900/20 dark:to-blue-900/20 relative overflow-hidden">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
-
-      {/* Hero Section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-8 py-16 relative z-10">
-        <div className="relative mb-8 group">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-full blur-2xl opacity-30 group-hover:opacity-50 transition-opacity" />
-          <img
-            src={LogoIcon}
-            alt="Numbers Go Up"
-            className="w-32 h-32 relative transform group-hover:scale-110 transition-all duration-500"
-          />
-        </div>
-        <h1 className="text-6xl md:text-7xl font-black text-center mb-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent animate-gradient" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
-          Numbers Go Up
-        </h1>
-        <div className="flex items-center gap-3 mb-8">
-          <TrendingUp className="w-8 h-8 text-blue-600 dark:text-blue-400 animate-bounce" style={{ animationDelay: '0s' }} />
-          <Target className="w-8 h-8 text-purple-600 dark:text-purple-400 animate-bounce" style={{ animationDelay: '0.1s' }} />
-          <Sparkles className="w-8 h-8 text-pink-600 dark:text-pink-400 animate-bounce" style={{ animationDelay: '0.2s' }} />
-        </div>
-        <p className="text-2xl text-center text-slate-700 dark:text-slate-200 mb-12 max-w-3xl font-medium">
-          A calendar for <span className="text-purple-600 dark:text-purple-400 font-bold">numberphiles</span>. Track your daily numbers, visualize your progress, and watch your goals come to life.
-        </p>
-        <button
-          onClick={onOpenCreate}
-          className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-blue-700 hover:via-purple-700 hover:to-pink-700 text-white font-bold text-lg px-12 py-5 rounded-2xl shadow-2xl hover:shadow-3xl transition-all transform hover:scale-110 flex items-center gap-3 group overflow-hidden mb-16"
-        >
-          <span className="absolute inset-0 bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <Plus className="w-6 h-6 relative z-10 group-hover:rotate-90 transition-transform" />
-          <span className="relative z-10">
-            { hasExistingData ? 'Create New Number Calendar' : 'Create Your First Number Calendar' }
-          </span>
-        </button>
-        { hasExistingData && (
-          <button
-            onClick={() => {
-              searchParams.delete('intro');
-              setSearchParams(searchParams);
-            }}
-            className="text-sm text-slate-600 dark:text-slate-400 underline hover:text-slate-800 dark:hover:text-slate-200 transition-colors mb-12 -mt-8 group cursor-pointer"
-          >
-            Continue to Existing Data <ArrowRight className="w-4 h-4 inline-block ml-1 group-hover:translate-x-1 transition-transform" />
-          </button>
-        ) }
-
-        {/* Hero Screenshot */}
-        <div className="w-full max-w-6xl mx-auto relative group">
-          {/* Gradient border effect */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl blur-2xl opacity-30 group-hover:opacity-50 transition-opacity" />
-          
-          {/* Screenshot container */}
-          <div className="relative bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-3xl shadow-2xl border-4 border-white/50 dark:border-slate-700/50 overflow-hidden">
-            {/* Placeholder for screenshot */}
-            <div className="aspect-[16/10] bg-gradient-to-br from-slate-100 via-blue-50 to-purple-50 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 flex items-center justify-center">
-              <div className="text-center p-8">
-                <div className="w-32 h-32 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 flex items-center justify-center opacity-30">
-                  <BarChartIcon className="w-16 h-16 text-white" />
-                </div>
-                <p className="text-2xl font-bold text-slate-400 dark:text-slate-500">App Screenshot Preview</p>
-                <p className="text-sm text-slate-400 dark:text-slate-600 mt-2">Your beautiful calendar interface will go here</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div className="max-w-7xl mx-auto px-8 py-20 grid grid-cols-1 md:grid-cols-3 gap-10 relative z-10">
-        <div className="text-center p-8 rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-2 border-blue-200 dark:border-blue-700 shadow-xl hover:shadow-2xl hover:scale-105 transition-all group">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center transform group-hover:scale-110 transition-all shadow-lg">
-            <BarChartIcon className="w-10 h-10 text-white" />
-          </div>
-          <h3 className="text-2xl font-bold mb-3 text-slate-800 dark:text-slate-100">Track Anything</h3>
-          <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-            Daily habits, workout reps, business metrics, or life events. If it's a number, track it here.
-          </p>
-        </div>
-
-        <div className="text-center p-8 rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-2 border-purple-200 dark:border-purple-700 shadow-xl hover:shadow-2xl hover:scale-105 transition-all group">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center transform group-hover:scale-110 transition-all shadow-lg">
-            <TrendingUp className="w-10 h-10 text-white" />
-          </div>
-          <h3 className="text-2xl font-bold mb-3 text-slate-800 dark:text-slate-100">Visualize Progress</h3>
-          <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-            Beautiful charts and insights help you see patterns and celebrate your wins.
-          </p>
-        </div>
-
-        <div className="text-center p-8 rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-2 border-pink-200 dark:border-pink-700 shadow-xl hover:shadow-2xl hover:scale-105 transition-all group">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-pink-400 to-pink-600 flex items-center justify-center transform group-hover:scale-110 transition-all shadow-lg">
-            <Plus className="w-10 h-10 text-white" />
-          </div>
-          <h3 className="text-2xl font-bold mb-3 text-slate-800 dark:text-slate-100">Multiple Datasets</h3>
-          <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed">
-            Organize different goals with separate datasets. Fitness, finance, hobbies—all in one place.
-          </p>
-        </div>
-      </div>
-
-      <AppFooter />
-    </div>
   );
 }
 
