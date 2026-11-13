@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { HeroHeatmap } from '@/features/landing/HeroHeatmap';
+import { TemplateStrip } from '@/features/landing/TemplateStrip';
 
 // Screenshots captured from the real app with sample data, in light and dark variants.
 // See scripts/landing-screenshots to regenerate them.
@@ -186,21 +188,6 @@ function ExpressionDemo() {
   );
 }
 
-const templates: { name: string; lower?: boolean }[] = [
-  { name: 'Trading P&L' },
-  { name: 'Weight loss', lower: true },
-  { name: 'Steps' },
-  { name: 'Sleep' },
-  { name: 'Revenue' },
-  { name: 'Expenses', lower: true },
-  { name: 'Screen time', lower: true },
-  { name: 'Running' },
-  { name: 'Savings' },
-  { name: 'Debt payoff', lower: true },
-  { name: 'Study time' },
-  { name: 'Mood' },
-];
-
 const wins = [
   { Icon: Target, title: 'Targets', text: 'Daily, weekly and monthly goals, suggested from your own history.' },
   { Icon: Flag, title: 'Milestones', text: 'Big totals to reach, with a badge for each one along the way.' },
@@ -262,6 +249,7 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
         {/* Hero */}
         <section className="relative">
           <div className="absolute inset-x-0 top-0 h-[640px] bg-gradient-to-b from-emerald-50/80 via-white to-white dark:from-emerald-950/30 dark:via-slate-950 dark:to-slate-950 pointer-events-none" />
+          <HeroHeatmap />
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 text-center">
             <p className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
               A calendar for numberphiles
@@ -346,17 +334,10 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
             </figure>
           </div>
 
-          <ul className="mt-8 flex flex-wrap gap-2" aria-label="Some of the 26 ready-made templates">
-            {templates.map(({ name, lower }) => (
-              <li key={name} className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
-                {lower
-                  ? <TrendingDown className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                  : <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-                {name}
-              </li>
-            ))}
-            <li className="inline-flex items-center px-3 py-1.5 text-sm text-slate-500 dark:text-slate-400">+ 14 more templates, or your own</li>
-          </ul>
+          <div className="mt-10 relative left-1/2 -translate-x-1/2 w-screen max-w-[1600px]">
+            <TemplateStrip />
+          </div>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">26 ready-made templates with the direction already set, or make your own.</p>
         </section>
 
         {/* Expression entry */}
