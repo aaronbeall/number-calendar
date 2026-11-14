@@ -16,6 +16,7 @@ import {
   Medal,
   PartyPopper,
   Plus,
+  PlusCircle,
   Sparkles,
   Target,
   TrendingDown,
@@ -24,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { GoodRules } from '@/features/landing/GoodRules';
 import { HeroHeatmap } from '@/features/landing/HeroHeatmap';
 import { TemplateStrip } from '@/features/landing/TemplateStrip';
 
@@ -260,7 +262,7 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
               <span className="text-red-500 dark:text-red-400">bad</span>.
             </h1>
             <p className="mt-6 mx-auto max-w-2xl text-lg sm:text-xl leading-relaxed text-slate-600 dark:text-slate-300 text-pretty">
-              All the power of a tracking spreadsheet with none of the setup: a free calendar for any number, with stats, goals and colours that know whether up or down is good.
+              All the power of a tracking spreadsheet with none of the setup: a free calendar for any number, with stats, goals and colours that know what a good day looks like for each one.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
               {primaryCta()}
@@ -305,22 +307,26 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
           </div>
         </section>
 
-        {/* Any number + direction */}
+        {/* Any number + what good looks like */}
         <section id="how" className="scroll-mt-20 max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32">
           <SectionHeading
             eyebrow="Any number"
             icon={<TrendingUp className="w-4 h-4" />}
             title="Track anything. It knows which way is up."
           >
-            Tell each calendar whether higher or lower is better, and every day, week and record is coloured to match.
+            Good doesn't always mean more. Tell each calendar what a good day looks like, and every day, week, record and goal follows from it.
           </SectionHeading>
 
-          <div className="mt-10 grid md:grid-cols-2 gap-6">
+          <div className="mt-10">
+            <GoodRules />
+          </div>
+
+          <div className="mt-6 grid md:grid-cols-2 gap-6">
             <figure>
               <figcaption className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
-                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/50"><TrendingUp className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /></span>
+                <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/50"><PlusCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-400" /></span>
                 Trading P&amp;L
-                <span className="font-normal text-slate-500 dark:text-slate-400">higher is better</span>
+                <span className="font-normal text-slate-500 dark:text-slate-400">above zero is good</span>
               </figcaption>
               <ShotCard><Shot name="week-pnl" mobile="m-week-pnl" alt="One week of Trading P&L: profitable days in green, a losing day in red, and the weekly total" /></ShotCard>
             </figure>
@@ -337,7 +343,7 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
           <div className="mt-10 relative left-1/2 -translate-x-1/2 w-screen max-w-[1600px]">
             <TemplateStrip />
           </div>
-          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">26 ready-made templates with the direction already set, or make your own.</p>
+          <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">26 ready-made templates with what's good already set up, or define your own.</p>
         </section>
 
         {/* Expression entry */}
