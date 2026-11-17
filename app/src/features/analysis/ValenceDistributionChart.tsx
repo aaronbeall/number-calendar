@@ -5,7 +5,7 @@ import { getAggregationPeriodLabel, type AggregationType } from '@/lib/analysis'
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getValenceValueFromData } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { pluralize } from '@/lib/utils';
 import { useMemo } from 'react';
 import { HelpCircle } from 'lucide-react';
@@ -24,6 +24,7 @@ interface ValenceDistributionChartProps {
   aggregationType: AggregationType;
   tracking: Tracking;
   valence: Valence;
+  unit?: NumberUnit;
   mode?: 'count' | 'total';
 }
 
@@ -49,6 +50,7 @@ export function ValenceDistributionChart({
   aggregationType,
   tracking,
   valence,
+  unit,
   mode = 'count',
 }: ValenceDistributionChartProps) {
   const effectiveMode = tracking === 'series' ? mode : 'count';
@@ -173,7 +175,7 @@ export function ValenceDistributionChart({
             </>
           ) : (
             <>
-              <span style={{ color: valueColor }} className="font-semibold">{formatValue(entry.value)}</span> total {entry.name.toLowerCase()} (
+              <span style={{ color: valueColor }} className="font-semibold">{formatValue(entry.value, { unit })}</span> total {entry.name.toLowerCase()} (
               <span style={{ color: valueColor }}>{formatValue(entry.percentage, { percent: true })}</span>)
             </>
           )}
@@ -196,7 +198,7 @@ export function ValenceDistributionChart({
               <span className="text-sm text-slate-700 dark:text-slate-300">
                 {entry.value}
               </span>
-              <Badge variant="secondary" className="px-1.5 py-0 text-[11px] leading-4">{formatValue(dataPoint?.value ?? 0)}</Badge>
+              <Badge variant="secondary" className="px-1.5 py-0 text-[11px] leading-4">{formatValue(dataPoint?.value ?? 0, { unit: dataPoint?.mode === 'count' ? undefined : unit })}</Badge>
             </div>
           );
         })}

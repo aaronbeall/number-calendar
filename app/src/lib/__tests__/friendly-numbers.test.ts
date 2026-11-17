@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { convertPeriodLengthWithRounding, convertPeriodUnitWithRounding, countSignificantDigits, formatRange, formatValue, roundToClean } from '../friendly-numbers';
+import { convertPeriodLengthWithRounding, convertPeriodUnitWithRounding, countSignificantDigits, formatRange, formatValue, getSupportedUnits, getUnitName, getUnitSymbol, isSameUnit, isSupportedUnit, roundToClean } from '../friendly-numbers';
 
 describe('convertPeriodUnitWithRounding', () => {
   it('adds precision when converting to smaller periods', () => {
@@ -312,5 +312,72 @@ describe('formatRange', () => {
 
   it('uses arrow for negative non-percent ranges', () => {
     expect(formatRange([-5, 10])).toBe('-5→10');
+  });
+});
+
+describe('formatValue with units', () => {
+  const kg = { style: 'unit', unit: 'kilogram' } as const;
+  const usd = { style: 'currency', currency: 'USD' } as const;
+
+  it('formats measurement units with short labels', () => {
+    expect(formatValue(72.456, { unit: kg })).toBe('72.46 kg');
+    expect(formatValue(7, { unit: { style: 'unit', unit: 'hour' } })).toBe('7 hr');
+  });
+
+  it('formats currencies with narrow symbols and cents only when present', () => {
+    expect(formatValue(1234, { unit: usd })).toBe('$1,234');
+    expect(formatValue(12.5, { unit: usd })).toBe('$12.50');
+    expect(formatValue(12.5, { unit: usd, decimals: 0 })).toBe('$13');
+    expect(formatValue(1234.56, { unit: usd, decimals: 'auto' })).toBe('$1,235');
+  });
+
+  it('combines units with short, delta and absolute', () => {
+    expect(formatValue(12345, { unit: kg, short: true })).toBe('12.3K kg');
+    expect(formatValue(12345, { unit: usd, short: true })).toBe('$12.3K');
+    expect(formatValue(-1.5, { unit: kg, delta: true })).toBe('-1.5 kg');
+    expect(formatValue(1.5, { unit: usd, delta: true })).toBe('+$1.50');
+    expect(formatValue(-5, { unit: kg, absolute: true })).toBe('5 kg');
+  });
+
+  it('ignores the unit for percent values', () => {
+    expect(formatValue(12.3, { unit: kg, percent: true })).toBe('12.3%');
+  });
+});
+
+describe('formatRange with units', () => {
+  it('omits the leading suffix unit for en dash ranges', () => {
+    expect(formatRange([7, 9], { unit: { style: 'unit', unit: 'hour' } })).toBe('7–9 hr');
+  });
+
+  it('keeps currency prefixes on both ends', () => {
+    expect(formatRange([5, 10], { unit: { style: 'currency', currency: 'USD' } })).toBe('$5–$10');
+  });
+
+  it('keeps both units when using an arrow separator', () => {
+    expect(formatRange([-5, 10], { unit: { style: 'unit', unit: 'kilogram' } })).toBe('-5 kg→10 kg');
+  });
+});
+
+describe('unit helpers', () => {
+  it('names units from Intl', () => {
+    expect(getUnitName({ style: 'unit', unit: 'kilogram' })).toBe('kilograms');
+    expect(getUnitName({ style: 'unit', unit: 'kilogram' }, { plural: false })).toBe('kilogram');
+    expect(getUnitName({ style: 'currency', currency: 'USD' })).toBe('US dollars');
+    expect(getUnitSymbol({ style: 'unit', unit: 'hour' })).toBe('hr');
+    expect(getUnitSymbol({ style: 'currency', currency: 'EUR' })).toBe('€');
+  });
+
+  it('lists and validates supported units', () => {
+    const { currencies, units } = getSupportedUnits();
+    expect(currencies).toContainEqual({ style: 'currency', currency: 'USD' });
+    expect(units).toContainEqual({ style: 'unit', unit: 'kilogram' });
+    expect(isSupportedUnit({ style: 'unit', unit: 'kilogram' })).toBe(true);
+    expect(isSupportedUnit({ style: 'unit', unit: 'calorie' })).toBe(false);
+  });
+
+  it('compares units', () => {
+    expect(isSameUnit(undefined, undefined)).toBe(true);
+    expect(isSameUnit({ style: 'unit', unit: 'hour' }, { style: 'unit', unit: 'hour' })).toBe(true);
+    expect(isSameUnit({ style: 'unit', unit: 'hour' }, undefined)).toBe(false);
   });
 });

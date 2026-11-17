@@ -22,9 +22,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import type { DateKey, Goal } from '@/features/db/localdb';
 import { useArchiveGoal, useUpdateGoal } from '@/features/db/useGoalsData';
+import { useDataset } from '@/features/db/useDatasetData';
 import { formatFriendlyDate, parseDateKey } from '@/lib/friendly-date';
 import { formatGoalTargetValue, isRangeCondition, type AchievementResult, type GoalResults } from '@/lib/goals';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { getMetricDisplayName, getMetricSourceDisplayName } from '@/lib/stats';
 import { adjectivize, capitalize, cn, indefinite, pluralize } from '@/lib/utils';
 import { Award, CalendarCheck2, CheckCircle, ChevronDown, Clock, Lock, MoreHorizontal, Pencil, Share2, Trash2, Trophy, Unlock } from 'lucide-react';
@@ -101,6 +102,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
   const [badgeEditOpen, setBadgeEditOpen] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const shareRef = useRef<HTMLDivElement | null>(null);
+  const { data: dataset } = useDataset(result?.goal.datasetId ?? '');
 
   if (!result) return null;
 
@@ -121,7 +123,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
 
   const periodTitle = capitalize(goal.timePeriod);
   const periodLabel = periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod));
-  const summaryTags = buildSummaryTags(goal);
+  const summaryTags = buildSummaryTags(goal, dataset?.unit);
   const provisionalAchievements = achievements.filter((achievement) => achievement.provisional);
   const hasProvisional = provisionalAchievements.length > 0;
   const provisionalDate = hasProvisional
@@ -637,9 +639,9 @@ function formatCreatedAt(createdAt: number): string {
   }).format(new Date(createdAt));
 }
 
-function buildSummaryTags(goal: Goal) {
+function buildSummaryTags(goal: Goal, unit?: NumberUnit) {
   const isRange = isRangeCondition(goal.target.condition);
-  const valueLabel =  formatGoalTargetValue(goal.target)
+  const valueLabel = formatGoalTargetValue(goal.target, { unit })
 
   const tags = [
     { label: 'Period', value: periodLabelMap[goal.timePeriod] ?? capitalize(adjectivize(goal.timePeriod)) },

@@ -2,10 +2,12 @@ import { NumberText } from '@/components/ui/number-text';
 import { getValueForValence } from '@/lib/valence';
 import type { Valence } from '@/features/db/localdb';
 import { cn } from '@/lib/utils';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 interface TrendSummaryBadgeProps {
   primaryMetricLabel: string;
   valence: Valence;
+  unit?: NumberUnit;
   primaryValue?: number;
   primaryValenceValue?: number;
   primaryDelta?: boolean;
@@ -16,6 +18,7 @@ interface TrendSummaryBadgeProps {
 export function TrendSummaryBadge({
   primaryMetricLabel,
   valence,
+  unit,
   primaryValue,
   primaryValenceValue,
   primaryDelta,
@@ -38,6 +41,7 @@ export function TrendSummaryBadge({
             value={primaryValue}
             valenceValue={primaryValenceValue}
             valence={valence}
+            unit={unit}
             delta={primaryDelta}
             animated
             className="inline"
@@ -50,6 +54,7 @@ export function TrendSummaryBadge({
               value={changePercent}
               valenceValue={changePercentValenceValue}
               valence={valence}
+              unit={unit}
               percent
               delta
               animated

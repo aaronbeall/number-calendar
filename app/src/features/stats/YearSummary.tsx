@@ -10,18 +10,20 @@ import AchievementBadge from '@/features/achievements/AchievementBadge';
 import { PopoverTip, PopoverTipTrigger, PopoverTipContent } from '@/components/ui/popover-tip';
 import type { CompletedAchievementResult } from '@/lib/goals';
 import { cn } from '@/lib/utils';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 interface YearSummaryProps {
   data: PeriodAggregateData<'year'>;
   yearName: string;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   isPanelOpen?: boolean;
   onSelect?: () => void;
   achievementResults?: CompletedAchievementResult[];
 }
 
-export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = false, onSelect, achievementResults = [] }: YearSummaryProps) {
+export function YearSummary({ data, yearName, valence, unit, tracking, isPanelOpen = false, onSelect, achievementResults = [] }: YearSummaryProps) {
   const [hoveredAchievementId, setHoveredAchievementId] = useState<string | null>(null);
   const { stats, valenceStats, primaryMetric, primaryMetricLabel, primaryValenceMetric, secondaryMetric, secondaryMetricLabel, secondaryMetricFormat, changeMetric } = useMemo(
     () => getCalendarData(data, undefined, tracking),
@@ -127,6 +129,7 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
           value={stats.mean ?? null}
           valenceValue={valenceStats?.mean ?? primaryValenceMetric}
           valence={valence}
+          unit={unit}
           className="font-mono text-lg font-bold"
           short
         />
@@ -137,6 +140,7 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
           value={stats.median ?? null}
           valenceValue={valenceStats?.median ?? primaryValenceMetric}
           valence={valence}
+          unit={unit}
           className="font-mono text-lg font-bold"
           short
         />
@@ -148,6 +152,7 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
           value={stats.min}
           valenceValue={valenceStats?.min ?? primaryValenceMetric}
           valence={valence}
+          unit={unit}
           className="font-mono text-base font-bold"
           short
         />
@@ -158,6 +163,7 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
           value={stats.max}
           valenceValue={valenceStats?.max ?? primaryValenceMetric}
           valence={valence}
+          unit={unit}
           className="font-mono text-base font-bold"
           short
         />
@@ -177,6 +183,7 @@ export function YearSummary({ data, yearName, valence, tracking, isPanelOpen = f
         secondaryMetricFormat={secondaryMetricFormat}
         changePercent={changeMetric}
         valence={valence}
+        unit={unit}
       />
     </div>
   </div>

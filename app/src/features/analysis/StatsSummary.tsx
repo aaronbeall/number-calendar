@@ -11,10 +11,12 @@ import { MetricCard } from './MetricCard';
 import React, { useMemo, useState } from 'react';
 import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import { adjectivize } from '@/lib/utils';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 interface StatsSummaryProps {
   stats: NumberStats | null;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   datasetId: string;
   aggregationType: AggregationType;
@@ -28,7 +30,7 @@ interface StatsSummaryProps {
   onSelectedMetricsChange: (metrics: NumberMetric[]) => void;
 }
 
-export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, aggregationType, timeFrameLabel, extremes, cumulatives, cumulativePercents, deltas, percents, selectedMetrics, onSelectedMetricsChange }: StatsSummaryProps) {
+export function StatsSummary({ stats: fullStats, valence, unit, tracking, datasetId, aggregationType, timeFrameLabel, extremes, cumulatives, cumulativePercents, deltas, percents, selectedMetrics, onSelectedMetricsChange }: StatsSummaryProps) {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [draftSelectedMetrics, setDraftSelectedMetrics] = useState<NumberMetric[]>(selectedMetrics);
   const [originalShowDeltas, setOriginalShowDeltas] = useState<boolean | null>(null);
@@ -289,6 +291,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
               value={item.value}
               label={item.label}
               valence={valence}
+              unit={unit}
               tracking={tracking}
               aggregationType={aggregationType}
               timeFrameLabel={timeFrameLabel}
@@ -317,6 +320,7 @@ export function StatsSummary({ stats: fullStats, valence, tracking, datasetId, a
               value={item.value}
               label={item.label}
               valence={valence}
+              unit={unit}
               tracking={tracking}
               aggregationType={aggregationType}
               timeFrameLabel={timeFrameLabel}

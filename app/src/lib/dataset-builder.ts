@@ -1,6 +1,7 @@
 import type { DatasetIconName } from '@/lib/dataset-icons';
 import type { ColorThemeName } from '@/lib/colors';
 import type { GoalCondition, Tracking, Valence } from '@/features/db/localdb';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 export type DatasetTemplate = {
   id: string;
@@ -9,8 +10,11 @@ export type DatasetTemplate = {
   searchTerms: string[];
   icon: DatasetIconName;
   theme: ColorThemeName;
-  units: string[];
-  usesCurrency?: boolean;
+  /**
+   * Suggested display units for this kind of data, most common first (the first is applied by default).
+   * Only units supported by Intl.NumberFormat can be used, so data like steps or calories has none.
+   */
+  units: NumberUnit[];
   tracking: Tracking;
   valence: Valence;
   sampleData: number[][];
@@ -97,8 +101,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['profit', 'loss', 'pnl', 'net income', 'business', 'revenue', 'expenses'],
     icon: 'dollar',
     theme: 'emerald',
-    units: [],
-    usesCurrency: true,
+    units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -172,8 +175,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['revenue', 'sales', 'income', 'gross', 'business'],
     icon: 'wallet',
     theme: 'blue',
-    units: [],
-    usesCurrency: true,
+    units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -247,8 +249,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['expenses', 'spend', 'budget', 'costs', 'outflow'],
     icon: 'cart',
     theme: 'red',
-    units: [],
-    usesCurrency: true,
+    units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
     tracking: 'series',
     valence: 'negative',
     sampleData: [
@@ -322,7 +323,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['weight', 'loss', 'body', 'scale', 'fitness'],
     icon: 'activity',
     theme: 'rose',
-    units: ['pound', 'kilogram'],
+    units: [{ style: 'unit', unit: 'pound' }, { style: 'unit', unit: 'kilogram' }, { style: 'unit', unit: 'stone' }],
     tracking: 'trend',
     valence: 'negative',
     sampleData: [
@@ -399,7 +400,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['weight', 'gain', 'bulk', 'mass', 'fitness'],
     icon: 'dumbbell',
     theme: 'amber',
-    units: ['pound', 'kilogram'],
+    units: [{ style: 'unit', unit: 'pound' }, { style: 'unit', unit: 'kilogram' }, { style: 'unit', unit: 'stone' }],
     tracking: 'trend',
     valence: 'positive',
     sampleData: [
@@ -476,7 +477,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['blood pressure', 'bp', 'health', 'systolic', 'diastolic'],
     icon: 'heart',
     theme: 'red',
-    units: ['mean-arterial-pressure', 'systolic', 'diastolic'],
+    units: [],
     tracking: 'trend',
     valence: 'neutral',
     sampleData: [
@@ -517,7 +518,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       goodValue: {
         period: {
           prompt: 'What shift per {period} feels realistic?',
-          description: 'Enter the {periodly} shift in {units} you want to see.',
+          description: 'Enter the {periodly} shift in mmHg you want to see.',
           suggested: {
             day: -0.5,
             week: -1.5,
@@ -526,7 +527,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         },
         range: {
           prompt: 'What reading range are you aiming for?',
-          description: 'Enter your target range in {units}.',
+          description: 'Enter your target range in mmHg.',
           suggested: {
             day: [70, 100],
             week: [70, 100],
@@ -556,7 +557,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['exercise', 'workout', 'minutes', 'fitness', 'activity'],
     icon: 'dumbbell',
     theme: 'emerald',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -700,7 +701,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['sleep', 'rest', 'hours', 'recovery'],
     icon: 'moon',
     theme: 'indigo',
-    units: ['hour'],
+    units: [{ style: 'unit', unit: 'hour' }, { style: 'unit', unit: 'minute' }],
     tracking: 'trend',
     valence: 'positive',
     sampleData: [
@@ -776,7 +777,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['water', 'hydration', 'ounces', 'liters'],
     icon: 'droplet',
     theme: 'blue',
-    units: ['fluid-ounce', 'liter', 'milliliter'],
+    units: [{ style: 'unit', unit: 'fluid-ounce' }, { style: 'unit', unit: 'liter' }, { style: 'unit', unit: 'milliliter' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -848,7 +849,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['calories', 'diet', 'nutrition', 'food'],
     icon: 'apple',
     theme: 'orange',
-    units: ['calorie', 'kilocalorie'],
+    units: [],
     tracking: 'series',
     valence: 'neutral',
     sampleData: [
@@ -885,7 +886,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       goodValue: {
         range: {
           prompt: 'What calorie range per {period} feels right?',
-          description: 'Enter the {periodly} range in {units} that keeps you on track.',
+          description: 'Enter the {periodly} range in calories that keeps you on track.',
           suggested: {
             day: [1600, 2400],
             week: [11200, 16800],
@@ -986,7 +987,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['study', 'learning', 'reading', 'school', 'focus'],
     icon: 'book',
     theme: 'purple',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1057,7 +1058,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['coding', 'programming', 'commits', 'dev'],
     icon: 'code',
     theme: 'cyan',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1128,7 +1129,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['hobby', 'creative', 'craft', 'painting', 'music', 'project'],
     icon: 'palette',
     theme: 'teal',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1199,7 +1200,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['reading', 'books', 'literature', 'study', 'pages'],
     icon: 'book',
     theme: 'amber',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1270,7 +1271,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['meditation', 'mindfulness', 'breathing', 'calm', 'focus'],
     icon: 'sparkle',
     theme: 'indigo',
-    units: ['minute'],
+    units: [{ style: 'unit', unit: 'minute' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1342,7 +1343,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['volunteer', 'service', 'community', 'charity', 'giving'],
     icon: 'heart',
     theme: 'rose',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1413,7 +1414,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['practice', 'skill', 'training', 'repetition', 'drill'],
     icon: 'book',
     theme: 'amber',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1484,7 +1485,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['session', 'count', 'appointments', 'classes', 'events'],
     icon: 'activity',
     theme: 'emerald',
-    units: ['session'],
+    units: [],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1630,7 +1631,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['screen', 'phone', 'device', 'usage', 'digital'],
     icon: 'code',
     theme: 'sky',
-    units: ['minute', 'hour'],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
     tracking: 'series',
     valence: 'negative',
     sampleData: [
@@ -1702,7 +1703,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['caffeine', 'coffee', 'tea', 'energy drink', 'stimulant'],
     icon: 'apple',
     theme: 'orange',
-    units: ['milligram', 'cup'],
+    units: [],
     tracking: 'series',
     valence: 'neutral',
     sampleData: [
@@ -1743,7 +1744,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
       goodValue: {
         period: {
           prompt: 'What caffeine limit per {period} feels right?',
-          description: 'Enter the {periodly} limit in {units} that keeps you on track.',
+          description: 'Enter the {periodly} limit in milligrams that keeps you on track.',
           suggested: {
             day: 200,
             week: 1200,
@@ -1752,7 +1753,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
         },
         alltime: {
           prompt: 'What total caffeine do you want to stay under?',
-          description: 'Enter a cumulative caffeine limit in {units}.',
+          description: 'Enter a cumulative caffeine limit in milligrams.',
           suggested: 20000,
         },
       },
@@ -1774,7 +1775,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['running', 'distance', 'miles', 'kilometers', 'cardio'],
     icon: 'footprints',
     theme: 'emerald',
-    units: ['mile', 'kilometer'],
+    units: [{ style: 'unit', unit: 'mile' }, { style: 'unit', unit: 'kilometer' }],
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1845,8 +1846,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['savings', 'balance', 'money', 'bank'],
     icon: 'wallet',
     theme: 'emerald',
-    units: [],
-    usesCurrency: true,
+    units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
     tracking: 'trend',
     valence: 'positive',
     sampleData: [
@@ -1921,8 +1921,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['debt', 'loan', 'payoff', 'balance'],
     icon: 'wallet',
     theme: 'red',
-    units: [],
-    usesCurrency: true,
+    units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
     tracking: 'trend',
     valence: 'negative',
     sampleData: [

@@ -14,7 +14,7 @@ import { getCalendarData } from '@/lib/calendar';
 import { getChartData, getChartNumbers, type NumbersChartDataPoint } from '@/lib/charts';
 import { buildExpressionFromNumbers, parseExpression } from '@/lib/expression';
 import { getDateKeyType } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import type { CompletedAchievementResult } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { useAchievementDrawerParam } from '@/lib/search-params';
@@ -40,6 +40,7 @@ export interface NumbersPanelProps {
   onSave?: (numbers: number[]) => void;
   extremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
 
   daysData?: Record<DayKey, PeriodAggregateData<'day'>>;
@@ -59,6 +60,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
   onSave,
   extremes,
   valence,
+  unit,
   tracking,
   daysData,
   dateKey,
@@ -324,6 +326,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                     isHighest={!!isHighestPrimary}
                     isLowest={!!isLowestPrimary}
                     valence={valence}
+                    unit={unit}
                     className="text-3xl font-mono font-extrabold"
                   />
                 </div>
@@ -339,6 +342,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                         value={secondaryMetricValue}
                         valenceValue={secondaryMetricValue}
                         valence={valence}
+                        unit={unit}
                         className="text-base font-mono font-bold"
                         {...secondaryMetricFormat}
                       />
@@ -353,6 +357,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                           value={changeMetricValue}
                           valenceValue={changeMetricValue}
                           valence={valence}
+                          unit={unit}
                           className="font-medium text-xs"
                           percent
                         />
@@ -380,6 +385,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                       isHighest={!!isHighest}
                       isLowest={!!isLowest}
                       valence={valence}
+                      unit={unit}
                       className="text-base font-mono font-bold"
                     />
                     {deltas && percents && (
@@ -389,6 +395,7 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                             value={delta}
                             valenceValue={delta}
                             valence={valence}
+                            unit={unit}
                             className="text-xs font-mono font-semibold"
                             delta
                           />
@@ -466,12 +473,12 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                         return (
                           <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                             <div style={{ fontWeight: 600, fontSize: 14 }}>
-                              <NumberText value={value} valenceValue={valenceValue} valence={valence} {...format} />
+                              <NumberText value={value} valenceValue={valenceValue} valence={valence} unit={unit} {...format} />
                             </div>
                             {secondaryValue !== undefined && secondaryValue !== null ? (
                               <div style={{ fontSize: 12, opacity: 0.7 }}>
                                 {secondaryLabel && <span className="mr-1">{secondaryLabel}</span>}
-                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} {...secondaryFormat} />
+                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} unit={unit} {...secondaryFormat} />
                               </div>
                             ) : null}
                           </div>
@@ -492,12 +499,14 @@ export const NumbersPanel: React.FC<NumbersPanelProps> = ({
                 grouping='monthly'
                 daysData={daysData}
                 valence={valence}
+                unit={unit}
                 tracking={tracking}
               />
               <GroupedStats
                 grouping='daily'
                 daysData={daysData}
                 valence={valence}
+                unit={unit}
                 tracking={tracking}
               />
             </>
@@ -555,10 +564,11 @@ interface DailyStatsProps {
   grouping: "daily" | "monthly";
   daysData: Record<DayKey, PeriodAggregateData<'day'>>;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
 }
 
-const GroupedStats: React.FC<DailyStatsProps> = ({ grouping, daysData, valence, tracking }) => {
+const GroupedStats: React.FC<DailyStatsProps> = ({ grouping, daysData, valence, unit, tracking }) => {
   const numbersByDay = useMemo(() => {
     const result: Record<DayKey, number[]> = {};
     for (const [key, day] of Object.entries(daysData) as [DayKey, PeriodAggregateData<'day'>][]) {
@@ -626,6 +636,7 @@ const GroupedStats: React.FC<DailyStatsProps> = ({ grouping, daysData, valence, 
                 value={value}
                 valenceValue={getValenceValueForNumber(value, undefined, tracking)}
                 valence={valence}
+                unit={unit}
                 className="text-base font-mono font-bold"
               />
             </span>
@@ -637,6 +648,7 @@ const GroupedStats: React.FC<DailyStatsProps> = ({ grouping, daysData, valence, 
                       value={high}
                       valenceValue={getValenceValueForNumber(high, undefined, tracking)}
                       valence={valence}
+                      unit={unit}
                       className="ml-1 text-xs font-mono font-semibold"
                     />
                   </span>
@@ -647,6 +659,7 @@ const GroupedStats: React.FC<DailyStatsProps> = ({ grouping, daysData, valence, 
                       value={low}
                       valenceValue={getValenceValueForNumber(low, undefined, tracking)}
                       valence={valence}
+                      unit={unit}
                       className="ml-1 text-xs font-mono font-semibold"
                     />
                   </span>

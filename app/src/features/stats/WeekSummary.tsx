@@ -12,6 +12,7 @@ import React, { useCallback, useMemo } from 'react';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { Line, LineChart, Tooltip } from 'recharts';
 import { useSidePanelParam } from '@/lib/search-params';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 export interface WeekSummaryProps {
   data: PeriodAggregateData<'week'>;
@@ -20,12 +21,13 @@ export interface WeekSummaryProps {
   weekNumber: number;
   isCurrentWeek?: boolean;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   dateKey: WeekKey;
   achievementResults: CompletedAchievementResult[];
 }
 
-export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, monthExtremes, weekNumber, isCurrentWeek, valence, tracking, dateKey, achievementResults }) => {
+export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, monthExtremes, weekNumber, isCurrentWeek, valence, unit, tracking, dateKey, achievementResults }) => {
   const numbers = useMemo(() => data.numbers ?? [], [data.numbers]);
   const priorNumbers = priorData?.numbers;
 
@@ -146,12 +148,12 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
                         return (
                           <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                             <div style={{ fontWeight: 600, fontSize: 14 }}>
-                              <NumberText value={value} valenceValue={valenceValue} valence={valence} {...format} />
+                              <NumberText value={value} valenceValue={valenceValue} valence={valence} unit={unit} {...format} />
                             </div>
                             {secondaryValue !== undefined && secondaryValue !== null ? (
                               <div style={{ fontSize: 12, opacity: 0.7 }}>
                                 {secondaryLabel && <span className=" text-slate-500 dark:text-slate-400 mr-1">{secondaryLabel}</span>}
-                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} {...secondaryFormat} />
+                                <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} unit={unit} {...secondaryFormat} />
                               </div>
                             ) : null}
                           </div>
@@ -170,20 +172,20 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
         <div className="hidden md:flex flex-row w-full md:w-auto justify-between md:justify-start gap-0 md:gap-5 md:items-center md:ml-auto">
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mean</div>
-            <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
+            <NumberText value={mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} valence={valence} unit={unit} className="font-mono text-xs sm:text-sm font-semibold" short />
           </div>
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Median</div>
-            <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} className="font-mono text-xs sm:text-sm font-semibold" short />
+            <NumberText value={median} valenceValue={valenceStats?.median ?? primaryValenceMetric} valence={valence} unit={unit} className="font-mono text-xs sm:text-sm font-semibold" short />
           </div>
           <div className="hidden md:block w-px h-6 bg-slate-300/40 dark:bg-slate-700/40" />
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Min</div>
-            <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
+            <NumberText value={min} valenceValue={valenceStats?.min ?? primaryValenceMetric} valence={valence} unit={unit} className="font-mono text-sm font-semibold" short />
           </div>
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Max</div>
-            <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} className="font-mono text-sm font-semibold" short />
+            <NumberText value={max} valenceValue={valenceStats?.max ?? primaryValenceMetric} valence={valence} unit={unit} className="font-mono text-sm font-semibold" short />
           </div>
         </div>
 
@@ -197,7 +199,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
             neutral: 'bg-slate-200/50 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200',
           })}`}>
             <div className="text-[10px] uppercase tracking-wide text-slate-500 dark:text-slate-400/80">{primaryMetricLabel}</div>
-            <NumberText value={primaryMetric} valenceValue={primaryValenceMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} valence={valence} className="text-lg sm:text-xl font-extrabold" short />
+            <NumberText value={primaryMetric} valenceValue={primaryValenceMetric} isHighest={!!isHighestPrimary} isLowest={!!isLowestPrimary} valence={valence} unit={unit} className="text-lg sm:text-xl font-extrabold" short />
           </div>
         </div>
       </div>
@@ -211,6 +213,7 @@ export const WeekSummary: React.FC<WeekSummaryProps> = ({ data, priorData, month
         editableNumbers={false}
         showExpressionInput={false}
         valence={valence}
+        unit={unit}
         tracking={tracking}
         dateKey={dateKey}
         achievementResults={achievementResults}

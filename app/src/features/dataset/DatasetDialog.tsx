@@ -20,6 +20,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCreateDataset, useUpdateDataset, useDeleteDataset, useDatasets } from '../db/useDatasetData';
 import { DatasetBuilder } from './DatasetBuilder';
+import { UnitPicker } from './UnitPicker';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 import type { DatasetTemplate } from '@/lib/dataset-builder';
 import type { Dataset, ISODateString, Tracking, Valence } from '../db/localdb';
 import { DATASET_ICON_OPTIONS, type DatasetIconName } from '../../lib/dataset-icons';
@@ -47,6 +49,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
   const [icon, setIcon] = useState<DatasetIconName>('database');
   const [tracking, setTracking] = useState<Tracking>('series');
   const [valence, setValence] = useState<Valence>('positive');
+  const [unit, setUnit] = useState<NumberUnit | undefined>(undefined);
   const [iconSearch, setIconSearch] = useState('');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [manualMode, setManualMode] = useState(false);
@@ -89,6 +92,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       setIcon(dataset.icon || 'database');
       setTracking(dataset.tracking);
       setValence(dataset.valence || 'positive');
+      setUnit(dataset.unit);
       setManualMode(true);
     }
   }, [dataset]);
@@ -100,6 +104,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       setIcon('database');
       setTracking('series');
       setValence('positive');
+      setUnit(undefined);
       setManualMode(false);
     }
   };
@@ -127,6 +132,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       icon: template.icon,
       tracking: template.tracking,
       valence: template.valence,
+      unit: template.units[0],
       createdAt: now,
       updatedAt: now,
     };
@@ -153,6 +159,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
         icon,
         tracking,
         valence,
+        unit,
         updatedAt: Date.now(),
       };
       updateDatasetMutation.mutate(updated, {
@@ -171,6 +178,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
         icon,
         tracking,
         valence,
+        unit,
         createdAt: now,
         updatedAt: now,
       };
@@ -550,6 +558,14 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
                 </button>
               </div>
             )}
+          </div>
+          {/* Unit Selection */}
+          <div className="space-y-3">
+            <Label htmlFor="dataset-unit">Unit</Label>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              Optional. Numbers are shown in this unit everywhere. It only changes how numbers look, never the numbers themselves.
+            </div>
+            <UnitPicker id="dataset-unit" value={unit} onChange={setUnit} className="sm:max-w-sm" />
           </div>
           </div>{/* End scrollable content area */}
 

@@ -7,6 +7,7 @@ import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { CheckCircle, Clock, TrendingDown, TrendingUp, XCircle } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { MainMetricsChip } from './MainMetricsChip';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 export interface MonthSummaryProps {
   data: PeriodAggregateData<'month'>;
@@ -14,12 +15,13 @@ export interface MonthSummaryProps {
   isCurrentMonth?: boolean;
   yearExtremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   isPanelOpen?: boolean;
   onSelect?: () => void;
 }
 
-export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isCurrentMonth, yearExtremes, valence, tracking, isPanelOpen = false, onSelect }) => {
+export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isCurrentMonth, yearExtremes, valence, unit, tracking, isPanelOpen = false, onSelect }) => {
   // Use getCalendarData for all stats, deltas, valence, etc.
   const {
     stats,
@@ -95,20 +97,20 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isC
         <div className="flex flex-row w-full md:w-auto justify-between md:justify-start gap-0 md:gap-6 md:items-center md:ml-auto">
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Mean</div>
-            <NumberText value={stats.mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} isHighest={!!isHighestMean} isLowest={!!isLowestMean} valence={valence} className="font-mono text-sm sm:text-base font-bold" short />
+            <NumberText value={stats.mean} valenceValue={valenceStats?.mean ?? primaryValenceMetric} isHighest={!!isHighestMean} isLowest={!!isLowestMean} valence={valence} unit={unit} className="font-mono text-sm sm:text-base font-bold" short />
           </div>
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Median</div>
-            <NumberText value={stats.median} valenceValue={valenceStats?.median ?? primaryValenceMetric} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} valence={valence} className="font-mono text-sm sm:text-base font-bold" short />
+            <NumberText value={stats.median} valenceValue={valenceStats?.median ?? primaryValenceMetric} isHighest={!!isHighestMedian} isLowest={!!isLowestMedian} valence={valence} unit={unit} className="font-mono text-sm sm:text-base font-bold" short />
           </div>
           <div className="hidden md:block w-px h-7 bg-slate-300/50 dark:bg-slate-700/50" />
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Min</div>
-            <NumberText value={stats.min} valenceValue={valenceStats?.min ?? primaryValenceMetric} isHighest={!!isHighestMin} isLowest={!!isLowestMin} valence={valence} className="font-mono text-base font-bold" short />
+            <NumberText value={stats.min} valenceValue={valenceStats?.min ?? primaryValenceMetric} isHighest={!!isHighestMin} isLowest={!!isLowestMin} valence={valence} unit={unit} className="font-mono text-base font-bold" short />
           </div>
           <div className="flex-1 md:flex-none text-center md:text-right">
             <div className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400 font-medium">Max</div>
-            <NumberText value={stats.max} valenceValue={valenceStats?.max ?? primaryValenceMetric} isHighest={!!isHighestMax} isLowest={!!isLowestMax} valence={valence} className="font-mono text-base font-bold" short />
+            <NumberText value={stats.max} valenceValue={valenceStats?.max ?? primaryValenceMetric} isHighest={!!isHighestMax} isLowest={!!isLowestMax} valence={valence} unit={unit} className="font-mono text-base font-bold" short />
           </div>
         </div>
 
@@ -125,6 +127,7 @@ export const MonthSummary: React.FC<MonthSummaryProps> = ({ data, monthName, isC
             secondaryMetricFormat={secondaryMetricFormat}
             changePercent={changeMetric}
             valence={valence}
+            unit={unit}
           />
         </div>
       </div>

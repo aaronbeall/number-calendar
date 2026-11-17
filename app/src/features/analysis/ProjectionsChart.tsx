@@ -12,7 +12,7 @@ import {
   type ProjectionSeriesPoint,
   getAggregationPeriodLabel,
 } from '@/lib/analysis';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
@@ -52,6 +52,7 @@ interface ProjectionsChartProps {
   projectionRecentWindow: ProjectionRecentWindow;
   projectionMomentumWeight: ProjectionMomentumWeight;
   valence: Valence;
+  unit?: NumberUnit;
   milestones: GoalResults[];
 }
 
@@ -65,6 +66,7 @@ export function ProjectionsChart({
   projectionRecentWindow,
   projectionMomentumWeight,
   valence,
+  unit,
   milestones,
 }: ProjectionsChartProps) {
   const { isDark } = useTheme();
@@ -481,10 +483,10 @@ export function ProjectionsChart({
               {primaryMetricLabel}
             </span>
             <span className="font-semibold">
-              <NumberText value={actual} valenceValue={actual} valence={valence} />
+              <NumberText value={actual} valenceValue={actual} valence={valence} unit={unit} />
               {typeof actualDelta === 'number' && (
                 <span className="ml-1 text-xs font-medium opacity-80">
-                  (<NumberText value={actualDelta} valenceValue={actualDelta} valence={valence} delta className="inline" />)
+                  (<NumberText value={actualDelta} valenceValue={actualDelta} valence={valence} unit={unit} delta className="inline" />)
                 </span>
               )}
             </span>
@@ -497,10 +499,10 @@ export function ProjectionsChart({
               Projected {primaryMetricLabel}
             </span>
             <span className="font-semibold">
-              <NumberText value={projected} valenceValue={projected} valence={valence} />
+              <NumberText value={projected} valenceValue={projected} valence={valence} unit={unit} />
               {typeof projectedDelta === 'number' && (
                 <span className="ml-1 text-xs font-medium opacity-80">
-                  (<NumberText value={projectedDelta} valenceValue={projectedDelta} valence={valence} delta className="inline" />)
+                  (<NumberText value={projectedDelta} valenceValue={projectedDelta} valence={valence} unit={unit} delta className="inline" />)
                 </span>
               )}
             </span>
@@ -514,10 +516,10 @@ export function ProjectionsChart({
                 High projection
               </span>
               <span className="font-medium">
-                <NumberText value={projectedHigh} valenceValue={projectedHigh} valence={valence} />
+                <NumberText value={projectedHigh} valenceValue={projectedHigh} valence={valence} unit={unit} />
                 {typeof projectedHighDelta === 'number' && (
                   <span className="ml-1 opacity-80">
-                    (<NumberText value={projectedHighDelta} valenceValue={projectedHighDelta} valence={valence} delta className="inline" />)
+                    (<NumberText value={projectedHighDelta} valenceValue={projectedHighDelta} valence={valence} unit={unit} delta className="inline" />)
                   </span>
                 )}
               </span>
@@ -528,10 +530,10 @@ export function ProjectionsChart({
                 Low projection
               </span>
               <span className="font-medium">
-                <NumberText value={projectedLow} valenceValue={projectedLow} valence={valence} />
+                <NumberText value={projectedLow} valenceValue={projectedLow} valence={valence} unit={unit} />
                 {typeof projectedLowDelta === 'number' && (
                   <span className="ml-1 opacity-80">
-                    (<NumberText value={projectedLowDelta} valenceValue={projectedLowDelta} valence={valence} delta className="inline" />)
+                    (<NumberText value={projectedLowDelta} valenceValue={projectedLowDelta} valence={valence} unit={unit} delta className="inline" />)
                   </span>
                 )}
               </span>
@@ -717,13 +719,13 @@ export function ProjectionsChart({
           <span className="font-semibold">
             {projectionRate ? (
               <>
-                <NumberText value={projectionRate.delta} valenceValue={projectionRate.delta} valence={valence} animated className="inline" /> / {getAggregationPeriodLabel(aggregationType)}
+                <NumberText value={projectionRate.delta} valenceValue={projectionRate.delta} valence={valence} unit={unit} animated className="inline" /> / {getAggregationPeriodLabel(aggregationType)}
               </>
             ) : 'N/A'}
           </span>
           {projectionRate && typeof projectionRate.percent === 'number' && (
             <span className="font-medium" style={{ color: projectionRateColor }}>
-              ({projectionRate.percent.toFixed(2)}%)
+              ({formatValue(projectionRate.percent, { percent: true, decimals: 2 })})
             </span>
           )}
         </div>
@@ -921,7 +923,7 @@ export function ProjectionsChart({
                     {result.goal.title}
                   </span>
                   <span className="text-slate-500 dark:text-slate-400">
-                    ({formatValue(targetValue)})
+                    ({formatValue(targetValue, { unit })})
                   </span>
                   {isCompleted && (
                     <CheckCircle className="absolute -top-1.5 -right-1.5 size-4 text-green-500 bg-white dark:bg-slate-900 rounded-full" />

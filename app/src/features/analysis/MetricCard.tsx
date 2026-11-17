@@ -6,7 +6,7 @@ import type { NumberMetric } from '@/lib/stats';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import type { AggregationType } from '@/lib/analysis';
 import { getMetricAnalysisDescription, getCumulativeAnalysisDescription, getExtremesAnalysisDescription, getDeltasAnalysisDescription } from '@/lib/analysis';
-import { getMetricValence, METRIC_DISPLAY_INFO } from '@/lib/stats';
+import { getMetricUnit, getMetricValence, METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { getValenceSource } from '@/lib/tracking';
 import { getValueForSign, getValueForValence } from '@/lib/valence';
 import {
@@ -19,12 +19,14 @@ import {
   Star,
 } from 'lucide-react';
 import React, { useState } from 'react';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 interface MetricCardProps {
   metric: NumberMetric;
   value: number | null;
   label: string;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   aggregationType: AggregationType;
   timeFrameLabel: string;
@@ -45,6 +47,7 @@ export function MetricCard({
   value,
   label,
   valence,
+  unit,
   tracking,
   aggregationType,
   timeFrameLabel,
@@ -78,6 +81,7 @@ export function MetricCard({
     return getValueForValence(getValenceValue(value, delta), valence, valenceToneClasses);
   };
   const metricValence = getMetricValence(metric, valence);
+  const metricUnit = getMetricUnit(metric, unit);
 
   // For high/low deltas, we don't have priors so instead compare high/low to current value to determine valence
   const highValenceDelta = (high ?? 0) - (value ?? 0) || deltaValue;
@@ -217,6 +221,7 @@ export function MetricCard({
               value={value} 
               valenceValue={getValenceValue(value, deltaValue)} 
               valence={metricValence} 
+              unit={metricUnit}
               short={!isHovered}
               animated 
               delta={METRIC_DISPLAY_INFO[metric].delta}
@@ -231,6 +236,7 @@ export function MetricCard({
                   value={deltaValue} 
                   valenceValue={getValenceValue(deltaValue, deltaValue)} 
                   valence={metricValence} 
+                  unit={metricUnit}
                   short={!isHovered}
                   animated 
                   delta 
@@ -242,6 +248,7 @@ export function MetricCard({
                       value={deltaPercent}
                       valenceValue={getValenceValue(deltaPercent, deltaPercent)}
                       valence={metricValence}
+                      unit={metricUnit}
                       short={!isHovered}
                       percent
                       absolute
@@ -264,6 +271,7 @@ export function MetricCard({
                   value={cumulativeValue} 
                   valenceValue={getValenceValue(cumulativeValue, deltaValue)} 
                   valence={metricValence} 
+                  unit={metricUnit}
                   short={!isHovered}
                   animated 
                   delta={METRIC_DISPLAY_INFO[metric].delta}
@@ -279,6 +287,7 @@ export function MetricCard({
                       value={cumulativePercent}
                       valenceValue={getValenceValue(cumulativePercent, cumulativePercent)}
                       valence={metricValence}
+                      unit={metricUnit}
                       short={!isHovered}
                       percent
                       absolute
@@ -303,6 +312,7 @@ export function MetricCard({
                     value={high} 
                     valenceValue={getValenceValue(high, highValenceDelta)} 
                     valence={metricValence} 
+                    unit={metricUnit}
                     short={!isHovered}
                     animated 
                     delta={METRIC_DISPLAY_INFO[metric].delta}
@@ -317,6 +327,7 @@ export function MetricCard({
                     value={low} 
                     valenceValue={getValenceValue(low, lowValenceDelta)} 
                     valence={metricValence} 
+                    unit={metricUnit}
                     short={!isHovered}
                     animated 
                     delta={METRIC_DISPLAY_INFO[metric].delta}

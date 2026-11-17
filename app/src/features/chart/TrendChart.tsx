@@ -3,7 +3,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { DayKey, Valence } from '@/features/db/localdb';
 import { getMonthDays, getYearDays } from '@/lib/calendar';
 import { dateToDayKey, formatFriendlyDate } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { getValueForValence } from '@/lib/valence';
 import { parseISO } from 'date-fns';
 import { BarChart as BarChartIcon, LineChart as LineChartIcon } from 'lucide-react';
@@ -18,6 +18,7 @@ interface TrendChartProps {
   month?: number; // 1-based, optional for full-year mode
   data: Record<DayKey, number[]>;
   valence: Valence;
+  unit?: NumberUnit;
   priorDay?: number[] | undefined;
 }
 
@@ -31,7 +32,7 @@ interface TrendPoint {
   mon?: number; // 1-12 month index for full-year monthly mode
 }
 
-export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valence, priorDay }) => {
+export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valence, unit, priorDay }) => {
   const [mode, setMode] = useState<TrendChartMode>('trend');
   const [group, setGroup] = useState<TrendGroup>('daily');
 
@@ -264,11 +265,11 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                           {formatFriendlyDate(p.x as DayKey)}
                         </div>
                         <div className="font-semibold" style={{ color: deltaColor }}>
-                          {formatValue(p.value)}
+                          {formatValue(p.value, { unit })}
                         </div>
                         <div className="font-mono text-sm">
                           <span style={{ color: deltaColor }}>
-                            {formatValue(p.delta, { delta: true })}
+                            {formatValue(p.delta, { delta: true, unit })}
                           </span>
                         </div>
                       </div>
@@ -368,7 +369,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ year, month, data, valen
                           {formatFriendlyDate(p.x as DayKey)}
                         </div>
                         <span style={{ color: deltaColor, fontWeight: 600, fontSize: 16 }}>
-                          {formatValue(p.delta, { delta: true })}
+                          {formatValue(p.delta, { delta: true, unit })}
                         </span>
                       </div>
                     );

@@ -10,7 +10,7 @@ import { useGoals } from '@/features/db/useGoalsData';
 import { usePreference } from '@/hooks/usePreference';
 import { formatPeriodLabel, getAggregationPeriodLabel, getValenceAdjustedColor, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { formatGoalTargetValue } from '@/lib/goals';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { METRIC_DISPLAY_INFO } from '@/lib/stats';
@@ -38,6 +38,7 @@ interface DeviationBarChartProps {
   aggregationType: AggregationType;
   tracking: Tracking;
   valence: Valence;
+  unit?: NumberUnit;
   rangeLabel: string;
   datasetId: string;
   priorTimeFrameValue?: number;
@@ -60,6 +61,7 @@ export function DeviationBarChart({
   aggregationType,
   tracking,
   valence,
+  unit,
   rangeLabel,
   datasetId,
   priorTimeFrameValue,
@@ -295,6 +297,7 @@ export function DeviationBarChart({
               value={point.value}
               valenceValue={point.value}
               valence={valence}
+              unit={unit}
               delta={valenceSource === 'deltas'}
               className="inline"
             />
@@ -309,6 +312,7 @@ export function DeviationBarChart({
               value={point.deviation}
               valenceValue={point.deviation}
               valence={valence}
+              unit={unit}
               delta
               className="inline"
             />
@@ -316,12 +320,12 @@ export function DeviationBarChart({
         </div>
         <div className="flex items-center justify-between gap-3 mb-2 text-[11px] text-slate-500 dark:text-slate-500">
           <span>{baselineLabel}:</span>
-          <span>{formatValue(point.baselineValue)}</span>
+          <span>{formatValue(point.baselineValue, { unit })}</span>
         </div>
         {medianValue !== null && (
           <div className="flex items-center justify-between gap-3 text-[11px] text-slate-500 dark:text-slate-500">
             <span>{medianLabel}:</span>
-            <span>{formatValue(medianValue)}</span>
+            <span>{formatValue(medianValue, { unit })}</span>
           </div>
         )}
       </div>
@@ -336,8 +340,8 @@ export function DeviationBarChart({
   const selectedGoal = selectedGoalId ? matchingGoals.find((g) => g.id === selectedGoalId) : null;
   const targetLabel = selectedGoal ? selectedGoal.title : 'Target';
   const targetValue = selectedGoal 
-    ? formatGoalTargetValue(selectedGoal.target) 
-    : targetBaselineValue ? formatValue(targetBaselineValue) : null;
+    ? formatGoalTargetValue(selectedGoal.target, { unit }) 
+    : targetBaselineValue ? formatValue(targetBaselineValue, { unit }) : null;
 
   return (
     <div className="h-80 w-full flex flex-col">
@@ -447,7 +451,7 @@ export function DeviationBarChart({
                         {goal.title}
                       </div>
                       <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                        {formatGoalTargetValue(goal.target)}
+                        {formatGoalTargetValue(goal.target, { unit })}
                       </div>
                     </div>
                     <AchievementBadge badge={goal.badge} size="small" className="flex-shrink-0" />

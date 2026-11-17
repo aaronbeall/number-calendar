@@ -1,4 +1,3 @@
-
 import { NumberText } from '@/components/ui/number-text';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import { getCalendarData } from '@/lib/calendar';
@@ -14,6 +13,7 @@ import React, { useMemo } from 'react';
 import { useSidePanelParam } from '../../lib/search-params';
 import { NumbersPanel } from '../panel/NumbersPanel';
 import { pluralize } from '@/lib/utils';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 export interface DayCellProps {
   date: Date;
@@ -22,11 +22,12 @@ export interface DayCellProps {
   onSave: (numbers: number[]) => void;
   monthExtremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   achievementResults: CompletedAchievementResult[];
 }
 
-export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave, monthExtremes, valence, tracking, achievementResults }) => {
+export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave, monthExtremes, valence, unit, tracking, achievementResults }) => {
   const [panelView, setPanelView] = useSidePanelParam();
   const dayKey = dateToDayKey(date);
   const isPanelOpen = typeof panelView === 'string' && panelView === dayKey;
@@ -170,6 +171,8 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
                 isHighest={!!isHighestPrimary}
                 isLowest={!!isLowestPrimary}
                 valence={valence}
+                unit={unit}
+                unitClassName="hidden md:inline"
                 className="font-mono font-bold text-base md:text-lg"
                 short
               />
@@ -227,6 +230,7 @@ export const DayCell: React.FC<DayCellProps> = ({ date, data, priorData, onSave,
         onSave={onSave}
         extremes={monthExtremes}
         valence={valence}
+        unit={unit}
         tracking={tracking}
         dateKey={dayKey}
         achievementResults={achievementResults}

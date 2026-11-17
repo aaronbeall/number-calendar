@@ -1,7 +1,7 @@
 import { PageHeader } from '@/components/PageHeader';
 import { LoadingState, ErrorState } from '@/components/PageStates';
 import type { DateKey, Valence } from '@/features/db/localdb';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { Award, CalendarDays, Flame, Skull, TrendingDown, TrendingUp, Trophy } from 'lucide-react';
 import { useMemo } from 'react';
 import { useDatasets } from '../features/db/useDatasetData';
@@ -28,41 +28,42 @@ export function Records({ datasetId }: { datasetId: string }) {
   // Prepare all records as an array for sorting, based on tracking type
   let recordCards: RecordCardProps[] = [];
   const valence = dataset.valence
+  const unit = dataset.unit
   if (dataset.tracking === 'series') {
     recordCards = [
       // Best
-      { type: "best", label: `Day`, ...records.bestDay, valence },
-      { type: "best", label: `Day Median`, ...records.bestDayMedian, valence },
-      { type: "best", label: `Week`, ...records.bestWeek, valence },
-      { type: "best", label: `Week Median`, ...records.bestWeekMedian, valence },
-      { type: "best", label: `Month`, ...records.bestMonth, valence },
-      { type: "best", label: `Monthly Median`, ...records.bestMonthMedian, valence },
+      { type: "best", label: `Day`, ...records.bestDay, valence, unit },
+      { type: "best", label: `Day Median`, ...records.bestDayMedian, valence, unit },
+      { type: "best", label: `Week`, ...records.bestWeek, valence, unit },
+      { type: "best", label: `Week Median`, ...records.bestWeekMedian, valence, unit },
+      { type: "best", label: `Month`, ...records.bestMonth, valence, unit },
+      { type: "best", label: `Monthly Median`, ...records.bestMonthMedian, valence, unit },
       // Worst
-      { type: "worst", label: `Day`, ...records.worstDay, valence },
-      { type: "worst", label: `Day Median`, ...records.worstDayMedian, valence },
-      { type: "worst", label: `Week`, ...records.worstWeek, valence },
-      { type: "worst", label: `Week Median`, ...records.worstWeekMedian, valence },
-      { type: "worst", label: `Month`, ...records.worstMonth, valence },
-      { type: "worst", label: `Monthly Median`, ...records.worstMonthMedian, valence },
+      { type: "worst", label: `Day`, ...records.worstDay, valence, unit },
+      { type: "worst", label: `Day Median`, ...records.worstDayMedian, valence, unit },
+      { type: "worst", label: `Week`, ...records.worstWeek, valence, unit },
+      { type: "worst", label: `Week Median`, ...records.worstWeekMedian, valence, unit },
+      { type: "worst", label: `Month`, ...records.worstMonth, valence, unit },
+      { type: "worst", label: `Monthly Median`, ...records.worstMonthMedian, valence, unit },
       // Streaks
-      { type: "streak", label: 'Daily Streak', ...records.bestDailyStreak, date: records.bestDailyStreak.end, valence },
-      { type: "streak", label: 'Weekly Streak', ...records.bestWeeklyStreak, date: records.bestWeeklyStreak.end, valence },
-      { type: "streak", label: 'Monthly Streak', ...records.bestMonthlyStreak, date: records.bestMonthlyStreak.end, valence },
+      { type: "streak", label: 'Daily Streak', ...records.bestDailyStreak, date: records.bestDailyStreak.end, valence, unit },
+      { type: "streak", label: 'Weekly Streak', ...records.bestWeeklyStreak, date: records.bestWeeklyStreak.end, valence, unit },
+      { type: "streak", label: 'Monthly Streak', ...records.bestMonthlyStreak, date: records.bestMonthlyStreak.end, valence, unit },
     ];
   } else if (dataset.tracking === 'trend') {
     recordCards = [
       // Best Medians
-      { type: "best", label: `Day Median`, ...records.bestDayMedian, valence },
-      { type: "best", label: `Week Median`, ...records.bestWeekMedian, valence },
-      { type: "best", label: `Monthly Median`, ...records.bestMonthMedian, valence },
+      { type: "best", label: `Day Median`, ...records.bestDayMedian, valence, unit },
+      { type: "best", label: `Week Median`, ...records.bestWeekMedian, valence, unit },
+      { type: "best", label: `Monthly Median`, ...records.bestMonthMedian, valence, unit },
       // Worst Medians
-      { type: "worst", label: `Day Median`, ...records.worstDayMedian, valence },
-      { type: "worst", label: `Week Median`, ...records.worstWeekMedian, valence },
-      { type: "worst", label: `Monthly Median`, ...records.worstMonthMedian, valence },
+      { type: "worst", label: `Day Median`, ...records.worstDayMedian, valence, unit },
+      { type: "worst", label: `Week Median`, ...records.worstWeekMedian, valence, unit },
+      { type: "worst", label: `Monthly Median`, ...records.worstMonthMedian, valence, unit },
       // Streaks
-      { type: "streak", label: 'Daily Trend Streak', ...records.bestDailyTrendStreak, date: records.bestDailyTrendStreak.end, valence },
-      { type: "streak", label: 'Weekly Trend Streak', ...records.bestWeeklyTrendStreak, date: records.bestWeeklyTrendStreak.end, valence },
-      { type: "streak", label: 'Monthly Trend Streak', ...records.bestMonthlyTrendStreak, date: records.bestMonthlyTrendStreak.end, valence },
+      { type: "streak", label: 'Daily Trend Streak', ...records.bestDailyTrendStreak, date: records.bestDailyTrendStreak.end, valence, unit },
+      { type: "streak", label: 'Weekly Trend Streak', ...records.bestWeeklyTrendStreak, date: records.bestWeeklyTrendStreak.end, valence, unit },
+      { type: "streak", label: 'Monthly Trend Streak', ...records.bestMonthlyTrendStreak, date: records.bestMonthlyTrendStreak.end, valence, unit },
     ];
   }
 
@@ -148,6 +149,7 @@ type RecordCardProps = {
   label: string;
   date: DateKey;
   valence: Valence;
+  unit?: NumberUnit;
   type: "best" | "worst" | "streak";
 } & ({
   type: "best" | "worst";
@@ -160,7 +162,7 @@ type RecordCardProps = {
 });
 
 function RecordCard(props: RecordCardProps) {
-  const { label, valence, date, type } = props;
+  const { label, valence, unit, date, type } = props;
   let icon: React.ReactNode;
   let displayLabel = label;
   let iconBg = '';
@@ -233,7 +235,7 @@ function RecordCard(props: RecordCardProps) {
     borderColor = 'border-slate-200 dark:border-slate-700';
     bgColor = 'bg-slate-50/50 dark:bg-slate-900/50';
   } else {
-    displayValue = formatValue(type == 'streak' ? props.length : props.value);
+    displayValue = type == 'streak' ? formatValue(props.length) : formatValue(props.value, { unit });
     displayDate = type === 'streak'
       ? formatFriendlyDate(props.start, props.end)
       : formatFriendlyDate(date);

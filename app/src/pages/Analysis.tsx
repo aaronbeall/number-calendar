@@ -802,6 +802,7 @@ export function Analysis() {
             key={dataset.id}
             stats={stats}
             valence={dataset.valence}
+            unit={dataset.unit}
             tracking={dataset.tracking}
             datasetId={dataset.id}
             aggregationType={aggregationType}
@@ -902,6 +903,7 @@ export function Analysis() {
                 mode={trendChartMode}
                 summaryLabel={trendSummaryLabel}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 selectedMetrics={selectedSummaryMetrics}
                 datasetId={dataset.id}
                 priorTimeFrameValue={trendPriorTimeFrameValue}
@@ -984,6 +986,7 @@ export function Analysis() {
                 aggregationType={aggregationType}
                 tracking={dataset.tracking}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 rangeLabel={activeTimeFrameLabel}
                 datasetId={dataset.id}
                 priorTimeFrameValue={priorTimeFrameValue}
@@ -1018,6 +1021,7 @@ export function Analysis() {
                 periods={computedAggregatesInRange}
                 tracking={dataset.tracking}
                 valence={dataset.valence}
+                unit={dataset.unit}
               />
             </LazyChart>
           </ChartSection>
@@ -1088,6 +1092,7 @@ export function Analysis() {
                   aggregationType={aggregationType}
                   tracking={dataset.tracking}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   mode={valenceDistributionMode}
                 />
               </LazyChart>
@@ -1120,6 +1125,7 @@ export function Analysis() {
                   aggregationType={aggregationType}
                   selectedMetrics={selectedSummaryMetrics}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   tracking={dataset.tracking}
                   datasetId={dataset.id}
                 />
@@ -1327,6 +1333,7 @@ export function Analysis() {
                 projectionRecentWindow={projectionRecentWindow}
                 projectionMomentumWeight={projectionMomentumWeight}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 milestones={milestonesResults}
               />
             </LazyChart>
@@ -1368,6 +1375,7 @@ export function Analysis() {
                 tracking={dataset.tracking}
                 aggregationType={aggregationType}
                 valence={dataset.valence}
+                unit={dataset.unit}
               />
             </LazyChart>
           </ChartSection>

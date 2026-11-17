@@ -248,6 +248,7 @@ export function DatasetCard({
                 value={primaryMetric}
                 valenceValue={primaryValenceValue}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 className="text-2xl font-bold"
                 short
               />
@@ -259,6 +260,7 @@ export function DatasetCard({
                   value={primaryMetricDelta}
                   valenceValue={primaryMetricDelta}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   className="text-xs"
                   short
                   delta
@@ -270,6 +272,7 @@ export function DatasetCard({
                   value={primaryMetricPercentChange}
                   valenceValue={primaryMetricPercentChange}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   className="text-xs"
                   placeholder="0%"
                   short
@@ -286,6 +289,7 @@ export function DatasetCard({
                 value={average}
                 valenceValue={averageValenceValue}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 className="text-2xl font-bold"
                 short
               />
@@ -297,6 +301,7 @@ export function DatasetCard({
                   value={averageDelta}
                   valenceValue={averageDelta}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   className="text-xs"
                   short
                   delta
@@ -308,6 +313,7 @@ export function DatasetCard({
                   value={averagePercentChange}
                   valenceValue={averagePercentChange}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   className="text-xs"
                   placeholder="0%"
                   short

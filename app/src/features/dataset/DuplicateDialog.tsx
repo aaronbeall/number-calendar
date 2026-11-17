@@ -110,6 +110,7 @@ export function DuplicateDialog({ open, onOpenChange, onDuplicated, dataset }: D
         icon: dataset.icon,
         tracking: dataset.tracking,
         valence: dataset.valence,
+        unit: dataset.unit,
         createdAt: now,
         updatedAt: now,
       };

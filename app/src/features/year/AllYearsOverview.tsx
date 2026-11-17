@@ -3,7 +3,7 @@ import { parseMonthKey, toMonthKey } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getValenceValueFromData, getPrimaryMetricFromStats } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { getNormalizedMagnitude } from '@/lib/charts';
 import React, { useCallback, useEffect, useMemo, useRef, memo } from 'react';
 
@@ -12,6 +12,7 @@ export interface AllYearsOverviewProps {
   selectedYear: number;
   onYearClick: (year: number) => void;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
 }
 
@@ -26,12 +27,13 @@ interface MonthDotProps {
   scale: number;
   monthData: PeriodAggregateData<'month'> | undefined;
   tracking: Tracking;
+  unit?: NumberUnit;
 }
 
-const MonthDot = memo(({ monthNum, color, scale, monthData, tracking }: MonthDotProps) => {
+const MonthDot = memo(({ monthNum, color, scale, monthData, tracking, unit }: MonthDotProps) => {
   const hasData = monthData && monthData.numbers.length > 0;
   const value = hasData ? getPrimaryMetricFromStats(monthData.stats, tracking) : 0;
-  const formattedValue = hasData ? formatValue(value) : '—';
+  const formattedValue = hasData ? formatValue(value, { unit }) : '—';
   const baseSizePx = 12;
   const sizedPx = baseSizePx * scale;
 
@@ -58,9 +60,10 @@ interface MonthGridProps {
   getMonthColorAndScale: (monthKey: MonthKey) => { color: string; scale: number };
   today: Date;
   tracking: Tracking;
+  unit?: NumberUnit;
 }
 
-const MonthGrid = memo(({ year, monthDataByKey, getMonthColorAndScale, today, tracking }: MonthGridProps) => {
+const MonthGrid = memo(({ year, monthDataByKey, getMonthColorAndScale, today, tracking, unit }: MonthGridProps) => {
   return (
     <div className="grid grid-cols-4 gap-3 place-items-center">
       {Array.from({ length: 12 }, (_, monthIndex) => {
@@ -80,6 +83,7 @@ const MonthGrid = memo(({ year, monthDataByKey, getMonthColorAndScale, today, tr
             scale={scale}
             monthData={monthData}
             tracking={tracking}
+            unit={unit}
           />
         );
       })}
@@ -116,6 +120,7 @@ interface YearButtonProps {
   onYearClick: (year: number) => void;
   yearButtonRef: (el: HTMLButtonElement | null) => void;
   tracking: Tracking;
+  unit?: NumberUnit;
 }
 
 const YearButton = memo(({
@@ -129,6 +134,7 @@ const YearButton = memo(({
   onYearClick,
   yearButtonRef,
   tracking,
+  unit,
 }: YearButtonProps) => {
   return (
     <button
@@ -149,6 +155,7 @@ const YearButton = memo(({
           getMonthColorAndScale={getMonthColorAndScale}
           today={today}
           tracking={tracking}
+          unit={unit}
         />
       ) : (
         <EmptyMonthGrid />
@@ -163,6 +170,7 @@ export const AllYearsOverview = memo(({
   selectedYear,
   onYearClick,
   valence,
+  unit,
   tracking,
 }: AllYearsOverviewProps) => {
   const today = new Date();
@@ -274,6 +282,7 @@ export const AllYearsOverview = memo(({
               today={today}
               getMonthColorAndScale={getMonthColorAndScale}
               onYearClick={onYearClick}
+              unit={unit}
               yearButtonRef={(el) => {
                 if (el) {
                   yearButtonsRef.current.set(year, el);
