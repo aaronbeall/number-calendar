@@ -1,9 +1,9 @@
 import { type Achievement, type DateKey, type DayKey, type Goal, type GoalCondition, type GoalRequirements, type GoalTarget, type GoalType, type TimePeriod } from '@/features/db/localdb';
 import { nanoid } from 'nanoid';
 import { convertDateKey, formatDateAsKey, isDayKey, type DateKeyType } from './friendly-date';
-import { computeCumulatives, computeNumberStats, getMetricDisplayName, computeStatsDeltas, computeStatsPercents, type NumberStats } from './stats';
+import { computeCumulatives, computeNumberStats, getMetricDisplayName, getMetricUnit, computeStatsDeltas, computeStatsPercents, type NumberStats } from './stats';
 import { adjectivize, capitalize, entriesOf, keysOf, pluralize } from './utils';
-import { type FormatValueOptions, formatRange, formatValue } from './friendly-numbers';
+import { type FormatValueOptions, type NumberDisplayOptions, formatRange, formatValue } from './friendly-numbers';
 import type { DeepPartial } from './types';
 
 // Helper: evaluate a metric condition (inclusive for non-zero, exclusive for zero)
@@ -22,21 +22,22 @@ export function evalCondition(cond: GoalCondition, value: number): boolean {
   return false;
 }
 
-export function formatGoalConditionLabel(condition: GoalCondition): string {
+export function formatGoalConditionLabel(condition: GoalCondition, { unit }: NumberDisplayOptions = {}): string {
+  const format = (value: number) => formatValue(value, { unit });
   if (condition.condition === 'above') {
-    return `${formatValue(condition.value)} and above`;
+    return `${format(condition.value)} and above`;
   }
   if (condition.condition === 'below') {
-    return `${formatValue(condition.value)} and below`;
+    return `${format(condition.value)} and below`;
   }
   if (condition.condition === 'inside') {
-    return `Between ${formatValue(condition.range[0])} and ${formatValue(condition.range[1])}`;
+    return `Between ${format(condition.range[0])} and ${format(condition.range[1])}`;
   }
   if (condition.condition === 'outside') {
-    return `Outside ${formatValue(condition.range[0])} and ${formatValue(condition.range[1])}`;
+    return `Outside ${format(condition.range[0])} and ${format(condition.range[1])}`;
   }
   if (condition.condition === 'equal') {
-    return `${formatValue(condition.value)}`;
+    return `${format(condition.value)}`;
   }
   return '';
 }
@@ -454,15 +455,15 @@ export function isValidGoalAttributes(goal: DeepPartial<GoalRequirements>): goal
  * Helper to format a goal target value, either a single value or a range, 
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
-export function formatGoalTargetValue({ value, range, source }: DeepPartial<GoalTarget>, { short }: { short?: boolean; } = {}): string {
-  return formatTargetValue({ value, range, source }, { short });
+export function formatGoalTargetValue({ value, range, source, metric }: DeepPartial<GoalTarget>, { short, unit }: { short?: boolean; } & NumberDisplayOptions = {}): string {
+  return formatTargetValue({ value, range, source }, { short, unit: getMetricUnit(metric, unit) });
 }
 
 /**
  * Helper to format a partial goal target value, which may be missing value or range,
  */
-function formatTargetValue({ value, range, source }: DeepPartial<Pick<GoalTarget, 'value' | 'range' | 'source'>>, { short }: { short?: boolean; } = {}): string {
-  const options: FormatValueOptions = { short, percent: source === 'percents' || source === 'cumulativePercents', delta: source === 'deltas' || source === 'cumulativePercents' };
+function formatTargetValue({ value, range, source }: DeepPartial<Pick<GoalTarget, 'value' | 'range' | 'source'>>, { short, unit }: { short?: boolean; } & NumberDisplayOptions = {}): string {
+  const options: FormatValueOptions & NumberDisplayOptions = { short, unit, percent: source === 'percents' || source === 'cumulativePercents', delta: source === 'deltas' || source === 'cumulativePercents' };
   if (Array.isArray(range) && typeof range[0] === 'number' && typeof range[1] === 'number') {
     return formatRange([range[0], range[1]], options);
   }

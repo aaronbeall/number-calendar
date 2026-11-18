@@ -458,3 +458,13 @@ export function emptyStats(): NumberStats {
     interquartileRange: 0,
   };
 }
+// Metrics that are counts or ratios of the numbers, and so never carry the dataset's display unit
+const UNITLESS_METRICS: readonly NumberMetric[] = ['count', 'changePercent', 'variance'];
+
+/**
+ * Returns the display unit for a metric: the dataset's unit, except for metrics that aren't measured in it
+ * (e.g. `count` is a number of entries, `variance` is in squared units).
+ */
+export function getMetricUnit<U>(metric: NumberMetric | undefined, unit: U | undefined): U | undefined {
+  return metric && UNITLESS_METRICS.includes(metric) ? undefined : unit;
+}

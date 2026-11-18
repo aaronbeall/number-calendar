@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import type { DayKey, MonthKey, Valence } from '@/features/db/localdb';
 import { parseDayKey, toDayKey, formatFriendlyDate } from '@/lib/friendly-date';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -16,6 +16,7 @@ interface YearChartProps {
   year: number;
   yearData: Record<DayKey, number[]>;
   valence: Valence;
+  unit?: NumberUnit;
 }
 
 // Helper to group data by month
@@ -32,7 +33,7 @@ function groupByMonth(yearData: Record<DayKey, number[]>): { month: number; numb
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-export const YearChart: React.FC<YearChartProps> = ({ year, yearData, valence }) => {
+export const YearChart: React.FC<YearChartProps> = ({ year, yearData, valence, unit }) => {
   const [mode, setMode] = useState<YearChartMode>(() => 'serial');
   const [group, setGroup] = useState<YearChartGroup>(() => 'monthly');
   // Prepare chart data
@@ -169,7 +170,7 @@ export const YearChart: React.FC<YearChartProps> = ({ year, yearData, valence })
                     return (
                       <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{formattedDate}</div>
-                        <span style={{ color, fontWeight: 600, fontSize: 16 }}>{formatValue(value)}</span>
+                        <span style={{ color, fontWeight: 600, fontSize: 16 }}>{formatValue(value, { unit })}</span>
                       </div>
                     );
                   }

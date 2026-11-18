@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { getValueForValence } from '@/lib/valence';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import { formatFriendlyDate } from '@/lib/friendly-date';
 import type { DayKey, Valence } from '@/features/db/localdb';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -14,9 +14,10 @@ type MonthChartGroup = 'daily' | 'all';
 export interface MonthChartProps {
   days: { date: DayKey; numbers: number[] }[];
   valence: Valence;
+  unit?: NumberUnit;
 }
 
-export const MonthChart: React.FC<MonthChartProps> = ({ days, valence }) => {
+export const MonthChart: React.FC<MonthChartProps> = ({ days, valence, unit }) => {
   const [mode, setMode] = useState<MonthChartMode>(() => 'serial');
   const [group, setGroup] = useState<MonthChartGroup>(() => 'daily');
   const data = useMemo(() => {
@@ -167,7 +168,7 @@ export const MonthChart: React.FC<MonthChartProps> = ({ days, valence }) => {
                   return (
                     <div className="rounded-md bg-white dark:bg-slate-900 px-3 py-2 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">{formattedDate}</div>
-                      <span style={{ color, fontWeight: 600, fontSize: 16 }}>{formatValue(value)}</span>
+                      <span style={{ color, fontWeight: 600, fontSize: 16 }}>{formatValue(value, { unit })}</span>
                     </div>
                   );
                 }

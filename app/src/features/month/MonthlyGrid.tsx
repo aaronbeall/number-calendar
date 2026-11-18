@@ -6,6 +6,7 @@ import { type StatsExtremes } from '@/lib/stats';
 import { parseISO } from 'date-fns';
 import { useMemo, memo } from 'react';
 import { MonthCell } from './MonthCell';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 interface MonthlyGridProps {
   year: number;
@@ -15,6 +16,7 @@ interface MonthlyGridProps {
   priorMonthByKey: Record<MonthKey, PeriodAggregateData<'month'> | undefined>;
   yearExtremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
 }
 
@@ -39,6 +41,7 @@ interface MonthCellWrapperProps {
   yearExtremes?: StatsExtremes;
   yearDailyExtremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   isCurrentMonth: boolean;
   isFutureMonth: boolean;
@@ -52,6 +55,7 @@ const MonthCellWrapper = memo(({
   yearExtremes,
   yearDailyExtremes,
   valence,
+  unit,
   tracking,
   isCurrentMonth,
   isFutureMonth,
@@ -67,12 +71,13 @@ const MonthCellWrapper = memo(({
     yearExtremes={yearExtremes}
     yearDailyExtremes={yearDailyExtremes}
     valence={valence}
+    unit={unit}
     tracking={tracking}
   />
 ));
 MonthCellWrapper.displayName = 'MonthCellWrapper';
 
-export const MonthlyGrid = memo(({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, valence, tracking }: MonthlyGridProps) => {
+export const MonthlyGrid = memo(({ year, dayDataByKey, priorDayByKey, monthDataByKey, priorMonthByKey, yearExtremes, valence, unit, tracking }: MonthlyGridProps) => {
 
   // Calculate daily extremes across all days in the year for proper dot scaling
   const yearDailyExtremes = useMemo(() => 
@@ -134,6 +139,7 @@ export const MonthlyGrid = memo(({ year, dayDataByKey, priorDayByKey, monthDataB
             yearExtremes={yearExtremes}
             yearDailyExtremes={yearDailyExtremes}
             valence={valence}
+            unit={unit}
             tracking={tracking}
             isCurrentMonth={isCurrentMonth}
             isFutureMonth={isFutureMonth}

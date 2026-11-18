@@ -28,6 +28,7 @@ import { MainMetricsChip } from '@/features/stats/MainMetricsChip';
 import { ArrowDownRight, ArrowUpRight, Ellipsis, Minus } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Line, LineChart, Tooltip as ChartTooltip} from 'recharts';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 type TimelineEntryKind = DateKeyType;
 
@@ -174,6 +175,7 @@ function TimelineDividerHeading({ title, className }: { title: string; className
 function TimelineStatsRow({
   stats,
   valence,
+  unit,
   primaryMetric,
   primaryMetricLabel,
   primaryValenceMetric,
@@ -185,6 +187,7 @@ function TimelineStatsRow({
 }: {
   stats: NonNullable<ReturnType<typeof computeNumberStats>>;
   valence: Valence;
+  unit?: NumberUnit;
   primaryMetric: number | undefined;
   primaryMetricLabel: string;
   primaryValenceMetric: number;
@@ -203,6 +206,7 @@ function TimelineStatsRow({
             value={stats.mean}
             valenceValue={valenceStats?.mean ?? 0}
             valence={valence}
+            unit={unit}
             className="font-mono text-xs sm:text-sm font-semibold"
             short
           />
@@ -213,6 +217,7 @@ function TimelineStatsRow({
             value={stats.median}
             valenceValue={valenceStats?.median ?? 0}
             valence={valence}
+            unit={unit}
             className="font-mono text-xs sm:text-sm font-semibold"
             short
           />
@@ -228,6 +233,7 @@ function TimelineStatsRow({
             value={stats.min}
             valenceValue={valenceStats?.min ?? 0}
             valence={valence}
+            unit={unit}
             className="font-mono text-sm font-semibold"
             short
           />
@@ -238,6 +244,7 @@ function TimelineStatsRow({
             value={stats.max}
             valenceValue={valenceStats?.max ?? 0}
             valence={valence}
+            unit={unit}
             className="font-mono text-sm font-semibold"
             short
           />
@@ -255,12 +262,13 @@ function TimelineStatsRow({
         secondaryMetricFormat={secondaryMetricFormat}
         changePercent={changePercent}
         valence={valence}
+        unit={unit}
       />
     </div>
   );
 }
 
-const renderTimelineChartTooltip = (valence: Valence) => ({
+const renderTimelineChartTooltip = (valence: Valence, unit?: NumberUnit) => ({
   active,
   payload,
 }: {
@@ -273,12 +281,12 @@ const renderTimelineChartTooltip = (valence: Valence) => ({
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
         <div style={{ fontWeight: 600, fontSize: 14 }}>
-          <NumberText value={value} valenceValue={valenceValue} valence={valence} {...format} />
+          <NumberText value={value} valenceValue={valenceValue} valence={valence} unit={unit} {...format} />
         </div>
         {secondaryValue !== undefined && secondaryValue !== null ? (
           <div style={{ fontSize: 12, opacity: 0.7 }}>
             {secondaryLabel && <span className="mr-1">{secondaryLabel}</span>}
-            <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} {...secondaryFormat} />
+            <NumberText value={secondaryValue} valenceValue={secondaryValue} valence={valence} unit={unit} {...secondaryFormat} />
           </div>
         ) : null}
       </div>
@@ -292,6 +300,7 @@ const TimelineEntryCard = React.memo(({
   achievements,
   noteText,
   valence,
+  unit,
   tracking,
   onOpen,
   isSelected,
@@ -300,6 +309,7 @@ const TimelineEntryCard = React.memo(({
   achievements: CompletedAchievementResult[];
   noteText?: string;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   onOpen?: (entry: TimelineEntry) => void;
   isSelected?: boolean;
@@ -434,6 +444,7 @@ const TimelineEntryCard = React.memo(({
                   <TimelineStatsRow
                     stats={stats}
                     valence={valence}
+                    unit={unit}
                     primaryMetric={primaryMetric}
                     primaryMetricLabel={primaryMetricLabel}
                     primaryValenceMetric={primaryValenceMetric}
@@ -552,6 +563,7 @@ const TimelineEntryCard = React.memo(({
             <TimelineStatsRow
               stats={stats}
               valence={valence}
+              unit={unit}
               primaryMetric={primaryMetric}
               primaryMetricLabel={primaryMetricLabel}
               primaryValenceMetric={primaryValenceMetric}
@@ -594,7 +606,7 @@ const TimelineEntryCard = React.memo(({
                     neutral: 'rgba(59,130,246,0.08)',
                   }),
                 }}
-                content={renderTimelineChartTooltip(valence)}
+                content={renderTimelineChartTooltip(valence, unit)}
               />
             </LineChart>
           </ChartContainer>
@@ -625,6 +637,7 @@ type AllTimeTrendChartProps = {
   allTimePrimaryMetric: number;
   allTimePrimaryValence: number;
   valence: Valence;
+  unit?: NumberUnit;
 };
 
 const AllTimeTrendChart = React.memo(function AllTimeTrendChart({
@@ -632,6 +645,7 @@ const AllTimeTrendChart = React.memo(function AllTimeTrendChart({
   allTimePrimaryMetric,
   allTimePrimaryValence,
   valence,
+  unit,
 }: AllTimeTrendChartProps) {
   if (allTimeChartData.length <= 1) return null;
 
@@ -662,6 +676,7 @@ const AllTimeTrendChart = React.memo(function AllTimeTrendChart({
             value={allTimePrimaryMetric}
             valenceValue={allTimePrimaryValence}
             valence={valence}
+            unit={unit}
             short
           />
         </span>
@@ -681,7 +696,7 @@ const AllTimeTrendChart = React.memo(function AllTimeTrendChart({
           />
           <ChartTooltip
             cursor={{ fill: tooltipColor }}
-            content={renderTimelineChartTooltip(valence)}
+            content={renderTimelineChartTooltip(valence, unit)}
           />
         </LineChart>
       </ChartContainer>
@@ -756,6 +771,7 @@ const MonthNavItem = React.memo(function MonthNavItem({
               value={monthPrimaryMetric}
               valenceValue={monthPrimaryValence}
               valence={dataset.valence}
+              unit={dataset.unit}
               short
             />
           </div>
@@ -848,6 +864,7 @@ const YearNavItem = React.memo(function YearNavItem({
               value={primaryMetric}
               valenceValue={primaryValenceMetric}
               valence={dataset.valence}
+              unit={dataset.unit}
               short
             />
           </div>
@@ -869,7 +886,7 @@ const YearNavItem = React.memo(function YearNavItem({
               />
               <ChartTooltip
                 cursor={{ fill: tooltipColor }}
-                content={renderTimelineChartTooltip(dataset.valence)}
+                content={renderTimelineChartTooltip(dataset.valence, dataset.unit)}
               />
             </LineChart>
           </ChartContainer>
@@ -1409,6 +1426,7 @@ export function Timeline() {
               allTimePrimaryMetric={allTimePrimaryMetric}
               allTimePrimaryValence={allTimePrimaryValence}
               valence={dataset.valence}
+              unit={dataset.unit}
             />
             <div
               ref={navScrollRef}
@@ -1442,6 +1460,7 @@ export function Timeline() {
                   achievements={achievementResultsByDateKey[yearEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                   noteText={notesByDateKey.get(yearEntry.dateKey)}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   tracking={dataset.tracking}
                   onOpen={handleOpenEntry}
                   isSelected={getIsSelected(yearEntry.dateKey)}
@@ -1461,6 +1480,7 @@ export function Timeline() {
                       achievements={achievementResultsByDateKey[monthEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                       noteText={notesByDateKey.get(monthEntry.dateKey)}
                       valence={dataset.valence}
+                      unit={dataset.unit}
                       tracking={dataset.tracking}
                       onOpen={handleOpenEntry}
                       isSelected={getIsSelected(monthEntry.dateKey)}
@@ -1473,6 +1493,7 @@ export function Timeline() {
                             achievements={achievementResultsByDateKey[weekEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                             noteText={notesByDateKey.get(weekEntry.dateKey)}
                             valence={dataset.valence}
+                            unit={dataset.unit}
                             tracking={dataset.tracking}
                             onOpen={handleOpenEntry}
                             isSelected={getIsSelected(weekEntry.dateKey)}
@@ -1487,6 +1508,7 @@ export function Timeline() {
                                 achievements={achievementResultsByDateKey[dayEntry.dateKey] ?? EMPTY_ACHIEVEMENTS}
                                 noteText={notesByDateKey.get(dayEntry.dateKey)}
                                 valence={dataset.valence}
+                                unit={dataset.unit}
                                 tracking={dataset.tracking}
                                 onOpen={handleOpenEntry}
                                 isSelected={getIsSelected(dayEntry.dateKey)}
@@ -1506,6 +1528,7 @@ export function Timeline() {
       <NumbersPanel
         {...panelProps}
         valence={dataset.valence}
+        unit={dataset.unit}
         tracking={dataset.tracking}
         achievementResults={achievementResultsByDateKey[panelProps.dateKey] ?? EMPTY_ACHIEVEMENTS}
         onClose={() => {

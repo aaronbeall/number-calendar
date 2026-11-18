@@ -8,10 +8,12 @@ import { useAllDays, useSaveDay } from '@/features/db/useDayEntryData';
 import { useCreateGoals, useGoals } from '@/features/db/useGoalsData';
 import { DATASET_TEMPLATES } from '@/lib/dataset-builder';
 import { toDayKey } from '@/lib/friendly-date';
-import { convertPeriodLengthWithRounding, convertPeriodUnitWithRounding, formatValue, roundToClean } from '@/lib/friendly-numbers';
+import { convertPeriodLengthWithRounding, convertPeriodUnitWithRounding, formatValue, getUnitName, roundToClean, type NumberUnit } from '@/lib/friendly-numbers';
 import { formatGoalConditionLabel, getGoalCategory, isSameGoal } from '@/lib/goals';
 import { calculateBaselines, generateGoals, type GeneratedGoals, type GoalBuilderInput, type GoalBuilderPeriod, type GoalBuilderTarget } from '@/lib/goals-builder';
 import { adjectivize, capitalize, cn, pluralize } from '@/lib/utils';
+import { useUpdateDataset } from '@/features/db/useDatasetData';
+import { UnitToggle } from '@/features/dataset/UnitPicker';
 import { getValueForGood, isBad } from '@/lib/valence';
 import { ArrowDown, ArrowLeft, ArrowLeftRight, ArrowRight, ArrowUp, Calendar, Check, Cog, Dices, Flag, Hash, Info, Sparkles, Target, TrendingUp, Trophy } from 'lucide-react';
 import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react';
@@ -54,15 +56,24 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
 
   const template = useMemo(() => DATASET_TEMPLATES.find((item) => item.id === templateId), [templateId]);
 
+  // Display unit: the template's suggested units can be toggled right here, and are saved to the dataset
+  const unit = dataset.unit;
+  const updateDataset = useUpdateDataset();
+  const handleUnitChange = (nextUnit: NumberUnit | undefined) => {
+    updateDataset.mutate({ ...dataset, unit: nextUnit, updatedAt: Date.now() });
+  };
+
   const tokenValues = useMemo(() => {
     const selectedPeriod = period || 'period';
     const periodly = period ? adjectivize(period) : 'periodly';
     const periods = period ? pluralize(period) : 'periods';
     const parent = period === 'day' ? 'week' : period === 'week' ? 'month' : period === 'month' ? 'year' : 'period';
-    const unit = template?.units?.[0] ?? 'unit';
-    const units = template?.units?.length ? pluralize(unit) : 'units';
+    // Name the dataset's unit, or the template's default unit when none is chosen (e.g. "pounds")
+    const namedUnit = dataset.unit ?? template?.defaultUnit ?? template?.units[0];
+    const unit = namedUnit ? getUnitName(namedUnit, { plural: false }) : 'unit';
+    const units = namedUnit ? getUnitName(namedUnit) : 'units';
     return { period: selectedPeriod, periodly, periods, parent, unit, units };
-  }, [period, template]);
+  }, [period, template, dataset.unit]);
 
   const replaceTokens = useCallback((text: string): string => {
     const replacements: Record<string, string> = {
@@ -521,14 +532,14 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     const delta = dataset.tracking === 'trend';
     if (period === 'day') {
       const parts = [
-        summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { delta, percent: isPercentMode })} weekly` : null,
-        summaryBaselines.monthTarget ? `${formatValue(summaryBaselines.monthTarget, { delta, percent: isPercentMode })} monthly` : null,
+        summaryBaselines.weekTarget ? `${formatValue(summaryBaselines.weekTarget, { unit, delta, percent: isPercentMode })} weekly` : null,
+        summaryBaselines.monthTarget ? `${formatValue(summaryBaselines.monthTarget, { unit, delta, percent: isPercentMode })} monthly` : null,
       ].filter(Boolean);
       return `(${parts.join(', ')})`;
     }
     if (period === 'week') {
       return summaryBaselines.monthTarget
-        ? `${formatValue(summaryBaselines.monthTarget, { delta, percent: isPercentMode })} / month`
+        ? `${formatValue(summaryBaselines.monthTarget, { unit, delta, percent: isPercentMode })} / month`
         : '';
     }
     return '';
@@ -536,7 +547,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
   const summary90DayTotal = (() => {
     if (!summaryBaselines || !isPeriodTarget) return '';
     const total = summaryBaselines.dayTarget * 90;
-    return formatValue(total, { delta: dataset.tracking === 'trend', percent: isPercentMode });
+    return formatValue(total, { unit, delta: dataset.tracking === 'trend', percent: isPercentMode });
   })();
   const perPeriodLabel = (() => {
     if (!summaryBaselines || !period || !isAllTimeTarget) return '';
@@ -546,7 +557,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
         : period === 'week'
           ? summaryBaselines.weekTarget
           : summaryBaselines.monthTarget;
-    return formatValue(perPeriodValue, { delta: dataset.tracking === 'trend' });
+    return formatValue(perPeriodValue, { unit, delta: dataset.tracking === 'trend' });
   })();
 
   const handleTargetTypeSelect = (
@@ -842,7 +853,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                     }}
                     className="underline hover:no-underline font-medium"
                   >
-                    Use {formatValue(-numValue, { delta: dataset.tracking === 'trend' })} instead?
+                    Use {formatValue(-numValue, { unit, delta: dataset.tracking === 'trend' })} instead?
                   </button>
                 </>
               )}
@@ -876,6 +887,12 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
               <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
               {template?.name ? `${template.name} Goal Builder` : 'Goal Builder'}
             </DialogTitle>
+            {step === 'period' && !!template?.units.length && (
+              <div className="flex items-center gap-2 pt-2 text-xs text-slate-500 dark:text-slate-400">
+                <span>Show numbers in</span>
+                <UnitToggle options={template.units} value={unit} onChange={handleUnitChange} />
+              </div>
+            )}
           </DialogHeader>
 
           <div key={step} className="flex-1 overflow-y-auto px-6 py-4">
@@ -1408,6 +1425,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                       {isRangeTarget
                         ? rangeConditionLabel
                         : formatValue(parseFloat(activeValue ?? ''), {
+                            unit,
                             delta: dataset.tracking === 'trend',
                             percent: isPercentMode
                           })}
@@ -1661,7 +1679,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                   Add a starting point?
                 </h3>
                 <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Your all-time goal starts from {formatValue(parsedStartingValue ?? 0)}. Want us to add that as your first data point?
+                  Your all-time goal starts from {formatValue(parsedStartingValue ?? 0, { unit })}. Want us to add that as your first data point?
                 </p>
               </div>
 
@@ -1685,7 +1703,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
                       Initial value
                     </div>
                     <div className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      {formatValue(parsedStartingValue ?? 0)}
+                      {formatValue(parsedStartingValue ?? 0, { unit })}
                     </div>
                   </div>
                   <div className="rounded-lg bg-slate-50/80 dark:bg-slate-800/60 px-3 py-2">

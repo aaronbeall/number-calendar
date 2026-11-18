@@ -3,7 +3,7 @@ import { Trophy, Skull, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Valence } from '@/features/db/localdb';
 import { getValueForValence } from '@/lib/valence';
-import { formatValue, type FormatValueOptions, type NumberDisplayOptions } from '@/lib/friendly-numbers';
+import { formatValueToParts, type FormatValueOptions, type NumberDisplayOptions } from '@/lib/friendly-numbers';
 
 export interface NumberTextProps extends FormatValueOptions, NumberDisplayOptions {
   value: number | null | undefined;
@@ -17,6 +17,26 @@ export interface NumberTextProps extends FormatValueOptions, NumberDisplayOption
   neutralClassName?: string;
   placeholder?: React.ReactNode;
   animated?: boolean;
+  /** Class for the unit symbol (and its spacing), e.g. to hide it where space is tight */
+  unitClassName?: string;
+}
+
+const isUnitPart = (part: Intl.NumberFormatPart | undefined) => part?.type === 'unit' || part?.type === 'currency';
+
+/**
+ * Renders formatted number parts, wrapping the unit (with its spacing) and optionally the fraction in styled spans
+ */
+function renderParts(parts: Intl.NumberFormatPart[], { smallFraction, unitClassName }: { smallFraction?: boolean; unitClassName?: string }): React.ReactNode {
+  return parts.map((part, i) => {
+    const isUnitSpacing = part.type === 'literal' && (isUnitPart(parts[i - 1]) || isUnitPart(parts[i + 1]));
+    if (unitClassName && (isUnitPart(part) || isUnitSpacing)) {
+      return <span key={i} className={unitClassName}>{part.value}</span>;
+    }
+    if (smallFraction && (part.type === 'decimal' || part.type === 'fraction')) {
+      return <span key={i} className="text-[0.7em] align-text-top opacity-70">{part.value}</span>;
+    }
+    return part.value;
+  });
 }
 
 export const NumberText: React.FC<NumberTextProps> = ({
@@ -35,8 +55,9 @@ export const NumberText: React.FC<NumberTextProps> = ({
   delta = false,
   absolute = false,
   decimals,
-  currency,
-  animated = false
+  unit,
+  animated = false,
+  unitClassName,
 }) => {
   const isFiniteNumber = typeof value === 'number' && Number.isFinite(value);
   
@@ -105,34 +126,16 @@ export const NumberText: React.FC<NumberTextProps> = ({
     }
   );
   
-  let formatted: React.ReactNode;
+  let formatted: React.ReactNode = placeholder;
   if (isRenderFinite) {
-    formatted = formatValue(renderValue, { short, percent, delta, absolute, decimals, currency });
-  } else {
-    formatted = placeholder;
-  }
-
-  // If using currency, split the decimal part (cents) and render with smaller font size
-  if (isRenderFinite && currency) {
-    const formattedText = String(formatted);
-    const match = formattedText.match(/^(.*?)(\.(\d+))(.*)$/);
-
-    if (match) {
-      const [, integerPart, , decimalDigits, decimalSuffix] = match;
-      formatted = (
-        <>
-          {integerPart}
-          <span className="text-[0.7em] align-text-top opacity-70">
-            .{decimalDigits}
-          </span>
-          {decimalSuffix}
-        </>
-      );
-    }
+    const parts = formatValueToParts(renderValue, { short, percent, delta, absolute, decimals, unit });
+    // For currency, render the cents smaller (e.g. $12.50)
+    const smallFraction = unit?.style === 'currency' && !short;
+    formatted = smallFraction || unitClassName ? renderParts(parts, { smallFraction, unitClassName }) : parts.map((part) => part.value).join('');
   }
 
   const text = (
-    <span className={cn(textClass, animated && 'transition-all duration-200', className)}>
+    <span className={cn('whitespace-nowrap', textClass, animated && 'transition-all duration-200', className)}>
       {formatted}
     </span>
   );

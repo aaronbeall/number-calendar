@@ -373,6 +373,7 @@ export function Calendar({
                 onMonthClick={handleYearOverviewMonthClick}
                 onYearChange={handleYearOverviewYearChange}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 tracking={dataset.tracking}
               />
             </div>
@@ -392,6 +393,7 @@ export function Calendar({
                 weekDataByKey={weekDataByKey}
                 priorWeekByKey={priorWeekDataByKey}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 tracking={dataset.tracking}
                 monthExtremes={monthExtremes}
                 achievementResultsByDateKey={achievementResultsByDateKey}
@@ -407,6 +409,7 @@ export function Calendar({
                 isCurrentMonth={year === today.getFullYear() && month === today.getMonth() + 1}
                 yearExtremes={yearExtremes}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 tracking={dataset.tracking}
                 isPanelOpen={isMonthSummaryOpen}
                 onSelect={handleMonthSummarySelect}
@@ -421,12 +424,14 @@ export function Calendar({
                   month={month}
                   data={monthNumbersByDay}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   priorDay={monthDays[0]?.priorData?.numbers}
                 />
               ) : (
                 <MonthChart
                   days={monthChartDays}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                 />
               )}
             </div>
@@ -440,6 +445,7 @@ export function Calendar({
                 selectedYear={year}
                 onYearClick={handleAllYearsOverviewYearClick}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 tracking={dataset.tracking}
               />
             </div>
@@ -459,6 +465,7 @@ export function Calendar({
                 priorMonthByKey={priorMonthDataByKey}
                 yearExtremes={yearExtremes}
                 valence={dataset.valence}
+                unit={dataset.unit}
                 tracking={dataset.tracking}
               />
             </div>
@@ -469,6 +476,7 @@ export function Calendar({
                 data={yearAggregate}
                 yearName={`${year}`} 
                 valence={dataset.valence}
+                unit={dataset.unit}
                 tracking={dataset.tracking}
                 isPanelOpen={isYearSummaryOpen}
                 onSelect={handleYearSummarySelect}
@@ -483,6 +491,7 @@ export function Calendar({
                   year={year}
                   data={yearNumbersByDay}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                   // Todo: prior day for year view?
                 />
               ) : (
@@ -490,6 +499,7 @@ export function Calendar({
                   year={year}
                   yearData={yearNumbersByDay}
                   valence={dataset.valence}
+                  unit={dataset.unit}
                 />
               )}
             </div>
@@ -499,6 +509,7 @@ export function Calendar({
       <NumbersPanel
         {...panelProps}
         valence={dataset.valence}
+        unit={dataset.unit}
         tracking={dataset.tracking}
         achievementResults={getAchievementsForDateKey(panelProps.dateKey)}
         onClose={() => {

@@ -1,3 +1,4 @@
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import type { DayKey, Tracking, Valence } from '@/features/db/localdb';
 import { dateToDayKey } from '@/lib/friendly-date';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
@@ -12,6 +13,7 @@ export interface YearOverviewProps {
   currentMonth: number;
   onMonthClick: (month: number) => void;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   onYearChange?: (newYear: number) => void;
 }
@@ -28,13 +30,14 @@ interface DayDotProps {
   color: string;
   hasData: boolean;
   value: number;
+  unit?: NumberUnit;
 }
 
-const DayDot = memo(({ day, month, year, color, hasData, value }: DayDotProps) => (
+const DayDot = memo(({ day, month, year, color, hasData, value, unit }: DayDotProps) => (
   <div
     key={day}
     className={`w-1 h-1 rounded-full ${color} transition-all duration-200`}
-    title={`${monthNames[month - 1]} ${day}, ${year}${hasData ? `: ${value}` : ''}`}
+    title={`${monthNames[month - 1]} ${day}, ${year}${hasData ? `: ${formatValue(value, { unit })}` : ''}`}
   />
 ));
 DayDot.displayName = 'DayDot';
@@ -46,6 +49,7 @@ interface MonthCardProps {
   dotData: Array<{ day: number; valenceValue: number; isFuture: boolean; hasData: boolean; value: number }>;
   getDotColor: (valenceValue: number, isFuture: boolean, hasData: boolean) => string;
   onMonthClick: (month: number) => void;
+  unit?: NumberUnit;
 }
 
 const MonthCard = memo(({
@@ -55,6 +59,7 @@ const MonthCard = memo(({
   dotData,
   getDotColor,
   onMonthClick,
+  unit,
 }: MonthCardProps) => {
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
@@ -95,6 +100,7 @@ const MonthCard = memo(({
               color={color}
               hasData={dayInfo.hasData}
               value={dayInfo.value}
+              unit={unit}
             />
           );
         })}
@@ -118,6 +124,7 @@ export const YearOverview = memo(({
   currentMonth,
   onMonthClick,
   valence,
+  unit,
   tracking,
   onYearChange
 }: YearOverviewProps) => {
@@ -192,6 +199,7 @@ export const YearOverview = memo(({
               dotData={dotDataByMonth[month]}
               getDotColor={getDotColor}
               onMonthClick={onMonthClick}
+              unit={unit}
             />
           );
         })}

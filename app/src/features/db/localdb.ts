@@ -3,6 +3,7 @@ import type { DatasetIconName } from '@/lib/dataset-icons';
 import { isDayKey, isMonthKey, isWeekKey, parseDayKey, parseMonthKey, parseWeekKey, parseYearKey, toMonthKey, toYearKey, type DateKeyType } from '@/lib/friendly-date';
 import { getMonthDays, getMonthWeeks, getWeekDays, getYearDays, getYearMonths, getYearWeeks } from '@/lib/calendar';
 import type { NumberMetric, NumberSource } from '@/lib/stats';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 import { openDB } from 'idb';
 import { nanoid } from 'nanoid';
 
@@ -14,6 +15,8 @@ export interface Dataset {
   icon?: DatasetIconName;
   tracking: Tracking;
   valence: Valence;
+  /** Optional display unit for all numbers in the dataset (display-only, never changes the numbers) */
+  unit?: NumberUnit;
   createdAt: number | ISODateString;
   updatedAt: number | ISODateString;
 }

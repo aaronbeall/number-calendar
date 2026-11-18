@@ -1,10 +1,10 @@
 import { useTheme } from '@/components/ThemeProvider';
 import type { NumberMetric } from '@/lib/stats';
-import { getMetricValence, METRIC_DISPLAY_INFO } from '@/lib/stats';
+import { getMetricUnit, getMetricValence, METRIC_DISPLAY_INFO } from '@/lib/stats';
 import { formatPeriodLabel, getMetricColorForValence, METRIC_COLORS, type AggregationType } from '@/lib/analysis';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import type { DateKey, Valence, Tracking } from '@/features/db/localdb';
 import { getValenceSource, getPrimaryMetric } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
@@ -27,6 +27,7 @@ interface PeriodComparisonChartProps {
   aggregationType: AggregationType;
   selectedMetrics?: NumberMetric[];
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   datasetId: string;
 }
@@ -47,6 +48,7 @@ export function PeriodComparisonChart({
   aggregationType,
   selectedMetrics = [],
   valence,
+  unit,
   tracking,
   datasetId,
 }: PeriodComparisonChartProps) {
@@ -194,7 +196,7 @@ export function PeriodComparisonChart({
                   style={{ backgroundColor: getSwatchColor(metric) }}
                 />
                 <span className="text-slate-600 dark:text-slate-300">
-                  <span className="font-semibold" style={{ color: valueColor }}>{typeof value === 'number' ? formatValue(value) : '—'}</span>{' '}
+                  <span className="font-semibold" style={{ color: valueColor }}>{typeof value === 'number' ? formatValue(value, { unit: getMetricUnit(metric, unit) }) : '—'}</span>{' '}
                   <span className="text-slate-500 dark:text-slate-400">{getMetricLabel(metric)}</span>
                 </span>
               </div>

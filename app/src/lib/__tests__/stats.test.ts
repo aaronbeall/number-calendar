@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   calculateExtremes,
+  getMetricUnit,
   computeCumulatives,
   computeMetricStats,
   computeNumberStats,
@@ -195,5 +196,18 @@ describe('stats', () => {
       expect(cumulatives.standardDeviation).toBe(current.standardDeviation);
       expect(cumulatives.interquartileRange).toBe(current.interquartileRange);
     });
+  });
+});
+
+describe('getMetricUnit', () => {
+  const kg = { style: 'unit', unit: 'kilogram' } as const;
+  it('keeps the dataset unit for measured metrics', () => {
+    expect(getMetricUnit('total', kg)).toBe(kg);
+    expect(getMetricUnit('mean', kg)).toBe(kg);
+  });
+  it('drops the unit for counts and ratios', () => {
+    expect(getMetricUnit('count', kg)).toBeUndefined();
+    expect(getMetricUnit('changePercent', kg)).toBeUndefined();
+    expect(getMetricUnit('variance', kg)).toBeUndefined();
   });
 });

@@ -1,7 +1,7 @@
 import { NumberText } from '@/components/ui/number-text';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Valence } from '@/features/db/localdb';
-import { formatValue, type FormatValueOptions } from '@/lib/friendly-numbers';
+import { formatValue, type FormatValueOptions, type NumberUnit } from '@/lib/friendly-numbers';
 import { getValueForValence } from '@/lib/valence';
 import { cn } from '@/lib/utils';
 
@@ -14,6 +14,7 @@ type MainMetricsChipProps = {
   secondaryMetricFormat?: FormatValueOptions;
   changePercent?: number;
   valence: Valence;
+  unit?: NumberUnit;
 };
 
 export const MainMetricsChip = ({
@@ -25,6 +26,7 @@ export const MainMetricsChip = ({
   secondaryMetricFormat,
   changePercent,
   valence,
+  unit,
 }: MainMetricsChipProps) => {
   const primaryClasses = getValueForValence(primaryValenceMetric, valence, {
     good: 'bg-emerald-200/70 dark:bg-emerald-900/70 text-emerald-700 dark:text-emerald-200',
@@ -52,6 +54,7 @@ export const MainMetricsChip = ({
               value={primaryMetric ?? null}
               valenceValue={primaryValenceMetric}
               valence={valence}
+              unit={unit}
               className="text-lg sm:text-xl font-extrabold"
               short
             />
@@ -60,6 +63,7 @@ export const MainMetricsChip = ({
                 value={secondaryMetric ?? null}
                 valenceValue={secondaryMetric ?? 0}
                 valence={valence}
+                unit={unit}
                 className="font-semibold"
                 short
                 {...secondaryMetricFormat}
@@ -80,6 +84,7 @@ export const MainMetricsChip = ({
                 value={primaryMetric ?? null}
                 valenceValue={primaryValenceMetric}
                 valence={valence}
+                unit={unit}
               />
             </span>
           </div>
@@ -90,6 +95,7 @@ export const MainMetricsChip = ({
                 value={secondaryMetric ?? null}
                 valenceValue={secondaryMetric ?? 0}
                 valence={valence}
+                unit={unit}
                 {...secondaryMetricFormat}
               />
             </span>

@@ -5,9 +5,9 @@ import { TrendSummaryBadge } from '@/features/analysis/TrendSummaryBadge';
 import type { DateKey, Tracking, Valence } from '@/features/db/localdb';
 import { formatPeriodLabel, getAggregationPeriodLabel, getMetricColorForValence, getValenceAdjustedColor, type AggregationType } from '@/lib/analysis';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
-import { getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
+import { getMetricUnit, getMetricValence, METRIC_DISPLAY_INFO, type NumberMetric } from '@/lib/stats';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence, getValueForValenceStrength } from '@/lib/valence';
 import { BarChart3, TrendingUp } from 'lucide-react';
@@ -36,6 +36,7 @@ interface TrendAnalysisChartProps {
   mode: TrendDataMode;
   summaryLabel?: string;
   valence?: Valence;
+  unit?: NumberUnit;
   selectedMetrics?: NumberMetric[];
   datasetId: string;
   priorTimeFrameValue?: number;
@@ -76,6 +77,7 @@ export function TrendAnalysisChart({
   mode,
   summaryLabel,
   valence = 'neutral',
+  unit,
   selectedMetrics = [],
   datasetId,
   priorTimeFrameValue,
@@ -445,13 +447,13 @@ export function TrendAnalysisChart({
                 />
                 <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300">
                   <span className="font-semibold">
-                    <NumberText value={primaryValue} valenceValue={primaryValenceValue} valence={metricValence} delta={primaryShowDelta} />
+                    <NumberText value={primaryValue} valenceValue={primaryValenceValue} valence={metricValence} unit={getMetricUnit(metric, unit)} delta={primaryShowDelta} />
                   </span>
                   <span className="text-slate-600 dark:text-slate-400">
                     {getMetricLabel(metric)}
                   </span>
                   <span>
-                    (<NumberText value={secondaryValue} valenceValue={secondaryValenceValue} valence={metricValence} delta={secondaryShowDelta} className="inline" />)
+                    (<NumberText value={secondaryValue} valenceValue={secondaryValenceValue} valence={metricValence} unit={getMetricUnit(metric, unit)} delta={secondaryShowDelta} className="inline" />)
                   </span>
                 </div>
               </div>
@@ -578,6 +580,7 @@ export function TrendAnalysisChart({
       <TrendSummaryBadge
         primaryMetricLabel={summaryLabel ?? getMetricLabel(primaryMetric)}
         valence={primaryMetricValence}
+        unit={getMetricUnit(primaryMetric, unit)}
         primaryValue={summaryPrimaryValue}
         primaryValenceValue={summaryPrimaryValenceValue}
         primaryDelta={summary?.primaryDelta}

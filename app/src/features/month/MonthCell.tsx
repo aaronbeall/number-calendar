@@ -12,6 +12,7 @@ import { useMemo } from 'react';
 import { useSidePanelParam } from '@/lib/search-params';
 import { useCalendar } from '@/context/useCalendar';
 import { pluralize } from '@/lib/utils';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 interface MonthCellProps {
   year: number;
@@ -24,10 +25,11 @@ interface MonthCellProps {
   yearExtremes?: StatsExtremes;
   yearDailyExtremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
 }
 
-export function MonthCell({ year, month, monthName, data, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, yearDailyExtremes, valence, tracking }: MonthCellProps) {
+export function MonthCell({ year, month, monthName, data, monthDays = [], isCurrentMonth, isFutureMonth = false, yearExtremes, yearDailyExtremes, valence, unit, tracking }: MonthCellProps) {
   const [panelView] = useSidePanelParam();
   const { setDate } = useCalendar();
   const monthKey = toMonthKey(year, month);
@@ -108,6 +110,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
               isLowest={!!isLowestPrimary}
               className="text-2xl md:text-3xl font-bold"
               valence={valence}
+              unit={unit}
               short
             />
             <div className="text-[7px] md:text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -221,6 +224,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
+                unit={unit}
               />
             </div>
             <div className="text-center">
@@ -235,6 +239,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
+                unit={unit}
               />
             </div>
             <div className="text-center">
@@ -249,6 +254,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
+                unit={unit}
               />
             </div>
             <div className="text-center">
@@ -263,6 +269,7 @@ export function MonthCell({ year, month, monthName, data, monthDays = [], isCurr
                 className="font-semibold text-xs md:text-sm"
                 short
                 valence={valence}
+                unit={unit}
               />
             </div>
           </div>

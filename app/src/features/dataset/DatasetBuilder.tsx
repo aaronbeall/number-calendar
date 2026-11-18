@@ -9,7 +9,7 @@ import { getChartData, type NumbersChartDataPoint } from '@/lib/charts';
 import { getColorTheme } from '@/lib/colors';
 import { DATASET_TEMPLATES, type DatasetTemplate } from '@/lib/dataset-builder';
 import { getDatasetIcon } from '@/lib/dataset-icons';
-import { formatRange, formatValue } from '@/lib/friendly-numbers';
+import { formatRange, formatValue, getUnitSymbol, type NumberUnit } from '@/lib/friendly-numbers';
 import { computeNumberStats } from '@/lib/stats';
 import { getPrimaryMetricFromStats, getPrimaryMetricLabel } from '@/lib/tracking';
 import { cn, isNameTaken } from '@/lib/utils';
@@ -219,7 +219,7 @@ export function DatasetBuilder({ onSelectTemplate, onManualMode }: DatasetBuilde
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 {(() => {
-                  const unitsLabel = selectedTemplate.units.length > 0 ? selectedTemplate.units.join(', ') : null;
+                  const unitsLabel = selectedTemplate.units.length > 0 ? selectedTemplate.units.map((unit) => getUnitSymbol(unit)).join(', ') : null;
                   const isTrend = selectedTemplate.tracking === 'trend';
                   const TrackingIcon = getValenceTrackingIcon(selectedTemplate.tracking, selectedTemplate.valence);
                   return (
@@ -254,6 +254,7 @@ export function DatasetBuilder({ onSelectTemplate, onManualMode }: DatasetBuilde
                 period={selectedTemplate.suggestedTarget?.period ?? 'day'}
                 sampleData={selectedTemplate.sampleData}
                 target={selectedTemplate.suggestedTarget}
+                unit={selectedTemplate.defaultUnit ?? undefined}
               />
             </div>
           </div>
@@ -279,7 +280,7 @@ export function DatasetBuilder({ onSelectTemplate, onManualMode }: DatasetBuilde
             {filteredTemplates.map((template) => {
               const Icon = getDatasetIcon(template.icon);
               const { bg: iconBg, text: iconText } = getColorTheme(template.theme);
-              const unitsLabel = template.units.length > 0 ? template.units.join(', ') : null;
+              const unitsLabel = template.units.length > 0 ? template.units.map((unit) => getUnitSymbol(unit)).join(', ') : null;
               const isTrend = template.tracking === 'trend';
               const TrackingIcon = getValenceTrackingIcon(template.tracking, template.valence);
 
@@ -398,11 +399,12 @@ type SampleDataPreviewProps = {
   period: NonNullable<DatasetTemplate['suggestedTarget']>['period'];
   sampleData: DatasetTemplate['sampleData'];
   target?: NonNullable<DatasetTemplate['suggestedTarget']>;
+  unit?: NumberUnit;
 };
 
-function SampleDataPreview({ tracking, valence, period, sampleData, target }: SampleDataPreviewProps) {
+function SampleDataPreview({ tracking, valence, period, sampleData, target, unit }: SampleDataPreviewProps) {
   const label = period === 'day' ? 'Day' : period === 'week' ? 'Week' : 'Month';
-  const formatSignedValue = (value: number) => (value > 0 ? `+${formatValue(value)}` : formatValue(value));
+  const formatSignedValue = (value: number) => formatValue(value, { delta: true, unit });
   const stats = sampleData
     .map((entry) => computeNumberStats(entry))
     .filter((entry): entry is NonNullable<ReturnType<typeof computeNumberStats>> => !!entry);
@@ -422,8 +424,8 @@ function SampleDataPreview({ tracking, valence, period, sampleData, target }: Sa
   const condition = valence === 'neutral' ? target?.condition : undefined
   const targetLabel = condition && (
     'range' in condition 
-    ? formatRange(condition.range) 
-    : formatValue(condition.value)
+    ? formatRange(condition.range, { unit }) 
+    : formatValue(condition.value, { unit })
   );
   const lineColor = getValueForValence(overallChange, valence, {
     good: 'rgb(34 197 94)',
@@ -457,7 +459,7 @@ function SampleDataPreview({ tracking, valence, period, sampleData, target }: Sa
         <div className="mb-1 text-[10px] text-gray-500 dark:text-gray-400">
           {label} {point.x + 1}
         </div>
-        <div className={cn('text-sm font-semibold', valueColor)}>{formatValue(point.value)}</div>
+        <div className={cn('text-sm font-semibold', valueColor)}>{formatValue(point.value, { unit })}</div>
         {deltaValue !== undefined && deltaLabel && (
           <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
             {formatSignedValue(deltaValue)} {deltaLabel.toLowerCase()}
@@ -477,7 +479,7 @@ function SampleDataPreview({ tracking, valence, period, sampleData, target }: Sa
 
     return {
       periodLabel: `${label} ${index + 1}`,
-      valueLabel: formatValue(entry.value),
+      valueLabel: formatValue(entry.value, { unit }),
       deltaLabel: tracking === 'trend' && entry.secondaryValue !== undefined
         ? formatSignedValue(entry.secondaryValue)
         : null,

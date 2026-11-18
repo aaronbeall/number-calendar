@@ -111,14 +111,91 @@ export function convertPeriodLengthWithRounding(value: string, from: PeriodUnit,
   return converted ? String(roundToClean(parseFloat(converted), toSignificantDigits)) : null;
 }
 
-// WIP
+/**
+ * A display unit for numbers. This maps 1:1 onto native `Intl.NumberFormat` styles, so any
+ * currency or unit that Intl supports is valid, and no custom formatting is involved:
+ * - `{ style: 'currency', currency: 'USD' }`: any ISO 4217 currency code
+ * - `{ style: 'unit', unit: 'kilogram' }`: any sanctioned Intl unit identifier (e.g. "hour", "mile-per-hour")
+ *
+ * Units are display-only: they never change the underlying numbers.
+ */
+export type NumberUnit =
+  | { style: 'currency'; currency: string }
+  | { style: 'unit'; unit: string };
+
 export type NumberDisplayOptions = {
-  /** e.g. "USD" for formatting as currency */
-  currency?: string;
-  /** e.g. "kg" for formatting with a unit suffix */
-  unit?: string;
-  /** if true, format negative numbers in accounting style (e.g. ($1,234.56) instead of -$1,234.56) */
-  accounting?: boolean;
+  /** Display unit (e.g. currency or measurement unit). Ignored when formatting as `percent`, since a relative change has no unit. */
+  unit?: NumberUnit;
+};
+
+/**
+ * The Intl.NumberFormat options for a display unit. Units use short labels ("5 kg", "3 hr"), and currencies
+ * use narrow symbols ("$5") with cents shown only when there are any ("$5", "$5.50").
+ */
+function getUnitFormatOptions(unit: NumberUnit): Intl.NumberFormatOptions {
+  return unit.style === 'currency'
+    // `trailingZeroDisplay` is ES2023 (Intl.NumberFormat v3), beyond this project's TS lib target
+    ? { style: 'currency', currency: unit.currency, currencyDisplay: 'narrowSymbol', trailingZeroDisplay: 'stripIfInteger' } as Intl.NumberFormatOptions
+    : { style: 'unit', unit: unit.unit, unitDisplay: 'short' };
+}
+
+/**
+ * All units supported by the runtime's Intl implementation, grouped by style.
+ */
+export function getSupportedUnits(): { currencies: NumberUnit[]; units: NumberUnit[] } {
+  const supportedValuesOf = (key: 'currency' | 'unit'): string[] => {
+    try {
+      return Intl.supportedValuesOf(key);
+    } catch {
+      return [];
+    }
+  };
+  return {
+    currencies: supportedValuesOf('currency').map((currency) => ({ style: 'currency', currency })),
+    units: supportedValuesOf('unit').map((unit) => ({ style: 'unit', unit })),
+  };
+}
+
+/** Whether a unit is supported by Intl (e.g. units from imported data or other runtimes). */
+export function isSupportedUnit(unit: NumberUnit): boolean {
+  try {
+    new Intl.NumberFormat('en-US', getUnitFormatOptions(unit));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Reads a single part (the unit or currency label) out of an Intl formatted value. */
+function getUnitPart(unit: NumberUnit, options: Intl.NumberFormatOptions, value: number): string {
+  try {
+    const parts = new Intl.NumberFormat('en-US', { ...getUnitFormatOptions(unit), ...options }).formatToParts(value);
+    return parts.find((part) => part.type === 'unit' || part.type === 'currency')?.value ?? '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Full name of a unit, from Intl's long display: e.g. "kilograms", "hours", "US dollars"
+ * (or "kilogram", "hour", "US dollar" when `plural` is false).
+ */
+export function getUnitName(unit: NumberUnit, { plural = true }: { plural?: boolean } = {}): string {
+  const options: Intl.NumberFormatOptions = unit.style === 'currency' ? { currencyDisplay: 'name' } : { unitDisplay: 'long' };
+  return getUnitPart(unit, options, plural ? 2 : 1);
+}
+
+/** Short symbol of a unit as it appears in formatted numbers: e.g. "kg", "hr", "$". */
+export function getUnitSymbol(unit: NumberUnit): string {
+  return getUnitPart(unit, {}, 2);
+}
+
+/** Whether two (optional) units are the same. */
+export function isSameUnit(a: NumberUnit | undefined, b: NumberUnit | undefined): boolean {
+  if (!a || !b) return !a && !b;
+  if (a.style === 'currency' && b.style === 'currency') return a.currency === b.currency;
+  if (a.style === 'unit' && b.style === 'unit') return a.unit === b.unit;
+  return false;
 }
 
 export type FormatValueOptions = { 
@@ -163,8 +240,25 @@ export function formatFriendlyNumber(value: number | [number, number], options: 
  * Helper to format numeric values for display in the UI,
  * with options for shortening, percent formatting, and delta formatting (with signs)
  */
-export function formatValue(num: number | undefined, { short = false, percent = false, delta = false, absolute = false, decimals, currency, unit, accounting }: FormatValueOptions & NumberDisplayOptions = {}): string {
+export function formatValue(num: number | undefined, options: FormatValueOptions & NumberDisplayOptions = {}): string {
   if (num === undefined || isNaN(num)) return '';
+  const { value, formatOptions } = getFormat(num, options);
+  return new Intl.NumberFormat('en-US', formatOptions).format(value);
+}
+
+/**
+ * Same as formatValue, but returns the Intl parts so callers can style pieces (e.g. the unit or cents) separately.
+ */
+export function formatValueToParts(num: number | undefined, options: FormatValueOptions & NumberDisplayOptions = {}): Intl.NumberFormatPart[] {
+  if (num === undefined || isNaN(num)) return [];
+  const { value, formatOptions } = getFormat(num, options);
+  return new Intl.NumberFormat('en-US', formatOptions).formatToParts(value);
+}
+
+/**
+ * Builds the Intl.NumberFormat options (and adjusted value) shared by formatValue and formatValueToParts
+ */
+function getFormat(num: number, { short = false, percent = false, delta = false, absolute = false, decimals, unit }: FormatValueOptions & NumberDisplayOptions): { value: number; formatOptions: Intl.NumberFormatOptions } {
   let options: Intl.NumberFormatOptions = {};
   let value = num;
   if (short) {
@@ -185,18 +279,13 @@ export function formatValue(num: number | undefined, { short = false, percent = 
     options = { ...options, signDisplay: 'never' };
     value = Math.abs(value);
   }
-  if (currency) {
-    options = { ...options, style: 'currency', currency, currencyDisplay: 'narrowSymbol' };
-    if (accounting) {
-      options = { ...options, currencySign: 'accounting' };
-    }
-  }
-  if (unit) {
-    options = { ...options, style: 'unit', unit, unitDisplay: 'short' };
+  if (unit && !percent) {
+    options = { ...options, ...getUnitFormatOptions(unit) };
   }
   
   // Handle decimal places
   const decimalOption = decimals ?? options.maximumFractionDigits ?? 2;
+  let maximumFractionDigits: number | undefined;
   if (decimalOption === 'auto') {
     // Don't apply `auto` to short because it will round off decimals based on pre-shortened value (e.g. 1234 -> 1.2K with 1 decimal place, but with `auto` it sees no decimals in the original number and we'd get "1K")
     if (!short) {
@@ -204,30 +293,35 @@ export function formatValue(num: number | undefined, { short = false, percent = 
       const rounded = roundToClean(value, 3);
       const roundedStr = rounded.toString();
       const decimalMatch = roundedStr.match(/\.(\d+)/);
-      const maxFractionDigits = decimalMatch ? decimalMatch[1].length : 0;
-      options = { ...options, maximumFractionDigits: maxFractionDigits };
+      maximumFractionDigits = decimalMatch ? decimalMatch[1].length : 0;
     }
   } else {
-    options = { ...options, maximumFractionDigits: decimalOption };
+    maximumFractionDigits = decimalOption;
+  }
+  // Currencies keep their native minor units (e.g. "$5.50", never "$5.5") unless rounding to whole amounts
+  const keepCurrencyDigits = options.style === 'currency' && !short && maximumFractionDigits !== 0;
+  if (maximumFractionDigits !== undefined && !keepCurrencyDigits) {
+    options = { ...options, maximumFractionDigits };
   }
   
-  return new Intl.NumberFormat('en-US', options).format(value);
+  return { value, formatOptions: options };
 }
 
 /**
  * Helper to format ranges for display, using formatValue for each number and handling percent/delta formatting
  */
-export function formatRange(range: [number | undefined, number | undefined] | undefined, { short, percent, delta, absolute }: FormatValueOptions = {}): string {
+export function formatRange(range: [number | undefined, number | undefined] | undefined, { short, percent, delta, absolute, decimals, unit }: FormatValueOptions & NumberDisplayOptions = {}): string {
   if (!range) return '';
   const [min, max] = range;
   // For deltas or ranges with negatives use `→` to avoid confusion with minus sign, 
   // otherwise en dash (e.g. `5–10`)
   const separator = delta || (!min || !max || min < 0 || max < 0) ? '→' : '–';
-  // For percents, omit the leading % symbol if using en dash, for brevity (e.g. `5–10%` instead of `5%–10%`))
-  const options = { short, percent, delta, absolute };
-  const minOptions = percent && separator === '–' ? { short, delta, absolute } : options;
+  // For percents and suffix units, omit the leading symbol if using en dash, for brevity
+  // (e.g. `5–10%` instead of `5%–10%`, `5–10 kg` instead of `5 kg–10 kg`). Currency prefixes are kept (`$5–$10`).
+  const options = { short, percent, delta, absolute, decimals, unit };
+  const omitMinSymbol = separator === '–' && (percent || unit?.style === 'unit');
+  const minOptions = omitMinSymbol ? { ...options, percent: false, unit: undefined } : options;
   const minStr = formatValue(min, minOptions);
   const maxStr = formatValue(max, options);
   return `${minStr}${separator}${maxStr}`;
 }
-

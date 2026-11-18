@@ -6,7 +6,7 @@ import {
 } from '@/lib/analysis';
 import { getNormalizedMagnitude } from '@/lib/charts';
 import { formatFriendlyDate, type DateKeyType } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric, getPrimaryMetricLabel } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
@@ -30,6 +30,7 @@ interface MomentumQuadrantChartProps {
   tracking: Tracking;
   aggregationType: AggregationType;
   valence: Valence;
+  unit?: NumberUnit;
 }
 
 // Sizing and opacity constants for customization
@@ -43,6 +44,7 @@ export function MomentumQuadrantChart({
   tracking,
   aggregationType,
   valence,
+  unit,
 }: MomentumQuadrantChartProps) {
   const { isDark } = useTheme();
   const primaryMetric = getPrimaryMetric(tracking);
@@ -106,13 +108,13 @@ export function MomentumQuadrantChart({
             {primaryMetricLabel}
           </span>
           <span className="font-semibold">
-            <NumberText value={point.level} valenceValue={point.level} valence={valence} delta={tracking === 'trend'} />
+            <NumberText value={point.level} valenceValue={point.level} valence={valence} unit={unit} delta={tracking === 'trend'} />
           </span>
         </div>
         <div className="flex items-center justify-between gap-3 text-sm">
           <span className="text-slate-600 dark:text-slate-400">Change</span>
           <span className="font-semibold">
-            <NumberText value={point.momentum} valenceValue={point.momentum} valence={valence} delta={true} />
+            <NumberText value={point.momentum} valenceValue={point.momentum} valence={valence} unit={unit} delta={true} />
           </span>
         </div>
       </div>

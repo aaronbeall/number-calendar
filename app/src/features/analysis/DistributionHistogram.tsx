@@ -1,7 +1,7 @@
 import { useTheme } from '@/components/ThemeProvider';
 import type { Tracking, Valence } from '@/features/db/localdb';
 import type { DateKeyType } from '@/lib/friendly-date';
-import { formatValue } from '@/lib/friendly-numbers';
+import { formatRange, formatValue, type NumberUnit } from '@/lib/friendly-numbers';
 import type { PeriodAggregateData } from '@/lib/period-aggregate';
 import { getPrimaryMetric, getValenceSource } from '@/lib/tracking';
 import { getValueForValence } from '@/lib/valence';
@@ -20,6 +20,7 @@ interface DistributionHistogramProps {
   periods: PeriodAggregateData<DateKeyType>[];
   tracking: Tracking;
   valence?: Valence;
+  unit?: NumberUnit;
 }
 
 interface HistogramBucket {
@@ -36,6 +37,7 @@ export function DistributionHistogram({
   periods,
   tracking,
   valence = 'neutral',
+  unit,
 }: DistributionHistogramProps) {
   const { isDark } = useTheme();
 
@@ -154,7 +156,7 @@ export function DistributionHistogram({
     return (
       <div className="rounded-md bg-white dark:bg-slate-900 px-2 py-1 shadow-lg dark:shadow-xl border border-gray-200 dark:border-slate-700">
         <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-          {formatValue(bin.rangeMin)} – {formatValue(bin.rangeMax)}
+          {formatRange([bin.rangeMin, bin.rangeMax], { unit })}
         </div>
         <div className="space-y-0.5">
           {bin.positiveCount > 0 && (

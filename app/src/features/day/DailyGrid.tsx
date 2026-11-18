@@ -1,5 +1,3 @@
-
-
 import type { DateKey, DayKey, Tracking, Valence, WeekKey } from '@/features/db/localdb';
 import { dateToWeekKey, formatDateAsKey } from '@/lib/friendly-date';
 import type { CompletedAchievementResult } from '@/lib/goals';
@@ -9,6 +7,7 @@ import { useCallback, useMemo, memo } from 'react';
 import { Fragment } from 'react/jsx-runtime';
 import { WeekSummary } from '../stats/WeekSummary';
 import { DayCell } from './DayCell';
+import type { NumberUnit } from '@/lib/friendly-numbers';
 
 interface DailyGridProps {
   year: number;
@@ -19,6 +18,7 @@ interface DailyGridProps {
   showWeekends?: boolean;
   monthExtremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   onSaveDay: (date: DayKey, numbers: number[]) => void;
   achievementResultsByDateKey: Record<DateKey, CompletedAchievementResult[]>;
@@ -46,6 +46,7 @@ interface DayCellWrapperProps {
   dayData: { date: Date; data: PeriodAggregateData<'day'>; priorData?: PeriodAggregateData<'day'> };
   monthExtremes?: StatsExtremes;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   onSaveDay: (date: DayKey, numbers: number[]) => void;
   achievementResults: CompletedAchievementResult[];
@@ -56,6 +57,7 @@ const DayCellWrapper = memo(({
   dayData,
   monthExtremes,
   valence,
+  unit,
   tracking,
   onSaveDay,
   achievementResults,
@@ -74,6 +76,7 @@ const DayCellWrapper = memo(({
         onSave={handleSave}
         monthExtremes={monthExtremes}
         valence={valence}
+        unit={unit}
         tracking={tracking}
         achievementResults={achievementResults}
       />
@@ -89,6 +92,7 @@ interface WeekSummaryWrapperProps {
   weekNumber: number;
   isCurrentWeek: boolean;
   valence: Valence;
+  unit?: NumberUnit;
   tracking: Tracking;
   weekDateKey: WeekKey;
   achievementResults: CompletedAchievementResult[];
@@ -102,6 +106,7 @@ const WeekSummaryWrapper = memo(({
   weekNumber,
   isCurrentWeek,
   valence,
+  unit,
   tracking,
   weekDateKey,
   achievementResults,
@@ -115,6 +120,7 @@ const WeekSummaryWrapper = memo(({
       weekNumber={weekNumber}
       isCurrentWeek={isCurrentWeek}
       valence={valence}
+      unit={unit}
       tracking={tracking}
       dateKey={weekDateKey}
       achievementResults={achievementResults}
@@ -133,6 +139,7 @@ export const DailyGrid = memo(({
   showWeekends = true,
   monthExtremes,
   valence,
+  unit,
   tracking,
   onSaveDay,
   achievementResultsByDateKey,
@@ -248,6 +255,7 @@ export const DailyGrid = memo(({
                   dayData={dayData}
                   monthExtremes={monthExtremes}
                   valence={valence}
+                  unit={unit}
                   tracking={tracking}
                   onSaveDay={handleSaveDay}
                   achievementResults={achievementResultsByDateKey[key] ?? []}
@@ -264,6 +272,7 @@ export const DailyGrid = memo(({
                 weekNumber={week.weekNumber}
                 isCurrentWeek={week.isCurrentWeek}
                 valence={valence}
+                unit={unit}
                 tracking={tracking}
                 weekDateKey={week.weekDateKey}
                 achievementResults={achievementResultsByDateKey[week.weekDateKey] ?? []}
