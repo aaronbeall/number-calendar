@@ -69,7 +69,7 @@ export function GoalBuilderDialog({ open, onOpenChange, dataset, templateId, onC
     const periods = period ? pluralize(period) : 'periods';
     const parent = period === 'day' ? 'week' : period === 'week' ? 'month' : period === 'month' ? 'year' : 'period';
     // Name the dataset's unit, or the template's default unit when none is chosen (e.g. "pounds")
-    const namedUnit = dataset.unit ?? template?.units[0];
+    const namedUnit = dataset.unit ?? template?.defaultUnit ?? template?.units[0];
     const unit = namedUnit ? getUnitName(namedUnit, { plural: false }) : 'unit';
     const units = namedUnit ? getUnitName(namedUnit) : 'units';
     return { period: selectedPeriod, periodly, periods, parent, unit, units };

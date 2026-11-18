@@ -11,10 +11,16 @@ export type DatasetTemplate = {
   icon: DatasetIconName;
   theme: ColorThemeName;
   /**
-   * Suggested display units for this kind of data, most common first (the first is applied by default).
-   * Only units supported by Intl.NumberFormat can be used, so data like steps or calories has none.
+   * Suggested display units for this kind of data, most common first. These are offered in the goal builder's unit toggle.
+   * Only units supported by Intl.NumberFormat can be used, so counts, scores and units Intl can't format
+   * (steps, sessions, mood, calories, mmHg, mg) have none.
    */
   units: NumberUnit[];
+  /**
+   * The display unit applied when a dataset is created from this template: one of `units`,
+   * or `null` when the numbers are best shown without a unit.
+   */
+  defaultUnit: NumberUnit | null;
   tracking: Tracking;
   valence: Valence;
   sampleData: number[][];
@@ -102,6 +108,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'dollar',
     theme: 'emerald',
     units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
+    defaultUnit: { style: 'currency', currency: 'USD' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -176,6 +183,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'wallet',
     theme: 'blue',
     units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
+    defaultUnit: { style: 'currency', currency: 'USD' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -250,6 +258,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'cart',
     theme: 'red',
     units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
+    defaultUnit: { style: 'currency', currency: 'USD' },
     tracking: 'series',
     valence: 'negative',
     sampleData: [
@@ -324,6 +333,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'activity',
     theme: 'rose',
     units: [{ style: 'unit', unit: 'pound' }, { style: 'unit', unit: 'kilogram' }, { style: 'unit', unit: 'stone' }],
+    defaultUnit: { style: 'unit', unit: 'pound' },
     tracking: 'trend',
     valence: 'negative',
     sampleData: [
@@ -401,6 +411,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'dumbbell',
     theme: 'amber',
     units: [{ style: 'unit', unit: 'pound' }, { style: 'unit', unit: 'kilogram' }, { style: 'unit', unit: 'stone' }],
+    defaultUnit: { style: 'unit', unit: 'pound' },
     tracking: 'trend',
     valence: 'positive',
     sampleData: [
@@ -478,6 +489,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'heart',
     theme: 'red',
     units: [],
+    defaultUnit: null,
     tracking: 'trend',
     valence: 'neutral',
     sampleData: [
@@ -558,6 +570,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'dumbbell',
     theme: 'emerald',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -630,6 +643,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'footprints',
     theme: 'sky',
     units: [],
+    defaultUnit: null,
     tracking: 'series',
     valence: 'neutral',
     sampleData: [
@@ -702,6 +716,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'moon',
     theme: 'indigo',
     units: [{ style: 'unit', unit: 'hour' }, { style: 'unit', unit: 'minute' }],
+    defaultUnit: { style: 'unit', unit: 'hour' },
     tracking: 'trend',
     valence: 'positive',
     sampleData: [
@@ -778,6 +793,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'droplet',
     theme: 'blue',
     units: [{ style: 'unit', unit: 'fluid-ounce' }, { style: 'unit', unit: 'liter' }, { style: 'unit', unit: 'milliliter' }],
+    defaultUnit: { style: 'unit', unit: 'fluid-ounce' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -850,6 +866,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'apple',
     theme: 'orange',
     units: [],
+    defaultUnit: null,
     tracking: 'series',
     valence: 'neutral',
     sampleData: [
@@ -913,6 +930,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'smile',
     theme: 'pink',
     units: [],
+    defaultUnit: null,
     tracking: 'trend',
     valence: 'positive',
     sampleData: [
@@ -988,6 +1006,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'book',
     theme: 'purple',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1059,6 +1078,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'code',
     theme: 'cyan',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1130,6 +1150,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'palette',
     theme: 'teal',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1201,6 +1222,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'book',
     theme: 'amber',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1271,7 +1293,8 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     searchTerms: ['meditation', 'mindfulness', 'breathing', 'calm', 'focus'],
     icon: 'sparkle',
     theme: 'indigo',
-    units: [{ style: 'unit', unit: 'minute' }],
+    units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1344,6 +1367,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'heart',
     theme: 'rose',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1415,6 +1439,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'book',
     theme: 'amber',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1486,6 +1511,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'activity',
     theme: 'emerald',
     units: [],
+    defaultUnit: null,
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1557,6 +1583,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'smile',
     theme: 'pink',
     units: [],
+    defaultUnit: null,
     tracking: 'trend',
     valence: 'neutral',
     sampleData: [
@@ -1632,6 +1659,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'code',
     theme: 'sky',
     units: [{ style: 'unit', unit: 'minute' }, { style: 'unit', unit: 'hour' }],
+    defaultUnit: { style: 'unit', unit: 'minute' },
     tracking: 'series',
     valence: 'negative',
     sampleData: [
@@ -1704,6 +1732,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'apple',
     theme: 'orange',
     units: [],
+    defaultUnit: null,
     tracking: 'series',
     valence: 'neutral',
     sampleData: [
@@ -1776,6 +1805,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'footprints',
     theme: 'emerald',
     units: [{ style: 'unit', unit: 'mile' }, { style: 'unit', unit: 'kilometer' }],
+    defaultUnit: { style: 'unit', unit: 'mile' },
     tracking: 'series',
     valence: 'positive',
     sampleData: [
@@ -1847,6 +1877,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'wallet',
     theme: 'emerald',
     units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
+    defaultUnit: { style: 'currency', currency: 'USD' },
     tracking: 'trend',
     valence: 'positive',
     sampleData: [
@@ -1922,6 +1953,7 @@ export const DATASET_TEMPLATES: DatasetTemplate[] = [
     icon: 'wallet',
     theme: 'red',
     units: [{ style: 'currency', currency: 'USD' }, { style: 'currency', currency: 'EUR' }, { style: 'currency', currency: 'GBP' }],
+    defaultUnit: { style: 'currency', currency: 'USD' },
     tracking: 'trend',
     valence: 'negative',
     sampleData: [

@@ -254,7 +254,7 @@ export function DatasetBuilder({ onSelectTemplate, onManualMode }: DatasetBuilde
                 period={selectedTemplate.suggestedTarget?.period ?? 'day'}
                 sampleData={selectedTemplate.sampleData}
                 target={selectedTemplate.suggestedTarget}
-                unit={selectedTemplate.units[0]}
+                unit={selectedTemplate.defaultUnit ?? undefined}
               />
             </div>
           </div>

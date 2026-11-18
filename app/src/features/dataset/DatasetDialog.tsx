@@ -132,7 +132,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       icon: template.icon,
       tracking: template.tracking,
       valence: template.valence,
-      unit: template.units[0],
+      unit: template.defaultUnit ?? undefined,
       createdAt: now,
       updatedAt: now,
     };
