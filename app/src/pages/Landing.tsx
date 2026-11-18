@@ -1,6 +1,6 @@
 import { AppFooter } from '@/App';
 import { ThemeToggle, UserMenu } from '@/AppHeader';
-import LogoIcon from '@/assets/logo.png';
+import { BrandMark, BrandWordmark } from '@/components/brand/Brand';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
@@ -103,14 +103,13 @@ function DatasetsLanding({
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Logo and Brand */}
             <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-              <img
-                src={LogoIcon}
-                alt="Numbers Go Up"
+              <BrandMark
+                title="Numbers Go Up"
                 className="w-8 sm:w-10 h-8 sm:h-10 flex-shrink-0 transition-transform hover:scale-105"
               />
               <div className="min-w-0">
-                <h1 className="text-lg sm:text-2xl font-semibold tracking-tight text-blue-700 dark:text-blue-300 truncate" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
-                  Numbers Go Up
+                <h1 className="text-xl sm:text-2xl leading-tight truncate">
+                  <BrandWordmark />
                 </h1>
                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">
                   A calendar for numberphiles

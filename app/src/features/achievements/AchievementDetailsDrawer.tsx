@@ -168,7 +168,7 @@ export function AchievementDetailsDrawer({ open, onOpenChange, result, onEditGoa
         : inProgress || currentProgress > 0
           ? `I'm working on ${period} goal in Numbers Go Up!`
           : `I just set $${period} goal in Numbers Go Up!`;
-      const shareUrl = 'https://numbers.metamodernmonkey.com';
+      const shareUrl = 'https://numbersgoup.app';
 
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({

@@ -1,6 +1,13 @@
-# Numbers Go Up
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="app/art/brand/lockup-dark.png">
+    <img src="app/art/brand/lockup-light.png" alt="Numbers Go Up: a calendar for numberphiles" width="560">
+  </picture>
+</p>
 
-> "A Calendar for numberphiles"
+<p align="center"><a href="https://numbersgoup.app">numbersgoup.app</a></p>
+
+# Numbers Go Up
 
 A calendar app for showing numbers (P&amp;L, etc) with aggregations, visualizations, and customizable achievement system.
 
@@ -28,3 +35,14 @@ A calendar app for showing numbers (P&amp;L, etc) with aggregations, visualizati
 
 <img width="376" height="953" alt="image" src="https://github.com/user-attachments/assets/604fa1da-a36a-4452-9bc8-702fb5550053" />
 
+## Brand
+
+The logo is a red down arrow and a green up arrow joined into an "N". Source art is in [`app/art/brand/`](app/art/brand/) (the original sheet is `app/art/branding-new.jpeg`), and the app draws it with `BrandMark` and `BrandWordmark` in `app/src/components/brand/Brand.tsx`.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| Navy | `#28323b` | Wordmark, app icon tile, dark surfaces |
+| Red | `#d42627` / fold `#a11f23` | Down arrow |
+| Green | `#397c47` / fold `#40a160` | Up arrow |
+| Paper | `#f1f0ec` | Light brand backgrounds |
+| Font | [Figtree](https://fonts.google.com/specimen/Figtree) ExtraBold | Lowercase "numbers go up" wordmark and display headings |
