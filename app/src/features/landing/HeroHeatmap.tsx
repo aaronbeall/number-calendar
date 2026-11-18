@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 
 const COLS = 56;
 const ROWS = 22;
@@ -21,6 +21,11 @@ type Cell = { x: number; y: number; tone: 'good' | 'bad' | 'empty'; strength: nu
  * right you go the greener it gets: the numbers go up. Masked so the headline stays clear.
  */
 export function HeroHeatmap() {
+  // Only draw the columns that fit on screen. Every cell is animated, so on a phone this cuts the
+  // work to about a quarter and keeps the main thread free while the page loads.
+  const [visibleCols] = useState(() =>
+    Math.min(COLS, Math.ceil((typeof window === 'undefined' ? Infinity : window.innerWidth) / STEP) + 2)
+  );
   const cells = useMemo(() => {
     const r = rng(7);
     const out: Cell[] = [];
@@ -35,8 +40,13 @@ export function HeroHeatmap() {
         out.push({ x: c * STEP, y: row * STEP, tone, strength: Math.min(strength, 1), delay: (c * 0.9 + row * 0.6) * 28 });
       }
     }
-    return out;
-  }, []);
+    // Keep the middle columns, and start the wave at the first one that's drawn.
+    const first = Math.floor((COLS - visibleCols) / 2);
+    const startDelay = first * 0.9 * 28;
+    return out
+      .filter(cell => cell.x >= first * STEP && cell.x < (first + visibleCols) * STEP)
+      .map(cell => ({ ...cell, x: cell.x - first * STEP, delay: cell.delay - startDelay }));
+  }, [visibleCols]);
 
   return (
     <div
@@ -60,7 +70,7 @@ export function HeroHeatmap() {
         @media (prefers-reduced-motion: reduce) { .hero-heatmap-cell { animation: none; } }
       `}</style>
       <svg
-        width={COLS * STEP}
+        width={visibleCols * STEP}
         height={ROWS * STEP}
         className="absolute left-1/2 -translate-x-1/2 -top-2 opacity-40 sm:opacity-60 dark:opacity-45 sm:dark:opacity-60"
       >

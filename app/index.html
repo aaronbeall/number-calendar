@@ -1,57 +1,150 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- SEO Meta Tags -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Apply the saved theme before first paint so dark-mode visitors don't see a white flash -->
+    <script>
+      try {
+        var t = localStorage.getItem('theme');
+        if (t === 'dark' || ((!t || t === 'system') && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {}
+    </script>
+
+    <!-- SEO -->
     <title>Numbers Go Up - A calendar for numbers that knows good from bad</title>
     <meta name="description" content="A free calendar for any daily number: P&amp;L, weight, steps, sleep and more. Type entries as math, get week, month and year stats, and see at a glance which days were good, whether good means higher, lower, above zero or inside a range. No account needed." />
     <meta name="keywords" content="number calendar, daily P&amp;L calendar, weight tracker, step tracker, spreadsheet alternative, number tracking, personal analytics, goal tracking" />
     <meta name="author" content="Meta Modern Monkey" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="https://numbersgoup.app/" />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+
+    <!-- Icons -->
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- PWA -->
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="application-name" content="Numbers Go Up" />
     <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff" />
     <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#28323b" />
-    
+    <meta name="color-scheme" content="light dark" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Numbers Go Up" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
+
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://numbersgoup.app" />
+    <meta property="og:url" content="https://numbersgoup.app/" />
+    <meta property="og:site_name" content="Numbers Go Up" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content="Numbers Go Up - A calendar for numbers that knows good from bad" />
     <meta property="og:description" content="A free calendar for any daily number that knows what a good day looks like: higher, lower, above zero or in range. Track P&amp;L, weight, steps and more with automatic week, month and year stats." />
-    <meta property="og:site_name" content="Numbers Go Up" />
     <meta property="og:image" content="https://numbersgoup.app/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Numbers Go Up logo next to a month calendar of green and red days" />
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://numbersgoup.app" />
-    <meta property="twitter:title" content="Numbers Go Up - A calendar for numbers that knows good from bad" />
-    <meta property="twitter:description" content="A free calendar for any daily number that knows what a good day looks like: higher, lower, above zero or in range. Track P&amp;L, weight, steps and more with automatic week, month and year stats." />
-    <meta property="twitter:image" content="https://numbersgoup.app/og-image.jpg" />
-    
-    <!-- Canonical URL -->
-    <link rel="canonical" href="https://numbersgoup.app" />
-    
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://numbersgoup.app/" />
+    <meta name="twitter:title" content="Numbers Go Up - A calendar for numbers that knows good from bad" />
+    <meta name="twitter:description" content="A free calendar for any daily number that knows what a good day looks like: higher, lower, above zero or in range. Track P&amp;L, weight, steps and more with automatic week, month and year stats." />
+    <meta name="twitter:image" content="https://numbersgoup.app/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Numbers Go Up logo next to a month calendar of green and red days" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://metamodernmonkey.com/#organization",
+            "name": "Meta Modern Monkey",
+            "url": "https://metamodernmonkey.com",
+            "email": "support@metamodernmonkey.com",
+            "sameAs": [
+              "https://patreon.com/metamodernmonkey",
+              "https://buymeacoffee.com/metamodernmonkey"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://numbersgoup.app/#website",
+            "url": "https://numbersgoup.app/",
+            "name": "Numbers Go Up",
+            "description": "A calendar for numbers that knows good from bad.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://metamodernmonkey.com/#organization" }
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://numbersgoup.app/#app",
+            "name": "Numbers Go Up",
+            "url": "https://numbersgoup.app/",
+            "description": "A free calendar for any daily number: P&L, weight, steps, sleep and more. Type entries as math, get week, month and year stats, and see at a glance which days were good, whether good means higher, lower, above zero or inside a range.",
+            "applicationCategory": "UtilitiesApplication",
+            "applicationSubCategory": "Number tracking",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript. Works offline once loaded and can be installed as an app.",
+            "isAccessibleForFree": true,
+            "inLanguage": "en",
+            "image": "https://numbersgoup.app/icon-512.png",
+            "screenshot": "https://numbersgoup.app/og-image.jpg",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "featureList": [
+              "Calendar of daily numbers with green and red good and bad days",
+              "Enter numbers as math expressions like 1+5-24",
+              "Week, month and year totals, averages, min, max and median",
+              "Good can mean higher, lower, above zero or inside a range",
+              "Targets, milestones, records and achievements",
+              "Trend, projection, momentum and deviation charts",
+              "CSV and JSON import and export",
+              "No account: data stays on your device",
+              "Works offline and installs as an app"
+            ],
+            "author": { "@id": "https://metamodernmonkey.com/#organization" },
+            "publisher": { "@id": "https://metamodernmonkey.com/#organization" },
+            "isPartOf": { "@id": "https://numbersgoup.app/#website" }
+          }
+        ]
+      }
+    </script>
+
+    <!-- Fonts: loaded without blocking first paint (text uses fallbacks until Figtree arrives) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  </head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-G6TVJLHVMJ"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@500;600;700;800&display=swap" /></noscript>
 
-    gtag('config', 'G-G6TVJLHVMJ');
-  </script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-G6TVJLHVMJ"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-G6TVJLHVMJ');
+    </script>
+  </head>
   <body class="bg-white dark:bg-slate-900/80">
     <div id="root"></div>
+    <noscript>
+      <main style="max-width:40rem;margin:4rem auto;padding:0 1rem;font-family:system-ui,sans-serif;line-height:1.5">
+        <h1>Numbers Go Up: a calendar for numbers that knows good from bad</h1>
+        <p>Numbers Go Up is a free calendar for any daily number: P&amp;L, weight, steps, sleep and more. Type entries as math, get week, month and year stats, and see at a glance which days were good, whether good means higher, lower, above zero or inside a range. No account needed, your data stays on your device, and it works offline.</p>
+        <p>Numbers Go Up needs JavaScript to run. Please enable it and reload the page.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -2,13 +2,16 @@ import { AppFooter } from '@/App';
 import { ThemeToggle, UserMenu } from '@/AppHeader';
 import { BrandMark, BrandWordmark } from '@/components/brand/Brand';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DatasetCard } from '@/features/dashboard/DatasetCard';
 import type { Dataset } from '@/features/db/localdb';
 import { usePreference } from '@/hooks/usePreference';
 import { Home, Plus, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { IntroLanding } from './IntroLanding';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Dataset cards draw charts; loading them separately keeps the chart library out of the homepage bundle.
+const DatasetCard = lazy(() => import('@/features/dashboard/DatasetCard').then(m => ({ default: m.DatasetCard })));
 
 export function Landing({ 
   datasets, 
@@ -198,17 +201,18 @@ function DatasetsLanding({
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredDatasets.map(ds => (
-            <DatasetCard
-              key={ds.id} 
-              dataset={ds} 
-              year={year} 
-              month={month} 
-              onSelect={onSelectDataset}
-              onOpenEdit={onOpenEdit}
-              onOpenImport={onOpenImport}
-              onOpenExport={onOpenExport}
-              onDuplicateDataset={onDuplicateDataset}
-            />
+            <Suspense key={ds.id} fallback={<Skeleton className="min-h-[300px] rounded-2xl" />}>
+              <DatasetCard
+                dataset={ds} 
+                year={year} 
+                month={month} 
+                onSelect={onSelectDataset}
+                onOpenEdit={onOpenEdit}
+                onOpenImport={onOpenImport}
+                onOpenExport={onOpenExport}
+                onDuplicateDataset={onDuplicateDataset}
+              />
+            </Suspense>
           ))}
           
           {/* Add New Dataset Card */}

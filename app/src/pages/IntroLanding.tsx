@@ -21,12 +21,14 @@ import {
   TrendingDown,
   TrendingUp,
   Trophy,
+  WifiOff,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { GoodRules } from '@/features/landing/GoodRules';
 import { HeroHeatmap } from '@/features/landing/HeroHeatmap';
 import { TemplateStrip } from '@/features/landing/TemplateStrip';
+import { useInstallApp } from '@/features/pwa/useInstallApp';
 
 // Screenshots captured from the real app with sample data, in light and dark variants.
 // See scripts/landing-screenshots to regenerate them.
@@ -85,7 +87,7 @@ function BrowserFrame({ children, className }: { children: ReactNode; className?
         <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
         <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
         <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-        <span className="ml-3 hidden sm:block text-[11px] text-slate-400 dark:text-slate-500 truncate">numbersgoup.app</span>
+        <span className="ml-3 hidden sm:block text-[11px] text-slate-500 dark:text-slate-400 truncate">numbersgoup.app</span>
       </div>
       {children}
     </div>
@@ -147,7 +149,7 @@ function ExpressionDemo() {
           <button
             key={ex}
             onClick={() => setExpr(ex)}
-            className="px-2 py-1 rounded-md font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+            className="px-2 py-1 rounded-md font-mono text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
             {ex}
           </button>
@@ -159,7 +161,7 @@ function ExpressionDemo() {
             key={`${i}-${n}`}
             className={cn(
               'px-2.5 py-1 rounded-full font-mono text-sm font-semibold text-white',
-              n > 0 ? 'bg-emerald-600' : n < 0 ? 'bg-red-600' : 'bg-slate-500'
+              n > 0 ? 'bg-emerald-700' : n < 0 ? 'bg-red-600' : 'bg-slate-500'
             )}
           >
             {fmt(n)}
@@ -202,13 +204,14 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
     searchParams.delete('intro');
     setSearchParams(searchParams);
   };
+  const installApp = useInstallApp();
   const ctaLabel = hasExistingData ? 'Create a new calendar' : 'Start tracking free';
 
   const primaryCta = (className?: string) => (
     <button
       onClick={onOpenCreate}
       className={cn(
-        'group inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-emerald-950 font-semibold px-6 py-3.5 shadow-lg shadow-emerald-600/25 transition-colors cursor-pointer',
+        'group inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-emerald-950 font-semibold px-6 py-3.5 shadow-lg shadow-emerald-600/25 transition-colors cursor-pointer',
         className
       )}
     >
@@ -449,7 +452,18 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
               <li className="inline-flex items-center justify-center gap-2"><Check className="w-4 h-4 text-emerald-400" />Free, no limits</li>
               <li className="inline-flex items-center justify-center gap-2"><Lock className="w-4 h-4 text-emerald-400" />No account, data stays in your browser</li>
               <li className="inline-flex items-center justify-center gap-2"><Download className="w-4 h-4 text-emerald-400" />CSV and JSON import and export</li>
+              <li className="inline-flex items-center justify-center gap-2">
+                <WifiOff className="w-4 h-4 text-emerald-400" />
+                {installApp.canInstall ? (
+                  <button onClick={installApp.install} className="underline underline-offset-4 decoration-slate-500 hover:text-white cursor-pointer">
+                    Works offline, install it as an app
+                  </button>
+                ) : (
+                  'Works offline, install it as an app'
+                )}
+              </li>
             </ul>
+            {installApp.dialog}
           </div>
         </section>
       </main>

@@ -4,7 +4,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Share2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import {
   Navigate,
   Route,
@@ -18,24 +18,37 @@ import { ErrorState } from './components/PageStates';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
 import { DatasetProvider } from './context/DatasetContext';
-import DatasetDialog from './features/dataset/DatasetDialog';
-import DuplicateDialog from './features/dataset/DuplicateDialog';
-import ExportDialog from './features/dataset/ExportDialog';
-import ImportDialog from './features/dataset/ImportDialog';
 import type { Dataset } from './features/db/localdb';
 import { useDataset, useDatasets } from './features/db/useDatasetData';
 import { useAchievements } from './hooks/useAchievements';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getCompletedAchievementsByDateKey } from './lib/goals';
-import Achievements from './pages/Achievements';
-import Analysis from './pages/Analysis';
-import { Calendar } from './pages/Calendar';
 import { Landing } from './pages/Landing';
-import Milestones from './pages/Milestones';
-import Records from './pages/Records';
-import Targets from './pages/Targets';
-import { Timeline } from './pages/Timeline';
-import TestError from './pages/TestError';
+import { PwaPrompts } from './features/pwa/PwaPrompts';
+import { RouteHead } from './features/seo/RouteHead';
+
+// The homepage loads eagerly; every app page is split into its own chunk so first visits stay light.
+// The service worker precaches all chunks, so they are still available offline.
+const Achievements = lazy(() => import('./pages/Achievements'));
+const Analysis = lazy(() => import('./pages/Analysis'));
+const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
+const Milestones = lazy(() => import('./pages/Milestones'));
+const Records = lazy(() => import('./pages/Records'));
+const Targets = lazy(() => import('./pages/Targets'));
+const Timeline = lazy(() => import('./pages/Timeline').then(m => ({ default: m.Timeline })));
+const TestError = lazy(() => import('./pages/TestError'));
+const DatasetDialog = lazy(() => import('./features/dataset/DatasetDialog'));
+const DuplicateDialog = lazy(() => import('./features/dataset/DuplicateDialog'));
+const ExportDialog = lazy(() => import('./features/dataset/ExportDialog'));
+const ImportDialog = lazy(() => import('./features/dataset/ImportDialog'));
+
+function PageFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center py-24">
+      <Spinner />
+    </div>
+  );
+}
 
 
 function App() {
@@ -44,10 +57,12 @@ function App() {
     <TooltipProvider delayDuration={300}>
       <ErrorBoundary>
         <Router basename={basename}>
+          <RouteHead />
           <AppLayout />
         </Router>
       </ErrorBoundary>
       <Toaster/>
+      <PwaPrompts />
     </TooltipProvider>
   );
 }
@@ -97,38 +112,41 @@ function AppLayout() {
   return (
     <>
       <ErrorBoundary>
-        <Routes>
-          <Route index element={
-            <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
-              <Landing
+        <Suspense fallback={<PageFallback />}>
+          <Routes>
+            <Route index element={
+              <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+                <Landing
+                  datasets={datasets}
+                  onSelectDataset={id => navigate(`/dataset/${id}`)}
+                  onOpenCreate={handleOpenCreate}
+                  onOpenEdit={handleOpenEdit}
+                  onOpenImport={handleOpenImport}
+                  onOpenExport={(datasetId) => handleOpenExport(datasetId)}
+                  onDuplicateDataset={handleOpenDuplicate}
+                />
+              </div>
+            } />
+            <Route path="milestones" element={<Milestones />} />
+            <Route path="targets" element={<Targets />} />
+            <Route path="achievements" element={<Achievements />} />
+            <Route path="test-error" element={<TestError />} />
+            <Route path="dataset/:datasetId/*" element={
+              <DatasetLayout
                 datasets={datasets}
-                onSelectDataset={id => navigate(`/dataset/${id}`)}
                 onOpenCreate={handleOpenCreate}
                 onOpenEdit={handleOpenEdit}
                 onOpenImport={handleOpenImport}
-                onOpenExport={(datasetId) => handleOpenExport(datasetId)}
-                onDuplicateDataset={handleOpenDuplicate}
+                onOpenExport={handleOpenExport}
               />
-            </div>
-          } />
-          <Route path="milestones" element={<Milestones />} />
-          <Route path="targets" element={<Targets />} />
-          <Route path="achievements" element={<Achievements />} />
-          <Route path="test-error" element={<TestError />} />
-          <Route path="dataset/:datasetId/*" element={
-            <DatasetLayout
-              datasets={datasets}
-              onOpenCreate={handleOpenCreate}
-              onOpenEdit={handleOpenEdit}
-              onOpenImport={handleOpenImport}
-              onOpenExport={handleOpenExport}
-            />
-          } />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            } />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </ErrorBoundary>
       
       {/* Global Dialogs - outside ErrorBoundary so they remain accessible even if a route crashes */}
+      <Suspense fallback={null}>
       { datasetDialog && (
         <DatasetDialog
           open={!!datasetDialog}
@@ -160,6 +178,7 @@ function AppLayout() {
           dataset={datasets.find(d => d.id === duplicateDialog)!}
         />
       )}
+      </Suspense>
     </>
   );
 }
@@ -226,17 +245,19 @@ function DatasetLayout({
         />
         <ErrorBoundary variant="inline">
           <div className="flex-1 w-full">
-            <Routes>
-              <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
-              <Route path="achievements" element={<Achievements />} />
-              <Route path="analysis" element={<Analysis />} />
-              <Route path="targets" element={<Targets />} />
-              <Route path="milestones" element={<Milestones />} />
-              <Route path="records" element={<Records datasetId={dataset.id} />} />
-              <Route path="timeline" element={<Timeline />} />
-              <Route path="test-error" element={<TestError />} />
-              <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
-            </Routes>
+            <Suspense fallback={<PageFallback />}>
+              <Routes>
+                <Route index element={<Calendar dataset={dataset} achievementResultsByDateKey={achievementResultsByDateKey} />} />
+                <Route path="achievements" element={<Achievements />} />
+                <Route path="analysis" element={<Analysis />} />
+                <Route path="targets" element={<Targets />} />
+                <Route path="milestones" element={<Milestones />} />
+                <Route path="records" element={<Records datasetId={dataset.id} />} />
+                <Route path="timeline" element={<Timeline />} />
+                <Route path="test-error" element={<TestError />} />
+                <Route path="settings" element={<div className="max-w-4xl mx-auto p-8"><h2 className="text-2xl font-bold mb-4">Settings</h2></div>} />
+              </Routes>
+            </Suspense>
           </div>
         </ErrorBoundary>
         <AppFooter />
@@ -262,7 +283,7 @@ export function AppFooter() {
   };
 
   return (
-    <footer className="w-full py-4 text-center text-xs text-slate-400 bg-transparent mt-8">
+    <footer className="w-full py-4 text-center text-xs text-slate-500 dark:text-slate-400 bg-transparent mt-8">
       <div className="flex flex-col sm:flex-row items-center justify-center gap-2 flex-wrap">
         <span>
           Made with <span aria-label="love" role="img">❤️</span> and <span aria-label="banana" role="img">🍌</span> by <a href="https://metamodernmonkey.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-500 transition-colors">Meta Modern Monkey</a> &copy; {new Date().getFullYear()}

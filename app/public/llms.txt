@@ -1,0 +1,23 @@
+# Numbers Go Up
+
+> Numbers Go Up is a free calendar for any daily number: P&L, weight, steps, sleep and more. It knows what a good day looks like for each number (higher, lower, above zero or inside a range) and colors days green or red to match. It runs in the browser with no account, keeps all data on the user's device, works offline and can be installed as an app.
+
+## What it does
+
+- Month calendar where each day shows its count, total, mean, median, min and max, with week and month summaries
+- Entries are typed as math: `1+5-24` becomes the three numbers 1, 5 and -24
+- Bar chart of each day below the calendar, plus trend, projection, momentum and deviation analysis
+- Targets, milestones, records and achievements
+- CSV and JSON import and export
+- Light and dark themes
+
+## Links
+
+- [Numbers Go Up](https://numbersgoup.app/): the app and its homepage
+- [Meta Modern Monkey](https://metamodernmonkey.com): the maker
+- [Support](mailto:support@metamodernmonkey.com)
+
+## Notes for agents
+
+- Only the homepage is public. Pages under `/dataset/` show data stored in each visitor's own browser, so they are empty for anyone else.
+- There is no API and no server-side user data.

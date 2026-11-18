@@ -5,6 +5,9 @@ import './styles/swipe-animations.css'
 import App from './App.tsx'
 import { ThemeProvider } from './components/ThemeProvider'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { initInstallPrompt } from './features/pwa/install'
+
+initInstallPrompt()
 
 const queryClient = new QueryClient({
   defaultOptions: {

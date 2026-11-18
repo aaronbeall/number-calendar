@@ -1,16 +1,47 @@
 {
+  "id": "/",
   "name": "Numbers Go Up",
   "short_name": "Numbers Go Up",
-  "description": "A calendar for numbers that knows good from bad.",
-  "start_url": "/",
+  "description": "A calendar for numbers that knows good from bad. Track P&L, weight, steps and more, with week, month and year stats. Works offline, and your data stays on your device.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
   "background_color": "#28323b",
   "theme_color": "#28323b",
+  "categories": ["productivity", "finance", "health", "utilities"],
+  "prefer_related_applications": false,
+  "launch_handler": { "client_mode": ["navigate-existing", "auto"] },
   "icons": [
-    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "New calendar",
+      "short_name": "New",
+      "description": "Start tracking a new number",
+      "url": "/?dataset&source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "All calendars",
+      "short_name": "Calendars",
+      "description": "See every calendar you track",
+      "url": "/?source=shortcut",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    { "src": "/screenshots/wide-calendar.webp", "sizes": "1280x800", "type": "image/webp", "form_factor": "wide", "label": "Month calendar with green and red days and weekly totals" },
+    { "src": "/screenshots/wide-analysis.webp", "sizes": "1280x800", "type": "image/webp", "form_factor": "wide", "label": "Analysis with trends and projections" },
+    { "src": "/screenshots/narrow-calendar.webp", "sizes": "780x1688", "type": "image/webp", "form_factor": "narrow", "label": "Month calendar on a phone" },
+    { "src": "/screenshots/narrow-entry.webp", "sizes": "780x1688", "type": "image/webp", "form_factor": "narrow", "label": "Entering a day's numbers as math" }
   ]
 }
