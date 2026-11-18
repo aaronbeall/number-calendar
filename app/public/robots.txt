@@ -1,0 +1,6 @@
+# Numbers Go Up: https://numbersgoup.app
+# Only the homepage is public. App pages show data stored in each visitor's own browser and are marked noindex.
+User-agent: *
+Allow: /
+
+Sitemap: https://numbersgoup.app/sitemap.xml

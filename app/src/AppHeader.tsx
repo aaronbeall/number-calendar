@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Award, Bell, CalendarDays, CalendarIcon, ChartNoAxesColumn, Download, Flag, Grid3X3, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, TrendingUp, Trophy, Upload, User } from 'lucide-react';
+import { AppWindow, Award, Bell, CalendarDays, CalendarIcon, ChartNoAxesColumn, Download, Flag, Grid3X3, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, TrendingUp, Trophy, Upload, User } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
@@ -17,6 +17,7 @@ import {
 } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTheme } from './components/ThemeProvider';
+import { useInstallApp } from './features/pwa/useInstallApp';
 import { useCalendar } from './context/useCalendar';
 import { AchievementToast } from './features/achievements/AchievementToast';
 import { AchievementUnlockOverlay } from './features/achievements/AchievementUnlockOverlay';
@@ -445,6 +446,7 @@ export function UserMenu() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const installApp = useInstallApp();
 
   const handleShare = async () => {
     try {
@@ -533,6 +535,12 @@ export function UserMenu() {
               Share
             </DropdownMenuItem>
           )}
+          {installApp.canInstall && (
+            <DropdownMenuItem className="gap-2" onSelect={installApp.install}>
+              <AppWindow className="h-4 w-4 text-slate-500" />
+              Install App
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem className="gap-2" asChild>
             <a
@@ -556,6 +564,8 @@ export function UserMenu() {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {installApp.dialog}
 
       {/* Sync Data Dialog */}
       <Dialog open={openSync} onOpenChange={setOpenSync}>

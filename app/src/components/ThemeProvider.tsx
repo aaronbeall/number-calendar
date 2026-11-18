@@ -33,6 +33,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     window.document.documentElement.classList.toggle("dark", appliedTheme === "dark");
     localStorage.setItem("theme", theme);
+    syncThemeColor(theme);
   }, [appliedTheme, theme]);
 
   const isDark = appliedTheme === "dark";
@@ -42,6 +43,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
+}
+
+const THEME_COLORS = { light: "#ffffff", dark: "#28323b" } as const;
+
+/**
+ * index.html has one theme-color tag per color scheme, so the browser UI follows the OS setting.
+ * When the user picks a theme in the app, point both tags at that theme's color instead.
+ */
+function syncThemeColor(theme: Theme) {
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach(meta => {
+    const scheme = meta.media.includes("dark") ? "dark" : "light";
+    meta.content = THEME_COLORS[theme === "system" ? scheme : theme];
+  });
 }
 
 export function useTheme() {

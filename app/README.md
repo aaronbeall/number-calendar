@@ -47,6 +47,14 @@ npm run dev
 - Local-first
 - IndexedDB persistence
 
+## PWA and SEO
+
+- **Offline:** `vite-plugin-pwa` generates a Workbox service worker (`dist/sw.js`) that precaches the whole app, including every lazy route chunk, so it runs with no connection after the first visit. Client-side routes fall back to the cached `index.html`. Google Fonts are cached at runtime.
+- **Updates:** a new deploy shows a "new version is available" toast with a Reload button (`src/features/pwa/PwaPrompts.tsx`). Open tabs check for updates hourly and when they become visible.
+- **Install:** `public/site.webmanifest` has icons (including maskable), shortcuts and install screenshots. "Install App" in the user menu shows the browser's install dialog, or Add to Home Screen steps on iPhone and iPad. Regenerate the screenshots with `node scripts/landing-screenshots/pwa.cjs` while `npm run dev` is running.
+- **Storage:** the app asks the browser to make storage persistent so IndexedDB data isn't evicted.
+- **SEO:** `index.html` has the canonical URL, Open Graph and Twitter tags and JSON-LD (`Organization`, `WebSite`, `WebApplication`). `robots.txt` and `llms.txt` are in `public/`; `sitemap.xml` is written at build time. Only the homepage is indexable: `src/features/seo/RouteHead.tsx` sets titles per page and marks app pages `noindex`, since they show data from the visitor's own browser.
+
 ## Architecture
 
 Feature-based structure with context providers for dataset management and calendar state.
