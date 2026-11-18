@@ -1,6 +1,6 @@
 import { AppFooter } from '@/App';
 import { ThemeToggle } from '@/AppHeader';
-import LogoIcon from '@/assets/logo.png';
+import { BrandMark, BrandWordmark } from '@/components/brand/Brand';
 import { useTheme } from '@/components/ThemeProvider';
 import { parseSeriesExpression } from '@/lib/expression';
 import { cn } from '@/lib/utils';
@@ -17,7 +17,6 @@ import {
   PartyPopper,
   Plus,
   PlusCircle,
-  Sparkles,
   Target,
   TrendingDown,
   TrendingUp,
@@ -86,7 +85,7 @@ function BrowserFrame({ children, className }: { children: ReactNode; className?
         <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
         <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
         <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-slate-300 dark:bg-slate-600" />
-        <span className="ml-3 hidden sm:block text-[11px] text-slate-400 dark:text-slate-500 truncate">numbers.metamodernmonkey.com</span>
+        <span className="ml-3 hidden sm:block text-[11px] text-slate-400 dark:text-slate-500 truncate">numbersgoup.app</span>
       </div>
       {children}
     </div>
@@ -117,7 +116,7 @@ function SectionHeading({ eyebrow, icon, title, children, center }: { eyebrow: s
         {icon}
         {eyebrow}
       </div>
-      <h2 className="mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>{title}</h2>
+      <h2 className="font-brand mt-3 text-3xl sm:text-4xl font-bold tracking-tight text-slate-900 dark:text-white text-balance">{title}</h2>
       {children && <p className="mt-4 text-base sm:text-lg leading-relaxed text-slate-600 dark:text-slate-300 text-pretty">{children}</p>}
     </div>
   );
@@ -225,8 +224,8 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
       <header className="sticky top-0 z-30 border-b border-slate-200/70 dark:border-slate-800/80 bg-white/80 dark:bg-slate-950/80 backdrop-blur">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 sm:h-16 flex items-center gap-3">
           <a href="#top" className="flex items-center gap-2 min-w-0">
-            <img src={LogoIcon} alt="" className="w-8 h-8 shrink-0" />
-            <span className="font-bold text-base sm:text-lg truncate" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>Numbers Go Up</span>
+            <BrandMark className="w-8 h-8" />
+            <span className="text-lg sm:text-xl truncate"><BrandWordmark /></span>
           </a>
           <nav className="hidden md:flex items-center gap-6 ml-8 text-sm text-slate-600 dark:text-slate-300">
             <a href="#how" className="hover:text-slate-900 dark:hover:text-white">How it works</a>
@@ -253,10 +252,10 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
           <div className="absolute inset-x-0 top-0 h-[640px] bg-gradient-to-b from-emerald-50/80 via-white to-white dark:from-emerald-950/30 dark:via-slate-950 dark:to-slate-950 pointer-events-none" />
           <HeroHeatmap />
           <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 text-center">
-            <p className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 dark:from-blue-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+            <p className="font-brand text-lg sm:text-2xl font-extrabold text-brand-green dark:text-brand-green-fold">
               A calendar for numberphiles
             </p>
-            <h1 className="mt-3 mx-auto max-w-4xl text-[2.5rem] leading-[1.08] sm:text-6xl lg:text-7xl font-bold tracking-tight text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+            <h1 className="font-brand mt-3 mx-auto max-w-4xl text-[2.5rem] leading-[1.08] sm:text-6xl lg:text-7xl font-bold tracking-tight text-balance">
               Every day's numbers, on a calendar that knows{' '}
               <span className="text-emerald-600 dark:text-emerald-400">good</span> from{' '}
               <span className="text-red-500 dark:text-red-400">bad</span>.
@@ -436,11 +435,11 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
 
         {/* Final CTA */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 pt-24 sm:pt-32 pb-12">
-          <div className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 px-6 py-14 sm:px-12 sm:py-16 text-center">
+          <div className="relative overflow-hidden rounded-3xl bg-brand-navy border border-slate-800 px-6 py-14 sm:px-12 sm:py-16 text-center">
             <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-emerald-500/20 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
-            <Sparkles className="relative mx-auto w-8 h-8 text-purple-300" />
-            <h2 className="relative mt-4 text-3xl sm:text-5xl font-bold tracking-tight text-white text-balance" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
+            <div className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-red-500/15 blur-3xl pointer-events-none" />
+            <BrandMark className="relative mx-auto w-12 h-12" />
+            <h2 className="font-brand relative mt-4 text-3xl sm:text-5xl font-bold tracking-tight text-white text-balance">
               Your numbers are going somewhere. <span className="text-emerald-400">See where.</span>
             </h2>
             <div className="relative mt-8 flex justify-center">

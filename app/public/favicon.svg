@@ -1,16 +1,1 @@
-<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#10b981"/>
-      <stop offset="50%" style="stop-color:#3b82f6"/>
-      <stop offset="100%" style="stop-color:#8b5cf6"/>
-    </linearGradient>
-  </defs>
-  
-  <!-- Background circle -->
-  <circle cx="16" cy="16" r="15" fill="url(#bgGradient)"/>
-  
-  <!-- Simple upward arrow -->
-  <path d="M 16 8 L 10 14 L 13 14 L 13 24 L 19 24 L 19 14 L 22 14 Z" 
-        fill="#ffffff"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -4 108 108"><polygon fill="#a11f23" points="29,0 58,41 58,50 29,12"/><polygon fill="#40a160" points="71,100 42,59 42,50 71,88"/><polygon fill="#d42627" points="11,0 29,0 29,66 40,66 20,100 0,66 11,66"/><polygon fill="#397c47" points="80,0 100,34 89,34 89,100 71,100 71,34 60,34"/></svg>

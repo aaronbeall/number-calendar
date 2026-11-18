@@ -1,5 +1,5 @@
 import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
-import LogoIcon from '@/assets/logo.png';
+import { BrandMark, BrandWordmark } from '@/components/brand/Brand';
 import PatreonIcon from '@/assets/patreon.svg?react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -231,7 +231,7 @@ export function AppHeader({
             {/* Dataset Badge Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-transparent bg-opacity-60 dark:bg-opacity-50 hover:bg-opacity-80 dark:hover:bg-opacity-70 min-w-0 transition-all cursor-pointer ${datasetBg}`}>
+                <button className={`flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-transparent bg-opacity-60 dark:bg-opacity-50 hover:bg-opacity-80 dark:hover:bg-opacity-70 min-w-0 max-w-[calc(50vw-5.5rem)] sm:max-w-none transition-all cursor-pointer ${datasetBg}`}>
                   {(() => { const Icon = getDatasetIcon(currentDataset?.icon); return <Icon className={`h-4 w-4 opacity-60 flex-shrink-0 ${datasetText}`} />; })()}
                   <span className={`font-semibold truncate text-sm ${datasetText}`}>{currentDataset?.name || 'Dataset'}</span>
                 </button>
@@ -344,14 +344,10 @@ export function AppHeader({
 
           {/* Center: Logo/Branding */}
           <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group flex-shrink-0">
-            <img
-              src={LogoIcon}
-              alt="Numbers Go Up"
-              className="w-7 h-7 transition-transform group-hover:scale-105"
-            />
+            <BrandMark title="Numbers Go Up" className="w-7 h-7 transition-transform group-hover:scale-105" />
             <div className="hidden sm:flex flex-col">
-              <h1 className="text-sm font-bold text-slate-700 dark:text-slate-300 tracking-tight group-hover:underline" style={{ fontFamily: '"Space Grotesk", sans-serif' }}>
-                Numbers Go Up
+              <h1 className="text-base leading-none group-hover:underline underline-offset-4">
+                <BrandWordmark />
               </h1>
             </div>
           </Link>
@@ -584,11 +580,7 @@ export function UserMenu() {
           <DialogHeader>
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-3">
-                <img
-                  src={LogoIcon}
-                  alt="Numbers Go Up"
-                  className="h-6 w-6"
-                />
+                <BrandMark className="h-7 w-7" />
                 <DialogTitle>About Numbers Go Up</DialogTitle>
               </div>
               {/* <div className="text-xs text-slate-500 dark:text-slate-400">

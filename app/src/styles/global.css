@@ -74,6 +74,17 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* Brand: see app/art/brand/ */
+@theme {
+  --font-brand: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-navy: #28323b;
+  --color-brand-paper: #f1f0ec;
+  --color-brand-red: #d42627;
+  --color-brand-red-fold: #a11f23;
+  --color-brand-green: #397c47;
+  --color-brand-green-fold: #40a160;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
