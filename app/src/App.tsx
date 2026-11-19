@@ -7,7 +7,6 @@ import {
   Route,
   BrowserRouter as Router,
   Routes,
-  useLocation,
   useNavigate,
   useParams
 } from 'react-router-dom';
@@ -146,12 +145,6 @@ function AppLayout() {
                 <Route path="*" element={<Navigate to="/app" replace />} />
               </Routes>
             )} />
-            {/* Links and installs from before the app moved under /app */}
-            <Route path="dataset/*" element={<LegacyAppRedirect />} />
-            <Route path="milestones" element={<LegacyAppRedirect />} />
-            <Route path="targets" element={<LegacyAppRedirect />} />
-            <Route path="achievements" element={<LegacyAppRedirect />} />
-            <Route path="test-error" element={<LegacyAppRedirect />} />
             <Route path="*" element={<HomepageRedirect />} />
           </Routes>
         </Suspense>
@@ -204,15 +197,6 @@ function HomepageRedirect() {
     window.location.replace(import.meta.env.BASE_URL);
   }, []);
   return null;
-}
-
-/**
- * Sends an old app URL (/dataset/..., /milestones, ...) to the same page under /app, keeping the
- * query and hash, so bookmarks and shared links from before the move still work.
- */
-function LegacyAppRedirect() {
-  const { pathname, search, hash } = useLocation();
-  return <Navigate to={`/app${pathname}${search}${hash}`} replace />;
 }
 
 function DatasetLayout({

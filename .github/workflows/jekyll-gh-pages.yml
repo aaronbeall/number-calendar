@@ -27,8 +27,7 @@ jobs:
           node-version: '20.19'
       - run: npm ci
       - run: npm run build
-      # Unknown paths get the app shell: it handles /app/... deep links and old /dataset/... links,
-      # and sends anything else to the homepage.
+      # Unknown paths get the app shell so /app/... deep links work; it sends any other path to the homepage.
       - run: |
           touch dist/.nojekyll
           cp dist/app/index.html dist/404.html

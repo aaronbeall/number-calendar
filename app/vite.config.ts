@@ -40,14 +40,14 @@ function sitemap(): Plugin {
  * The homepage (index.html -> src/home.tsx) and the app (app/index.html -> src/main.tsx) are separate
  * entries. Static hosts serve "/" and "/app/" as files, but deep app links like /app/dataset/x need
  * the app shell. This mirrors the production setup (GitHub Pages serves app/index.html as 404.html)
- * in the dev and preview servers: "/" is the homepage, every other page URL gets the app.
+ * in the dev and preview servers: page URLs under /app get the app shell.
  */
 function appShellFallback(): Plugin {
   const rewrite = (req: { url?: string }, _res: unknown, next: () => void) => {
     const url = req.url ?? '/'
     const [pathname, query = ''] = url.split('?')
-    const isPage = !/\.[a-z0-9]+$/i.test(pathname) && !pathname.startsWith('/@') && !pathname.startsWith('/src/') && !pathname.startsWith('/node_modules/')
-    if (isPage && pathname !== '/' && pathname !== '/index.html') {
+    const isPage = !/\.[a-z0-9]+$/i.test(pathname)
+    if (isPage && /^\/app(\/|$)/.test(pathname)) {
       req.url = '/app/index.html' + (query ? `?${query}` : '')
     }
     next()
