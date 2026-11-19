@@ -50,7 +50,7 @@ export function ErrorState({
   title = 'Something went wrong',
   message = 'We could not find what you were looking for.',
   details,
-  actions = [{ label: 'Back to home', to: '/', variant: 'default' }],
+  actions = [{ label: 'Back to your data', to: '/app', variant: 'default' }],
   className,
 }: ErrorStateProps) {
   return (

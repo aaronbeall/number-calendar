@@ -1,10 +1,7 @@
-import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
-import PatreonIcon from '@/assets/patreon.svg?react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Share2 } from 'lucide-react';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   Navigate,
   Route,
@@ -14,6 +11,7 @@ import {
   useParams
 } from 'react-router-dom';
 import { AppHeader } from './AppHeader';
+import { AppFooter } from './components/AppFooter';
 import { ErrorState } from './components/PageStates';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
@@ -23,12 +21,12 @@ import { useDataset, useDatasets } from './features/db/useDatasetData';
 import { useAchievements } from './hooks/useAchievements';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getCompletedAchievementsByDateKey } from './lib/goals';
-import { Landing } from './pages/Landing';
 import { PwaPrompts } from './features/pwa/PwaPrompts';
 import { RouteHead } from './features/seo/RouteHead';
 
-// The homepage loads eagerly; every app page is split into its own chunk so first visits stay light.
+// Every app page is split into its own chunk so the first load stays light.
 // The service worker precaches all chunks, so they are still available offline.
+const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
 const Achievements = lazy(() => import('./pages/Achievements'));
 const Analysis = lazy(() => import('./pages/Analysis'));
 const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
@@ -100,47 +98,54 @@ function AppLayout() {
     setDuplicateDialog(datasetId);
   };
 
-  if (datasetsLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
-        <Spinner className="mb-4" />
-        <div className="text-center text-slate-400 text-lg animate-pulse">Loading...</div>
-        <AppFooter />
-      </div>
-    );
-  }
+  const appLoading = (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
+      <Spinner className="mb-4" />
+      <div className="text-center text-slate-400 text-lg animate-pulse">Loading...</div>
+      <AppFooter />
+    </div>
+  );
+
   return (
     <>
       <ErrorBoundary>
         <Suspense fallback={<PageFallback />}>
           <Routes>
-            <Route index element={
-              <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
-                <Landing
-                  datasets={datasets}
-                  onSelectDataset={id => navigate(`/dataset/${id}`)}
-                  onOpenCreate={handleOpenCreate}
-                  onOpenEdit={handleOpenEdit}
-                  onOpenImport={handleOpenImport}
-                  onOpenExport={(datasetId) => handleOpenExport(datasetId)}
-                  onDuplicateDataset={handleOpenDuplicate}
-                />
-              </div>
-            } />
-            <Route path="milestones" element={<Milestones />} />
-            <Route path="targets" element={<Targets />} />
-            <Route path="achievements" element={<Achievements />} />
-            <Route path="test-error" element={<TestError />} />
-            <Route path="dataset/:datasetId/*" element={
-              <DatasetLayout
-                datasets={datasets}
-                onOpenCreate={handleOpenCreate}
-                onOpenEdit={handleOpenEdit}
-                onOpenImport={handleOpenImport}
-                onOpenExport={handleOpenExport}
-              />
-            } />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* The homepage is a separate page (index.html + src/home.tsx), so leave the app for it. */}
+            <Route index element={<HomepageRedirect />} />
+            {/* The app itself. The installed PWA starts here. */}
+            <Route path="app/*" element={datasetsLoading ? appLoading : (
+              <Routes>
+                <Route index element={
+                  <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+                    <Landing
+                      datasets={datasets}
+                      onSelectDataset={id => navigate(`/app/dataset/${id}`)}
+                      onOpenCreate={handleOpenCreate}
+                      onOpenEdit={handleOpenEdit}
+                      onOpenImport={handleOpenImport}
+                      onOpenExport={(datasetId) => handleOpenExport(datasetId)}
+                      onDuplicateDataset={handleOpenDuplicate}
+                    />
+                  </div>
+                } />
+                <Route path="milestones" element={<Milestones />} />
+                <Route path="targets" element={<Targets />} />
+                <Route path="achievements" element={<Achievements />} />
+                <Route path="test-error" element={<TestError />} />
+                <Route path="dataset/:datasetId/*" element={
+                  <DatasetLayout
+                    datasets={datasets}
+                    onOpenCreate={handleOpenCreate}
+                    onOpenEdit={handleOpenEdit}
+                    onOpenImport={handleOpenImport}
+                    onOpenExport={handleOpenExport}
+                  />
+                } />
+                <Route path="*" element={<Navigate to="/app" replace />} />
+              </Routes>
+            )} />
+            <Route path="*" element={<HomepageRedirect />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
@@ -151,7 +156,7 @@ function AppLayout() {
         <DatasetDialog
           open={!!datasetDialog}
           onOpenChange={handleCloseDialog}
-          onCreated={id => navigate(`/dataset/${id}`)}
+          onCreated={id => navigate(`/app/dataset/${id}`)}
           dataset={editingDataset}
         />
       )}
@@ -174,13 +179,24 @@ function AppLayout() {
         <DuplicateDialog
           open={!!duplicateDialog}
           onOpenChange={setDuplicateDialog}
-          onDuplicated={id => navigate(`/dataset/${id}`)}
+          onDuplicated={id => navigate(`/app/dataset/${id}`)}
           dataset={datasets.find(d => d.id === duplicateDialog)!}
         />
       )}
       </Suspense>
     </>
   );
+}
+
+/**
+ * The app bundle only serves /app. Static hosts also hand it unknown paths (GitHub Pages' 404.html
+ * is the app shell), so anything that isn't an app route goes to the homepage with a full page load.
+ */
+function HomepageRedirect() {
+  useEffect(() => {
+    window.location.replace(import.meta.env.BASE_URL);
+  }, []);
+  return null;
 }
 
 function DatasetLayout({
@@ -226,7 +242,7 @@ function DatasetLayout({
         title="Dataset not found"
         message="This dataset could not be loaded. It may have been removed or the link is outdated."
         details={datasetId ? `Requested dataset id: ${datasetId}` : undefined}
-        actions={[{ label: 'Back to home', to: '/' }]}
+        actions={[{ label: 'Back to your data', to: '/app' }]}
       />
     );
   }
@@ -263,68 +279,6 @@ function DatasetLayout({
         <AppFooter />
       </div>
     </DatasetProvider>
-  );
-}
-
-export function AppFooter() {
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: 'Numbers Go Up',
-        text: 'A calendar for numberphiles - Track your daily numbers and visualize your progress!',
-        url: window.location.href,
-      });
-    } catch (err) {
-      // User cancelled or share failed
-      if ((err as Error).name !== 'AbortError') {
-        console.error('Share failed:', err);
-      }
-    }
-  };
-
-  return (
-    <footer className="w-full py-4 text-center text-xs text-slate-500 dark:text-slate-400 bg-transparent mt-8">
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 flex-wrap">
-        <span>
-          Made with <span aria-label="love" role="img">❤️</span> and <span aria-label="banana" role="img">🍌</span> by <a href="https://metamodernmonkey.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-500 transition-colors">Meta Modern Monkey</a> &copy; {new Date().getFullYear()}
-        </span>
-
-        <div className="flex items-center justify-center gap-2 flex-wrap sm:border-l sm:border-slate-300 sm:dark:border-slate-700 sm:pl-2 sm:ml-2">
-          <a
-            href="https://patreon.com/metamodernmonkey"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors group"
-            aria-label="Patreon"
-          >
-            <PatreonIcon className="w-3 h-3 text-slate-400 group-hover:text-pink-600 transition-colors" />
-            <span className="group-hover:text-pink-600 transition-colors">Patreon</span>
-          </a>
-
-          <a
-            href="https://buymeacoffee.com/metamodernmonkey"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors group"
-            aria-label="Buy Me a Coffee"
-          >
-            <BuyMeACoffeeIcon className="w-3 h-3 text-slate-400 group-hover:text-yellow-600 transition-colors" />
-            <span className="group-hover:text-yellow-600 transition-colors">Buy Me a Coffee</span>
-          </a>
-
-          {typeof navigator.share === 'function' && (
-            <button
-              onClick={handleShare}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group"
-              aria-label="Share"
-            >
-              <Share2 className="w-3 h-3 group-hover:text-blue-500 transition-colors" />
-              <span className="group-hover:text-blue-500 transition-colors">Share</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </footer>
   );
 }
 

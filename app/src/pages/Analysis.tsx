@@ -685,14 +685,14 @@ export function Analysis() {
             <div className="flex flex-col sm:flex-row gap-3 mt-2">
               {dataset && (
                 <Button asChild size="lg">
-                  <Link to={`/dataset/${dataset.id}`}>
+                  <Link to={`/app/dataset/${dataset.id}`}>
                     <Calendar className="w-4 h-4 mr-2" />
                     Go to Calendar
                   </Link>
                 </Button>
               )}
               <Button asChild variant="outline" size="lg">
-                <Link to="/">
+                <Link to="/app">
                   <BarChart3 className="w-4 h-4 mr-2" />
                   View Dashboard
                 </Link>

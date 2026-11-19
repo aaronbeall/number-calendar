@@ -34,7 +34,7 @@ async function shootCard(page, title, file, { hideFloating = false } = {}) {
 
 // Save a big day so new achievements unlock, then capture the celebration overlay.
 async function shootCelebration(page, file) {
-  await page.goto(BASE + '/dataset/pnl?year=2026&month=10&panel=2026-10-30');
+  await page.goto(BASE + '/app/dataset/pnl?year=2026&month=10&panel=2026-10-30');
   await page.waitForTimeout(2000);
   const box = page.locator('textarea').first();
   await box.click();
@@ -51,12 +51,12 @@ async function shootCelebration(page, file) {
       const { page, ctx } = await setup(b, { theme, scale: 2 });
       await page.setViewportSize({ width: 1000, height: 900 });
       const go = async (p, name, wait = 1800) => { await page.goto(BASE + p); await page.waitForTimeout(wait); await page.screenshot({ path: `${RAW}/${theme}-d-${name}.png`, fullPage: true }); };
-      await go('/dataset/pnl?year=2026&month=10', 'pnl');
-      await go('/dataset/weight?year=2026&month=10', 'weight');
-      await go('/dataset/pnl?year=2026&month=10&panel=2026-10-15', 'panel');
-      await go('/dataset/pnl/targets', 'targets');
+      await go('/app/dataset/pnl?year=2026&month=10', 'pnl');
+      await go('/app/dataset/weight?year=2026&month=10', 'weight');
+      await go('/app/dataset/pnl?year=2026&month=10&panel=2026-10-15', 'panel');
+      await go('/app/dataset/pnl/targets', 'targets');
       await page.setViewportSize({ width: 1280, height: 900 });
-      await page.goto(BASE + '/dataset/pnl/analysis');
+      await page.goto(BASE + '/app/dataset/pnl/analysis');
       await page.waitForTimeout(1500);
       for (const t of ['Projections', 'Monthly Deviation', 'Momentum Quadrant', 'Trend Over Time']) {
         await shootCard(page, t, `${RAW}/${theme}-d-an-${t.toLowerCase().replace(/ /g, '-')}.png`);
@@ -68,10 +68,10 @@ async function shootCelebration(page, file) {
     {
       const { page, ctx } = await setup(b, { theme, mobile: true, scale: 3 });
       const go = async (p, name, full = false) => { await page.goto(BASE + p); await page.waitForTimeout(2200); await page.screenshot({ path: `${RAW}/${theme}-m-${name}.png`, fullPage: full }); };
-      await go('/dataset/pnl?year=2026&month=10', 'pnl');
-      await go('/dataset/pnl?year=2026&month=10', 'pnl-full', true);
-      await go('/dataset/weight?year=2026&month=10', 'weight-full', true);
-      await page.goto(BASE + '/dataset/pnl/analysis');
+      await go('/app/dataset/pnl?year=2026&month=10', 'pnl');
+      await go('/app/dataset/pnl?year=2026&month=10', 'pnl-full', true);
+      await go('/app/dataset/weight?year=2026&month=10', 'weight-full', true);
+      await page.goto(BASE + '/app/dataset/pnl/analysis');
       await page.waitForTimeout(1500);
       for (const t of ['Projections', 'Monthly Deviation', 'Momentum Quadrant']) {
         await shootCard(page, t, `${RAW}/${theme}-m-an-${t.toLowerCase().replace(/ /g, '-')}.png`, { hideFloating: true });

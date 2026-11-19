@@ -5,8 +5,8 @@
   "description": "A calendar for numbers that knows good from bad. Track P&L, weight, steps and more, with week, month and year stats. Works offline, and your data stays on your device.",
   "lang": "en",
   "dir": "ltr",
-  "start_url": "/?source=pwa",
-  "scope": "/",
+  "start_url": "/app/?source=pwa",
+  "scope": "/app",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
@@ -27,14 +27,14 @@
       "name": "New calendar",
       "short_name": "New",
       "description": "Start tracking a new number",
-      "url": "/?dataset&source=shortcut",
+      "url": "/app/?dataset&source=shortcut",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
       "name": "All calendars",
       "short_name": "Calendars",
       "description": "See every calendar you track",
-      "url": "/?source=shortcut",
+      "url": "/app/?source=shortcut",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ],

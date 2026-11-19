@@ -104,7 +104,7 @@ export function Records({ datasetId }: { datasetId: string }) {
       <PageHeader
         title="Records"
         description="See your strongest streaks, best periods, and standout moments."
-        backTo={`/dataset/${dataset.id}`}
+        backTo={`/app/dataset/${dataset.id}`}
         icon={Award}
         variant="records"
       />

@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { AppWindow, Award, Bell, CalendarDays, CalendarIcon, ChartNoAxesColumn, Download, Flag, Grid3X3, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, TrendingUp, Trophy, Upload, User } from 'lucide-react';
+import { AppWindow, Award, Bell, CalendarDays, CalendarIcon, ChartNoAxesColumn, Download, Flag, Grid3X3, Info, List, Mail, Menu, Plus, RefreshCw, Settings, Share2, Sparkles, Target, TrendingUp, Trophy, Upload, User } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
@@ -17,6 +17,7 @@ import {
 } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTheme } from './components/ThemeProvider';
+import { ThemeToggle } from './components/ThemeToggle';
 import { useInstallApp } from './features/pwa/useInstallApp';
 import { useCalendar } from './context/useCalendar';
 import { AchievementToast } from './features/achievements/AchievementToast';
@@ -58,7 +59,7 @@ export function AppHeader({
 
   // Determine current page for active state styling
   const currentPage = useMemo(() => {
-    const basePath = `/dataset/${currentDataset.id}`;
+    const basePath = `/app/dataset/${currentDataset.id}`;
     const path = location.pathname;
     if (path === basePath || path === `${basePath}/`) return 'calendar';
     if (path.startsWith(`${basePath}/timeline`)) return 'timeline';
@@ -74,12 +75,12 @@ export function AppHeader({
   const inactiveStyles = 'hover:bg-slate-100 dark:hover:bg-slate-800';
 
   const getDatasetPath = (datasetId: string) => {
-    const basePath = `/dataset/${currentDataset.id}`;
+    const basePath = `/app/dataset/${currentDataset.id}`;
     const subPath = location.pathname.startsWith(basePath)
       ? location.pathname.slice(basePath.length)
       : '';
     const normalizedSubPath = subPath === '/' ? '' : subPath;
-    return `/dataset/${datasetId}${normalizedSubPath}${location.search}${location.hash}`;
+    return `/app/dataset/${datasetId}${normalizedSubPath}${location.search}${location.hash}`;
   };
 
   const provisionalCounts = useMemo(() => {
@@ -138,7 +139,7 @@ export function AppHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-48">
                 <DropdownMenuItem className={`gap-2 hidden sm:flex ${currentPage === 'calendar' ? activeStyles : inactiveStyles}`} asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}` : '#'}>
+                  <Link to={currentDataset ? `/app/dataset/${currentDataset.id}` : '#'}>
                     <CalendarIcon className="h-4 w-4" />
                     Calendar
                   </Link>
@@ -146,7 +147,7 @@ export function AppHeader({
                 <DropdownMenuItem className={`gap-2 sm:hidden ${currentPage === 'calendar' && mode === 'daily' ? activeStyles : inactiveStyles}`} onClick={() => {
                   setMode('daily');
                   if (currentPage !== 'calendar') {
-                    navigate(currentDataset ? `/dataset/${currentDataset.id}` : '#');
+                    navigate(currentDataset ? `/app/dataset/${currentDataset.id}` : '#');
                   }
                 }}>
                   <CalendarDays className="h-4 w-4" />
@@ -155,27 +156,27 @@ export function AppHeader({
                 <DropdownMenuItem className={`gap-2 sm:hidden ${currentPage === 'calendar' && mode === 'monthly' ? activeStyles : inactiveStyles}`} onClick={() => {
                   setMode('monthly');
                   if (currentPage !== 'calendar') {
-                    navigate(currentDataset ? `/dataset/${currentDataset.id}` : '#');
+                    navigate(currentDataset ? `/app/dataset/${currentDataset.id}` : '#');
                   }
                 }}>
                   <Grid3X3 className="h-4 w-4" />
                   Monthly
                 </DropdownMenuItem>
                 <DropdownMenuItem className={`gap-2 ${currentPage === 'timeline' ? activeStyles : inactiveStyles}`} asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/timeline` : '#'}>
+                  <Link to={currentDataset ? `/app/dataset/${currentDataset.id}/timeline` : '#'}>
                     <List className="h-4 w-4" />
                     Timeline
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className={`gap-2 ${currentPage === 'analysis' ? activeStyles : inactiveStyles}`} asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/analysis` : '#'}>
+                  <Link to={currentDataset ? `/app/dataset/${currentDataset.id}/analysis` : '#'}>
                     <ChartNoAxesColumn className="h-4 w-4" />
                     Analysis
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className={`gap-2 ${currentPage === 'milestones' ? activeStyles : inactiveStyles}`} asChild>
-                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/milestones` : '#'}>
+                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/app/dataset/${currentDataset.id}/milestones` : '#'}>
                     <Flag className="h-4 w-4" />
                     <span className="flex-1">Milestones</span>
                     {provisionalCounts.milestones > 0 && (
@@ -186,7 +187,7 @@ export function AppHeader({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className={`gap-2 ${currentPage === 'targets' ? activeStyles : inactiveStyles}`} asChild>
-                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/targets` : '#'}>
+                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/app/dataset/${currentDataset.id}/targets` : '#'}>
                     <Target className="h-4 w-4" />
                     <span className="flex-1">Targets</span>
                     {provisionalCounts.targets > 0 && (
@@ -197,7 +198,7 @@ export function AppHeader({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className={`gap-2 ${currentPage === 'achievements' ? activeStyles : inactiveStyles}`} asChild>
-                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/dataset/${currentDataset.id}/achievements` : '#'}>
+                  <Link className="flex w-full items-center gap-2" to={currentDataset ? `/app/dataset/${currentDataset.id}/achievements` : '#'}>
                     <Trophy className="h-4 w-4" />
                     <span className="flex-1">Achievements</span>
                     {provisionalCounts.achievements > 0 && (
@@ -208,7 +209,7 @@ export function AppHeader({
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem className={`gap-2 ${currentPage === 'records' ? activeStyles : inactiveStyles}`} asChild>
-                  <Link to={currentDataset ? `/dataset/${currentDataset.id}/records` : '#'}>
+                  <Link to={currentDataset ? `/app/dataset/${currentDataset.id}/records` : '#'}>
                     <Award className="h-4 w-4" />
                     Records
                   </Link>
@@ -323,7 +324,7 @@ export function AppHeader({
 
                 <DropdownMenuItem
                   className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 px-2 py-1.5"
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/app')}
                 >
                   View all datasets ({datasets.length}) →
                 </DropdownMenuItem>
@@ -344,7 +345,7 @@ export function AppHeader({
           </div>
 
           {/* Center: Logo/Branding */}
-          <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group flex-shrink-0">
+          <Link to="/app" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 group flex-shrink-0">
             <BrandMark title="Numbers Go Up" className="w-7 h-7 transition-transform group-hover:scale-105" />
             <div className="hidden sm:flex flex-col">
               <h1 className="text-base leading-none group-hover:underline underline-offset-4">
@@ -412,26 +413,6 @@ export function AppHeader({
         />
       )}
     </>
-  );
-}
-
-export function ThemeToggle() {
-  const { appliedTheme: theme, setTheme } = useTheme();
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8"
-      aria-label="Toggle light/dark mode"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-    >
-      {theme === 'dark' ? (
-        <Moon className="h-4 w-4 text-blue-500" />
-      ) : (
-        <Sun className="h-4 w-4 text-yellow-400" />
-      )}
-    </Button>
   );
 }
 

@@ -5,7 +5,7 @@ async function setup(browser, {theme='light', mobile=false, scale=1}={}){
   const ctx = await browser.newContext(mobile ? { viewport:{width:390,height:844}, deviceScaleFactor:scale, isMobile:true, hasTouch:true, colorScheme:theme } : { viewport:{width:1440,height:900}, deviceScaleFactor:scale, colorScheme:theme });
   const page = await ctx.newPage();
   await page.clock.setFixedTime(new Date('2026-10-31T17:00:00'));
-  await page.goto(BASE+'/');
+  await page.goto(BASE+'/app/'); // the app creates the database; the homepage only reads it
   await page.waitForTimeout(800);
   const data = build(); const g = require('fs').existsSync(__dirname+'/goals.json') ? JSON.parse(require('fs').readFileSync(__dirname+'/goals.json')) : {goals:[],achievements:[]};
   await page.evaluate(async ({data, theme, g}) => {

@@ -358,7 +358,7 @@ export function AchievementInsightsChart({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <Link to={`/dataset/${datasetId}/achievements?add`}>
+            <Link to={`/app/dataset/${datasetId}/achievements?add`}>
               <Button variant="outline" className="h-auto min-h-16 w-full px-3 py-2.5 justify-start gap-2.5 border-yellow-200/80 dark:border-yellow-900/60 bg-yellow-50/70 dark:bg-yellow-950/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30">
                 <AchievementBadge badge={EMPTY_STATE_BADGES.goal} size="small" />
                 <span className="flex-1 min-w-0 text-left">
@@ -368,7 +368,7 @@ export function AchievementInsightsChart({
                 <ExternalLink className="h-3.5 w-3.5 text-yellow-700 dark:text-yellow-300" />
               </Button>
             </Link>
-            <Link to={`/dataset/${datasetId}/milestones?add`}>
+            <Link to={`/app/dataset/${datasetId}/milestones?add`}>
               <Button variant="outline" className="h-auto min-h-16 w-full px-3 py-2.5 justify-start gap-2.5 border-blue-200/80 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30">
                 <AchievementBadge badge={EMPTY_STATE_BADGES.milestone} size="small" />
                 <span className="flex-1 min-w-0 text-left">
@@ -378,7 +378,7 @@ export function AchievementInsightsChart({
                 <ExternalLink className="h-3.5 w-3.5 text-blue-700 dark:text-blue-300" />
               </Button>
             </Link>
-            <Link to={`/dataset/${datasetId}/targets?add`}>
+            <Link to={`/app/dataset/${datasetId}/targets?add`}>
               <Button variant="outline" className="h-auto min-h-16 w-full px-3 py-2.5 justify-start gap-2.5 border-green-200/80 dark:border-green-900/60 bg-green-50/70 dark:bg-green-950/20 hover:bg-green-100 dark:hover:bg-green-900/30">
                 <AchievementBadge badge={EMPTY_STATE_BADGES.target} size="small" />
                 <span className="flex-1 min-w-0 text-left">

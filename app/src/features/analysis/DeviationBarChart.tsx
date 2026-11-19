@@ -457,7 +457,7 @@ export function DeviationBarChart({
               emptyContent={aggregationType !== 'none' ? (
                 <div className="px-2 py-2 text-center">
                   <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">You haven't created any {periodly} targets yet</p>
-                  <Link to={`/dataset/${datasetId}/targets?add`}>
+                  <Link to={`/app/dataset/${datasetId}/targets?add`}>
                     <Button
                       variant="outline"
                       size="sm"

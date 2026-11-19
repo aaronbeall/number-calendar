@@ -13,11 +13,12 @@
 
 ## Links
 
-- [Numbers Go Up](https://numbersgoup.app/): the app and its homepage
+- [Numbers Go Up](https://numbersgoup.app/): the homepage
+- [Open the app](https://numbersgoup.app/app): the app itself, no sign-up
 - [Meta Modern Monkey](https://metamodernmonkey.com): the maker
 - [Support](mailto:support@metamodernmonkey.com)
 
 ## Notes for agents
 
-- Only the homepage is public. Pages under `/dataset/` show data stored in each visitor's own browser, so they are empty for anyone else.
+- Only the homepage is public. The app lives under `/app/`, and its pages show data stored in each visitor's own browser, so they are empty for anyone else.
 - There is no API and no server-side user data.
