@@ -11,6 +11,7 @@ import {
   Check,
   Download,
   Flag,
+  LayoutGrid,
   LineChart,
   Lock,
   Medal,
@@ -24,7 +25,7 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { GoodRules } from '@/features/landing/GoodRules';
 import { HeroHeatmap } from '@/features/landing/HeroHeatmap';
 import { TemplateStrip } from '@/features/landing/TemplateStrip';
@@ -198,28 +199,37 @@ const wins = [
   { Icon: Trophy, title: 'Achievements', text: 'Streaks and badges that unlock with a little celebration.' },
 ];
 
-export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingData: boolean; onOpenCreate: () => void }) {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const goToDashboard = () => {
-    searchParams.delete('intro');
-    setSearchParams(searchParams);
-  };
-  const installApp = useInstallApp();
-  const ctaLabel = hasExistingData ? 'Create a new calendar' : 'Start tracking free';
+const primaryButtonClass =
+  'group inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-emerald-950 font-semibold px-6 py-3.5 shadow-lg shadow-emerald-600/25 transition-colors cursor-pointer';
 
-  const primaryCta = (className?: string) => (
-    <button
-      onClick={onOpenCreate}
-      className={cn(
-        'group inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-emerald-950 font-semibold px-6 py-3.5 shadow-lg shadow-emerald-600/25 transition-colors cursor-pointer',
-        className
-      )}
-    >
+/**
+ * The public homepage at "/". The app lives at "/app".
+ *
+ * Visitors who already have calendars in this browser (datasetCount > 0) get "Open your data" as the
+ * main action, in the nav, the hero and the closing CTA, instead of being redirected, so the page still works as a
+ * homepage for them and can be shared.
+ */
+export function IntroLanding({ datasetCount, onOpenCreate }: { datasetCount: number; onOpenCreate: () => void }) {
+  const hasExistingData = datasetCount > 0;
+  const installApp = useInstallApp();
+
+  const openDataCta = (className?: string) => (
+    <Link to="/app" className={cn(primaryButtonClass, className)}>
+      <LayoutGrid className="w-5 h-5" />
+      Open your data
+      <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+    </Link>
+  );
+
+  const createCta = (className?: string) => (
+    <button onClick={onOpenCreate} className={cn(primaryButtonClass, className)}>
       <Plus className="w-5 h-5" />
-      {ctaLabel}
+      Start tracking free
       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
     </button>
   );
+
+  const primaryCta = (className?: string) => (hasExistingData ? openDataCta(className) : createCta(className));
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 overflow-x-hidden">
@@ -237,14 +247,17 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
           </nav>
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
-            {hasExistingData && (
-              <button onClick={goToDashboard} className="hidden sm:inline-flex text-sm font-medium px-3 py-2 rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
-                Your dashboard
+            {hasExistingData ? (
+              <Link to="/app" className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400 whitespace-nowrap">
+                <span className="sm:hidden">Your data</span>
+                <span className="hidden sm:inline">Open your data</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <button onClick={onOpenCreate} className="text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 cursor-pointer whitespace-nowrap">
+                Start free
               </button>
             )}
-            <button onClick={onOpenCreate} className="text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 cursor-pointer whitespace-nowrap">
-              {hasExistingData ? 'New calendar' : 'Start free'}
-            </button>
           </div>
         </div>
       </header>
@@ -268,18 +281,22 @@ export function IntroLanding({ hasExistingData, onOpenCreate }: { hasExistingDat
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
               {primaryCta()}
+              {hasExistingData && (
+                <button onClick={onOpenCreate} className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer">
+                  <Plus className="w-4 h-4" />
+                  New calendar
+                </button>
+              )}
               <a href="#how" className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                 See how it works
                 <ArrowDown className="w-4 h-4" />
               </a>
             </div>
-            {hasExistingData && (
-              <button onClick={goToDashboard} className="sm:hidden mt-4 text-sm text-slate-600 dark:text-slate-400 underline cursor-pointer">
-                Continue to your data
-              </button>
-            )}
             <ul className="mt-6 flex flex-wrap justify-center gap-x-5 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
-              {['Free, no caps', 'No account', 'Your data stays in your browser'].map((t) => (
+              {(hasExistingData
+                ? [`${datasetCount} ${datasetCount === 1 ? 'calendar' : 'calendars'} saved on this device`, 'Free, no caps', 'No account']
+                : ['Free, no caps', 'No account', 'Your data stays in your browser']
+              ).map((t) => (
                 <li key={t} className="inline-flex items-center gap-1.5">
                   <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   {t}

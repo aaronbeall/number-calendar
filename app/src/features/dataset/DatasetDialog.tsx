@@ -135,7 +135,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       onSuccess: () => {
         reset();
         onOpenChange(false);
-        navigate(`/dataset/${id}?goal-builder=${template.id}`);
+        navigate(`/app/dataset/${id}?goal-builder=${template.id}`);
       },
     });
   };
@@ -190,7 +190,7 @@ export function DatasetDialog({ open, onOpenChange, onCreated, dataset }: Datase
       onSuccess: () => {
         setDeleteOpen(false);
         onOpenChange(false);
-        navigate('/');
+        navigate('/app');
       }
     });
   };

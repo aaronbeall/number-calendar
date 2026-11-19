@@ -946,7 +946,7 @@ export function ProjectionsChart({
                   </p>
                 </div>
               </div>
-              <Link to={`/dataset/${datasetId}/milestones?add`}>
+              <Link to={`/app/dataset/${datasetId}/milestones?add`}>
                 <Button variant="outline" className="w-full h-auto px-3 py-2.5 justify-start gap-2.5 border-blue-200/80 dark:border-blue-900/60 bg-blue-50/70 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-900/30">
                   <AchievementBadge badge={{ style: 'laurel_trophy', icon: 'flag', color: 'sapphire', label: '' }} size="small" />
                   <span className="flex-1 min-w-0 text-left">

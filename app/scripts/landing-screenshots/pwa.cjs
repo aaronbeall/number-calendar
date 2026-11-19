@@ -17,8 +17,8 @@ fs.mkdirSync(OUT, { recursive: true });
       await page.screenshot({ path: `${OUT}/${name}.png` });
     };
     await page.goto(BASE + '/'); await page.waitForTimeout(1500);
-    await shoot('/dataset/pnl?year=2026&month=10', 'wide-calendar', 3000);
-    await shoot('/dataset/pnl/analysis', 'wide-analysis', 3000);
+    await shoot('/app/dataset/pnl?year=2026&month=10', 'wide-calendar', 3000);
+    await shoot('/app/dataset/pnl/analysis', 'wide-analysis', 3000);
     await ctx.close();
   }
   {
@@ -28,8 +28,8 @@ fs.mkdirSync(OUT, { recursive: true });
       await page.waitForTimeout(wait);
       await page.screenshot({ path: `${OUT}/${name}.png` });
     };
-    await shoot('/dataset/pnl?year=2026&month=10', 'narrow-calendar');
-    await shoot('/dataset/pnl?year=2026&month=10&panel=2026-10-15', 'narrow-entry');
+    await shoot('/app/dataset/pnl?year=2026&month=10', 'narrow-calendar');
+    await shoot('/app/dataset/pnl?year=2026&month=10&panel=2026-10-15', 'narrow-entry');
     await ctx.close();
   }
   await b.close();

@@ -31,7 +31,7 @@ export default function Achievements() {
         message="This dataset could not be loaded. It may have been removed or the link is outdated."
         details={datasetId ? `Requested dataset id: ${datasetId}` : undefined}
         actions={[
-          { label: 'Back to home', to: '/' },
+          { label: 'Back to your data', to: '/app' },
         ]}
       />
     );
@@ -54,7 +54,7 @@ export default function Achievements() {
       <PageHeader
         title="Achievements"
         description="Create goals to track your progress and celebrate wins."
-        backTo={`/dataset/${dataset?.id ?? datasetId ?? ''}`}
+        backTo={`/app/dataset/${dataset?.id ?? datasetId ?? ''}`}
         icon={Trophy}
         variant="achievements"
         actions={headerActions}

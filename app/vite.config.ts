@@ -9,7 +9,7 @@ import type { Plugin } from 'vite'
 const SITE_URL = 'https://numbersgoup.app'
 
 /**
- * Writes sitemap.xml at build time. Only the homepage is listed: every other route shows data that
+ * Writes sitemap.xml at build time. Only the homepage is listed: the app under /app shows data that
  * lives in the visitor's own browser, so there's nothing for search engines to index there.
  */
 function sitemap(): Plugin {
@@ -36,6 +36,28 @@ function sitemap(): Plugin {
   }
 }
 
+/**
+ * Writes app/index.html, a copy of the app shell for the /app entry point, so the installed app's
+ * start URL is served as a real page (200, not the 404.html fallback) on static hosts like GitHub
+ * Pages. The copy is marked noindex with its own canonical, so crawlers that don't run JS never
+ * treat it as a duplicate of the homepage.
+ */
+function appEntryHtml(): Plugin {
+  return {
+    name: 'app-entry-html',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle(_options, bundle) {
+      const index = bundle['index.html']
+      if (!index || index.type !== 'asset') return
+      const html = String(index.source)
+        .replace(/<meta name="robots" content="[^"]*"\s*\/?>/, '<meta name="robots" content="noindex, follow" />')
+        .replace(/<link rel="canonical" href="[^"]*"\s*\/?>/, `<link rel="canonical" href="${SITE_URL}/app" />`)
+      this.emitFile({ type: 'asset', fileName: 'app/index.html', source: html })
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   base: process.env.VITE_BASE || '/',
@@ -44,6 +66,7 @@ export default defineConfig({
     tailwindcss(),
     svgr(),
     sitemap(),
+    appEntryHtml(),
     VitePWA({
       // The update toast in src/features/pwa/PwaPrompts.tsx lets the user choose when to reload.
       registerType: 'prompt',
@@ -55,9 +78,10 @@ export default defineConfig({
         // fully offline after the first visit. All user data is already local in IndexedDB.
         globPatterns: ['**/*.{js,css,html,svg,png,webp,ico,webmanifest,woff2}'],
         // Manifest screenshots and the social image are only fetched by browsers and crawlers.
-        globIgnores: ['404.html', 'screenshots/**', 'og-image.jpg'],
+        // app/index.html is the same shell as index.html; navigations fall back to index.html anyway.
+        globIgnores: ['404.html', 'app/index.html', 'screenshots/**', 'og-image.jpg'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-        // Client-side routes (/dataset/..., /milestones) are served from the cached app shell.
+        // Client-side routes (/app/dataset/..., /app/milestones) are served from the cached app shell.
         navigateFallback: 'index.html',
         navigateFallbackDenylist: [/^\/(robots\.txt|sitemap\.xml|CNAME)$/, /\.[a-z0-9]+$/i],
         cleanupOutdatedCaches: true,

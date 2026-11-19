@@ -10,6 +10,7 @@ import {
   Route,
   BrowserRouter as Router,
   Routes,
+  useLocation,
   useNavigate,
   useParams
 } from 'react-router-dom';
@@ -23,12 +24,13 @@ import { useDataset, useDatasets } from './features/db/useDatasetData';
 import { useAchievements } from './hooks/useAchievements';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getCompletedAchievementsByDateKey } from './lib/goals';
-import { Landing } from './pages/Landing';
+import { IntroLanding } from './pages/IntroLanding';
 import { PwaPrompts } from './features/pwa/PwaPrompts';
 import { RouteHead } from './features/seo/RouteHead';
 
 // The homepage loads eagerly; every app page is split into its own chunk so first visits stay light.
 // The service worker precaches all chunks, so they are still available offline.
+const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
 const Achievements = lazy(() => import('./pages/Achievements'));
 const Analysis = lazy(() => import('./pages/Analysis'));
 const Calendar = lazy(() => import('./pages/Calendar').then(m => ({ default: m.Calendar })));
@@ -100,46 +102,64 @@ function AppLayout() {
     setDuplicateDialog(datasetId);
   };
 
-  if (datasetsLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
-        <Spinner className="mb-4" />
-        <div className="text-center text-slate-400 text-lg animate-pulse">Loading...</div>
-        <AppFooter />
-      </div>
-    );
-  }
+  const appLoading = (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-white dark:bg-slate-900/80">
+      <Spinner className="mb-4" />
+      <div className="text-center text-slate-400 text-lg animate-pulse">Loading...</div>
+      <AppFooter />
+    </div>
+  );
+
   return (
     <>
       <ErrorBoundary>
         <Suspense fallback={<PageFallback />}>
           <Routes>
+            {/* The public homepage. It never waits on local data: the "Open your data" button appears once datasets load. */}
             <Route index element={
-              <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
-                <Landing
-                  datasets={datasets}
-                  onSelectDataset={id => navigate(`/dataset/${id}`)}
-                  onOpenCreate={handleOpenCreate}
-                  onOpenEdit={handleOpenEdit}
-                  onOpenImport={handleOpenImport}
-                  onOpenExport={(datasetId) => handleOpenExport(datasetId)}
-                  onDuplicateDataset={handleOpenDuplicate}
-                />
-              </div>
-            } />
-            <Route path="milestones" element={<Milestones />} />
-            <Route path="targets" element={<Targets />} />
-            <Route path="achievements" element={<Achievements />} />
-            <Route path="test-error" element={<TestError />} />
-            <Route path="dataset/:datasetId/*" element={
-              <DatasetLayout
-                datasets={datasets}
+              <HomeRoute
+                datasetCount={datasetsLoading ? 0 : datasets.length}
                 onOpenCreate={handleOpenCreate}
-                onOpenEdit={handleOpenEdit}
-                onOpenImport={handleOpenImport}
-                onOpenExport={handleOpenExport}
               />
             } />
+            {/* The app itself. The installed PWA starts here. */}
+            <Route path="app/*" element={datasetsLoading ? appLoading : (
+              <Routes>
+                <Route index element={
+                  <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900/80">
+                    <Landing
+                      datasets={datasets}
+                      onSelectDataset={id => navigate(`/app/dataset/${id}`)}
+                      onOpenCreate={handleOpenCreate}
+                      onOpenEdit={handleOpenEdit}
+                      onOpenImport={handleOpenImport}
+                      onOpenExport={(datasetId) => handleOpenExport(datasetId)}
+                      onDuplicateDataset={handleOpenDuplicate}
+                    />
+                  </div>
+                } />
+                <Route path="milestones" element={<Milestones />} />
+                <Route path="targets" element={<Targets />} />
+                <Route path="achievements" element={<Achievements />} />
+                <Route path="test-error" element={<TestError />} />
+                <Route path="dataset/:datasetId/*" element={
+                  <DatasetLayout
+                    datasets={datasets}
+                    onOpenCreate={handleOpenCreate}
+                    onOpenEdit={handleOpenEdit}
+                    onOpenImport={handleOpenImport}
+                    onOpenExport={handleOpenExport}
+                  />
+                } />
+                <Route path="*" element={<Navigate to="/app" replace />} />
+              </Routes>
+            )} />
+            {/* Links and installs from before the app moved under /app */}
+            <Route path="dataset/*" element={<LegacyAppRedirect />} />
+            <Route path="milestones" element={<LegacyAppRedirect />} />
+            <Route path="targets" element={<LegacyAppRedirect />} />
+            <Route path="achievements" element={<LegacyAppRedirect />} />
+            <Route path="test-error" element={<LegacyAppRedirect />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
@@ -151,7 +171,7 @@ function AppLayout() {
         <DatasetDialog
           open={!!datasetDialog}
           onOpenChange={handleCloseDialog}
-          onCreated={id => navigate(`/dataset/${id}`)}
+          onCreated={id => navigate(`/app/dataset/${id}`)}
           dataset={editingDataset}
         />
       )}
@@ -174,13 +194,43 @@ function AppLayout() {
         <DuplicateDialog
           open={!!duplicateDialog}
           onOpenChange={setDuplicateDialog}
-          onDuplicated={id => navigate(`/dataset/${id}`)}
+          onDuplicated={id => navigate(`/app/dataset/${id}`)}
           dataset={datasets.find(d => d.id === duplicateDialog)!}
         />
       )}
       </Suspense>
     </>
   );
+}
+
+/**
+ * The homepage, plus two leftovers from when the app lived at the root:
+ * - Apps installed before the move launch "/?source=pwa" (or a shortcut) until the browser refreshes
+ *   their manifest, so those go straight to the app.
+ * - "?intro" used to force the homepage; it is the homepage now, so the flag is just dropped.
+ */
+function HomeRoute({ datasetCount, onOpenCreate }: { datasetCount: number; onOpenCreate: () => void }) {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  const source = params.get('source');
+  if (source === 'pwa' || source === 'shortcut') {
+    return <Navigate to={`/app${search}`} replace />;
+  }
+  if (params.has('intro')) {
+    params.delete('intro');
+    const rest = params.toString();
+    return <Navigate to={rest ? `/?${rest}` : '/'} replace />;
+  }
+  return <IntroLanding datasetCount={datasetCount} onOpenCreate={onOpenCreate} />;
+}
+
+/**
+ * Sends an old app URL (/dataset/..., /milestones, ...) to the same page under /app, keeping the
+ * query and hash, so bookmarks and shared links from before the move still work.
+ */
+function LegacyAppRedirect() {
+  const { pathname, search, hash } = useLocation();
+  return <Navigate to={`/app${pathname}${search}${hash}`} replace />;
 }
 
 function DatasetLayout({
@@ -226,7 +276,7 @@ function DatasetLayout({
         title="Dataset not found"
         message="This dataset could not be loaded. It may have been removed or the link is outdated."
         details={datasetId ? `Requested dataset id: ${datasetId}` : undefined}
-        actions={[{ label: 'Back to home', to: '/' }]}
+        actions={[{ label: 'Back to your data', to: '/app' }]}
       />
     );
   }
