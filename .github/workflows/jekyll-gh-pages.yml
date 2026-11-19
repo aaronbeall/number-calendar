@@ -27,9 +27,11 @@ jobs:
           node-version: '20.19'
       - run: npm ci
       - run: npm run build
+      # Unknown paths get the app shell: it handles /app/... deep links and old /dataset/... links,
+      # and sends anything else to the homepage.
       - run: |
           touch dist/.nojekyll
-          cp dist/index.html dist/404.html
+          cp dist/app/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./app/dist

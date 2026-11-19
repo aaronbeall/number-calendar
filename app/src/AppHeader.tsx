@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { AppWindow, Award, Bell, CalendarDays, CalendarIcon, ChartNoAxesColumn, Download, Flag, Grid3X3, Info, List, Mail, Menu, Moon, Plus, RefreshCw, Settings, Share2, Sparkles, Sun, Target, TrendingUp, Trophy, Upload, User } from 'lucide-react';
+import { AppWindow, Award, Bell, CalendarDays, CalendarIcon, ChartNoAxesColumn, Download, Flag, Grid3X3, Info, List, Mail, Menu, Plus, RefreshCw, Settings, Share2, Sparkles, Target, TrendingUp, Trophy, Upload, User } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Link,
@@ -17,6 +17,7 @@ import {
 } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useTheme } from './components/ThemeProvider';
+import { ThemeToggle } from './components/ThemeToggle';
 import { useInstallApp } from './features/pwa/useInstallApp';
 import { useCalendar } from './context/useCalendar';
 import { AchievementToast } from './features/achievements/AchievementToast';
@@ -412,26 +413,6 @@ export function AppHeader({
         />
       )}
     </>
-  );
-}
-
-export function ThemeToggle() {
-  const { appliedTheme: theme, setTheme } = useTheme();
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8"
-      aria-label="Toggle light/dark mode"
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-    >
-      {theme === 'dark' ? (
-        <Moon className="h-4 w-4 text-blue-500" />
-      ) : (
-        <Sun className="h-4 w-4 text-yellow-400" />
-      )}
-    </Button>
   );
 }
 

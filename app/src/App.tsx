@@ -1,10 +1,7 @@
-import BuyMeACoffeeIcon from '@/assets/buymeacoffee.svg?react';
-import PatreonIcon from '@/assets/patreon.svg?react';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Share2 } from 'lucide-react';
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import {
   Navigate,
   Route,
@@ -15,6 +12,7 @@ import {
   useParams
 } from 'react-router-dom';
 import { AppHeader } from './AppHeader';
+import { AppFooter } from './components/AppFooter';
 import { ErrorState } from './components/PageStates';
 import { Skeleton } from './components/ui/skeleton';
 import { Spinner } from './components/ui/spinner';
@@ -24,11 +22,10 @@ import { useDataset, useDatasets } from './features/db/useDatasetData';
 import { useAchievements } from './hooks/useAchievements';
 import { useSearchParamState } from './hooks/useSearchParamState';
 import { getCompletedAchievementsByDateKey } from './lib/goals';
-import { IntroLanding } from './pages/IntroLanding';
 import { PwaPrompts } from './features/pwa/PwaPrompts';
 import { RouteHead } from './features/seo/RouteHead';
 
-// The homepage loads eagerly; every app page is split into its own chunk so first visits stay light.
+// Every app page is split into its own chunk so the first load stays light.
 // The service worker precaches all chunks, so they are still available offline.
 const Landing = lazy(() => import('./pages/Landing').then(m => ({ default: m.Landing })));
 const Achievements = lazy(() => import('./pages/Achievements'));
@@ -115,13 +112,8 @@ function AppLayout() {
       <ErrorBoundary>
         <Suspense fallback={<PageFallback />}>
           <Routes>
-            {/* The public homepage. It never waits on local data: the "Open your data" button appears once datasets load. */}
-            <Route index element={
-              <HomeRoute
-                datasetCount={datasetsLoading ? 0 : datasets.length}
-                onOpenCreate={handleOpenCreate}
-              />
-            } />
+            {/* The homepage is a separate page (index.html + src/home.tsx), so leave the app for it. */}
+            <Route index element={<HomepageRedirect />} />
             {/* The app itself. The installed PWA starts here. */}
             <Route path="app/*" element={datasetsLoading ? appLoading : (
               <Routes>
@@ -160,7 +152,7 @@ function AppLayout() {
             <Route path="targets" element={<LegacyAppRedirect />} />
             <Route path="achievements" element={<LegacyAppRedirect />} />
             <Route path="test-error" element={<LegacyAppRedirect />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<HomepageRedirect />} />
           </Routes>
         </Suspense>
       </ErrorBoundary>
@@ -204,24 +196,14 @@ function AppLayout() {
 }
 
 /**
- * The homepage, plus two leftovers from when the app lived at the root:
- * - Apps installed before the move launch "/?source=pwa" (or a shortcut) until the browser refreshes
- *   their manifest, so those go straight to the app.
- * - "?intro" used to force the homepage; it is the homepage now, so the flag is just dropped.
+ * The app bundle only serves /app. Static hosts also hand it unknown paths (GitHub Pages' 404.html
+ * is the app shell), so anything that isn't an app route goes to the homepage with a full page load.
  */
-function HomeRoute({ datasetCount, onOpenCreate }: { datasetCount: number; onOpenCreate: () => void }) {
-  const { search } = useLocation();
-  const params = new URLSearchParams(search);
-  const source = params.get('source');
-  if (source === 'pwa' || source === 'shortcut') {
-    return <Navigate to={`/app${search}`} replace />;
-  }
-  if (params.has('intro')) {
-    params.delete('intro');
-    const rest = params.toString();
-    return <Navigate to={rest ? `/?${rest}` : '/'} replace />;
-  }
-  return <IntroLanding datasetCount={datasetCount} onOpenCreate={onOpenCreate} />;
+function HomepageRedirect() {
+  useEffect(() => {
+    window.location.replace(import.meta.env.BASE_URL);
+  }, []);
+  return null;
 }
 
 /**
@@ -313,68 +295,6 @@ function DatasetLayout({
         <AppFooter />
       </div>
     </DatasetProvider>
-  );
-}
-
-export function AppFooter() {
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: 'Numbers Go Up',
-        text: 'A calendar for numberphiles - Track your daily numbers and visualize your progress!',
-        url: window.location.href,
-      });
-    } catch (err) {
-      // User cancelled or share failed
-      if ((err as Error).name !== 'AbortError') {
-        console.error('Share failed:', err);
-      }
-    }
-  };
-
-  return (
-    <footer className="w-full py-4 text-center text-xs text-slate-500 dark:text-slate-400 bg-transparent mt-8">
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-2 flex-wrap">
-        <span>
-          Made with <span aria-label="love" role="img">❤️</span> and <span aria-label="banana" role="img">🍌</span> by <a href="https://metamodernmonkey.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-blue-500 transition-colors">Meta Modern Monkey</a> &copy; {new Date().getFullYear()}
-        </span>
-
-        <div className="flex items-center justify-center gap-2 flex-wrap sm:border-l sm:border-slate-300 sm:dark:border-slate-700 sm:pl-2 sm:ml-2">
-          <a
-            href="https://patreon.com/metamodernmonkey"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-colors group"
-            aria-label="Patreon"
-          >
-            <PatreonIcon className="w-3 h-3 text-slate-400 group-hover:text-pink-600 transition-colors" />
-            <span className="group-hover:text-pink-600 transition-colors">Patreon</span>
-          </a>
-
-          <a
-            href="https://buymeacoffee.com/metamodernmonkey"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-colors group"
-            aria-label="Buy Me a Coffee"
-          >
-            <BuyMeACoffeeIcon className="w-3 h-3 text-slate-400 group-hover:text-yellow-600 transition-colors" />
-            <span className="group-hover:text-yellow-600 transition-colors">Buy Me a Coffee</span>
-          </a>
-
-          {typeof navigator.share === 'function' && (
-            <button
-              onClick={handleShare}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group"
-              aria-label="Share"
-            >
-              <Share2 className="w-3 h-3 group-hover:text-blue-500 transition-colors" />
-              <span className="group-hover:text-blue-500 transition-colors">Share</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </footer>
   );
 }
 

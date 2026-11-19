@@ -1,12 +1,12 @@
-import { AppFooter } from '@/App';
-import { ThemeToggle, UserMenu } from '@/AppHeader';
+import { UserMenu } from '@/AppHeader';
+import { AppFooter } from '@/components/AppFooter';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { BrandMark, BrandWordmark } from '@/components/brand/Brand';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Dataset } from '@/features/db/localdb';
 import { usePreference } from '@/hooks/usePreference';
 import { Home, Plus, Search } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Dataset cards draw charts; loading them separately keeps the chart library out of the homepage bundle.
@@ -128,13 +128,13 @@ function DatasetsLanding({
 
             {/* Right side actions */}
             <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <Link
-                to="/"
+              <a
+                href={import.meta.env.BASE_URL}
                 className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group"
                 aria-label="Numbers Go Up homepage"
               >
                 <Home className="w-4 sm:w-5 h-4 sm:h-5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors" />
-              </Link>
+              </a>
               <button
                 type="button"
                 onClick={onOpenCreate}

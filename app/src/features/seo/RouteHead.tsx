@@ -4,8 +4,6 @@ import { matchPath, useLocation } from 'react-router-dom';
 
 export const SITE_URL = 'https://numbersgoup.app';
 export const SITE_NAME = 'Numbers Go Up';
-/** Must match the <title> in index.html, which is what crawlers see before JS runs. */
-export const HOME_TITLE = 'Numbers Go Up - A calendar for numbers that knows good from bad';
 
 const datasetPageTitles: Record<string, string> = {
   '': 'Calendar',
@@ -47,9 +45,10 @@ function setCanonical(href: string) {
 /**
  * Keeps the document title, robots and canonical tags in step with the route.
  *
- * Only the homepage at "/" is public content. The app lives under /app and shows data that exists
- * only in the visitor's own browser, so every /app page is marked noindex with a canonical of its
- * own path. Titles still follow the page so tabs, history and installed-app windows read well.
+ * This runs only in the app (served under /app); the homepage is a separate page with its own static
+ * tags in index.html. App pages show data that exists only in the visitor's own browser, so they are
+ * all noindex with a canonical of their own path. Titles follow the page so tabs, history and
+ * installed-app windows read well.
  */
 export function RouteHead() {
   const { pathname } = useLocation();
@@ -57,8 +56,7 @@ export function RouteHead() {
   const datasetId = datasetMatch?.params.datasetId ?? '';
   const { data: dataset } = useDataset(datasetId);
 
-  const isHome = pathname === '/';
-  let title = isHome ? HOME_TITLE : `Your calendars · ${SITE_NAME}`;
+  let title = `Your calendars · ${SITE_NAME}`;
   if (datasetMatch) {
     const sub = (datasetMatch.params['*'] ?? '').split('/')[0];
     const page = datasetPageTitles[sub] ?? 'Calendar';
@@ -72,9 +70,9 @@ export function RouteHead() {
 
   useEffect(() => {
     document.title = title;
-    setMeta('robots', isHome ? 'index, follow, max-image-preview:large' : 'noindex, follow');
-    setCanonical(isHome ? `${SITE_URL}/` : `${SITE_URL}${pathname.replace(/\/$/, '')}`);
-  }, [title, isHome, pathname]);
+    setMeta('robots', 'noindex, follow');
+    setCanonical(`${SITE_URL}${pathname.replace(/\/$/, '')}`);
+  }, [title, pathname]);
 
   return null;
 }

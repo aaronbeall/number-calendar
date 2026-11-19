@@ -1,5 +1,5 @@
-import { AppFooter } from '@/App';
-import { ThemeToggle } from '@/AppHeader';
+import { AppFooter } from '@/components/AppFooter';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { BrandMark, BrandWordmark } from '@/components/brand/Brand';
 import { useTheme } from '@/components/ThemeProvider';
 import { parseSeriesExpression } from '@/lib/expression';
@@ -25,7 +25,6 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
 import { GoodRules } from '@/features/landing/GoodRules';
 import { HeroHeatmap } from '@/features/landing/HeroHeatmap';
 import { TemplateStrip } from '@/features/landing/TemplateStrip';
@@ -199,34 +198,40 @@ const wins = [
   { Icon: Trophy, title: 'Achievements', text: 'Streaks and badges that unlock with a little celebration.' },
 ];
 
+/** The app is a separate page (its own entry and bundle), so these are full page loads, not router links. */
+const APP_URL = `${import.meta.env.BASE_URL}app/`;
+/** Opens the app with the new-calendar dialog showing. */
+const CREATE_URL = `${APP_URL}?dataset`;
+
 const primaryButtonClass =
   'group inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-emerald-950 font-semibold px-6 py-3.5 shadow-lg shadow-emerald-600/25 transition-colors cursor-pointer';
 
 /**
- * The public homepage at "/". The app lives at "/app".
+ * The public homepage at "/". It is its own Vite entry (src/home.tsx) and is not part of the PWA; the
+ * app lives at "/app" with its own entry (src/main.tsx).
  *
  * Visitors who already have calendars in this browser (datasetCount > 0) get "Open your data" as the
  * main action, in the nav, the hero and the closing CTA, instead of being redirected, so the page still works as a
  * homepage for them and can be shared.
  */
-export function IntroLanding({ datasetCount, onOpenCreate }: { datasetCount: number; onOpenCreate: () => void }) {
+export function IntroLanding({ datasetCount }: { datasetCount: number }) {
   const hasExistingData = datasetCount > 0;
   const installApp = useInstallApp();
 
   const openDataCta = (className?: string) => (
-    <Link to="/app" className={cn(primaryButtonClass, className)}>
+    <a href={APP_URL} className={cn(primaryButtonClass, className)}>
       <LayoutGrid className="w-5 h-5" />
       Open your data
       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-    </Link>
+    </a>
   );
 
   const createCta = (className?: string) => (
-    <button onClick={onOpenCreate} className={cn(primaryButtonClass, className)}>
+    <a href={CREATE_URL} className={cn(primaryButtonClass, className)}>
       <Plus className="w-5 h-5" />
       Start tracking free
       <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-    </button>
+    </a>
   );
 
   const primaryCta = (className?: string) => (hasExistingData ? openDataCta(className) : createCta(className));
@@ -248,15 +253,15 @@ export function IntroLanding({ datasetCount, onOpenCreate }: { datasetCount: num
           <div className="ml-auto flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             {hasExistingData ? (
-              <Link to="/app" className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400 whitespace-nowrap">
+              <a href={APP_URL} className="inline-flex items-center gap-1.5 text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-emerald-700 text-white hover:bg-emerald-800 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:bg-emerald-400 whitespace-nowrap">
                 <span className="sm:hidden">Your data</span>
                 <span className="hidden sm:inline">Open your data</span>
                 <ArrowRight className="w-4 h-4" />
-              </Link>
+              </a>
             ) : (
-              <button onClick={onOpenCreate} className="text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 cursor-pointer whitespace-nowrap">
+              <a href={CREATE_URL} className="text-sm font-semibold px-3 sm:px-4 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 cursor-pointer whitespace-nowrap">
                 Start free
-              </button>
+              </a>
             )}
           </div>
         </div>
@@ -282,10 +287,10 @@ export function IntroLanding({ datasetCount, onOpenCreate }: { datasetCount: num
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
               {primaryCta()}
               {hasExistingData && (
-                <button onClick={onOpenCreate} className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer">
+                <a href={CREATE_URL} className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer">
                   <Plus className="w-4 h-4" />
                   New calendar
-                </button>
+                </a>
               )}
               <a href="#how" className="inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 font-semibold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
                 See how it works

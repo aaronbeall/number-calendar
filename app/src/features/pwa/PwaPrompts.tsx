@@ -45,10 +45,6 @@ export function PwaPrompts() {
   useEffect(() => {
     if (!offlineReady) return;
     setOfflineReady(false);
-    // First visits land on the homepage, where a toast would sit on top of the sign-up button.
-    // Mention offline support only once someone is using the app.
-    const home = import.meta.env.BASE_URL.replace(/\/?$/, '/');
-    if (window.location.pathname === home) return;
     toast('Ready to work offline', {
       description: 'Numbers Go Up is saved on this device and works without a connection.',
       duration: 5000,
